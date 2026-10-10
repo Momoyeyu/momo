@@ -23,9 +23,12 @@
 | Phase | 单选 | `P0` `P1` `P2` `P3` `P4` `P5` / `Track`（声线、人格等并行轨道） |
 | Area | 单选 | `app` `models` `infra` `docs` `voice` `persona` |
 | Priority | 单选 | `High` / `Medium` / `Low` |
-| Repo | 单选 | `momo-app` `momo-models` `momo-infra` `momo-docs`（跨仓视图用） |
 
-视图建议：按 Phase 分组的 Board（主线推进）+ 按 Area 分组的 Table（轨道视角）+ `Priority=High` 过滤的「本周」视图。
+仓库归属直接用 Projects V2 内置 `Repository` 列（自动填充，无需自定义 `Repo` 字段——`Repo` 为保留名不可建）。
+
+视图建议：按 Phase 分组的 Board（主线推进）+ 按 Area 分组的 Table（轨道视角）+ `Priority=High` 过滤的「本周」视图（Projects V2 API 不支持创建视图，需在建好的 Project 页面手动配置）。
+
+> 已落地（2026-10-10）：Project #2 <https://github.com/users/Momoyeyu/projects/2>，四仓已 link，28 条首批 issue 全部挂载——P0=Todo+High，P1/P2/Track=Backlog+Medium，P3+=Backlog+Low。
 
 ## 标签体系
 
