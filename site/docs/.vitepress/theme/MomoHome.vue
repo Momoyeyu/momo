@@ -94,6 +94,7 @@ const blueprintLinks = [
 
     <footer class="momo-home-footer">
       <span>momo · 午后桌面</span>
+      <a :href="withBase('/guide/credits')">桃濑日和 Hiyori · © Live2D Inc. · 素材与许可</a>
     </footer>
   </main>
 </template>

@@ -3,6 +3,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useData, withBase } from 'vitepress'
 
 const CORE_URL = 'https://cubism.live2d.com/sdk-web/core/05/live2dcubismcore.min.js'
+const MODEL_URL = '/live2d/hiyori/Hiyori.model3.json'
+const idleMotionCount = 9
 
 const { isDark } = useData()
 const host = ref<HTMLElement>()
@@ -19,6 +21,8 @@ let model: import('pixi-live2d-display/cubism4').Live2DModel | undefined
 let resizeObserver: ResizeObserver | undefined
 let intersectionObserver: IntersectionObserver | undefined
 let motionPreference: MediaQueryList | undefined
+let motionIndex = 0
+let forceMotionPriority: import('pixi-live2d-display/cubism4').MotionPriority
 let generation = 0
 let interactionTimer: number | undefined
 let originalBounds: { x: number; y: number; width: number; height: number } | undefined
@@ -128,11 +132,33 @@ function onPointerMove(event: PointerEvent) {
 
 async function greet() {
   if (!model) return
+  allowInteraction(12000)
+  try {
+    const started = await model.motion('TapBody', 0, forceMotionPriority)
+    bubble.value = started ? '你好呀。今天想一起做点什么？' : '日和还没准备好这个动作，再试一次吧。'
+  } catch {
+    bubble.value = '问候动作暂时没有开始，再试一次吧。'
+  }
 }
 
+async function nextMotion() {
   if (!model) return
+  allowInteraction(12000)
+  const state = model.internalModel.motionManager.state
+  while (
+    (state.currentGroup === 'Idle' && state.currentIndex === motionIndex)
+    || (state.reservedGroup === 'Idle' && state.reservedIndex === motionIndex)
+    || (state.reservedIdleGroup === 'Idle' && state.reservedIdleIndex === motionIndex)
+  ) {
+    motionIndex = (motionIndex + 1) % idleMotionCount
+  }
+  const selectedMotion = motionIndex
+  motionIndex = (motionIndex + 1) % idleMotionCount
   try {
+    const started = await model.motion('Idle', selectedMotion, forceMotionPriority)
+    bubble.value = started ? `动作 ${selectedMotion + 1} · 桃濑日和` : '日和还没准备好这个动作，再试一次吧。'
   } catch {
+    bubble.value = '动作切换遇到问题了，再试一次吧。'
   }
 }
 
@@ -202,12 +228,14 @@ async function initialize() {
     ;(window as typeof window & { PIXI?: typeof PIXI }).PIXI = PIXI
     const live2d = await import('pixi-live2d-display/cubism4')
     if (request !== generation || !host.value) return
+    forceMotionPriority = live2d.MotionPriority.FORCE
     live2d.config.sound = false
     live2d.config.logLevel = live2d.config.LOG_LEVEL_ERROR
     app = new PIXI.Application({
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
+      resolution: Math.min(window.devicePixelRatio || 1, 3),
       width: Math.max(1, host.value.clientWidth),
       height: Math.max(1, host.value.clientHeight),
     })
@@ -218,6 +246,7 @@ async function initialize() {
       return
     }
     const canvas = app.view as HTMLCanvasElement
+    canvas.setAttribute('aria-label', '桃濑日和 Hiyori Live2D 互动模型')
     canvas.tabIndex = -1
     host.value.replaceChildren(canvas)
     const loadedModel = await live2d.Live2DModel.from(withBase(MODEL_URL), { autoInteract: false, ticker: app.ticker })
@@ -227,6 +256,9 @@ async function initialize() {
       return
     }
     model = loadedModel
+    for (const texture of model.textures) {
+      texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON
+    }
     const bounds = model.getLocalBounds()
     originalBounds = { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
     app.stage.addChild(model)
@@ -275,10 +307,12 @@ onBeforeUnmount(cleanup)
     <div class="scene-ground" aria-hidden="true"></div>
     <p class="scene-note">与你同频</p>
     <div ref="host" class="live2d-canvas-host"></div>
+    <div v-if="state === 'loading'" class="live2d-loading" role="status">正在邀请日和来到桌面…</div>
     <div v-if="state === 'error'" class="live2d-error" role="alert"><strong>互动预览暂时没有加载成功</strong><span>{{ error }}</span><div><button type="button" @click="initialize">重试</button><a :href="withBase('/guide/credits')">查看素材与兼容说明</a></div></div>
     <p v-else-if="bubble" class="live2d-bubble" aria-live="polite">{{ bubble }}</p>
     <div class="live2d-actions" aria-label="Live2D 互动控制">
       <button type="button" :disabled="state === 'loading' || state === 'error'" @click="greet">打个招呼</button>
+      <button type="button" :disabled="state === 'loading' || state === 'error'" @click="nextMotion">换个动作</button>
       <button type="button" :disabled="state === 'loading' || state === 'error'" @click="togglePause">{{ pauseLabel }}</button>
     </div>
     <p class="live2d-caption">Live2D 互动预览 · 不连接对话服务</p>
