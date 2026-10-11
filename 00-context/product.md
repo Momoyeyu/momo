@@ -1,10 +1,10 @@
 # 产品定义：momo
 
-> 一句话：momo 是一个本地优先的 Neuro-sama 式 AI streamer —— Live2D 形象、语音对话、能被打断、有自己的人格与记忆；先本地跑起来，直播暂缓。
+> 一句话：momo 是一个本地优先的 AI 虚拟伙伴 —— Live2D 形象、语音对话、能被打断、有自己的人格与记忆；先本地跑起来，直播暂缓。
 
 ## momo 是什么
 
-Neuro-sama 的启发不是"某个模型"，而是一条**流水线**：定制 LLM + TTS + ASR + Live2D 皮 + 回合/打断运行时 + action 总线 + 过滤层（调研详见 [research.md](./research.md)）。momo 复刻这条流水线，但坚持两个约束：
+momo 的核心不是"某个模型"，而是一条**流水线**：定制 LLM + TTS + ASR + Live2D 皮 + 回合/打断运行时 + action 总线 + 过滤层（课题背景调研见 [research.md](./research.md)）。在此之上坚持两个约束：
 
 - **本地优先**：LLM/ASR/TTS 全部可本地自托管，云端 API 只做兜底、对照和视觉等补充能力。隐私、零订阅成本、可离线演示。
 - **模块化**：交互端 / 编排器 / 模型服务三段式进程分离（见 [../01-architecture/system.md](../01-architecture/system.md)），单组件可替换、可降级。

@@ -87,7 +87,7 @@ flowchart TD
 ### ADR-013 回合状态机与 barge-in 三动作语义
 
 - **决策**：回合状态机 Idle→Listening→Thinking→Speaking→Idle，Speaking/Thinking 可被 Interrupted；idle 超时触发自发行为。barge-in 固定三动作：**停播、取消上游生成、已播出文本记账入历史**。细则见 [../01-architecture/runtime.md](../01-architecture/runtime.md)。
-- **理由**：Neuro 式"能插话"的体验核心；已播出文本记账保证 LLM 历史与实际说出的话一致。
+- **理由**：「能插话」是拟人对话的体验核心；已播出文本记账保证 LLM 历史与实际说出的话一致。
 - **被否**：打断即整回合丢弃（用户听到的和模型记得的不一致）；排队制不打断（破坏"像人"第一指标）。
 
 ### ADR-019 输入输出双向过滤接口预留，P5 前必须实装
@@ -149,7 +149,7 @@ flowchart TD
 ### ADR-015 action 总线仿 neuro-game-sdk（P4）
 
 - **决策**：游戏/工具通过 WS 向编排器注册 `{name, description, json_schema}` 的 action；LLM 只输出结构化调用；执行下沉到注册方校验。协议见 [../01-architecture/protocol.md](../01-architecture/protocol.md) `action.*`。
-- **理由**：Neuro 验证过的模式——LLM 不直接执行，安全边界天然成立。
+- **理由**：LLM 不直接执行、执行下沉到注册方——安全边界天然成立。
 - **被否**：LLM 直接生成并执行代码（无安全边界）；让编排器内置游戏逻辑（每接一个游戏改核心）。
 
 ### ADR-016 视觉 = `deepseek-v4-flash-vision-exp` API，不自建 VLM（P4）
