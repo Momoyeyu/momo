@@ -71,13 +71,14 @@ flowchart LR
 - 模型下载/校验：走 `HF_ENDPOINT=https://hf-mirror.com`，断点续传 + hash 校验；
 - 服务编排启停：按 `MOMO_PROFILE` 拉起/停止 normal/degraded 两套进程拓扑；
 - 降级切换：改 env + 重启的正确顺序封装；
-- 测量工具：首包延迟、RTF、tok/s 探测，输出与文档验收指标可对照的格式。
+- 测量工具：首包延迟、RTF、tok/s 探测，输出与文档验收指标可对照的格式；
+- **Web 运维控制台**（`momoctl web`）：组件/模型/训练 job/env 配置的浏览器操作面，复用同一 binary 与同一套核心逻辑；含训练 job 编排（本地子进程 + SSH 远程执行器）。
 
 **不能做什么（硬约束）：**
 
 - **不承载人设/对话业务**：infra 不知道 momo 说了什么；
 - **不在运行时数据通路上**：任何音频/文本不经过 infra；它只在带外（启动前、诊断时、测量时）出现；
-- 不含推理代码、不含 UI；
+- 不含推理代码；**UI 仅限运维控制台**（舞台/对话界面永远归 momo-app）；
 - 必须能在 Python 环境完全坏掉时运行——这也是它是 Rust 单二进制的原因（bootstrap 问题：修 Python 的工具不能依赖 Python）。
 
 ## 为什么是"app 编排 / models 推理"这个分法
@@ -99,6 +100,7 @@ flowchart LR
 | 新表情 tag → Live2D 映射 | app（前端） | 渲染逻辑 |
 | 截图→视觉调用 | models | 模型调用适配 |
 | 延迟看板/压测 | infra | 测量工具 |
+| Web 控制台 / 训练 job 编排 | infra | 运维操作面（训练实体仍在 models 仓，infra 只编排执行） |
 
 ## 检查表
 

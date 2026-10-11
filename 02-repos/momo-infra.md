@@ -5,12 +5,12 @@
 ## 目的
 
 - 把"跑起来 / 坏了查 / 降级救场"三件事收成一条命令：`momoctl doctor`、`momoctl serve`、`momoctl switch`。
-- 输出同时面向人（表格/颜色）和脚本（`--json`），退出码可被 CI 与 shell 利用。
+- 输出同时面向人（表格/颜色）、脚本（`--json`）和浏览器（`momoctl web` 控制台），退出码可被 CI 与 shell 利用。
 
 ## 范围
 
-- 做：env 检查矩阵、MANIFEST 下载校验、进程编排（spawn/pid/log/探活）、profile 切换、端到端延迟 bench、模型 GC。
-- 不做：模型推理、协议消息定义、前端构建发布（npm/tauri build 归 momo-app 自己的 CI）。
+- 做：env 检查矩阵、MANIFEST 下载校验、进程编排（spawn/pid/log/探活）、profile 切换、端到端延迟 bench、模型 GC、**Web 运维控制台**（`momoctl web`：组件/模型/训练 job/配置的浏览器操作面，见下文专节）。
+- 不做：模型推理、协议消息定义、舞台前端（momo-app 的 web 归其自管；本仓 `web/` 仅为控制台自用）。
 - 跨仓协作：读 momo-models 的 `models/MANIFEST.toml` 与服务端点约定；探测 momo-app `momod` 的 `/healthz`——本仓是这些约定的消费方，不是定义方。
 
 ## 形态决策：单 binary 多子命令
@@ -44,16 +44,39 @@ momo-infra/
 │   │   ├── serve.rs            # up/down/status/logs/restart
 │   │   ├── switch.rs           # normal ↔ degraded 切换
 │   │   ├── bench.rs            # 端到端延迟测量
-│   │   └── gc.rs               # 模型 GC：N-1 代清理、models.lock 联动
-│   └── serve/
-│       ├── proc.rs             # spawn/kill/pidfile/日志落盘
-│       └── profile.rs          # normal / degraded → 组件清单与启动顺序
+│   │   ├── gc.rs               # 模型 GC：N-1 代清理、models.lock 联动
+│   │   └── web.rs              # axum 控制台 server：REST API + 内嵌静态 SPA
+│   ├── serve/
+│   │   ├── proc.rs             # spawn/kill/pidfile/日志落盘
+│   │   └── profile.rs          # normal / degraded → 组件清单与启动顺序
+│   ├── api/
+│   │   ├── mod.rs              # REST 路由：doctor/serve/models/jobs/config 五组
+│   │   ├── dto.rs              # API 出入参（与 --json 输出同 schema）
+│   │   └── sse.rs              # SSE：日志流、job 进度、组件状态变化
+│   └── jobs/
+│       ├── mod.rs
+│       ├── runner.rs           # job 生命周期：prepare→launch→monitor→artifact→promote
+│       ├── exec_local.rs       # 本地子进程执行器（复用 serve/proc.rs）
+│       ├── exec_ssh.rs         # SSH 远程执行器（4090D/mac-studio）
+│       ├── store.rs            # $XDG_STATE_HOME/momo/jobs/：job 描述+状态+日志索引
+│       └── pipeline.rs         # pipeline 定义：voice-sft / persona-qlora（步骤编排+产物登记）
 ├── profiles/
 │   ├── normal.toml             # 正常档组件表（入库，作为默认模板）
 │   └── degraded.toml           # 降级档组件表
+├── web/                        # 控制台前端：Vite + TS，构建产物经 include_dir 打进二进制
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── src/
+│       ├── main.ts             # 单页路由 + API client + SSE client
+│       ├── pages/overview.ts   # doctor 可视化（组/检查项/状态色/修复 hint）
+│       ├── pages/components.ts # serve：组件表 + up/down/restart + 日志 tail(SSE)
+│       ├── pages/models.ts     # MANIFEST 列表 + pull 进度 + 激活项选择（provider/声线/大脑）
+│       ├── pages/training.ts   # pipeline 向导 + job 列表 + 实时日志/loss 曲线
+│       └── pages/config.ts     # MOMO_* env 编辑（写回 .env.<profile>，敏感键掩码）
 ├── tests/
 │   ├── manifest_test.rs
-│   └── doctor_json_test.rs     # --json 输出 schema 稳定回归
+│   ├── doctor_json_test.rs     # --json 输出 schema 稳定回归
+│   └── api_contract_test.rs    # REST 出入参与 --json schema 一致性
 └── .github/workflows/ci.yml
 ```
 
@@ -120,6 +143,63 @@ flowchart TD
 - 扫描 `$MOMO_MODELS_DIR` 中未被 `models.lock` 与 `.env` 引用的目录（评估期模型、半截下载 `.part`），列出待删清单；`--dry-run` 只报告不删（默认行为，显式 `--yes` 才执行删除）。
 - 删除同步更新 `models.lock`；删除前先校验 `.env` 与 lock 无引用，有引用则 warn 并跳过。
 
+### `momoctl web [--listen 127.0.0.1:7830] [--open]`
+
+Web 运维控制台：同一 binary 起 axum server，REST API + 内嵌静态 SPA（`web/dist` 经 `include_dir!` 打进二进制，单文件分发不变）。**CLI 与 Web 是同一套核心逻辑的两种前端**——API 出入参与 `--json` 输出同 schema（`api/dto.rs` 唯一维护处），`api_contract_test` 锁定一致性。
+
+参考：LLaMA-Factory **LlamaBoard**（Runner 管训练子进程生命周期、分页 train/eval/infer/export、配置 YAML 持久化、断线恢复进行中的 run）、**llm-systems-manager**（推理服务远程控制：起停/换模型/tail 日志/跨机）。
+
+```mermaid
+flowchart LR
+    subgraph BROWSER["浏览器 127.0.0.1"]
+        SPA["SPA<br/>overview/components/models/<br/>training/config 五页"]
+    end
+    subgraph MO["momoctl web（axum）"]
+        API["REST /api/*<br/>dto = --json schema"]
+        SSE["SSE /api/events<br/>日志·进度·状态推送"]
+        JOBS["jobs/runner<br/>job 生命周期状态机"]
+    end
+    SPA -->|fetch/SSE| API & SSE
+    API --> CORE["复用 cmds/serve/manifest/env_cfg/net"]
+    JOBS --> LOCAL["exec_local<br/>spawn 子进程"]
+    JOBS --> SSH["exec_ssh<br/>4090D / mac-studio"]
+    CORE --> SYS["momod / svc / brain<br/>profiles / .env / $MOMO_MODELS_DIR"]
+```
+
+#### 页面与功能
+
+| 页 | 内容 | 对应 API |
+|---|---|---|
+| 概览 | doctor 检查矩阵可视化（组/项/ok-warn-fail/修复 hint）、组件健康一览 | `GET /api/doctor`、`GET /api/serve/status` |
+| 组件 | profile 组件表、up/down/restart、逐组件日志 tail（SSE）、切换 normal/degraded | `POST /api/serve/{up,down,restart}`、`GET /api/serve/logs?id=`(SSE)、`POST /api/switch` |
+| 模型 | MANIFEST 条目表（版本/sha256/大小/在盘状态）、pull 进度条、**激活选择**：TTS provider、克隆声线目录、大脑 endpoint | `GET /api/models`、`POST /api/models/pull`、`POST /api/models/activate` |
+| 训练 | pipeline 向导（数据集→超参→执行目标→产物目录）、job 列表与状态、实时日志 + loss 曲线（SSE）、artifact → MANIFEST 登记/回滚 | `GET/POST /api/jobs`、`GET /api/jobs/{id}/logs`(SSE)、`POST /api/jobs/{id}/{cancel,promote}` |
+| 配置 | `MOMO_*` env 表单编辑（按 config.md 分组、敏感键掩码、写回 `.env.<profile>` 前留 `.bak`） | `GET/PUT /api/config` |
+
+#### 训练 job 模型
+
+```mermaid
+stateDiagram-v2
+    [*] --> queued: POST /api/jobs
+    queued --> preparing: 数据集校验/切片
+    preparing --> running: launch(local|ssh)
+    running --> succeeded: exit 0 + 产物校验
+    running --> failed: exit!=0 / 日志解析异常
+    running --> canceled: POST cancel
+    succeeded --> promoted: artifact→MANIFEST + 激活
+    failed --> queued: retry
+    canceled --> queued: retry
+```
+
+- **pipeline 即数据**：`pipeline.rs` 内置两条流水线——`voice-sft`（参考音频→prepare_dataset→sft_cosyvoice3→盲听 A/B→`MOMO_TTS_MODEL_DIR` 激活）与 `persona-qlora`（对话素材→build_dataset→lora_qwen→regression-20→评估报告）。每步映射到 momo-models `training/` 下对应脚本，pipeline 步骤产出物写入 job store。
+- **执行器二选一**：`exec_local`（复用 proc.rs spawn/pidfile/日志落盘）与 `exec_ssh`（ssh 到 4090D/mac-studio：远端拉起 `uv run` 训练脚本、定期 rsync 日志与 checkpoint 回本地 job store；ssh 复用系统 `~/.ssh/config` 别名，不自管密钥）。bigstrong 夜间窗口遵守 [`../05-ops/borrowed-etiquette.md`](../05-ops/borrowed-etiquette.md)：job 允许标记 `borrowed_night_only`，runner 只在配置窗口内调度。
+- **job store**：`${XDG_STATE_HOME}/momo/jobs/<job_id>/{job.json,logs/,artifacts/}`；重启 `momoctl web` 后 runner 重扫 store，恢复 running 态监控（参照 LlamaBoard resume 语义）。CLI 侧暴露 `momoctl jobs list|logs|cancel` 子命令共用同一 store——web 与 CLI 操作同一份 job。
+- **安全边界**：默认只绑 `127.0.0.1`；`--listen` 显式放宽时才出 localhost，届时要求 `MOMO_WEB_TOKEN`（未设拒绝启动）；所有 POST 走 CSRF token；配置页永不回显敏感值，只写 set/unset。
+
+#### 范围边界（重申）
+
+控制台只做**运维面**：起停组件、管模型文件、跑训练 job、改 env。不做：对话/人设业务（momo-app/momo-models 职责）、协议消息定义（protocol.md 单一来源）、前端发布（自己的 `web/` 只服务控制台，与 momo-app 的舞台前端无关）。
+
 ## 输出格式与退出码约定
 
 - 默认人读：对齐表格 + 状态色（ok 绿/warn 黄/fail 红）；进度条/下载速率走 stderr，stdout 保持可管道。
@@ -163,3 +243,6 @@ flowchart TD
 - [ ] `momoctl bench` 对运行中的栈输出 p50/p95 与 <1.5s 判定；`--strict` 退出码正确
 - [ ] `momoctl gc --dry-run` 列出待删清单且不删；实删后 `models.lock` 同步更新
 - [ ] 所有子命令 `--json` 输出可被 `jq` 解析，schema 测试通过
+- [ ] `momoctl web` 起控制台：五个页面可用，REST 出入参与 `--json` schema 一致（api_contract_test 过）
+- [ ] 组件页可对真实组件执行 up/down/restart 并 tail 日志；配置页写回 `.env.<profile>` 且敏感键不回显
+- [ ] 训练页跑通一条本地 pipeline job（mock 训练脚本亦可）：状态机迁移正确、SSE 日志可达、产物可 promote 进 MANIFEST
