@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 560" font-family="inherit">
+  <defs>
+    <marker id="dp-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8b84a8"/>
+    </marker>
+  </defs>
+
+  <!-- Mac Air -->
+  <rect x="16" y="16" width="240" height="200" rx="16" class="dg-region" stroke-width="1.6"/>
+  <text x="32" y="42" font-size="12" class="dg-region-label">Mac Air（交互端）</text>
+  <rect x="48" y="70" width="176" height="110" rx="12" fill="#f7a8c4" stroke="#3d3455" stroke-width="2"/>
+  <text x="136" y="104" text-anchor="middle" font-size="13" font-weight="700" class="dg-node-text">浏览器</text>
+  <text x="136" y="126" text-anchor="middle" font-size="10.5" class="dg-node-text">Live2D + 音频 IO</text>
+  <text x="136" y="146" text-anchor="middle" font-size="10" class="dg-node-text" opacity="0.75">CPU ASR 可选</text>
+
+  <!-- laptop -->
+  <rect x="300" y="16" width="380" height="330" rx="16" class="dg-region" stroke-width="1.6"/>
+  <text x="316" y="42" font-size="12" class="dg-region-label">laptop · WSL2 · RTX 3070 Laptop 8GB（编排 + 语音）</text>
+
+  <rect x="330" y="70" width="150" height="70" rx="12" fill="#a78bfa" stroke="#3d3455" stroke-width="2"/>
+  <text x="405" y="98" text-anchor="middle" font-size="12.5" font-weight="700" class="dg-node-text">momod :7800</text>
+  <text x="405" y="118" text-anchor="middle" font-size="10.5" class="dg-node-text">编排器</text>
+
+  <rect x="500" y="70" width="150" height="70" rx="12" fill="#b5e3c4" stroke="#3d3455" stroke-width="2"/>
+  <text x="575" y="98" text-anchor="middle" font-size="12.5" font-weight="700" class="dg-node-text">ASR :7810</text>
+  <text x="575" y="118" text-anchor="middle" font-size="10.5" class="dg-node-text">纯 CPU</text>
+
+  <rect x="500" y="160" width="150" height="70" rx="12" fill="#f9d77e" stroke="#3d3455" stroke-width="2"/>
+  <text x="575" y="188" text-anchor="middle" font-size="12.5" font-weight="700" class="dg-node-text">TTS :7811</text>
+  <text x="575" y="208" text-anchor="middle" font-size="10.5" class="dg-node-text">CUDA · CosyVoice3/Kokoro</text>
+
+  <rect x="330" y="160" width="150" height="70" rx="12" fill="#8fd8c9" stroke="#3d3455" stroke-width="2"/>
+  <text x="405" y="188" text-anchor="middle" font-size="12.5" font-weight="700" class="dg-node-text">momoctl</text>
+  <text x="405" y="208" text-anchor="middle" font-size="10.5" class="dg-node-text">serve / web / jobs</text>
+
+  <rect x="330" y="258" width="320" height="60" rx="12" fill="#d9d3e8" stroke="#3d3455" stroke-width="2"/>
+  <text x="490" y="282" text-anchor="middle" font-size="12" font-weight="700" class="dg-node-text">降级档：本地 7-8B Q4 / DeepSeek API</text>
+  <text x="490" y="302" text-anchor="middle" font-size="10.5" class="dg-node-text">laptop 可单机全栈兜底（只改 env）</text>
+
+  <!-- mac-studio -->
+  <rect x="720" y="16" width="244" height="170" rx="16" class="dg-region" stroke-width="1.6"/>
+  <text x="736" y="42" font-size="12" class="dg-region-label">mac-studio M3 Ultra 512GB（借用）</text>
+  <rect x="748" y="66" width="188" height="90" rx="12" fill="#f9c7a0" stroke="#3d3455" stroke-width="2"/>
+  <text x="842" y="96" text-anchor="middle" font-size="12.5" font-weight="700" class="dg-node-text">mlx_lm.server :7820</text>
+  <text x="842" y="116" text-anchor="middle" font-size="10.5" class="dg-node-text">Qwen3-30B-A3B-4bit</text>
+  <text x="842" y="134" text-anchor="middle" font-size="10" class="dg-node-text" opacity="0.75">实测 121 t/s</text>
+
+  <!-- external -->
+  <rect x="300" y="380" width="664" height="164" rx="16" class="dg-region" stroke-width="1.6"/>
+  <text x="316" y="406" font-size="12" class="dg-region-label">外部资源（借用 / 云端）</text>
+
+  <rect x="330" y="430" width="150" height="80" rx="12" fill="#d9d3e8" stroke="#3d3455" stroke-width="2"/>
+  <text x="405" y="460" text-anchor="middle" font-size="12" font-weight="700" class="dg-node-text">DeepSeek API</text>
+  <text x="405" y="480" text-anchor="middle" font-size="10.5" class="dg-node-text">兜底 / 对照 / 视觉</text>
+
+  <rect x="510" y="430" width="150" height="80" rx="12" fill="#d9d3e8" stroke="#3d3455" stroke-width="2"/>
+  <text x="585" y="460" text-anchor="middle" font-size="12" font-weight="700" class="dg-node-text">bigstrong vLLM</text>
+  <text x="585" y="480" text-anchor="middle" font-size="10.5" class="dg-node-text">qwen3.8-27B 借用</text>
+  <text x="585" y="498" text-anchor="middle" font-size="10" class="dg-node-text" opacity="0.75">夜间窗口</text>
+
+  <rect x="690" y="430" width="130" height="80" rx="12" fill="#f7a8c4" stroke="#3d3455" stroke-width="2"/>
+  <text x="755" y="460" text-anchor="middle" font-size="12" font-weight="700" class="dg-node-text">4090D 训练机</text>
+  <text x="755" y="480" text-anchor="middle" font-size="10.5" class="dg-node-text">≤24h burst</text>
+
+  <rect x="846" y="430" width="106" height="80" rx="12" fill="#8fd8c9" stroke="#3d3455" stroke-width="2"/>
+  <text x="899" y="460" text-anchor="middle" font-size="12" font-weight="700" class="dg-node-text">模型产物</text>
+  <text x="899" y="480" text-anchor="middle" font-size="10.5" class="dg-node-text">回传 laptop</text>
+
+  <!-- edges -->
+  <path d="M256 120 C 280 110, 300 106, 326 105" fill="none" class="dg-stroke" stroke-width="2" marker-end="url(#dp-arr)"/>
+  <text x="280" y="98" text-anchor="middle" font-size="10" class="dg-sub">WS /ws/ui</text>
+
+  <line x1="480" y1="100" x2="496" y2="102" class="dg-stroke" stroke-width="2" marker-end="url(#dp-arr)"/>
+  <line x1="480" y1="120" x2="536" y2="156" class="dg-stroke" stroke-width="2" marker-end="url(#dp-arr)"/>
+  <text x="508" y="142" text-anchor="middle" font-size="9.5" class="dg-sub">momo-ws</text>
+
+  <path d="M405 140 C 420 200, 560 240, 780 200" fill="none" class="dg-stroke" stroke-width="2" marker-end="url(#dp-arr)"/>
+  <text x="600" y="216" text-anchor="middle" font-size="10" class="dg-sub">OpenAI HTTP over LAN</text>
+
+  <path d="M405 230 C 405 330, 405 380, 405 426" fill="none" class="dg-stroke dg-dash" stroke-width="2" marker-end="url(#dp-arr)"/>
+  <text x="440" y="360" text-anchor="middle" font-size="10" class="dg-sub">备选</text>
+
+  <path d="M480 200 C 540 300, 560 360, 580 426" fill="none" class="dg-stroke dg-dash" stroke-width="2" marker-end="url(#dp-arr)"/>
+  <text x="560" y="330" text-anchor="middle" font-size="10" class="dg-sub">副脑(502)</text>
+
+  <line x1="820" y1="470" x2="842" y2="470" class="dg-stroke" stroke-width="2" marker-end="url(#dp-arr)"/>
+  <path d="M846 446 C 700 380, 640 300, 610 232" fill="none" class="dg-stroke dg-dash" stroke-width="2" marker-end="url(#dp-arr)"/>
+  <text x="730" y="330" text-anchor="middle" font-size="10" class="dg-sub">SFT 产物回传</text>
+</svg>

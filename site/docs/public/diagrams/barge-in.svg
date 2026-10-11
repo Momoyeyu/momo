@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="inherit">
+  <defs>
+    <marker id="bi-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8b84a8"/>
+    </marker>
+    <marker id="bi-arr-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#e0678c"/>
+    </marker>
+  </defs>
+
+  <!-- phase band -->
+  <g font-size="10.5" font-weight="600">
+    <rect x="24" y="12" width="250" height="26" rx="13" fill="#8fd8c9" opacity="0.5"/>
+    <text x="149" y="29" text-anchor="middle" class="dg-node-text">触发 + 防抖</text>
+    <rect x="284" y="12" width="250" height="26" rx="13" fill="#f7a8c4" opacity="0.5"/>
+    <text x="409" y="29" text-anchor="middle" class="dg-node-text">动作 ① 停播</text>
+    <rect x="544" y="12" width="140" height="26" rx="13" fill="#f9c7a0" opacity="0.5"/>
+    <text x="614" y="29" text-anchor="middle" class="dg-node-text">动作 ② 取消上游</text>
+    <rect x="694" y="12" width="240" height="26" rx="13" fill="#a78bfa" opacity="0.4"/>
+    <text x="814" y="29" text-anchor="middle" class="dg-node-text">动作 ③ 记账 → 回 Listening</text>
+  </g>
+
+  <!-- lanes -->
+  <g font-size="11" class="dg-region-label">
+    <text x="24" y="92">触发源</text>
+    <text x="24" y="186">momod 编排器</text>
+    <text x="24" y="290">下游服务</text>
+    <text x="24" y="386">历史记账</text>
+  </g>
+  <g class="dg-stroke" stroke-width="1" opacity="0.35">
+    <line x1="24" y1="120" x2="936" y2="120"/>
+    <line x1="24" y1="224" x2="936" y2="224"/>
+    <line x1="24" y1="328" x2="936" y2="328"/>
+  </g>
+
+  <!-- nodes: trigger lane -->
+  <rect x="40" y="60" width="130" height="56" rx="11" fill="#8fd8c9" stroke="#3d3455" stroke-width="2"/>
+  <text x="105" y="84" text-anchor="middle" font-size="11.5" font-weight="700" class="dg-node-text">speech_start</text>
+  <text x="105" y="102" text-anchor="middle" font-size="9.5" class="dg-node-text">ASR VAD · 用户/系统</text>
+
+  <!-- orch lane -->
+  <rect x="200" y="140" width="120" height="56" rx="11" fill="#f9d77e" stroke="#3d3455" stroke-width="2"/>
+  <text x="260" y="164" text-anchor="middle" font-size="11.5" font-weight="700" class="dg-node-text">防抖判定</text>
+  <text x="260" y="182" text-anchor="middle" font-size="9.5" class="dg-node-text">持续 ≥250ms</text>
+
+  <rect x="350" y="140" width="130" height="56" rx="11" fill="#a78bfa" stroke="#3d3455" stroke-width="2"/>
+  <text x="415" y="164" text-anchor="middle" font-size="11.5" font-weight="700" class="dg-node-text">广播 barge_in</text>
+  <text x="415" y="182" text-anchor="middle" font-size="9.5" class="dg-node-text">同 turn_id · applied</text>
+
+  <rect x="510" y="140" width="120" height="56" rx="11" fill="#f9c7a0" stroke="#3d3455" stroke-width="2"/>
+  <text x="570" y="164" text-anchor="middle" font-size="11.5" font-weight="700" class="dg-node-text">收 played_seq</text>
+  <text x="570" y="182" text-anchor="middle" font-size="9.5" class="dg-node-text">已播句回报 · 500ms 兜底</text>
+
+  <rect x="660" y="140" width="120" height="56" rx="11" fill="#f2a0b5" stroke="#3d3455" stroke-width="2"/>
+  <text x="720" y="164" text-anchor="middle" font-size="11.5" font-weight="700" class="dg-node-text">取消令牌触发</text>
+  <text x="720" y="182" text-anchor="middle" font-size="9.5" class="dg-node-text">各任务 &lt;50ms 退出</text>
+
+  <rect x="810" y="140" width="126" height="56" rx="11" fill="#a5c8ff" stroke="#3d3455" stroke-width="2"/>
+  <text x="873" y="164" text-anchor="middle" font-size="11.5" font-weight="700" class="dg-node-text">已播文本入账</text>
+  <text x="873" y="182" text-anchor="middle" font-size="9.5" class="dg-node-text">interrupted:true</text>
+
+  <!-- targets lane -->
+  <rect x="350" y="250" width="130" height="56" rx="11" fill="#f7a8c4" stroke="#3d3455" stroke-width="2"/>
+  <text x="415" y="274" text-anchor="middle" font-size="11.5" font-weight="700" class="dg-node-text">UI 清播放缓冲</text>
+  <text x="415" y="292" text-anchor="middle" font-size="9.5" class="dg-node-text">丢弃未播帧</text>
+
+  <rect x="540" y="250" width="120" height="56" rx="11" fill="#f9d77e" stroke="#3d3455" stroke-width="2"/>
+  <text x="600" y="274" text-anchor="middle" font-size="11.5" font-weight="700" class="dg-node-text">control.cancel</text>
+  <text x="600" y="292" text-anchor="middle" font-size="9.5" class="dg-node-text">TTS/ASR 200ms 内停</text>
+
+  <rect x="700" y="250" width="120" height="56" rx="11" fill="#f9c7a0" stroke="#3d3455" stroke-width="2"/>
+  <text x="760" y="274" text-anchor="middle" font-size="11.5" font-weight="700" class="dg-node-text">abort LLM 流</text>
+  <text x="760" y="292" text-anchor="middle" font-size="9.5" class="dg-node-text">断流丢弃在途 token</text>
+
+  <!-- ledger lane -->
+  <rect x="810" y="350" width="126" height="56" rx="11" fill="#b5e3c4" stroke="#3d3455" stroke-width="2"/>
+  <text x="873" y="374" text-anchor="middle" font-size="11.5" font-weight="700" class="dg-node-text">会话历史</text>
+  <text x="873" y="392" text-anchor="middle" font-size="9.5" class="dg-node-text">在播句按前缀截断</text>
+
+  <!-- edges -->
+  <line x1="170" y1="88" x2="214" y2="136" class="dg-stroke" stroke-width="1.8" marker-end="url(#bi-arr)"/>
+  <line x1="320" y1="168" x2="346" y2="168" class="dg-stroke" stroke-width="1.8" marker-end="url(#bi-arr)"/>
+  <text x="333" y="158" text-anchor="middle" font-size="9" class="dg-sub">确认</text>
+
+  <line x1="480" y1="168" x2="506" y2="168" class="dg-stroke" stroke-width="1.8" marker-end="url(#bi-arr)"/>
+  <line x1="415" y1="196" x2="415" y2="246" class="dg-stroke" stroke-width="1.8" marker-end="url(#bi-arr)"/>
+  <text x="440" y="226" text-anchor="middle" font-size="9" class="dg-sub">停播</text>
+
+  <path d="M480 280 C 510 280, 520 240, 548 200" fill="none" class="dg-stroke" stroke-width="1.8" marker-end="url(#bi-arr)"/>
+  <text x="520" y="252" text-anchor="middle" font-size="9" class="dg-sub">played_seq</text>
+
+  <line x1="630" y1="168" x2="656" y2="168" class="dg-stroke" stroke-width="1.8" marker-end="url(#bi-arr)"/>
+
+  <path d="M700 196 C 660 220, 640 230, 614 248" fill="none" stroke="#e0678c" stroke-width="1.8" marker-end="url(#bi-arr-r)"/>
+  <path d="M730 196 C 740 216, 748 230, 754 246" fill="none" stroke="#e0678c" stroke-width="1.8" marker-end="url(#bi-arr-r)"/>
+
+  <line x1="780" y1="168" x2="806" y2="168" class="dg-stroke" stroke-width="1.8" marker-end="url(#bi-arr)"/>
+  <line x1="873" y1="196" x2="873" y2="346" class="dg-stroke" stroke-width="1.8" marker-end="url(#bi-arr)"/>
+</svg>

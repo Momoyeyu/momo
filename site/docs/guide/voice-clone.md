@@ -2,7 +2,7 @@
 
 目标：momo 拥有一条稳定、低延迟、有辨识度的克隆声线。**不依赖代码里程碑，素材收集本周即可开始。**
 
-<DiagramFrame src="voice-clone.html" :height="660" />
+<SvgDiagram src="voice-clone.svg" title="声线克隆流水线" />
 
 ## 素材分级与质量门槛
 

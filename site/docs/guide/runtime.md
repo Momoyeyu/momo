@@ -2,7 +2,7 @@
 
 momod（Rust 编排器）的运行时核心：五态状态机 + 取消令牌 + 句切 + 队列背压 + 延迟预算。
 
-<DiagramFrame src="turn-states.html" :height="560" />
+<SvgDiagram src="turn-states.svg" title="回合状态机" />
 
 ## 各状态进入动作
 

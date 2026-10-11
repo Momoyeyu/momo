@@ -2,7 +2,7 @@
 
 进程间通信协议：**JSON 文本帧（控制面）+ 二进制音频帧（数据面），单连接复用**。LLM 推理不在本协议内——编排器对大脑走 OpenAI-compatible HTTP SSE。
 
-<DiagramFrame src="turn-voice.html" :height="640" />
+<SvgDiagram src="turn-voice.svg" title="完整语音回合时序" />
 
 ## 连接拓扑
 

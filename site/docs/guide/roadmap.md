@@ -1,13 +1,6 @@
 # 路线图与里程碑
 
-```mermaid
-flowchart LR
-    P0["P0 管道骨架<br/>文字→LLM→TTS→出声"] --> P1["P1 有脸<br/>Live2D+口型+WebUI"]
-    P1 --> P2["P2 对话<br/>语音输入+打断+本地TTS"]
-    P2 --> P3["P3 灵魂<br/>记忆+自发行为+声线SFT"]
-    P3 --> P4["P4 能力<br/>action总线+视觉"]
-    P4 --> P5["P5 直播 ⏸️ 暂缓"]
-```
+<SvgDiagram src="roadmap.svg" title="开发路线图" />
 
 两条并行轨道不与里程碑绑定：[声线克隆](/guide/voice-clone)（素材收集本周可开始）、[人格微调](/guide/persona)（P3 起认真做）。
 

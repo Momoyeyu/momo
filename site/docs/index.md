@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: momo
-  text: 住在你电脑里的 AI 伙伴
+  text: 住在你电脑里的<br/>AI 伙伴
   tagline: 三段式架构 · 全本地可跑 · 自己的声线与人格
   actions:
     - theme: brand
@@ -14,19 +14,29 @@ hero:
       link: https://github.com/Momoyeyu/momo/tree/master/docs
 
 features:
-  - icon: 🧠
+  - icon:
+      src: /icons/brain.svg
+      alt: 本地大脑
     title: 本地大脑
     details: Qwen3-30B-A3B 4bit 在 Apple Silicon 上实测 121 tok/s；DeepSeek API 兜底。OpenAI-compatible 接口，换脑不改代码。
-  - icon: 🗣️
+  - icon:
+      src: /icons/voice.svg
+      alt: 声线
     title: 自己的声线
     details: 零样本克隆已跑通（F5-TTS RTF 0.535）；不达标走 4090D SFT ≤24h，产物灰度切换可回滚。
-  - icon: ⚡
+  - icon:
+      src: /icons/barge.svg
+      alt: 打断
     title: 真·打断
     details: barge-in 三动作 —— 停播、取消上游、已播句入账。取消令牌全管线传播，<50ms 退出。
-  - icon: 🔌
+  - icon:
+      src: /icons/plug.svg
+      alt: 协议
     title: 协议解耦
     details: momo-ws v1：JSON 控制帧 + 二进制音频帧复用一条连接。交互端、编排器、模型服务进程分离。
 ---
+
+<Floaties :count="18" />
 
 <div class="landing-section">
 
@@ -35,7 +45,7 @@ features:
 麦采集 → VAD 分段 → SenseVoice 转写 → LLM 流式 → 句切 → TTS 逐句合成 → 边下边播。
 你说到一半，她会停下来听你说。
 
-<DiagramFrame src="turn-voice.html" :height="620" />
+<SvgDiagram src="turn-voice.svg" title="完整语音回合时序" />
 
 </div>
 

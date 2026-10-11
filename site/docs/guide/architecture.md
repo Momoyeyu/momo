@@ -2,7 +2,7 @@
 
 三段式：**交互端**（渲染 + 音频 IO）— **编排器**（回合/打断/路由/状态机）— **模型服务**（LLM/ASR/TTS）。进程间走 `momo-ws v1` 与 OpenAI-compatible HTTP；**运维面**（momoctl + Web 控制台）在旁路，不在数据通路上。
 
-<DiagramFrame src="system-main.html" :height="720" />
+<SvgDiagram src="system-main.svg" title="系统总体架构" />
 
 ## 组件职责
 

@@ -2,7 +2,7 @@
 
 真打断是「像人」的关键——momo 说话中途你开口，她立刻停。**三动作，顺序固定、幂等执行。**
 
-<DiagramFrame src="barge-in.html" :height="620" />
+<SvgDiagram src="barge-in.svg" title="barge-in 打断" />
 
 ## 触发源
 

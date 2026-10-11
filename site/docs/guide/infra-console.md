@@ -4,7 +4,7 @@
 
 ## 训练 job 生命周期
 
-<DiagramFrame src="train-job.html" :height="600" />
+<SvgDiagram src="train-job.svg" title="训练 job 生命周期" />
 
 - **job store**：`jobs/<job_id>/{job.json,logs/,artifacts/}`；重启后 runner 重扫恢复 running 态监控（参照 LlamaBoard resume 语义）
 - **执行器**：`exec_local`（spawn + pidfile + 日志落盘）或 `exec_ssh`（4090D/mac-studio，rsync 日志与 checkpoint 回传；复用 `~/.ssh/config`）

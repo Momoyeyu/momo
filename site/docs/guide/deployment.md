@@ -3,7 +3,7 @@
 **正常档**：交互端在 Mac Air（或 laptop），编排+语音在 laptop（WSL2, RTX 3070 Laptop 8GB），大脑在 mac-studio（M3 Ultra 512GB，借用）。
 **降级档**：mac-studio 不可用时 laptop 单机全栈——同一套协议与代码，**只改 env**。
 
-<DiagramFrame src="deploy.html" :height="640" />
+<SvgDiagram src="deploy.svg" title="部署拓扑" />
 
 ## 各机器角色
 

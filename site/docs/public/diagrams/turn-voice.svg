@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 640" font-family="inherit">
+  <defs>
+    <marker id="tv-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8b84a8"/>
+    </marker>
+  </defs>
+
+  <!-- phase markers -->
+  <text x="14" y="140" font-size="10.5" class="dg-region-label">① 握手</text>
+  <text x="14" y="250" font-size="10.5" class="dg-region-label">② 上行收音</text>
+  <text x="14" y="360" font-size="10.5" class="dg-region-label">③ 生成</text>
+  <text x="14" y="520" font-size="10.5" class="dg-region-label">④ 下行播报</text>
+  <line x1="60" y1="205" x2="926" y2="205" class="dg-stroke dg-dash" stroke-width="1" opacity="0.4"/>
+  <line x1="60" y1="345" x2="926" y2="345" class="dg-stroke dg-dash" stroke-width="1" opacity="0.4"/>
+  <line x1="60" y1="455" x2="926" y2="455" class="dg-stroke dg-dash" stroke-width="1" opacity="0.4"/>
+
+  <!-- lifelines -->
+  <g stroke-width="1.6" class="dg-stroke">
+    <line x1="100" y1="90" x2="100" y2="620" class="dg-dash"/>
+    <line x1="290" y1="90" x2="290" y2="620" class="dg-dash"/>
+    <line x1="480" y1="90" x2="480" y2="620" class="dg-dash"/>
+    <line x1="670" y1="90" x2="670" y2="620" class="dg-dash"/>
+    <line x1="860" y1="90" x2="860" y2="620" class="dg-dash"/>
+  </g>
+
+  <rect x="30" y="40" width="140" height="50" rx="10" fill="#f7a8c4" stroke="#3d3455" stroke-width="2"/>
+  <text x="100" y="62" text-anchor="middle" font-size="12.5" font-weight="700" class="dg-node-text">交互端</text>
+  <text x="100" y="80" text-anchor="middle" font-size="9.5" class="dg-node-text">Live2D + 音频 IO</text>
+
+  <rect x="215" y="40" width="150" height="50" rx="10" fill="#a78bfa" stroke="#3d3455" stroke-width="2"/>
+  <text x="290" y="62" text-anchor="middle" font-size="12.5" font-weight="700" class="dg-node-text">momod 编排器</text>
+  <text x="290" y="80" text-anchor="middle" font-size="9.5" class="dg-node-text">状态机 · 打断 · 句切</text>
+
+  <rect x="415" y="40" width="130" height="50" rx="10" fill="#b5e3c4" stroke="#3d3455" stroke-width="2"/>
+  <text x="480" y="62" text-anchor="middle" font-size="12.5" font-weight="700" class="dg-node-text">ASR</text>
+  <text x="480" y="80" text-anchor="middle" font-size="9.5" class="dg-node-text">SenseVoice :7810</text>
+
+  <rect x="605" y="40" width="130" height="50" rx="10" fill="#f9c7a0" stroke="#3d3455" stroke-width="2"/>
+  <text x="670" y="62" text-anchor="middle" font-size="12.5" font-weight="700" class="dg-node-text">大脑 LLM</text>
+  <text x="670" y="80" text-anchor="middle" font-size="9.5" class="dg-node-text">OpenAI :7820</text>
+
+  <rect x="795" y="40" width="130" height="50" rx="10" fill="#f9d77e" stroke="#3d3455" stroke-width="2"/>
+  <text x="860" y="62" text-anchor="middle" font-size="12.5" font-weight="700" class="dg-node-text">TTS</text>
+  <text x="860" y="80" text-anchor="middle" font-size="9.5" class="dg-node-text">CosyVoice3 :7811</text>
+
+  <!-- activation bars -->
+  <rect x="284" y="120" width="12" height="480" rx="3" fill="#a78bfa" opacity="0.35"/>
+
+  <!-- messages -->
+  <g font-size="10.5" class="dg-label">
+    <line x1="104" y1="120" x2="284" y2="120" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="194" y="112" text-anchor="middle">hello (momo-ws v1)</text>
+
+    <line x1="286" y1="148" x2="104" y2="148" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="194" y="140" text-anchor="middle">hello.ok</text>
+
+    <line x1="296" y1="170" x2="474" y2="170" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="385" y="162" text-anchor="middle">hello / hello.ok</text>
+
+    <line x1="296" y1="192" x2="854" y2="192" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="575" y="184" text-anchor="middle">hello / hello.ok</text>
+
+    <line x1="104" y1="232" x2="284" y2="232" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="194" y="224" text-anchor="middle">audio.chunk ×N · 上行 PCM（二进制帧）</text>
+
+    <line x1="296" y1="260" x2="474" y2="260" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="385" y="252" text-anchor="middle">audio.chunk ×N 转发</text>
+
+    <line x1="476" y1="288" x2="296" y2="288" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="386" y="280" text-anchor="middle">input.vad speech_end</text>
+
+    <line x1="476" y1="316" x2="296" y2="316" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="386" y="308" text-anchor="middle">input.audio.segment final（带文本）</text>
+
+    <line x1="286" y1="370" x2="104" y2="370" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="194" y="362" text-anchor="middle">segment 镜像字幕 + state.turn thinking</text>
+
+    <line x1="296" y1="398" x2="664" y2="398" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="480" y="390" text-anchor="middle">POST /chat/completions · stream</text>
+
+    <line x1="666" y1="426" x2="296" y2="426" class="dg-stroke" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#tv-arr)"/>
+    <text x="480" y="418" text-anchor="middle">token 流（SSE）×N</text>
+
+    <line x1="286" y1="480" x2="104" y2="480" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="194" y="472" text-anchor="middle">output.sentence · 字幕+表情 ×每句</text>
+
+    <line x1="296" y1="480" x2="854" y2="480" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="600" y="472" text-anchor="middle">output.sentence ×每句</text>
+
+    <line x1="856" y1="520" x2="296" y2="520" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="575" y="512" text-anchor="middle">audio.chunk ×K 下行（二进制帧）</text>
+
+    <line x1="286" y1="552" x2="104" y2="552" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="194" y="544" text-anchor="middle">audio.chunk · 边下边播</text>
+
+    <line x1="286" y1="590" x2="104" y2="590" class="dg-stroke" stroke-width="1.8" marker-end="url(#tv-arr)"/>
+    <text x="194" y="582" text-anchor="middle">state.turn speaking → idle</text>
+  </g>
+</svg>

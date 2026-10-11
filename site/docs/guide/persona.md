@@ -2,7 +2,7 @@
 
 目标：momo 说话像「她」而不是通用助手。两步走——**P0-P2 character card + system prompt 逼近；P3 起攒数据 QLoRA 把人格写进权重**（prompt 聊久会滑回助手腔，LoRA 是解药）。
 
-<DiagramFrame src="persona-qlora.html" :height="620" />
+<SvgDiagram src="persona-qlora.svg" title="人格微调流水线" />
 
 ## character card
 
