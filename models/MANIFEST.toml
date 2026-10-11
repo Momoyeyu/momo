@@ -1,0 +1,63 @@
+# MANIFEST.toml —— 模型下载清单（口径见 src/momo_models/manifest.py 与
+# momo-docs/02-repos/momo-models.md「模型目录布局与下载清单」）。
+#
+# 权重实体在 $MOMO_MODELS_DIR（默认 ~/.cache/momo/models，不入库），
+# dest 镜像 <owner>/<repo> 布局。下载与校验由 momo-infra `momoctl pull` 执行；
+# 运行时 provider 只读本地路径，sha256 校验不过 → readyz 拒绝就绪。
+#
+# TODO：所有 sha256 为占位（"TODO"），`momoctl pull` 实装前按 hf-mirror 实际文件补齐。
+
+[[model]]
+name = "cosyvoice3-0.5b"
+repo_id = "FunAudioLLM/Fun-CosyVoice3-0.5B-2512"
+revision = "main"
+dest = "FunAudioLLM/Fun-CosyVoice3-0.5B-2512"
+notes = "TTS 首选目标；instruct 控情感，双向流式官方标称 150ms；显存需求待实测"
+files = [
+  # TODO: 官方 repo 文件清单（权重/tokenizer/配置）实装 pull 时按实际补齐
+  { path = "TODO", sha256 = "TODO" },
+]
+
+[[model]]
+name = "kokoro-82m"
+repo_id = "hexgrad/Kokoro-82M"
+revision = "main"
+dest = "hexgrad/Kokoro-82M"
+notes = "TTS 实测兜底：首包 209ms、RTF 0.023、VRAM 0.76GB（2026-10-10, 3070 Laptop）"
+files = [
+  { path = "kokoro-v1_0.pth", sha256 = "TODO" },
+  { path = "config.json", sha256 = "TODO" },
+  # TODO: voices/*.pt 音色包按选用项补齐
+]
+
+[[model]]
+name = "f5-tts-v1"
+repo_id = "SWivid/F5-TTS"
+revision = "main"
+dest = "SWivid/F5-TTS"
+notes = "F5-TTS v1 零样本克隆（实测兜底）：RTF 0.535、VRAM 0.8GB；参考音需干净单人声"
+files = [
+  # TODO: F5TTS_v1_Base 模型文件清单
+  { path = "TODO", sha256 = "TODO" },
+]
+
+[[model]]
+name = "sense-voice-small-int8"
+repo_id = "csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17"
+revision = "main"
+dest = "sherpa-onnx/sense-voice-zh-en-ja-ko-yue-2024-07-17"
+notes = "ASR 基线（纯 CPU，RTF 0.040）：zh/en/ja/ko/yue + 自动语言 + 情感/事件标记；onnx 与 tokens.txt 必须配套"
+files = [
+  { path = "model.int8.onnx", sha256 = "TODO" },
+  { path = "tokens.txt", sha256 = "TODO" },
+]
+
+[[model]]
+name = "silero-vad"
+repo_id = "snakers4/silero-vad"
+revision = "main"
+dest = "snakers4/silero-vad"
+notes = "VAD 断句（不做识别）；onnx 权重供 sherpa-onnx 或 silero-vad 包加载"
+files = [
+  { path = "silero_vad.onnx", sha256 = "TODO" },
+]

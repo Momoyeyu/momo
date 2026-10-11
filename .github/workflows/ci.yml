@@ -1,0 +1,28 @@
+name: ci
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # lock 一致性 + 仅装核心依赖（重模型 extras 与 GPU 测试不进 CI）
+      - run: uv sync --locked
+
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+
+      - run: uv run pytest -m "not gpu and not slow"
