@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "81441200-efa2-42d3-a4fe-ad2926cef39a",
+  "receiptId": "9ed90b4f-bb3f-4bf1-b034-ce766acf0411",
   "status": "current",
   "command": "deliver",
   "type": "workflow",
-  "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/workflow-persona-qlora/candidate.json",
-  "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/workflow-persona-qlora/persona-qlora.html",
+  "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/workflow-persona-qlora/candidate.json",
+  "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/workflow-persona-qlora/persona-qlora.html",
   "specification": {
-    "sha256": "3c9e2feacfe20cbd4a9ef509dacdd0c163684b500b67f524e2e0b71d8fbbce89",
-    "bytes": 4793
+    "sha256": "92dc2ab34fc442b4c92ce05efaa3f4927b69e1722e7a8b75e58cc983123afd06",
+    "bytes": 4789
   },
   "artifact": {
-    "sha256": "c9b80b5c9ba98feffd3c70a716ce8cad9ce3d07ce207fde4008277abc516ae30",
-    "bytes": 758780
+    "sha256": "bc397f2806fa4af8b7ed22b23306dc0828d35bfd2e86f0209002938f283289f0",
+    "bytes": 758768
   }
 }

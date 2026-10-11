@@ -36,5 +36,5 @@
 VAD 切片 3-10s → 清洗 → SenseVoice 标注 + 人工抽检 ≥10% → 4090D 单卡 ≤24h（checkpoint 每 2h）→ **结束前 ≥1h rsync 回传** → 盲听复测 → `MOMO_TTS_MODEL_DIR` env 切换灰度上线，N-1 版本保留可回滚。
 
 ::: info 权威来源
-[momo-docs/04-tracks/voice-clone.md](https://github.com/Momoyeyu/momo-docs/blob/master/04-tracks/voice-clone.md) — 完整打分表模板、回传路径、风险对策表。
+[docs/04-tracks/voice-clone.md](https://github.com/Momoyeyu/momo/blob/master/docs/04-tracks/voice-clone.md) — 完整打分表模板、回传路径、风险对策表。
 :::

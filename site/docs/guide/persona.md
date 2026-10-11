@@ -6,7 +6,7 @@
 
 ## character card
 
-单一事实来源 `persona/momo.yaml`（momo-models 仓），schema 覆盖：
+单一事实来源 `persona/momo.yaml`（`{b[:-1]}/` 仓），schema 覆盖：
 
 ```yaml
 name: momo
@@ -28,5 +28,5 @@ dialogue_examples: []   # 人工修写过的 few-shot，金标准
 4. 达标 → 4090D QLoRA（8-14B，≤24h）→ LoRA 挂载 → 灰度回归 → 上线；不达标 → 回改 card
 
 ::: info 权威来源
-[momo-docs/04-tracks/persona.md](https://github.com/Momoyeyu/momo-docs/blob/master/04-tracks/persona.md) — prompt 注入方式、评测集设计、LoRA 灰度策略。
+[docs/04-tracks/persona.md](https://github.com/Momoyeyu/momo/blob/master/docs/04-tracks/persona.md) — prompt 注入方式、评测集设计、LoRA 灰度策略。
 :::

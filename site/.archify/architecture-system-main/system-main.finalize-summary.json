@@ -6,14 +6,14 @@
   "type": "architecture",
   "quality": "showcase",
   "specification": {
-    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/architecture-system-main/candidate.json",
-    "sha256": "c060864c6143f9841bde88cde5d6aea073e80032f745361f2038d62cb6a534f3",
-    "bytes": 6706
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/architecture-system-main/candidate.json",
+    "sha256": "6961524d3ada6479e25c8d1715f4818e44f3446854e6fad01826781052f2787f",
+    "bytes": 6704
   },
   "artifact": {
-    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/architecture-system-main/system-main.html",
-    "sha256": "cf4352826661595cc3b0177d14f13d023f8681bfa8ae44a087e0d9d4fe49522f",
-    "bytes": 772661
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/architecture-system-main/system-main.html",
+    "sha256": "38681c89241f5c752577129a81e2fad96d45cabb498658accc4f1116d4f7c1f5",
+    "bytes": 772655
   },
   "gates": {
     "validate": "pass",
@@ -28,9 +28,9 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/architecture-system-main/system-main.finalize.json",
-    "summaryReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/architecture-system-main/system-main.finalize-summary.json",
-    "browserCheckReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/architecture-system-main/system-main.browser-check.json"
+    "receipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/architecture-system-main/system-main.finalize.json",
+    "summaryReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/architecture-system-main/system-main.finalize-summary.json",
+    "browserCheckReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/architecture-system-main/system-main.browser-check.json"
   },
   "update": {
     "status": "current",
@@ -43,7 +43,7 @@
     "noticeText": null
   },
   "visualReview": "not-requested",
-  "durationMs": 1440,
+  "durationMs": 2644,
   "visualReviewRecommendation": {
     "action": "inspect-route-readability",
     "signals": {

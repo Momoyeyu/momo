@@ -11,7 +11,7 @@ hero:
       link: /guide/architecture
     - theme: alt
       text: GitHub
-      link: https://github.com/Momoyeyu/momo-docs
+      link: https://github.com/Momoyeyu/momo/tree/master/docs
 
 features:
   - icon: 🧠
@@ -74,13 +74,16 @@ features:
 
 <div class="landing-section">
 
-## 四个仓库
+## 一个仓库 · 五个模块
+
+全部代码与设计都在 [Momoyeyu/momo](https://github.com/Momoyeyu/momo) 单仓内，按目录划分：
 
 <div class="stage-grid">
-  <div class="stage-card"><span class="stage-tag">Rust</span><h3><a href="https://github.com/Momoyeyu/momo-app">momo-app</a></h3><p>交互端 + 编排器。tokio/axum，回合状态机、打断、句切、音频队列。</p></div>
-  <div class="stage-card"><span class="stage-tag">Python</span><h3><a href="https://github.com/Momoyeyu/momo-models">momo-models</a></h3><p>模型服务。FastAPI，ASR/TTS/embed 服务 + 训练/评测脚本。</p></div>
-  <div class="stage-card"><span class="stage-tag">Rust</span><h3><a href="https://github.com/Momoyeyu/momo-infra">momo-infra</a></h3><p>momoctl 运维工具 + Web 控制台。doctor、serve、模型管理、训练 job。</p></div>
-  <div class="stage-card"><span class="stage-tag">Docs</span><h3><a href="https://github.com/Momoyeyu/momo-docs">momo-docs</a></h3><p>全部设计文档（本站内容的权威来源），文档先行。</p></div>
+  <div class="stage-card"><span class="stage-tag">Rust + TS</span><h3><a href="https://github.com/Momoyeyu/momo/tree/master/app">app/</a></h3><p>交互端 + 编排器。tokio/axum，回合状态机、打断、句切、音频队列。</p></div>
+  <div class="stage-card"><span class="stage-tag">Python</span><h3><a href="https://github.com/Momoyeyu/momo/tree/master/models">models/</a></h3><p>模型服务。FastAPI，ASR/TTS/embed 服务 + 训练/评测脚本。</p></div>
+  <div class="stage-card"><span class="stage-tag">Rust</span><h3><a href="https://github.com/Momoyeyu/momo/tree/master/infra">infra/</a></h3><p>momoctl 运维工具 + Web 控制台。doctor、serve、模型管理、训练 job。</p></div>
+  <div class="stage-card"><span class="stage-tag">Docs</span><h3><a href="https://github.com/Momoyeyu/momo/tree/master/docs">docs/</a></h3><p>全部设计文档（本站内容的权威来源），文档先行。</p></div>
+  <div class="stage-card"><span class="stage-tag">VitePress</span><h3><a href="https://github.com/Momoyeyu/momo/tree/master/site">site/</a></h3><p>本站源码——产品主页 + 设计文档站。</p></div>
 </div>
 
 任务排期见 <a href="https://github.com/users/Momoyeyu/projects/2">GitHub Project · 任务总览</a>。

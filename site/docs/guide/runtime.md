@@ -49,5 +49,5 @@ momod（Rust 编排器）的运行时核心：五态状态机 + 取消令牌 + �
 | **合计** | **~1.3 s** | 余量 ~200ms |
 
 ::: info 权威来源
-[momo-docs/01-architecture/runtime.md](https://github.com/Momoyeyu/momo-docs/blob/master/01-architecture/runtime.md) — 取消令牌树、模块布局、完整预算表。
+[docs/01-architecture/runtime.md](https://github.com/Momoyeyu/momo/blob/master/docs/01-architecture/runtime.md) — 取消令牌树、模块布局、完整预算表。
 :::

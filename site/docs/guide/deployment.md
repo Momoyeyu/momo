@@ -32,5 +32,5 @@ mac-studio 收回 → MOMO_LLM_ENDPOINT 切本地 7-8B Q4 或 deepseek-v4-flash
 - **mac-studio**：按「随时消失」设计，正常档所有关键路径都有降级映射。
 
 ::: info 权威来源
-[momo-docs/05-ops/deployment.md](https://github.com/Momoyeyu/momo-docs/blob/master/05-ops/deployment.md) · [degradation.md](https://github.com/Momoyeyu/momo-docs/blob/master/05-ops/degradation.md) · [borrowed-etiquette.md](https://github.com/Momoyeyu/momo-docs/blob/master/05-ops/borrowed-etiquette.md)
+[docs/05-ops/deployment.md](https://github.com/Momoyeyu/momo/blob/master/docs/05-ops/deployment.md) · [degradation.md](https://github.com/Momoyeyu/momo/blob/master/docs/05-ops/degradation.md) · [borrowed-etiquette.md](https://github.com/Momoyeyu/momo/blob/master/docs/05-ops/borrowed-etiquette.md)
 :::

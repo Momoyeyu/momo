@@ -1,4 +1,4 @@
-# momo-docs
+# docs 目录
 
 momo 的全部设计文档。momo 是一个本地优先的 AI 虚拟伙伴：Live2D 形象、语音对话、回合状态机、可打断，三段式进程架构（交互端 / 编排器 / 模型服务）。项目原则是**文档先于代码**：协议、状态机、配置先在文档里定稿，再动手实现。
 
@@ -8,7 +8,7 @@ momo 由 4 个独立 GitHub 仓库组成（均 public，挂在 `Momoyeyu` 账户
 
 | 仓库 | 语言 | 内容 |
 |---|---|---|
-| `momo-docs` | Markdown | 全部设计文档（本仓库） |
+| `docs 目录` | Markdown | 全部设计文档（本仓库） |
 | `momo-app` | Rust + TypeScript | 应用主体：Rust 实现编排器/运行时/服务；TS 薄前端（Live2D 渲染、音频采集与播放）。短期 Web，长期 Tauri 2 桌面壳，前后端协议不变 |
 | `momo-models` | Python | 模型服务与训练：LLM 接入适配、ASR、TTS、声线克隆/微调、人格微调、评测。推理调用现有库，不重写推理引擎 |
 | `momo-infra` | Rust | 运维工具集 `momoctl`：doctor 诊断、模型下载/校验（hf-mirror）、服务编排启停、降级切换、测量工具、Web 运维控制台（`momoctl web`，P2）。**不承载人设/对话业务，不在运行时数据通路上** |
@@ -16,7 +16,7 @@ momo 由 4 个独立 GitHub 仓库组成（均 public，挂在 `Momoyeyu` 账户
 ```mermaid
 flowchart LR
     subgraph REPOS["momo 仓库群"]
-        DOCS["momo-docs<br/>设计文档"]
+        DOCS["docs 目录<br/>设计文档"]
         APP["momo-app<br/>Rust 编排器 + TS 前端"]
         MODELS["momo-models<br/>Python 模型服务/训练"]
         INFRA["momo-infra<br/>Rust 运维 CLI"]
@@ -36,7 +36,7 @@ flowchart LR
 ## 目录结构与阅读顺序
 
 ```
-momo-docs/
+docs/
 ├── README.md                  ← 本文档
 ├── 00-context/                ← 项目背景与决策
 │   ├── product.md             产品定义：是什么、为谁、体验指标、非目标
@@ -53,7 +53,7 @@ momo-docs/
 │   ├── momo-app.md            应用仓：Rust 编排器 + TS 薄前端
 │   ├── momo-models.md         模型服务与训练仓（Python）
 │   ├── momo-infra.md          运维工具仓（Rust CLI + Web 控制台，momoctl）
-│   └── momo-docs.md           文档仓自身规范
+│   └── docs 目录.md           文档仓自身规范
 ├── 03-phases/                 ← 阶段详细设计
 │   ├── p0-pipeline.md         P0 管道骨架：文字→LLM→TTS→出声
 │   ├── p1-stage.md            P1 有脸：WebUI + Live2D + 口型

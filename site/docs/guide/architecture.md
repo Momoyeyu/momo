@@ -8,13 +8,13 @@
 
 | 组件 | 仓库 | 语言 | 职责 | 对外接口 |
 |---|---|---|---|---|
-| 交互端 | momo-app | TS | Live2D 渲染、表情/口型、麦采集、播放、文字输入 | WS 客户端 → `/ws/ui` |
-| 编排器 momod | momo-app | Rust | WS 服务、回合状态机、barge-in、句切、历史、路由 | 监听 `:7800` |
-| ASR 服务 | momo-models | Python | silero-vad 分段 + SenseVoice 转写（纯 CPU，实测 RTF 0.040） | WS 服务 `:7810` |
-| TTS 服务 | momo-models | Python | 逐句合成 + 情感参数，audio.chunk 回流 | WS 服务 `:7811` |
+| 交互端 | `app/` | TS | Live2D 渲染、表情/口型、麦采集、播放、文字输入 | WS 客户端 → `/ws/ui` |
+| 编排器 momod | `app/` | Rust | WS 服务、回合状态机、barge-in、句切、历史、路由 | 监听 `:7800` |
+| ASR 服务 | `models/` | Python | silero-vad 分段 + SenseVoice 转写（纯 CPU，实测 RTF 0.040） | WS 服务 `:7810` |
+| TTS 服务 | `models/` | Python | 逐句合成 + 情感参数，audio.chunk 回流 | WS 服务 `:7811` |
 | 大脑 | 外部 | — | OpenAI-compatible 流式 chat | HTTP `:7820` / 远端 |
 | action 提供方 | 第三方 | 任意 | 注册/执行 action（P4） | WS 客户端 → `/ws/action` |
-| momoctl | momo-infra | Rust | doctor、模型管理、编排启停、训练 job、Web 控制台 | env / CLI / REST |
+| momoctl | `infra/` | Rust | doctor、模型管理、编排启停、训练 job、Web 控制台 | env / CLI / REST |
 
 ## 数据流
 
@@ -37,5 +37,5 @@
 - **降级只改 env**（ADR-008）：同一套代码跑正常档/降级档。
 
 ::: tip 完整版本
-[momo-docs/01-architecture/system.md](https://github.com/Momoyeyu/momo-docs/blob/master/01-architecture/system.md) · [boundaries.md](https://github.com/Momoyeyu/momo-docs/blob/master/01-architecture/boundaries.md) · [decisions.md](https://github.com/Momoyeyu/momo-docs/blob/master/00-context/decisions.md)（25 条 ADR）
+[docs/01-architecture/system.md](https://github.com/Momoyeyu/momo/blob/master/docs/01-architecture/system.md) · [boundaries.md](https://github.com/Momoyeyu/momo/blob/master/docs/01-architecture/boundaries.md) · [decisions.md](https://github.com/Momoyeyu/momo/blob/master/docs/00-context/decisions.md)（25 条 ADR）
 :::

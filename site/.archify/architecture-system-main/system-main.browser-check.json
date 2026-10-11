@@ -6,11 +6,11 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "bf6f6a84-685b-489f-9908-8bcab39cd5b9",
+  "deliveryReceiptId": "3110beae-5313-4f74-88ca-9afdf3dc5859",
   "artifact": {
-    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/architecture-system-main/system-main.html",
-    "sha256": "cf4352826661595cc3b0177d14f13d023f8681bfa8ae44a087e0d9d4fe49522f",
-    "bytes": 772661
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/architecture-system-main/system-main.html",
+    "sha256": "38681c89241f5c752577129a81e2fad96d45cabb498658accc4f1116d4f7c1f5",
+    "bytes": 772655
   },
   "state": {
     "detail": "read",

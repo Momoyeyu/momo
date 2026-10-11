@@ -13,7 +13,7 @@ export default defineConfig({
       { text: '协议', link: '/guide/protocol' },
       { text: '流水线', link: '/guide/voice-clone' },
       { text: '路线图', link: '/guide/roadmap' },
-      { text: 'GitHub', link: 'https://github.com/Momoyeyu/momo-docs' }
+      { text: 'GitHub', link: 'https://github.com/Momoyeyu/momo' }
     ],
     sidebar: [
       {
@@ -51,7 +51,7 @@ export default defineConfig({
     ],
     outline: { level: [2, 3], label: '本页内容' },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/Momoyeyu/momo-docs' }
+      { icon: 'github', link: 'https://github.com/Momoyeyu/momo' }
     ],
     footer: {
       message: 'Docs authored ahead of code — 文档先行',

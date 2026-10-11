@@ -6,11 +6,11 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "81441200-efa2-42d3-a4fe-ad2926cef39a",
+  "deliveryReceiptId": "9ed90b4f-bb3f-4bf1-b034-ce766acf0411",
   "artifact": {
-    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/workflow-persona-qlora/persona-qlora.html",
-    "sha256": "c9b80b5c9ba98feffd3c70a716ce8cad9ce3d07ce207fde4008277abc516ae30",
-    "bytes": 758780
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/workflow-persona-qlora/persona-qlora.html",
+    "sha256": "bc397f2806fa4af8b7ed22b23306dc0828d35bfd2e86f0209002938f283289f0",
+    "bytes": 758768
   },
   "state": {
     "detail": "read",

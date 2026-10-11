@@ -43,5 +43,5 @@
 | `MOMO_DEEPSEEK_API_KEY` | 空 | **敏感** |
 
 ::: info 权威来源
-[momo-docs/01-architecture/config.md](https://github.com/Momoyeyu/momo-docs/blob/master/01-architecture/config.md) — 全量键表、degraded 覆盖样例、敏感清单。
+[docs/01-architecture/config.md](https://github.com/Momoyeyu/momo/blob/master/docs/01-architecture/config.md) — 全量键表、degraded 覆盖样例、敏感清单。
 :::

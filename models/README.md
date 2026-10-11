@@ -4,7 +4,7 @@
 
 目标平台：Linux + Windows（Windows 经 WSL2，等同 Linux；开发环境 macOS）。
 
-设计文档：<https://github.com/Momoyeyu/momo-docs>（口径：`02-repos/momo-models.md`，协议：`01-architecture/protocol.md`，env：`01-architecture/config.md`）
+设计文档：<https://github.com/Momoyeyu/docs 目录>（口径：`02-repos/momo-models.md`，协议：`01-architecture/protocol.md`，env：`01-architecture/config.md`）
 
 ## 开发
 

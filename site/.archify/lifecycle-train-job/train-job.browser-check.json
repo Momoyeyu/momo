@@ -6,11 +6,11 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "2385be6e-d9fb-4b87-bef6-519d91ea4a4d",
+  "deliveryReceiptId": "cbdfc4e7-a445-41fb-9f09-8ebaaa382ff2",
   "artifact": {
-    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
-    "sha256": "44384ce0a014363a49da5b713b6bfe8d858591da1fc42324eac90c285b70c8b8",
-    "bytes": 762634
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.html",
+    "sha256": "390f12702510cdd2ac9c65ff09cb5477abc0602e0afbecc94a76eeb4d8e99dc8",
+    "bytes": 762630
   },
   "state": {
     "detail": "read",

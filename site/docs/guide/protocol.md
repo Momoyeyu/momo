@@ -50,5 +50,5 @@ LLM 内联 `[happy]` 标注 → 编排器剥离写入 `output.sentence.emotion`�
 - 重连退避：指数 0.5s→8s，±20% 抖动。
 
 ::: info 权威来源
-[momo-docs/01-architecture/protocol.md](https://github.com/Momoyeyu/momo-docs/blob/master/01-architecture/protocol.md) — 全部 JSON schema、close code、版本协商细则。
+[docs/01-architecture/protocol.md](https://github.com/Momoyeyu/momo/blob/master/docs/01-architecture/protocol.md) — 全部 JSON schema、close code、版本协商细则。
 :::

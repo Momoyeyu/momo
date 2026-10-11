@@ -6,14 +6,14 @@
   "type": "lifecycle",
   "quality": "showcase",
   "specification": {
-    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/candidate.json",
-    "sha256": "5732d5f4ed85092f08a710a8459c9a9ecebbbd0ee8387f6b3ff769f1cc110c95",
-    "bytes": 4056
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/candidate.json",
+    "sha256": "12518c1dbe062e2466e15bd6cecd8258b7ece4f6f86eab02a0a801b817c3c5cd",
+    "bytes": 4052
   },
   "artifact": {
-    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
-    "sha256": "44384ce0a014363a49da5b713b6bfe8d858591da1fc42324eac90c285b70c8b8",
-    "bytes": 762634
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.html",
+    "sha256": "390f12702510cdd2ac9c65ff09cb5477abc0602e0afbecc94a76eeb4d8e99dc8",
+    "bytes": 762630
   },
   "gates": {
     "validate": "pass",
@@ -28,9 +28,9 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.finalize.json",
-    "summaryReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.finalize-summary.json",
-    "browserCheckReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.browser-check.json"
+    "receipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.finalize.json",
+    "summaryReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.finalize-summary.json",
+    "browserCheckReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.browser-check.json"
   },
   "update": {
     "status": "current",
@@ -43,7 +43,7 @@
     "noticeText": null
   },
   "visualReview": "not-requested",
-  "durationMs": 2501,
+  "durationMs": 2556,
   "visualReviewRecommendation": {
     "action": "inspect-route-readability",
     "signals": {

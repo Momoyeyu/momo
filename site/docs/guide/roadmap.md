@@ -38,5 +38,5 @@ flowchart LR
 - torch/torchaudio 版本严格对齐（已踩坑）
 
 ::: info 权威来源
-[momo-docs/00-context/roadmap.md](https://github.com/Momoyeyu/momo-docs/blob/master/00-context/roadmap.md) · [03-phases/](https://github.com/Momoyeyu/momo-docs/tree/master/03-phases) 各阶段完整任务分解。
+[docs/00-context/roadmap.md](https://github.com/Momoyeyu/momo/blob/master/docs/00-context/roadmap.md) · [03-phases/](https://github.com/Momoyeyu/momo/tree/master/docs/03-phases) 各阶段完整任务分解。
 :::

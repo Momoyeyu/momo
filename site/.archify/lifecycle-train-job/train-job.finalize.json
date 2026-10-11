@@ -5,16 +5,16 @@
   "status": "pass",
   "type": "lifecycle",
   "quality": "showcase",
-  "startedAt": "2026-10-11T05:39:12.575Z",
+  "startedAt": "2026-10-11T05:50:11.236Z",
   "specification": {
-    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/candidate.json",
-    "sha256": "5732d5f4ed85092f08a710a8459c9a9ecebbbd0ee8387f6b3ff769f1cc110c95",
-    "bytes": 4056
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/candidate.json",
+    "sha256": "12518c1dbe062e2466e15bd6cecd8258b7ece4f6f86eab02a0a801b817c3c5cd",
+    "bytes": 4052
   },
   "artifact": {
-    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
-    "sha256": "44384ce0a014363a49da5b713b6bfe8d858591da1fc42324eac90c285b70c8b8",
-    "bytes": 762634
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.html",
+    "sha256": "390f12702510cdd2ac9c65ff09cb5477abc0602e0afbecc94a76eeb4d8e99dc8",
+    "bytes": 762630
   },
   "stages": {
     "validate": {
@@ -27,8 +27,8 @@
         "/Users/momoyeyu/.config/devin/skills/archify/bin/archify.mjs",
         "deliver",
         "lifecycle",
-        "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/candidate.json",
-        "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
+        "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/candidate.json",
+        "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.html",
         "--quality",
         "showcase",
         "--json"
@@ -38,8 +38,8 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "5732d5f4ed85092f08a710a8459c9a9ecebbbd0ee8387f6b3ff769f1cc110c95",
-          "bytes": 4056
+          "sha256": "12518c1dbe062e2466e15bd6cecd8258b7ece4f6f86eab02a0a801b817c3c5cd",
+          "bytes": 4052
         },
         "validation": {
           "checksPassed": 9,
@@ -54,33 +54,33 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 539,
+      "durationMs": 283,
       "command": [
         "/Users/momoyeyu/.nvm/versions/node/v22.23.3/bin/node",
         "/Users/momoyeyu/.config/devin/skills/archify/bin/archify.mjs",
         "deliver",
         "lifecycle",
-        "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/candidate.json",
-        "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
+        "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/candidate.json",
+        "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.html",
         "--quality",
         "showcase",
         "--json"
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "2385be6e-d9fb-4b87-bef6-519d91ea4a4d",
+        "receiptId": "cbdfc4e7-a445-41fb-9f09-8ebaaa382ff2",
         "ok": true,
         "command": "deliver",
         "type": "lifecycle",
-        "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/candidate.json",
-        "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
+        "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/candidate.json",
+        "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.html",
         "specification": {
-          "sha256": "5732d5f4ed85092f08a710a8459c9a9ecebbbd0ee8387f6b3ff769f1cc110c95",
-          "bytes": 4056
+          "sha256": "12518c1dbe062e2466e15bd6cecd8258b7ece4f6f86eab02a0a801b817c3c5cd",
+          "bytes": 4052
         },
         "artifact": {
-          "sha256": "44384ce0a014363a49da5b713b6bfe8d858591da1fc42324eac90c285b70c8b8",
-          "bytes": 762634
+          "sha256": "390f12702510cdd2ac9c65ff09cb5477abc0602e0afbecc94a76eeb4d8e99dc8",
+          "bytes": 762630
         },
         "validation": {
           "checksPassed": 9,
@@ -106,20 +106,20 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 223,
+      "durationMs": 101,
       "command": [
         "/Users/momoyeyu/.nvm/versions/node/v22.23.3/bin/node",
         "/Users/momoyeyu/.config/devin/skills/archify/bin/archify.mjs",
         "check",
-        "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
+        "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
+        "file": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.html",
         "artifact": {
-          "sha256": "44384ce0a014363a49da5b713b6bfe8d858591da1fc42324eac90c285b70c8b8",
-          "bytes": 762634
+          "sha256": "390f12702510cdd2ac9c65ff09cb5477abc0602e0afbecc94a76eeb4d8e99dc8",
+          "bytes": 762630
         },
         "checks": [
           {
@@ -292,18 +292,18 @@
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "2385be6e-d9fb-4b87-bef6-519d91ea4a4d"
+        "deliveryReceiptId": "cbdfc4e7-a445-41fb-9f09-8ebaaa382ff2"
       }
     },
     "browser-check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1467,
+      "durationMs": 1864,
       "command": [
         "/Users/momoyeyu/.nvm/versions/node/v22.23.3/bin/node",
         "/Users/momoyeyu/.config/devin/skills/archify/bin/archify.mjs",
         "browser-check",
-        "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
+        "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.html",
         "--json",
         "--require-provenance"
       ],
@@ -316,11 +316,11 @@
         "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "2385be6e-d9fb-4b87-bef6-519d91ea4a4d",
+        "deliveryReceiptId": "cbdfc4e7-a445-41fb-9f09-8ebaaa382ff2",
         "artifact": {
-          "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
-          "sha256": "44384ce0a014363a49da5b713b6bfe8d858591da1fc42324eac90c285b70c8b8",
-          "bytes": 762634
+          "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.html",
+          "sha256": "390f12702510cdd2ac9c65ff09cb5477abc0602e0afbecc94a76eeb4d8e99dc8",
+          "bytes": 762630
         },
         "state": {
           "detail": "read",
@@ -1009,13 +1009,13 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.finalize.json",
-    "summaryReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.finalize-summary.json",
-    "browserCheckReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.browser-check.json"
+    "receipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.finalize.json",
+    "summaryReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.finalize-summary.json",
+    "browserCheckReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/lifecycle-train-job/train-job.browser-check.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-10-11T05:39:15.076Z",
-  "durationMs": 2501,
+  "finishedAt": "2026-10-11T05:50:13.792Z",
+  "durationMs": 2556,
   "update": {
     "status": "current",
     "installedVersion": "3.0.1",

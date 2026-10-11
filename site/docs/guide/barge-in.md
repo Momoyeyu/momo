@@ -28,5 +28,5 @@
 取消令牌 cancel 后各管线任务 <50ms 退出（`select!` 监听子 token）；模型服务须 200ms 内停产出，迟到帧按 `seq`/`tag` 丢弃。
 
 ::: info 权威来源
-[momo-docs/01-architecture/runtime.md](https://github.com/Momoyeyu/momo-docs/blob/master/01-architecture/runtime.md) §2-3 · [protocol.md](https://github.com/Momoyeyu/momo-docs/blob/master/01-architecture/protocol.md) `control.barge_in`/`control.cancel`。
+[docs/01-architecture/runtime.md](https://github.com/Momoyeyu/momo/blob/master/docs/01-architecture/runtime.md) §2-3 · [protocol.md](https://github.com/Momoyeyu/momo/blob/master/docs/01-architecture/protocol.md) `control.barge_in`/`control.cancel`。
 :::

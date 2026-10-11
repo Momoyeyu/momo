@@ -131,7 +131,7 @@
       "type": "cloud",
       "label": "QLoRA 微调",
       "sublabel": "8-14B · 4090D ≤24h",
-      "tag": "训练实体在 momo-models",
+      "tag": "训练实体在 models/",
       "width": 150
     },
     {

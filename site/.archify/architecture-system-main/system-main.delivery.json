@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "bf6f6a84-685b-489f-9908-8bcab39cd5b9",
+  "receiptId": "3110beae-5313-4f74-88ca-9afdf3dc5859",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
-  "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/architecture-system-main/candidate.json",
-  "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/architecture-system-main/system-main.html",
+  "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/architecture-system-main/candidate.json",
+  "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/site/.archify/architecture-system-main/system-main.html",
   "specification": {
-    "sha256": "c060864c6143f9841bde88cde5d6aea073e80032f745361f2038d62cb6a534f3",
-    "bytes": 6706
+    "sha256": "6961524d3ada6479e25c8d1715f4818e44f3446854e6fad01826781052f2787f",
+    "bytes": 6704
   },
   "artifact": {
-    "sha256": "cf4352826661595cc3b0177d14f13d023f8681bfa8ae44a087e0d9d4fe49522f",
-    "bytes": 772661
+    "sha256": "38681c89241f5c752577129a81e2fad96d45cabb498658accc4f1116d4f7c1f5",
+    "bytes": 772655
   }
 }
