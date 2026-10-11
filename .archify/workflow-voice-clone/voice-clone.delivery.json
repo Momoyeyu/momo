@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "28f8e21e-7276-47a8-8cd3-02f5bdf78ac4",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/workflow-voice-clone/candidate.json",
+  "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/workflow-voice-clone/voice-clone.html",
+  "specification": {
+    "sha256": "627f26d64db485882d9b494865a7c968c76806bd6599def6dbef21c22e997226",
+    "bytes": 5568
+  },
+  "artifact": {
+    "sha256": "c26be0b8d6b3ccef7059efa5e0d43a7ab6e774d93f943d8a732c28cf31ac0d3e",
+    "bytes": 761587
+  }
+}

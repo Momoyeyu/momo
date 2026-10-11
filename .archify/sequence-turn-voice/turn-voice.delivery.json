@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "935ca018-de76-4288-ab65-76fcbac304ed",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/sequence-turn-voice/candidate.json",
+  "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/sequence-turn-voice/turn-voice.html",
+  "specification": {
+    "sha256": "015b67a4eba9fa0eab3270cd063462f89b98e4937f2535054e96e9b903ec7e97",
+    "bytes": 4881
+  },
+  "artifact": {
+    "sha256": "8f066fbdc263e98232a1beb5ab09237e76e279c54d995ecec18dd0b4a09a73d7",
+    "bytes": 759993
+  }
+}

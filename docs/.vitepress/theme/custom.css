@@ -1,0 +1,116 @@
+:root {
+  --vp-c-brand-1: #7c6cf0;
+  --vp-c-brand-2: #9a8cf7;
+  --vp-c-brand-3: #b8aef9;
+  --vp-c-brand-soft: rgba(124, 108, 240, 0.14);
+}
+
+.diagram-frame {
+  position: relative;
+  margin: 16px 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--vp-c-bg-soft);
+}
+
+.diagram-frame iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+}
+
+.diagram-open {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-2);
+  text-decoration: none;
+}
+
+.diagram-open:hover {
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+}
+
+.landing-section {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px 8px;
+}
+
+.landing-section h2 {
+  border-top: none;
+  margin-top: 0;
+  font-size: 28px;
+}
+
+.stage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin: 20px 0 8px;
+}
+
+.stage-card {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  padding: 16px 18px;
+  background: var(--vp-c-bg-soft);
+}
+
+.stage-card .stage-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  margin-bottom: 8px;
+}
+
+.stage-card h3 {
+  margin: 4px 0 6px;
+  font-size: 16px;
+}
+
+.stage-card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+  line-height: 1.6;
+}
+
+.metric-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.metric-chip {
+  flex: 1 1 160px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: var(--vp-c-bg-soft);
+}
+
+.metric-chip .num {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--vp-c-brand-1);
+}
+
+.metric-chip .lbl {
+  font-size: 12px;
+  color: var(--vp-c-text-2);
+  margin-top: 2px;
+}

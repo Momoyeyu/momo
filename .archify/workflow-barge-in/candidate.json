@@ -1,0 +1,266 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "barge-in 打断三动作",
+    "output": "barge-in.html",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "trigger",
+      "label": "触发源"
+    },
+    {
+      "id": "orch",
+      "label": "momod 编排器"
+    },
+    {
+      "id": "targets",
+      "label": "下游服务"
+    },
+    {
+      "id": "ledger",
+      "label": "历史记账"
+    }
+  ],
+  "phases": [
+    {
+      "id": "p-detect",
+      "label": "触发 + 防抖",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "p-stop",
+      "label": "动作1 停播",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "p-cancel",
+      "label": "动作2 取消上游",
+      "fromCol": 4,
+      "toCol": 4
+    },
+    {
+      "id": "p-ledger",
+      "label": "动作3 记账 → 回 Listening",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g-cancel",
+      "label": "取消令牌传播",
+      "lane": "targets",
+      "fromCol": 4,
+      "toCol": 4,
+      "variant": "security"
+    },
+    {
+      "id": "g-ledger",
+      "label": "保证记得的=听到的",
+      "lane": "ledger",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "vad",
+    "debounce",
+    "broadcast",
+    "played",
+    "cancel",
+    "ledger"
+  ],
+  "nodes": [
+    {
+      "id": "vad",
+      "lane": "trigger",
+      "col": 0,
+      "type": "external",
+      "label": "speech_start",
+      "sublabel": "ASR VAD / 用户 / 系统",
+      "width": 136
+    },
+    {
+      "id": "debounce",
+      "lane": "trigger",
+      "col": 1,
+      "type": "security",
+      "label": "防抖判定",
+      "sublabel": "持续 ≥250ms",
+      "tag": "MOMO_BARGEIN_MIN_MS",
+      "width": 136
+    },
+    {
+      "id": "broadcast",
+      "lane": "orch",
+      "col": 2,
+      "type": "backend",
+      "label": "广播 barge_in",
+      "sublabel": "applied:true 同 turn_id",
+      "width": 136
+    },
+    {
+      "id": "played",
+      "lane": "orch",
+      "col": 3,
+      "type": "backend",
+      "label": "收 played_seq",
+      "sublabel": "已播句回报 · 500ms 兜底",
+      "width": 144
+    },
+    {
+      "id": "cancel",
+      "lane": "orch",
+      "col": 4,
+      "type": "backend",
+      "label": "取消令牌触发",
+      "sublabel": "各任务 <50ms 退出",
+      "tag": "CancellationToken",
+      "width": 144
+    },
+    {
+      "id": "ledger",
+      "lane": "orch",
+      "col": 5,
+      "type": "backend",
+      "label": "已播文本入账",
+      "sublabel": "assistant 消息 interrupted:true",
+      "width": 144
+    },
+    {
+      "id": "ui-flush",
+      "lane": "targets",
+      "col": 3,
+      "type": "frontend",
+      "label": "UI 清播放缓冲",
+      "sublabel": "丢弃未播帧",
+      "width": 136
+    },
+    {
+      "id": "cancel-tts",
+      "lane": "targets",
+      "col": 4,
+      "type": "backend",
+      "label": "control.cancel",
+      "sublabel": "TTS/ASR · 200ms 内停",
+      "width": 144
+    },
+    {
+      "id": "abort-llm",
+      "lane": "targets",
+      "col": 5,
+      "type": "cloud",
+      "label": "abort LLM HTTP 流",
+      "sublabel": "断流丢弃在途 token",
+      "width": 144
+    },
+    {
+      "id": "hist-store",
+      "lane": "ledger",
+      "col": 5,
+      "type": "database",
+      "label": "会话历史",
+      "sublabel": "在播句按前缀截断",
+      "width": 144
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "vad",
+      "to": "debounce",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e2",
+      "from": "debounce",
+      "to": "broadcast",
+      "label": "确认打断",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e3",
+      "from": "broadcast",
+      "to": "played",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e4",
+      "from": "played",
+      "to": "cancel",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e5",
+      "from": "cancel",
+      "to": "ledger",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e7",
+      "from": "broadcast",
+      "to": "ui-flush",
+      "label": "停播",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e8",
+      "from": "ui-flush",
+      "to": "played",
+      "label": "played_seq",
+      "variant": "default",
+      "role": "return"
+    },
+    {
+      "id": "e9",
+      "from": "cancel",
+      "to": "cancel-tts",
+      "variant": "security",
+      "role": "branch"
+    },
+    {
+      "id": "e10",
+      "from": "cancel",
+      "to": "abort-llm",
+      "variant": "security",
+      "role": "branch"
+    },
+    {
+      "id": "e11",
+      "from": "ledger",
+      "to": "hist-store",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "硬约束",
+      "items": [
+        "三动作顺序固定: 停播 → 取消 → 记账",
+        "同 turn 重复 barge_in 幂等, 只执行一次",
+        "played_seq 超时按「已送出即已播」保守入账"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "时序目标",
+      "items": [
+        "取消令牌 cancel 后任务 <50ms 退出",
+        "模型服务 200ms 内停产出, 迟到帧按 seq 丢弃",
+        "记账完成前不回 Listening",
+        "记账完成后回 Listening, 新回合新令牌"
+      ]
+    }
+  ]
+}

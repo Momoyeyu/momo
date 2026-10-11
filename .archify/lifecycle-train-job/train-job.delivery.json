@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "2385be6e-d9fb-4b87-bef6-519d91ea4a4d",
+  "status": "current",
+  "command": "deliver",
+  "type": "lifecycle",
+  "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/candidate.json",
+  "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-train-job/train-job.html",
+  "specification": {
+    "sha256": "5732d5f4ed85092f08a710a8459c9a9ecebbbd0ee8387f6b3ff769f1cc110c95",
+    "bytes": 4056
+  },
+  "artifact": {
+    "sha256": "44384ce0a014363a49da5b713b6bfe8d858591da1fc42324eac90c285b70c8b8",
+    "bytes": 762634
+  }
+}

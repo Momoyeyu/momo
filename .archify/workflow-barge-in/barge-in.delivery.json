@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "9078eb7b-d43b-4af7-a60b-27131a79431b",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/workflow-barge-in/candidate.json",
+  "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/workflow-barge-in/barge-in.html",
+  "specification": {
+    "sha256": "b7b4c20485ed8361ed53b7f1ec6e6a9a9dd2b1415a0f8c9e327c5bc39fa1a9df",
+    "bytes": 5428
+  },
+  "artifact": {
+    "sha256": "3f0a773427b9276e950bde488c46724f21bd9987e3f21ba556808ef1c0f03861",
+    "bytes": 761694
+  }
+}

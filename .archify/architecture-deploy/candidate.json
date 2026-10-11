@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "部署拓扑: 正常档 vs 降级档",
+    "output": "deploy.html",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "browser", "type": "frontend", "label": "浏览器", "sublabel": "Live2D + 音频 IO", "pos": [50, 230], "size": [130, 64], "tag": "Mac Air / laptop" },
+    { "id": "momod", "type": "backend", "label": "momod :7800", "sublabel": "编排器", "pos": [290, 230], "size": [140, 64] },
+    { "id": "asr", "type": "backend", "label": "ASR :7810", "sublabel": "纯 CPU", "pos": [190, 380], "size": [140, 60] },
+    { "id": "tts", "type": "backend", "label": "TTS :7811", "sublabel": "CUDA", "pos": [390, 380], "size": [140, 60] },
+    { "id": "momoctl", "type": "backend", "label": "momoctl", "sublabel": "serve / web / jobs", "pos": [290, 90], "size": [140, 60] },
+    { "id": "mlx", "type": "backend", "label": "mlx_lm.server", "sublabel": "Qwen3-30B-A3B-4bit · 实测121t/s", "pos": [580, 230], "size": [160, 64], "tag": ":7820" },
+    { "id": "deepseek", "type": "cloud", "label": "DeepSeek API", "sublabel": "v4-flash 兜底/对照", "pos": [580, 90], "size": [150, 56] },
+    { "id": "bigstrong", "type": "backend", "label": "bigstrong vLLM", "sublabel": "qwen3.8-27B 借用", "pos": [580, 380], "size": [150, 56] },
+    { "id": "gpu4090d", "type": "cloud", "label": "4090D 训练机", "sublabel": "学校云 24h burst", "pos": [830, 380], "size": [150, 56] },
+    { "id": "models", "type": "database", "label": "模型产物", "sublabel": "回传 laptop", "pos": [830, 230], "size": [140, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Mac Air (交互端)", "wraps": ["browser"] },
+    { "kind": "region", "label": "laptop WSL2 · RTX 3070 Laptop 8GB (编排+语音)", "wraps": ["momod", "asr", "tts", "momoctl"] },
+    { "kind": "region", "label": "mac-studio M3 Ultra 512GB (大脑·借用)", "wraps": ["mlx"] },
+    { "kind": "region", "label": "外部资源 (借用/云端)", "wraps": ["deepseek", "bigstrong", "gpu4090d", "models"] }
+  ],
+  "connections": [
+    { "id": "d1", "from": "browser", "to": "momod", "label": "WS /ws/ui", "variant": "emphasis" },
+    { "id": "d2", "from": "momod", "to": "asr", "label": "momo-ws", "fromSide": "bottom", "toSide": "top" },
+    { "id": "d3", "from": "momod", "to": "tts", "label": "momo-ws", "fromSide": "bottom", "toSide": "top" },
+    { "id": "d4", "from": "momod", "to": "mlx", "label": "OpenAI HTTP over LAN", "variant": "emphasis" },
+    { "id": "d5", "from": "momod", "to": "deepseek", "label": "备选 endpoint", "variant": "dashed", "fromSide": "top", "toSide": "bottom" },
+    { "id": "d6", "from": "momod", "to": "bigstrong", "label": "副脑(当前502)", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "d7", "from": "momoctl", "to": "momod", "label": "编排/env", "variant": "dashed", "fromSide": "bottom", "toSide": "top" },
+    { "id": "d8", "from": "gpu4090d", "to": "models", "label": "rsync 回传", "variant": "dashed" },
+    { "id": "d9", "from": "models", "to": "tts", "label": "TTS SFT 产物", "variant": "dashed", "fromSide": "bottom", "toSide": "right" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "正常档", "items": ["交互端在 Mac Air 或 laptop, 编排+语音在 laptop", "大脑在 mac-studio (借用): 30B-A3B 4bit 实测 121 t/s", "ASR 纯 CPU 已验证可放 Mac Air, 默认留 laptop 零跳数"] },
+    { "dot": "amber", "title": "降级档 (mac-studio 收回时)", "items": ["laptop 单机全栈, 同一套协议与代码", "大脑换本地 7-8B Q4 或 deepseek-v4-flash", "只改 MOMO_LLM_ENDPOINT 等 env (ADR-008)", "Mac Air 二级兜底: CPU ASR + 8B MLX 大脑能力边界内"] },
+    { "dot": "rose", "title": "借用纪律", "items": ["bigstrong: 他人生产 vLLM, 仅夜间窗口且用完恢复", "4090D: 24h 硬上限, 结束前 ≥1h 回传产物", "mac-studio 随时可能被收回, 按可消失设计"] }
+  ]
+}

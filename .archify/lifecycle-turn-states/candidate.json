@@ -1,0 +1,162 @@
+{
+  "schema_version": 2,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "回合状态机 (momod runtime)",
+    "output": "turn-states.html",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "回合主推进"
+    },
+    {
+      "id": "interrupt",
+      "label": "打断路径"
+    }
+  ],
+  "states": [
+    {
+      "id": "idle",
+      "type": "waiting",
+      "label": "Idle",
+      "sublabel": "重置 idle 计时器",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "tag": "等待输入"
+    },
+    {
+      "id": "listening",
+      "type": "active",
+      "label": "Listening",
+      "sublabel": "绑定 turn_id · 接收音频",
+      "lane": "main",
+      "col": 1,
+      "step": "02",
+      "tag": "VAD 分段"
+    },
+    {
+      "id": "thinking",
+      "type": "active",
+      "label": "Thinking",
+      "sublabel": "组历史+人设 · 起 LLM 流",
+      "lane": "main",
+      "col": 2,
+      "step": "03",
+      "tag": "取消令牌"
+    },
+    {
+      "id": "speaking",
+      "type": "active",
+      "label": "Speaking",
+      "sublabel": "句切 → 双发 UI+TTS",
+      "lane": "main",
+      "col": 3,
+      "step": "04",
+      "tag": "逐句播报"
+    },
+    {
+      "id": "interrupted",
+      "type": "decision",
+      "label": "Interrupted",
+      "sublabel": "barge-in 三动作执行",
+      "lane": "interrupt",
+      "col": 3,
+      "tag": "幂等"
+    }
+  ],
+  "transitions": [
+    {
+      "from": "idle",
+      "to": "listening",
+      "label": "input.text / VAD 开始"
+    },
+    {
+      "from": "listening",
+      "to": "thinking",
+      "label": "segment final"
+    },
+    {
+      "from": "listening",
+      "to": "idle",
+      "label": "空段 / 误触发",
+      "variant": "dashed"
+    },
+    {
+      "from": "thinking",
+      "to": "speaking",
+      "label": "首个 output.sentence"
+    },
+    {
+      "from": "thinking",
+      "to": "interrupted",
+      "label": "barge-in",
+      "variant": "security"
+    },
+    {
+      "from": "thinking",
+      "to": "idle",
+      "label": "空回复 / 失败",
+      "variant": "dashed"
+    },
+    {
+      "from": "speaking",
+      "to": "interrupted",
+      "label": "barge-in",
+      "variant": "security"
+    },
+    {
+      "from": "speaking",
+      "to": "idle",
+      "label": "final 句播完"
+    },
+    {
+      "from": "interrupted",
+      "to": "listening",
+      "label": "新输入继续",
+      "variant": "emphasis"
+    },
+    {
+      "from": "interrupted",
+      "to": "idle",
+      "label": "无后续输入",
+      "variant": "dashed"
+    },
+    {
+      "from": "idle",
+      "to": "thinking",
+      "label": "idle 超时自发开口",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "状态广播",
+      "items": [
+        "每次迁移广播 state.turn{state,seq,ref_id} 给 UI",
+        "UI 只用它驱动动画/气泡, 不得推断音频时序"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "自发行为",
+      "items": [
+        "Idle 持续 MOMO_IDLE_TIMEOUT_S(默认 20s) 无输入 → 直接进 Thinking",
+        "注入最近话题/挂机时长作情境; 连续自发最多 1 次防刷屏"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "打断语义",
+      "items": [
+        "thinking 与 speaking 均可被 barge-in",
+        "历史记账完成前不回 Listening",
+        "新回合 = 新取消令牌, 不复用"
+      ]
+    }
+  ]
+}

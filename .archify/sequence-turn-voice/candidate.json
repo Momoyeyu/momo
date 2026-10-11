@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "完整语音回合时序 (momo-ws v1)",
+    "output": "turn-voice.html",
+    "locale": "zh-CN",
+    "column_fit": "spread",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "ui",
+      "type": "frontend",
+      "label": "交互端",
+      "sublabel": "Live2D + 音频 IO"
+    },
+    {
+      "id": "orch",
+      "type": "backend",
+      "label": "momod 编排器",
+      "sublabel": "回合状态机"
+    },
+    {
+      "id": "asr",
+      "type": "backend",
+      "label": "ASR",
+      "sublabel": "SenseVoice :7810"
+    },
+    {
+      "id": "brain",
+      "type": "cloud",
+      "label": "大脑 LLM",
+      "sublabel": "OpenAI-compat :7820"
+    },
+    {
+      "id": "tts",
+      "type": "backend",
+      "label": "TTS",
+      "sublabel": "逐句合成 :7811"
+    }
+  ],
+  "segments": [
+    {
+      "from": 130,
+      "to": 230,
+      "label": "握手"
+    },
+    {
+      "from": 240,
+      "to": 370,
+      "label": "语音上行 + 转写"
+    },
+    {
+      "from": 380,
+      "to": 590,
+      "label": "生成 · 句切 · 合成"
+    },
+    {
+      "from": 600,
+      "to": 650,
+      "label": "回合收尾"
+    }
+  ],
+  "messages": [
+    {
+      "id": "hello-ui",
+      "from": "ui",
+      "to": "orch",
+      "y": 160,
+      "label": "hello (v1)",
+      "variant": "default"
+    },
+    {
+      "id": "hello-ok-ui",
+      "from": "orch",
+      "to": "ui",
+      "y": 188,
+      "label": "hello.ok",
+      "variant": "return"
+    },
+    {
+      "id": "hello-asr",
+      "from": "orch",
+      "to": "asr",
+      "y": 214,
+      "label": "hello / hello.ok",
+      "variant": "dashed"
+    },
+    {
+      "id": "hello-tts",
+      "from": "orch",
+      "to": "tts",
+      "y": 250,
+      "label": "hello / hello.ok",
+      "variant": "dashed"
+    },
+    {
+      "id": "mic-up",
+      "from": "ui",
+      "to": "orch",
+      "y": 274,
+      "label": "audio.chunk ×N 上行 PCM",
+      "variant": "emphasis"
+    },
+    {
+      "id": "fwd-asr",
+      "from": "orch",
+      "to": "asr",
+      "y": 302,
+      "label": "audio.chunk ×N 转发",
+      "variant": "default"
+    },
+    {
+      "id": "vad-end",
+      "from": "asr",
+      "to": "orch",
+      "y": 330,
+      "label": "input.vad speech_end",
+      "variant": "return"
+    },
+    {
+      "id": "seg-final",
+      "from": "asr",
+      "to": "orch",
+      "y": 358,
+      "label": "input.audio.segment final",
+      "variant": "return"
+    },
+    {
+      "id": "mirror-sub",
+      "from": "orch",
+      "to": "ui",
+      "y": 386,
+      "label": "segment 镜像字幕 + state.turn thinking",
+      "variant": "return"
+    },
+    {
+      "id": "llm-call",
+      "from": "orch",
+      "to": "brain",
+      "y": 418,
+      "label": "POST /chat/completions stream",
+      "variant": "emphasis"
+    },
+    {
+      "id": "llm-tokens",
+      "from": "brain",
+      "to": "orch",
+      "y": 446,
+      "label": "token 流 (SSE)",
+      "variant": "return"
+    },
+    {
+      "id": "sent-ui",
+      "from": "orch",
+      "to": "ui",
+      "y": 478,
+      "label": "output.sentence 字幕+表情",
+      "variant": "default"
+    },
+    {
+      "id": "sent-tts",
+      "from": "orch",
+      "to": "tts",
+      "y": 506,
+      "label": "output.sentence ×每句",
+      "variant": "emphasis"
+    },
+    {
+      "id": "tts-audio",
+      "from": "tts",
+      "to": "orch",
+      "y": 534,
+      "label": "audio.chunk ×K 下行",
+      "variant": "return"
+    },
+    {
+      "id": "play-audio",
+      "from": "orch",
+      "to": "ui",
+      "y": 562,
+      "label": "audio.chunk 边下边播",
+      "variant": "default"
+    },
+    {
+      "id": "turn-end",
+      "from": "orch",
+      "to": "ui",
+      "y": 622,
+      "label": "state.turn speaking → idle",
+      "variant": "dashed"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "orch",
+      "from": 155,
+      "to": 630,
+      "type": "backend"
+    },
+    {
+      "participant": "asr",
+      "from": 270,
+      "to": 364,
+      "type": "backend"
+    },
+    {
+      "participant": "brain",
+      "from": 414,
+      "to": 454,
+      "type": "cloud"
+    },
+    {
+      "participant": "tts",
+      "from": 500,
+      "to": 542,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "延迟预算",
+      "items": [
+        "语音回合目标 <1.5s 出声 (VAD 判停起算)",
+        "ASR 实测 RTF 0.040 / Kokoro 首包 209ms (2026-10-10)",
+        "LLM 首 token 预估 300ms, MLX 30B 实测 121 t/s"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "打断变体",
+      "items": [
+        "Speaking 中 speech_start 或用户插话 → control.barge_in",
+        "三动作: 停播回报 played_seq → 取消上游 → 已播句入账历史",
+        "细节见运行时状态机与 barge-in 图"
+      ]
+    }
+  ]
+}

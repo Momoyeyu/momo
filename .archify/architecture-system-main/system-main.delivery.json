@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "bf6f6a84-685b-489f-9908-8bcab39cd5b9",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/architecture-system-main/candidate.json",
+  "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/architecture-system-main/system-main.html",
+  "specification": {
+    "sha256": "c060864c6143f9841bde88cde5d6aea073e80032f745361f2038d62cb6a534f3",
+    "bytes": 6706
+  },
+  "artifact": {
+    "sha256": "cf4352826661595cc3b0177d14f13d023f8681bfa8ae44a087e0d9d4fe49522f",
+    "bytes": 772661
+  }
+}

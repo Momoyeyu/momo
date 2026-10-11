@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "lifecycle",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-turn-states/candidate.json",
+    "sha256": "ff01350510797d407da2346f00b525363403f9d67017cbedb252e32a30f4e6c9",
+    "bytes": 3496
+  },
+  "artifact": {
+    "path": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-turn-states/turn-states.html",
+    "sha256": "88b0e56b59ad621c30e563f79a12c3cce34ed77799d0f0e11fbdeda0fbd43b86",
+    "bytes": 758735
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-turn-states/turn-states.finalize.json",
+    "summaryReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-turn-states/turn-states.finalize-summary.json",
+    "browserCheckReceipt": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/lifecycle-turn-states/turn-states.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-11T05:36:39.985Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2431,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 4
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "from": "thinking",
+            "to": "interrupted",
+            "label": "barge-in",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "right": {
+            "from": "speaking",
+            "to": "idle",
+            "label": "final 句播完",
+            "collectionIndex": 7,
+            "artifactIndex": 8
+          },
+          "point": [
+            679,
+            182
+          ]
+        },
+        {
+          "left": {
+            "from": "thinking",
+            "to": "idle",
+            "label": "空回复 / 失败",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "right": {
+            "from": "interrupted",
+            "to": "listening",
+            "label": "新输入继续",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            409,
+            160
+          ]
+        },
+        {
+          "left": {
+            "from": "speaking",
+            "to": "idle",
+            "label": "final 句播完",
+            "collectionIndex": 7,
+            "artifactIndex": 8
+          },
+          "right": {
+            "from": "interrupted",
+            "to": "listening",
+            "label": "新输入继续",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            409,
+            182
+          ]
+        },
+        {
+          "left": {
+            "from": "interrupted",
+            "to": "listening",
+            "label": "新输入继续",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "right": {
+            "from": "idle",
+            "to": "thinking",
+            "label": "idle 超时自发开口",
+            "collectionIndex": 10,
+            "artifactIndex": 11
+          },
+          "point": [
+            409,
+            138
+          ]
+        }
+      ],
+      "detours": [],
+      "truncated": false
+    },
+    "hints": [
+      "thinking → interrupted crosses speaking → idle: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "thinking → idle crosses interrupted → listening: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "speaking → idle crosses interrupted → listening: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "interrupted → listening crosses idle → thinking: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

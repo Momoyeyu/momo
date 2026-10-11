@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "81441200-efa2-42d3-a4fe-ad2926cef39a",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/workflow-persona-qlora/candidate.json",
+  "output": "/Users/momoyeyu/Projects/personal/momo/momo-page/.archify/workflow-persona-qlora/persona-qlora.html",
+  "specification": {
+    "sha256": "3c9e2feacfe20cbd4a9ef509dacdd0c163684b500b67f524e2e0b71d8fbbce89",
+    "bytes": 4793
+  },
+  "artifact": {
+    "sha256": "c9b80b5c9ba98feffd3c70a716ce8cad9ce3d07ce207fde4008277abc516ae30",
+    "bytes": 758780
+  }
+}

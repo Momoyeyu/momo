@@ -1,0 +1,236 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "人格轨道: character card → 数据 → QLoRA",
+    "output": "persona-qlora.html",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "prompt",
+      "label": "人格定义 (P0-P2)"
+    },
+    {
+      "id": "data",
+      "label": "数据攒集"
+    },
+    {
+      "id": "train",
+      "label": "QLoRA 训练 (P3+)"
+    },
+    {
+      "id": "eval",
+      "label": "回归评测"
+    }
+  ],
+  "phases": [
+    {
+      "id": "p-prompt",
+      "label": "prompt 逼近",
+      "fromCol": 0,
+      "toCol": 2
+    },
+    {
+      "id": "p-data",
+      "label": "采集 + 修写",
+      "fromCol": 3,
+      "toCol": 4,
+      "variant": "emphasis"
+    },
+    {
+      "id": "p-train",
+      "label": "微调 + 回归",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g-loop",
+      "label": "改人设视同改代码: PR + 回归通过才合并",
+      "lane": "eval",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "security"
+    }
+  ],
+  "mainPath": [
+    "card",
+    "inject",
+    "chat",
+    "collect",
+    "edit",
+    "dataset",
+    "qlora",
+    "regress",
+    "merge"
+  ],
+  "nodes": [
+    {
+      "id": "card",
+      "lane": "prompt",
+      "col": 0,
+      "type": "database",
+      "label": "persona.yaml",
+      "sublabel": "character card 单一事实来源",
+      "width": 144
+    },
+    {
+      "id": "inject",
+      "lane": "prompt",
+      "col": 1,
+      "type": "backend",
+      "label": "system prompt 组装",
+      "sublabel": "+ 记忆/情境注入",
+      "width": 144
+    },
+    {
+      "id": "chat",
+      "lane": "prompt",
+      "col": 2,
+      "type": "backend",
+      "label": "日常会话",
+      "sublabel": "8 情感 tag 对齐协议",
+      "width": 136
+    },
+    {
+      "id": "collect",
+      "lane": "data",
+      "col": 3,
+      "type": "messagebus",
+      "label": "会话采集",
+      "sublabel": "脱敏入库",
+      "width": 136
+    },
+    {
+      "id": "edit",
+      "lane": "data",
+      "col": 4,
+      "type": "backend",
+      "label": "人工修写",
+      "sublabel": "改不符人设的回复",
+      "tag": "金标准",
+      "width": 136
+    },
+    {
+      "id": "dataset",
+      "lane": "data",
+      "col": 5,
+      "type": "database",
+      "label": "SFT 数据集",
+      "sublabel": "JSONL 数百条起步",
+      "width": 136
+    },
+    {
+      "id": "qlora",
+      "lane": "train",
+      "col": 5,
+      "type": "cloud",
+      "label": "QLoRA 微调",
+      "sublabel": "8-14B · 4090D ≤24h",
+      "tag": "训练实体在 momo-models",
+      "width": 150
+    },
+    {
+      "id": "merge",
+      "lane": "prompt",
+      "col": 5,
+      "type": "backend",
+      "label": "LoRA 挂载灰度",
+      "sublabel": "20 题回归通过后上线",
+      "width": 150
+    },
+    {
+      "id": "regress",
+      "lane": "eval",
+      "col": 5,
+      "type": "security",
+      "label": "20 题评测集",
+      "sublabel": "固定回归 · 不达标回改 card",
+      "width": 144
+    }
+  ],
+  "edges": [
+    {
+      "id": "p1",
+      "from": "card",
+      "to": "inject",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p2",
+      "from": "inject",
+      "to": "chat",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p3",
+      "from": "chat",
+      "to": "collect",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p4",
+      "from": "collect",
+      "to": "edit",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p5",
+      "from": "edit",
+      "to": "dataset",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p6",
+      "from": "dataset",
+      "to": "qlora",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p7",
+      "from": "qlora",
+      "to": "regress",
+      "variant": "security"
+    },
+    {
+      "id": "p8",
+      "from": "regress",
+      "to": "merge",
+      "label": "达标",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p9",
+      "from": "regress",
+      "to": "card",
+      "label": "不达标",
+      "variant": "dashed",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "两步策略",
+      "items": [
+        "P0-P2: character card + system prompt 逼近人设",
+        "P3 起: 攒真实对话做 QLoRA, 把人格写进权重",
+        "card 变更走 PR, 回归通过才合并",
+        "已知问题: prompt 聊久会滑回助手腔, LoRA 是解药"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "数据纪律",
+      "items": [
+        "dialogue_examples 与 traits 必须人工修写, 不堆自动生成",
+        "会话采集先脱敏再入库",
+        "情绪 tag 固定 8 值, 与协议 output.sentence 对齐"
+      ]
+    }
+  ]
+}

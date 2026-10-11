@@ -1,0 +1,262 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "声线轨道: 素材 → 零样本 → SFT → 灰度",
+    "output": "voice-clone.html",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "material",
+      "label": "素材 (本周可开始)"
+    },
+    {
+      "id": "eval",
+      "label": "零样本评估"
+    },
+    {
+      "id": "sft",
+      "label": "SFT 微调 (不达标时)"
+    },
+    {
+      "id": "deploy",
+      "label": "部署切换"
+    }
+  ],
+  "phases": [
+    {
+      "id": "p-collect",
+      "label": "收集 + 质检",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "p-zero",
+      "label": "试听 + 盲听",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "p-sft",
+      "label": "数据集制备",
+      "fromCol": 4,
+      "toCol": 4
+    },
+    {
+      "id": "p-ship",
+      "label": "训练 + 灰度",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g-data",
+      "label": "数据集制备",
+      "lane": "sft",
+      "fromCol": 4,
+      "toCol": 4,
+      "variant": "dashed"
+    },
+    {
+      "id": "g-train",
+      "label": "4090D ≤24h",
+      "lane": "sft",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "emphasis"
+    }
+  ],
+  "mainPath": [
+    "collect",
+    "quality",
+    "zeroshot",
+    "blind",
+    "prepare",
+    "train",
+    "deploy"
+  ],
+  "nodes": [
+    {
+      "id": "collect",
+      "lane": "material",
+      "col": 0,
+      "type": "external",
+      "label": "声线素材",
+      "sublabel": "T0 30s / T2 10-60min",
+      "width": 176
+    },
+    {
+      "id": "quality",
+      "lane": "material",
+      "col": 1,
+      "type": "security",
+      "label": "质量门槛",
+      "sublabel": "单人声 · 无BGM · ≥24kHz",
+      "tag": "授权清单",
+      "width": 176
+    },
+    {
+      "id": "zeroshot",
+      "lane": "eval",
+      "col": 2,
+      "type": "backend",
+      "label": "零样本试听",
+      "sublabel": "3 基座 × 3 参考音 × 15 句",
+      "width": 184
+    },
+    {
+      "id": "blind",
+      "lane": "eval",
+      "col": 3,
+      "type": "security",
+      "label": "盲听 A/B",
+      "sublabel": "≥2人 · 加权分 ≥3.5 达标",
+      "tag": "相似度×2",
+      "width": 184
+    },
+    {
+      "id": "prepare",
+      "lane": "sft",
+      "col": 4,
+      "type": "backend",
+      "label": "数据集制备",
+      "sublabel": "VAD切片 + SenseVoice标注 + 抽检10%",
+      "width": 190
+    },
+    {
+      "id": "train",
+      "lane": "sft",
+      "col": 5,
+      "type": "cloud",
+      "label": "CosyVoice3 SFT",
+      "sublabel": "checkpoint 每2h · 结束留1h回传",
+      "tag": "4090D",
+      "width": 190
+    },
+    {
+      "id": "deploy",
+      "lane": "deploy",
+      "col": 5,
+      "type": "backend",
+      "label": "灰度切默认声线",
+      "sublabel": "只改 env · N-1 可回滚",
+      "tag": "MOMO_TTS_MODEL_DIR",
+      "width": 190
+    },
+    {
+      "id": "kokoro",
+      "lane": "deploy",
+      "col": 3,
+      "type": "backend",
+      "label": "Kokoro 兜底",
+      "sublabel": "实测首包 209ms (P2 先上线)",
+      "width": 176
+    },
+    {
+      "id": "iterate",
+      "lane": "material",
+      "col": 5,
+      "type": "messagebus",
+      "label": "补素材再训",
+      "sublabel": "不达标回到素材环节",
+      "width": 176
+    }
+  ],
+  "edges": [
+    {
+      "id": "v1",
+      "from": "collect",
+      "to": "quality",
+      "variant": "emphasis"
+    },
+    {
+      "id": "v2",
+      "from": "quality",
+      "to": "zeroshot",
+      "variant": "emphasis"
+    },
+    {
+      "id": "v3",
+      "from": "zeroshot",
+      "to": "blind",
+      "variant": "emphasis"
+    },
+    {
+      "id": "v4",
+      "from": "blind",
+      "to": "prepare",
+      "label": "不达标",
+      "variant": "security"
+    },
+    {
+      "id": "v5",
+      "from": "prepare",
+      "to": "train",
+      "variant": "emphasis"
+    },
+    {
+      "id": "v6",
+      "from": "train",
+      "to": "deploy",
+      "label": "产物回传 + 盲听复测达标",
+      "variant": "emphasis"
+    },
+    {
+      "id": "v7",
+      "from": "blind",
+      "to": "deploy",
+      "label": "零样本达标直接切",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "v8",
+      "from": "kokoro",
+      "to": "deploy",
+      "label": "过渡方案",
+      "variant": "dashed"
+    },
+    {
+      "id": "v9",
+      "from": "train",
+      "to": "iterate",
+      "label": "复测不达标",
+      "variant": "dashed",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "基座选择",
+      "items": [
+        "首选 Fun-CosyVoice3-0.5B (9语言 · 流式 · 情感指令)",
+        "备选 GPT-SoVITS (生态成熟), IndexTTS-2 仅盲听胜出才转正",
+        "质量优先, 并列时按 流式>情感>依赖风险>训练支持 排序"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "已实测基线",
+      "items": [
+        "F5-TTS 零样本: RTF 0.535 / VRAM 0.8GB (3070 Laptop)",
+        "Kokoro: 首包 209ms / RTF 0.023 / 0.76GB",
+        "SenseVoice 标注: 纯CPU RTF 0.040 (2026-10-10 实测)"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "红线",
+      "items": [
+        "只克隆有权使用的声音, 授权写入 manifest",
+        "P5 直播前必须确认声线授权链",
+        "训练会话结束前 ≥1h 完成产物回传, 否则等于丢产物"
+      ]
+    }
+  ]
+}
