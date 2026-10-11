@@ -1,0 +1,44 @@
+# 正常档组件表（入库默认模板）。
+# laptop 起 momo-svc-asr / momo-svc-tts / momod；大脑是 mac-studio MLX
+# 外部端点，serve 只探活不拉起（momo-infra.md §serve / deployment.md）。
+# order 升序拉起，down 逆序；external 组件按序探活。
+
+[profile]
+name = "normal"
+description = "正常档：laptop asr/tts/momod + mac-studio MLX 大脑（外部端点，只探活）"
+
+# 大脑：mac-studio MLX（MOMO_LLM_ENDPOINT 默认 http://mac-studio:7820/v1）
+[[component]]
+name = "brain"
+order = 0
+external = true
+probe_env = "MOMO_LLM_ENDPOINT"
+probe_path = "/models"
+
+# ASR：momo-models 仓内 uv run，端口读 MOMO_ASR_LISTEN
+[[component]]
+name = "momo-svc-asr"
+order = 10
+cwd = "../momo-models"
+cmd = "uv"
+args = ["run", "momo-svc-asr"]
+ready = "http://127.0.0.1:7810/readyz"
+env = { MOMO_ASR_LISTEN = "127.0.0.1:7810", MOMO_ASR_MODEL = "sensevoice-small", MOMO_ASR_THREADS = "4", MOMO_VAD_SILENCE_MS = "250" }
+
+# TTS：kokoro 为已实测兜底；cosyvoice3 就绪后改 MOMO_TTS_PROVIDER
+[[component]]
+name = "momo-svc-tts"
+order = 20
+cwd = "../momo-models"
+cmd = "uv"
+args = ["run", "momo-svc-tts"]
+ready = "http://127.0.0.1:7811/readyz"
+env = { MOMO_TTS_LISTEN = "127.0.0.1:7811", MOMO_TTS_PROVIDER = "kokoro", MOMO_TTS_LANG = "auto" }
+
+# 编排器：momo-app 仓 momod，PATH 或 --app-bin 定位；启动时握手下探 llm/tts/asr
+[[component]]
+name = "momod"
+order = 30
+cmd = "momod"
+ready = "http://127.0.0.1:7800/readyz"
+env = { MOMO_ORCH_LISTEN = "0.0.0.0:7800" }

@@ -1,0 +1,24 @@
+[package]
+name = "momo-infra"
+version = "0.1.0"
+edition = "2021"
+description = "momo 运维 CLI：doctor / pull / serve / switch / bench / gc"
+
+[lib]
+name = "momo_infra"
+path = "src/lib.rs"
+
+[[bin]]
+name = "momoctl"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.9"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
+thiserror = "2"
+dotenvy = "0.15"
+owo-colors = "4"
+sha2 = "0.10"
