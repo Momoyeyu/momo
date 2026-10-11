@@ -136,7 +136,7 @@ flowchart TD
 
 ### ADR-012 Live2D = Pixi 7 adapter + 官方许可 sample；口型来自实际播放
 
-- **决策**：复用 Live2D/Pixi 上游，通过自有 `AvatarAdapter`/`MotionDirector` 隔离；网站可用 Haru 官方 sample 作 demo，但它不是 momo 专属角色。口型由实际 AudioWorklet 播放 RMS 驱动。
+- **决策**：复用 Live2D/Pixi 上游，通过自有 `AvatarAdapter`/`MotionDirector` 隔离；网站使用桃濑日和 Hiyori 官方 sample 作 demo，并保持模型与角色设计原样。口型由实际 AudioWorklet 播放 RMS 驱动。
 - **理由**：先复用官方资源验证真实 Live2D，同时保持角色与 renderer 可替换。Runtime Core、sample 与应用代码许可证分别核验。
 - **被否**：自研 Runtime；用假 CSS 角色替代实际 Live2D；让 emotion motion 覆盖 lipsync。
 

@@ -20,7 +20,7 @@ momo 是本地优先的 AI 桌宠：有形象，能听你说话，也能安静�
 
 - 桌面形象、文字与语音、可打断的回合组成 P0 交流闭环。
 - P1 继续打磨记忆、模式与个性化，P2 连接工具和更多场景。
-- Haru sample 与 Cubism Core 使用 Live2D 各自许可，不属于仓库 MIT 代码许可。
+- 桃濑日和 Hiyori sample 与 Cubism Core 使用 Live2D 各自许可，不属于仓库 MIT 代码许可。
 - 产品默认中文；中、英、日输入输出按 provider capability 启用。
 
 [开发进度](./docs/06-management/github-project.md#工程状态)

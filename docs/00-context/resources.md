@@ -1,13 +1,14 @@
 # Live2D 素材与许可
 
-> 网站以固定的 Haru 互动 demo 展示 Live2D 呈现，并在这里记录素材、Core 与桌面发布的许可边界。
+> 网站以固定的桃濑日和 Hiyori 互动 demo 展示 Live2D 呈现，并在这里记录素材、Core 与桌面发布的许可边界。
 
 ## 网站 demo
 
-- Sample data：Live2D Cubism Web Samples 的 Haru，固定到 commit `de9eb4bec4326b81fe67a54e84322fdc39bc7446`（official tag4-r.7）。
-- 本地副本位于 `site/docs/public/live2d/haru/`；`Haru.model3.json` 仅移除了 `Sound` 字段，网站不分发或自动播放 sample sound。
+- Sample data：[桃濑日和 Hiyori 官方页面](https://www.live2d.com/en/learn/sample/momose-hiyori/)，资源来自 Live2D Cubism Web Samples，固定到 commit `de9eb4bec4326b81fe67a54e84322fdc39bc7446`（official tag4-r.7）。
+- 固定资源源：<https://raw.githubusercontent.com/Live2D/CubismWebSamples/de9eb4bec4326b81fe67a54e84322fdc39bc7446/Samples/Resources/Hiyori/>
+- 本地副本位于 `site/docs/public/live2d/hiyori/`。保留官方模型、贴图与动作原样；不修改角色设计。此模型没有独立 expression 文件，主页使用其原生 motion 展示动作。
 - Cubism Core 不被 vendored 或改许可证；网站从 Live2D 官方版本化地址加载 Core。
-- `pixi-live2d-display` 是 renderer adapter；它的 MIT 许可证不覆盖 Cubism Core 或 Haru sample data。
+- `pixi-live2d-display` 是 renderer adapter；它的 MIT 许可证不覆盖 Cubism Core 或桃濑日和 Hiyori sample data。
 
 ## 许可链接
 
@@ -19,4 +20,4 @@
 
 ## 桌面应用边界
 
-网站固定 Haru demo 与未来桌面版的任意-avatar-import 是不同用途。桌面应用在开放用户导入、打包或公开发布前，必须针对实际 SDK、模型来源与发布方式重新确认 publication license。
+网站固定桃濑日和 Hiyori demo 与未来桌面版的任意-avatar-import 是不同用途。桌面应用在开放用户导入、打包或公开发布前，必须针对实际 SDK、模型来源与发布方式重新确认 publication license。

@@ -68,7 +68,7 @@ flowchart TD
     SWITCH -->|"退出"| DISPOSE["dispose model / textures / ticker"] --> TERMINAL["结束"]
 ```
 
-Haru 是网站固定互动 demo，不是 momo 的专属角色。网站使用的 sample data、Cubism Core 与应用代码适用不同许可。未来桌面版若开放任意 avatar 导入与公开发布，必须按目标 SDK 与素材用途重新核对 publication license。
+桃濑日和 Hiyori 是网站固定互动 demo，保持官方模型与角色设计原样。网站使用的 sample data、Cubism Core 与应用代码适用不同许可。未来桌面版若开放任意 avatar 导入与公开发布，必须按目标 SDK 与素材用途重新核对 publication license。
 
 ## 拖拽、点击、缩放与显示器恢复
 

@@ -8,7 +8,7 @@
 
 momo 以 Live2D 形象住在桌面，通过文字、按住说话与连续语音和你交流。它会回应你的触碰，在你插话时停下来，也把对话与记忆留在你能掌握的地方。
 
-网站互动预览使用的 Haru sample 与 Cubism Core 许可说明见 [Live2D 素材与许可](./resources.md)。
+网站互动预览使用的 桃濑日和 Hiyori sample 与 Cubism Core 许可说明见 [Live2D 素材与许可](./resources.md)。
 
 ## 三个产品支柱
 
