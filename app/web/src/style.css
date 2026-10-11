@@ -1,0 +1,51 @@
+:root {
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+}
+
+.bubble.user {
+  align-self: flex-end;
+  color: #fff;
+}
+
+
+#composer {
+  display: flex;
+  gap: 8px;
+}
+
+#composer-input {
+  flex: 1;
+}
+
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+#status {
+  position: fixed;
+  left: 16px;
+  font-size: 12px;
+}
