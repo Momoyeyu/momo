@@ -32,6 +32,7 @@ flowchart LR
 | `MOMO_ORCH_LISTEN` | WS + 静态 UI 监听地址 | `127.0.0.1:7800` | host:port | 否 |
 | `MOMO_UI_DIR` | 前端静态目录（打包内嵌时忽略） | `./web/dist` | path | 否 |
 | `MOMO_WEB_ORIGIN` | 浏览器来源（CORS/WS Origin 白名单） | `http://localhost:5173` | URL | 否 |
+| `MOMO_WEB_TOKEN` | `momoctl web` 控制台鉴权 token；`--listen` 放宽出 localhost 时必填（未设拒绝启动） | 空 | str | **是** |
 | `MOMO_LLM_ENDPOINT` | 大脑 OpenAI-compatible base URL | `http://mac-studio.local:7820/v1` | URL | 否 |
 | `MOMO_LLM_MODEL` | 传给大脑的 model 字段 | `qwen3-8b-4bit` | str | 否 |
 | `MOMO_LLM_API_KEY` | 大脑端点鉴权 key；本地可为空 | 空 | str | **是** |
@@ -162,7 +163,7 @@ HF_ENDPOINT=https://hf-mirror.com   # laptop 必须
 
 ## 4. 敏感项与安全
 
-- **敏感清单**：`MOMO_LLM_API_KEY`、`MOMO_DEEPSEEK_API_KEY`、`MOMO_DATA_KEEP_AUDIO`（后续新增一律按"值即密钥/隐私开关"判断）。
+- **敏感清单**：`MOMO_LLM_API_KEY`、`MOMO_DEEPSEEK_API_KEY`、`MOMO_WEB_TOKEN`、`MOMO_DATA_KEEP_AUDIO`（后续新增一律按"值即密钥/隐私开关"判断）。
 - **敏感数据（非 key）**：`MOMO_DATA_KEEP_AUDIO=on` 时落盘的原始麦音频属隐私数据——key 本身只是开关，但其产物按敏感数据同等纪律处理（短期保留、仅 ASR 排错用途、到期清理、不外传）。
 - `.env` 已在各仓 `.gitignore`；`.env.example` 中敏感项**只留空值占位**，禁止提交真实 key。
 - 日志/诊断输出对敏感值打码（显示前 4 位 + `…`）；`momoctl doctor` 只做"是否设置"检查，不回显。

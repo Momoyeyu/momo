@@ -24,12 +24,13 @@
 | Area | 单选 | `app` `models` `infra` `docs` `voice` `persona` |
 | Priority | 单选 | `P0` 当前阶段必做 / `P1` 近阶段应做 / `P2` 远期·可选（**紧急度**，与 Phase 独立） |
 | Start / Due | 日期 | 每条任务的计划起止日（排期粒度到周） |
+| 内容类型 | 单选 | `协议` `运行时` `前端` `模型服务` `运维工具` `文档` `验收`（语义字段，不用 label 凑） |
 
-**排期约定**：issue 粒度 ≈0.5–2 天工作量（做完即关），粗目标留在 milestone 描述里；所有 issue 指派 `@Momoyeyu`；里程碑带 due_on（P0→P3 按周排，P4/P5 待定）。Phase 标签与 milestone 同名对应；Priority 按当前阶段=P0、近两阶段+track=P1、更远期=P2。
+**排期约定**：issue 粒度 ≈0.5–2 天工作量（做完即关），粗目标留在 milestone 描述里；所有 issue 指派 `@Momoyeyu`；里程碑**不带 due_on**，排期只体现在每条 issue 的 Start/Due 字段。Phase 标签与 milestone 同名对应；Priority 按当前阶段=P0、近两阶段+track=P1、更远期=P2。
 
 仓库归属直接用 Projects V2 内置 `Repository` 列（自动填充，无需自定义 `Repo` 字段——`Repo` 为保留名不可建）。
 
-视图建议：按 Phase 分组的 Board（主线推进）+ 按 Area 分组的 Table（轨道视角）+ `Priority=High` 过滤的「本周」视图（Projects V2 API 不支持创建视图，需在建好的 Project 页面手动配置）。
+视图：单一 Table 视图「**任务总览**」，列为 Title / Assignees / Status / Repository / Priority / Start / Due / 内容类型——不按 Priority 拆多个视图。
 
 > 已落地（2026-10-10）：Project #2 <https://github.com/users/Momoyeyu/projects/2>，四仓已 link，28 条首批 issue 全部挂载——P0=Todo+High，P1/P2/Track=Backlog+Medium，P3+=Backlog+Low。
 
@@ -152,7 +153,7 @@ PR 规范：
 ## 检查表
 
 - [ ] 4 仓建好、public、挂 `Momoyeyu`，各仓 `.env.example` 占位入库
-- [ ] Project V2 建好，5 个字段按上表配置，3 个视图建好
+- [ ] Project V2 建好，6 个字段按上表配置 + 内置 Repository 列，「任务总览」视图列序如上
 - [ ] 各仓 `phase:*`/`area:*` 标签建齐且同名同色
 - [ ] 各仓里程碑 P0-P5 建好，描述含 roadmap 验收原文
 - [ ] P0 + Track 的 issue 全部建出并挂到 Project

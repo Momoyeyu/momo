@@ -11,7 +11,7 @@ momo 由 4 个独立 GitHub 仓库组成（均 public，挂在 `Momoyeyu` 账户
 | `momo-docs` | Markdown | 全部设计文档（本仓库） |
 | `momo-app` | Rust + TypeScript | 应用主体：Rust 实现编排器/运行时/服务；TS 薄前端（Live2D 渲染、音频采集与播放）。短期 Web，长期 Tauri 2 桌面壳，前后端协议不变 |
 | `momo-models` | Python | 模型服务与训练：LLM 接入适配、ASR、TTS、声线克隆/微调、人格微调、评测。推理调用现有库，不重写推理引擎 |
-| `momo-infra` | Rust | 运维工具集 `momoctl`：doctor 诊断、模型下载/校验（hf-mirror）、服务编排启停、降级切换、测量工具。**不承载人设/对话业务，不在运行时数据通路上** |
+| `momo-infra` | Rust | 运维工具集 `momoctl`：doctor 诊断、模型下载/校验（hf-mirror）、服务编排启停、降级切换、测量工具、Web 运维控制台（`momoctl web`，P2）。**不承载人设/对话业务，不在运行时数据通路上** |
 
 ```mermaid
 flowchart LR
@@ -52,7 +52,7 @@ momo-docs/
 ├── 02-repos/                  ← 各仓库内部设计
 │   ├── momo-app.md            应用仓：Rust 编排器 + TS 薄前端
 │   ├── momo-models.md         模型服务与训练仓（Python）
-│   ├── momo-infra.md          运维工具仓（Rust CLI，momoctl）
+│   ├── momo-infra.md          运维工具仓（Rust CLI + Web 控制台，momoctl）
 │   └── momo-docs.md           文档仓自身规范
 ├── 03-phases/                 ← 阶段详细设计
 │   ├── p0-pipeline.md         P0 管道骨架：文字→LLM→TTS→出声
