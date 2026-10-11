@@ -52,12 +52,14 @@ MOMO_DATA_KEEP_AUDIO=off       # 敏感产物：授权排错时短期保留原�
 MOMO_EMOTION_MAP=config/emotion.map.yaml   # tag → Live2D 表情映射
 ```
 
+
 ## 4. 敏感项与安全
 
 - **敏感数据（非 key）**：`MOMO_DATA_KEEP_AUDIO=on` 时落盘的原始麦音频属隐私数据——key 本身只是开关，但其产物按敏感数据同等纪律处理（短期保留、仅 ASR 排错用途、到期清理、不外传）。
 - `.env` 已在各仓 `.gitignore`；`.env.example` 中敏感项**只留空值占位**，禁止提交真实 key。
 
 ## 5. 与配置发布平台的兼容
+
 
 - 配置面是**扁平 key=value 环境变量**，无嵌套配置文件——任何支持 env 注入的平台（systemd/Docker/k8s/自研发布平台）都可直接消费。
 

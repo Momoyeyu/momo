@@ -8,6 +8,7 @@ flowchart TD
     ADR001 --> ADR003["ADR-003 三段式进程<br/>+ momo-ws 协议"]
     ADR002 --> ADR004["ADR-004 编排器在 app<br/>推理在 models"]
     ADR013["ADR-013 回合语义/<br/>barge-in 三动作"] --> ADR003
+    ADR019["ADR-019 扩展过滤边界"] --> FUTURE["未来 streaming 前置条件"]
 ```
 
 ## 仓库与工程
@@ -47,9 +48,13 @@ flowchart TD
 
 ### ADR-013 回合状态机与 barge-in 三动作语义
 
+- **决策**：`TurnCoordinator` 独占回合状态；`Speaking` 从 `playback.started` 开始。barge-in 先同步停本地播放/嘴型并原子失效旧回合，同时并行取消 LLM/TTS/句切/音频，绝不等待 ACK；随后按 playback ledger 结算确认听见的完整句与部分审计。capture 生命周期独立保留。细则见 [../01-architecture/runtime.md](../01-architecture/runtime.md)。
+- **理由**：「能插话」是桌面陪伴的体验核心；ACK 账本让模型上下文不虚构用户听见的内容。
 - **被否**：打断即整回合丢弃（用户听到的和模型记得的不一致）；排队制不打断（破坏"像人"第一指标）。
 
+### ADR-019 为外部 ingress/egress 预留过滤边界
 
+- **理由**：外部内容的风险模型与本地 companion 不同，过滤必须在公开接入前完成，同时不能污染 turn core。
 
 
 
@@ -60,13 +65,21 @@ flowchart TD
 
 
 
+### ADR-012 Live2D = Pixi 7 adapter + 官方许可 sample；口型来自实际播放
+
+- **理由**：先复用官方资源验证真实 Live2D，同时保持角色与 renderer 可替换。Runtime Core、sample 与应用代码许可证分别核验。
+- **被否**：自研 Runtime；用假 CSS 角色替代实际 Live2D；让 emotion motion 覆盖 lipsync。
 
 
 
 
+- **理由**：LLM 不直接执行；用户授权与结构化 schema 共同形成安全边界。
+- **被否**：LLM 直接执行代码；本地可信即默认永久授权；把工具业务写进 turn core。
 
 
-
+- **决策**：截图先展示采集范围与数据去向；allow once 后交给可配置 vision provider，不自建 VLM。
+- **理由**：屏幕内容敏感，授权边界比具体 provider 更稳定。
+- **被否**：后台自动截图；把单一远端 provider 写死为产品能力。
 
 
 
