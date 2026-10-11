@@ -1,0 +1,28 @@
+{
+  "name": "momo-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "pixi-live2d-display": "0.5.0-beta",
+    "pixi.js": "^7.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.46.3",
+    "vite": "^8.3.0",
+    "vitest": "^4.0.8"
+  }
+}

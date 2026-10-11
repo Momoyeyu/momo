@@ -1,0 +1,86 @@
+/* 骨架占位样式；正式视觉随角色资产迭代。 */
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  background: #111;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#chat {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  bottom: 96px;
+  width: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bubble {
+  padding: 8px 12px;
+  border-radius: 12px;
+  max-width: 85%;
+  white-space: pre-wrap;
+}
+
+.bubble.user {
+  align-self: flex-end;
+  background: #3b82f6;
+  color: #fff;
+}
+
+.bubble.assistant {
+  align-self: flex-start;
+  background: #27272a;
+  color: #e4e4e7;
+}
+
+#composer {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
+  width: 320px;
+}
+
+#composer-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #3f3f46;
+  background: #18181b;
+  color: #e4e4e7;
+}
+
+#composer-send {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #3b82f6;
+  color: #fff;
+  cursor: pointer;
+}
+
+#status {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  font-size: 12px;
+  color: #a1a1aa;
+}
