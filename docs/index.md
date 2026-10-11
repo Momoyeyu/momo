@@ -4,7 +4,7 @@ layout: home
 hero:
   name: momo
   text: 住在你电脑里的 AI 伙伴
-  tagline: 三段式架构 · 全本地可跑 · 自己的声线与人格 —— 受 Neuro-sama 启发的开源 AI companion
+  tagline: 三段式架构 · 全本地可跑 · 自己的声线与人格
   actions:
     - theme: brand
       text: 查看架构设计
