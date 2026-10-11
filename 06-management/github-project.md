@@ -20,9 +20,12 @@
 | 字段 | 类型 | 取值 |
 |---|---|---|
 | Status | 单选 | `Backlog` / `Todo` / `In Progress` / `In Review` / `Done` |
-| Phase | 单选 | `P0` `P1` `P2` `P3` `P4` `P5` / `Track`（声线、人格等并行轨道） |
+| Phase | 单选 | `P0` `P1` `P2` `P3` `P4` `P5` / `Track`（开发阶段，非优先级） |
 | Area | 单选 | `app` `models` `infra` `docs` `voice` `persona` |
-| Priority | 单选 | `High` / `Medium` / `Low` |
+| Priority | 单选 | `P0` 当前阶段必做 / `P1` 近阶段应做 / `P2` 远期·可选（**紧急度**，与 Phase 独立） |
+| Start / Due | 日期 | 每条任务的计划起止日（排期粒度到周） |
+
+**排期约定**：issue 粒度 ≈0.5–2 天工作量（做完即关），粗目标留在 milestone 描述里；所有 issue 指派 `@Momoyeyu`；里程碑带 due_on（P0→P3 按周排，P4/P5 待定）。Phase 标签与 milestone 同名对应；Priority 按当前阶段=P0、近两阶段+track=P1、更远期=P2。
 
 仓库归属直接用 Projects V2 内置 `Repository` 列（自动填充，无需自定义 `Repo` 字段——`Repo` 为保留名不可建）。
 
@@ -60,6 +63,8 @@ stateDiagram-v2
 ```
 
 ## 初始 issue 清单（第一批任务卡）
+
+> 2026-10-11 重构：首批 28 条粗卡已作废关闭，替换为约 60 条 0.5–2 天粒度任务卡（见 Project #2）。下表保留的是**原始拆卡口径**（每阶段大致要覆盖的工作面），实际卡片以 Project 为准。
 
 每条 = 一句话任务 + 验收指针。phase/area 标注为标签值。
 
