@@ -2,6 +2,8 @@
 
 模型服务与训练：momo-svc-asr / momo-svc-tts / momo-svc-embed，声线克隆与人格微调、评测。
 
+目标平台：Linux + Windows（Windows 经 WSL2，等同 Linux；开发环境 macOS）。
+
 设计文档：<https://github.com/Momoyeyu/momo-docs>（口径：`02-repos/momo-models.md`，协议：`01-architecture/protocol.md`，env：`01-architecture/config.md`）
 
 ## 开发
