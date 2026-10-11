@@ -4,6 +4,7 @@
 
 目标平台：Linux + Windows（开发环境 macOS）。
 
+设计文档：<https://github.com/Momoyeyu/docs 目录>
 
 ## 开发
 

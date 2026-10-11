@@ -1,2 +1,7 @@
 node_modules/
+dist/
+target/
+__pycache__/
+.venv/
 *.tsbuildinfo
+.env
