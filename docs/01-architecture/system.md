@@ -1,5 +1,6 @@
 # 总体架构
 
+> 桌面呈现负责在场，回合编排负责接话，模型服务提供理解与表达能力。三层通过清晰的事件与音频边界协作。
 
 ## 运行时组件
 
@@ -10,6 +11,7 @@ flowchart TB
     ASR["听懂 · models/Python<br/>ASR + VAD"]
     LLM["回答 · 本地或远端 LLM<br/>OpenAI-compatible SSE"]
     TTS["说出 · models/Python<br/>TTS adapter"]
+    DESK <-->|"momo-ws：输入 / 状态 / 音频"| TURN
     TURN <-->|"语音 / 转写"| ASR
     TURN <-->|"流式文本"| LLM
     TURN <-->|"句子 / 音频"| TTS
@@ -83,5 +85,6 @@ ASR/TTS 不就绪不阻止 LLM 文字回复；LLM 不就绪时只保留 draft、
 
 - [桌面宿主与窗口生命周期](./desktop.md)
 - [运行时与状态机](./runtime.md)
+- [通信协议](./protocol.md)
 - [用户操作路径图谱](./workflows.md)
 - [模块边界](./boundaries.md)

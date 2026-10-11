@@ -52,6 +52,7 @@ MOMO_DATA_KEEP_AUDIO=off       # 敏感产物：授权排错时短期保留原�
 MOMO_EMOTION_MAP=config/emotion.map.yaml   # tag → Live2D 表情映射
 ```
 
+配置覆盖记忆、语音和视觉服务；具体能力按产品优先级启用。
 
 ## 4. 敏感项与安全
 

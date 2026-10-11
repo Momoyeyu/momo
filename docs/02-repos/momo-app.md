@@ -1,5 +1,6 @@
 
 
+## 模块结构
 
 ```text
 app/
@@ -10,6 +11,7 @@ app/
 └── src/
     ├── session/              # session actor
     ├── turn/                 # TurnCoordinator、取消、playback ledger
+    ├── protocol/             # momo-ws 消息与音频 codec
     ├── repository/           # transcript/correction/persona/memory/index
 ```
 
@@ -20,6 +22,7 @@ flowchart LR
     UI <--> AUDIO["AudioPlayer / Worklet"]
     AUDIO -->|"实际 playback"| PRESENT["PresentationDirector"]
     PRESENT -->|"avatar params"| UI
+    UI <-->|"momo-ws"| ACTOR["Rust session actor"]
     ACTOR --> TURN["TurnCoordinator"]
     TURN -->|"domain events"| UI
     TURN --> REPO["local conversation repository"]

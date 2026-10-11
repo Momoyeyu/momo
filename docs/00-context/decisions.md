@@ -35,6 +35,7 @@ flowchart TD
 
 ### ADR-003 三段式进程分离 + 进程间 WebSocket
 
+- **决策**：三层进程分工 + momo-ws 事件与音频协议；LLM 使用 OpenAI-compatible SSE。规范见 [../01-architecture/protocol.md](../01-architecture/protocol.md)。
 
 ### ADR-004 编排器放 momo-app（Rust），模型推理放 momo-models（Python）
 
@@ -58,7 +59,9 @@ flowchart TD
 
 
 
+### ADR-022 编排器与语音服务共享通信契约
 
+- **决策**：编排器与语音服务使用同一份 momo-ws 契约，统一流标识、取消与播放回执；调试接口独立于实时对话通路。
 - **理由**：打断、取消、流式音频、VAD 事件（`input.vad`）语义已在 momo-ws 定义；再立一套 REST 主协议要维护两份语义且打断语义难表达。
 - **被否**：为模型服务另定义 REST `/v1/*` 作为运行时主协议。
 
@@ -73,6 +76,7 @@ flowchart TD
 
 
 
+- **决策**：工具/action 使用独立扩展消息组；每次请求向用户展示动作、范围和数据去向，只有 allow 后执行，deny/cancel/late-result 都有显式路径。
 - **理由**：LLM 不直接执行；用户授权与结构化 schema 共同形成安全边界。
 - **被否**：LLM 直接执行代码；本地可信即默认永久授权；把工具业务写进 turn core。
 

@@ -51,6 +51,7 @@ export default defineConfig({
         ],
       },
       {
+        text: '参考与工程',
         collapsed: true,
         items: [
           { text: '文档索引', link: '/guide/docs-index' },

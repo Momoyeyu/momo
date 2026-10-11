@@ -5,6 +5,7 @@
 ```mermaid
 flowchart LR
     DOCS -.-> SITE["site/<br/>静态产品页 + 文档消费"]
+    APP <-->|"momo-ws"| MODELS
     INFRA -.->|"启停 / 探测 / 产物"| APP & MODELS & LLM
     SITE -.->|"include canonical docs"| DOCS
 ```

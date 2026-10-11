@@ -9,6 +9,7 @@ flowchart LR
 
 
 - 会话历史查看、改标题、correction、删除、导出与新对话；原 audit entry 不被改写。
+- 事件、字幕与音频通过 momo-ws 统一协作。
 
 
 

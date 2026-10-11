@@ -1,4 +1,6 @@
+# momo-ws 通信协议
 
+> momo-ws 连接桌面交互、回合编排和语音服务，统一传递输入、状态、字幕与音频。每个事件和音频流都有明确归属，使播放、打断与重连保持一致。
 
 LLM 不使用本协议：`TurnCoordinator` 直接调用 OpenAI-compatible HTTP SSE。
 
@@ -40,6 +42,7 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 | `state.turn` | orchestrator→UI | `turn_id,state` | turn domain event |
 
 
+固定 emotion：`neutral` `happy` `sad` `angry` `surprised` `thinking` `shy` `sleepy`。tool action 使用独立的工具扩展消息组。
 
 
 Tauri 每次启动生成 ephemeral token，经 desktop IPC 只交给内嵌 UI。UI 把 token 放在 WebSocket 的第一条 `hello.auth_token` 中，**不**放 query URL、日志或 Authorization header。browser dev 由本地 setup 手动取得同类 per-process token；静态网站不持有 token、不连接 localhost，也不请求 API key 或麦克风。
@@ -58,6 +61,7 @@ flowchart TD
     HELLO -->|"否"| CLOSE4400["close 4400 malformed / timeout"]
     HELLO -->|"是"| TOKEN{"constant-time token 校验通过？"}
     TOKEN -->|"否"| CLOSE4401["close 4401 unauthorized"]
+    TOKEN -->|"是"| VERSION{"协议版本受支持？"}
     VERSION -->|"否"| CLOSE4001["close 4001 version mismatch"]
     VERSION -->|"是"| RESUME{"owner + session 可恢复？"}
     RESUME -->|"是"| SNAP["hello.ok + session.snapshot"]
