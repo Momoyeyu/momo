@@ -2,6 +2,8 @@
 
 应用主体：Rust 编排器 momod + TypeScript 薄前端（Live2D/音频 IO）。短期 Web，长期 Tauri 2 壳。
 
+目标平台：Linux + Windows（开发环境 macOS）。
+
 设计文档：<https://github.com/Momoyeyu/momo-docs>
 
 ## 开发
