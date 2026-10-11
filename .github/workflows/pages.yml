@@ -3,7 +3,10 @@ name: Deploy Pages
 on:
   push:
     branches: [master]
-    paths: ['site/**']
+    paths:
+      - 'site/**'
+      - 'docs/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -29,6 +32,8 @@ jobs:
           cache: pnpm
           cache-dependency-path: site/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+        working-directory: site
+      - run: pnpm test
         working-directory: site
       - run: pnpm build
         working-directory: site

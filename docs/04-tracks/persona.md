@@ -1,4 +1,28 @@
-# 并行轨道：人格（persona）
+# 人格与可纠正上下文
+
+> 人格先由稳定的人设与可纠正的上下文建立；微调是可选的后续工具。
+
+P0 使用本地 persona 与 conversation correction；P1 让 card、context、routine 和 derived memory 的来源、修正与失效路径对用户可见。
+
+```mermaid
+flowchart TD
+    BASE["稳定 persona card"] --> CONTEXT["本地 conversation context"]
+    CONTEXT --> EXPERIENCE["日常交互"]
+    EXPERIENCE --> CORRECT{"用户发现不准确？"}
+    CORRECT -->|"card"| CARD["提出 card 修正"]
+    CORRECT -->|"conversation"| RECORD["新增 correction<br/>保留原 audit entry"]
+    CORRECT -->|"routine"| ROUTINE["调整 companion preference"]
+    CARD --> GATE["复用 frozen regression gate"]
+    GATE --> APPLY{"gate 通过？"}
+    APPLY -->|"是"| NEXT["下一 turn 使用修正内容"]
+    APPLY -->|"否"| REVISE["继续修正，不激活"]
+    RECORD --> INVALIDATE["失效相关 derived memory"] --> NEXT
+    ROUTINE --> NEXT
+    NEXT -.-> OPTIONAL["可选后续：微调实验"]
+```
+
+<details>
+<summary>历史实验规格与复现记录</summary>
 
 > 目标：momo 说话像「她」而不是通用助手。策略分两步——**P0-P2 用 character card + system prompt 逼近**，**P3 起攒数据做 QLoRA 把人格写进权重**。
 > 已知问题：prompt 聊久了会滑回助手腔，LoRA 是解药（见 [../00-context/research.md](../00-context/research.md) 开放问题）。
@@ -143,3 +167,5 @@ flowchart TD
 - [ ] 修写流程跑过至少一轮，SFT 数据集 ≥200 条
 - [ ] regression-20 可自动跑分，当前基线分已记录
 - [ ] card 改动触发回归评测并归档结果
+
+</details>

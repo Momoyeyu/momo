@@ -1,68 +1,71 @@
 # 产品定义：momo
 
-> 一句话：momo 是一个本地优先的 AI 虚拟伙伴 —— Live2D 形象、语音对话、能被打断、有自己的人格与记忆；先本地跑起来，直播暂缓。
+> **让桌面多一个，懂得回应的存在。**
+>
+> momo 是本地优先的 AI 桌宠：有形象，能听你说话，也能安静陪着你。
+>
+> **设计目标：** 完整桌面 companion、Tauri host 与协议 v2 尚未实现；当前代码仍是 v1 handshake/scaffold。
 
-## momo 是什么
+## 产品定位
 
-momo 的核心不是"某个模型"，而是一条**流水线**：定制 LLM + TTS + ASR + Live2D 皮 + 回合/打断运行时 + action 总线 + 过滤层（课题背景调研见 [research.md](./research.md)）。在此之上坚持两个约束：
+momo 是桌面 companion，不是聊天机器人 dashboard，也不是以直播为中心的产品。它以真实 Live2D 形象留在桌面，通过文字、按住说话与用户主动开启的连续麦克风接话；隐私敏感数据和会话记录优先留在本机。
 
-- **本地优先**：LLM/ASR/TTS 全部可本地自托管，云端 API 只做兜底、对照和视觉等补充能力。隐私、零订阅成本、可离线演示。
-- **模块化**：交互端 / 编排器 / 模型服务三段式进程分离（见 [../01-architecture/system.md](../01-architecture/system.md)），单组件可替换、可降级。
+Haru 官方 sample 只用于网站演示，不是 momo 的专属角色设计。Live2D Runtime Core、sample 模型和第三方推理库各自遵循上游许可，不能因应用代码采用 MIT 就自动视为 MIT。
 
-## 目标用户
+## 三个产品支柱
 
-**唯一的用户是开发者本人。** 这决定了：
-
-- 不做账号体系、多租户、权限模型；
-- 交互端默认跑在本机浏览器/Tauri 壳，网络环境按 LAN 设计；
-- "产品验收"= 开发者本人觉得"像个人、聊得下去"。
-
-## 核心体验指标
-
-"像人"是产品目标，但必须落成可测的工程指标：
-
-| 指标 | 目标值 | 说明 |
+| 支柱 | P0 体验 | 后续增强 |
 |---|---|---|
-| 首包延迟（文字回合） | **< 1.5 s** | 从提交文字到扬声器出声。预算分解见 [../01-architecture/runtime.md](../01-architecture/runtime.md) |
-| 首包延迟（语音回合） | **< 1.5 s** | 从用户说完话（VAD 判停）到出声；ASR/VAD 预算同上表 |
-| 打断响应 | **< 300 ms** | barge-in 触发到停播完成；打断后再出声仍按首包指标 |
-| 自发行为 | 挂机 10 min 主动开口 2–3 次 | P3 验收项；空闲 scheduler 注入情境让 LLM 自发说话 |
-| 记忆 | 重启后记得上次聊过什么 | P3 验收项；sqlite-vec + BGE-M3 |
-| 情感表达 | 每句输出携带 emotion tag | tag 同时驱动 TTS 情感控制与 Live2D 表情 |
+| **在场** | Live2D 可用 idle、注视、点击抚摸、拖拽、缩放与桌面置顶 | P2 可授权感知更多桌面情境 |
+| **接话** | 文字、PTT、主动开启的连续麦克风、字幕、口型、Stop 与 barge-in | P2 工具与截图扩展 |
+| **熟悉** | 本地会话记录、correction + persona | P1 用户可控记忆、模式与主动行为 |
 
-"像人"三支柱与指标的对应关系：
+persona/连接状态、回合状态、动画状态使用彼此独立的时钟；界面不能用某一个状态推导另外两个状态。
+
+## P0 / P1 / P2 旅程
 
 ```mermaid
-flowchart TD
-    HUMAN["像人"] --> LAT["低延迟<br/>首包 &lt;1.5s<br/>打断 &lt;300ms"]
-    HUMAN --> SPON["自发行为<br/>空闲主动开口"]
-    HUMAN --> MEM["记忆<br/>跨会话记得"]
-    HUMAN --> EMO["情感<br/>tag 驱动 TTS+表情"]
-    LAT -.-> RUNTIME["runtime.md 状态机/预算"]
-    SPON -.-> P3["P3 空闲 scheduler"]
-    MEM -.-> P3B["P3 sqlite-vec+BGE-M3"]
-    EMO -.-> PROTO["protocol.md output.sentence"]
+flowchart LR
+    START["启动 momo"] --> P0["P0 完整桌面闭环<br/>形象 + 文字 / PTT / VAD + 打断<br/>本地记录 + 服务设置"]
+    P0 --> USE["每天可用的桌面陪伴"]
+    USE --> P1["P1 更熟悉<br/>记忆 CRUD + 三种模式<br/>用户启用的主动建议 + 授权声线"]
+    P1 --> TRUST["可理解、可关闭、可纠正"]
+    TRUST --> P2["P2 可扩展<br/>工具 / 截图授权 + 运维训练界面"]
+    P2 -.-> LATER["以后：streaming adapter"]
 ```
 
-## 语言要求
+## 本地优先与可降级
 
-- **默认中文**：人设、prompt、默认交互语言均为中文。
-- **能力覆盖中/英/日**：ASR（SenseVoice-Small，实测支持 zh/en/ja/ko/yue）、TTS（CosyVoice3 9 语言含中日英 / GPT-SoVITS 中日英韩粤）、LLM（Qwen 多语）都覆盖。
-- **开放问题**：一句话内混说中日英（code-switching）时 TTS 表现待实测，可能按句做语言路由（见 research.md 开放问题）。
+- 对话 audit、correction、persona 和 P1 记忆默认本地保存；用户可查看、改标题、删除与导出。
+- 产品默认中文；中、英、日输入与输出按 provider capability 启用。
+- ASR/TTS 可本地运行，LLM 通过 OpenAI-compatible SSE 连接本地或受控远端端点。
+- 静态网站不连接本地 API，不索取 API key，也不请求麦克风权限。
+- Wayland、透明窗口或 system menu 不支持时使用普通可见窗口；menu 不可靠时禁用 click-through。
+
+## 范围
+
+### P0：完整桌面闭环
+
+Tauri 2 桌面窗口、system menu、拖拽/缩放、置顶、聊天浮层、真实 Live2D、文字 + PTT + 主动开启的 VAD、字幕与实际播放驱动的口型、Stop/barge-in、本地 transcript/correction、模型与服务设置。浏览器仅是预览/开发 host。
+
+### P1：可信赖的 companion
+
+记忆提议与 CRUD、quiet/focus/companion 模式、用户明确启用的主动建议、获授权的声线个性化。主动行为在专注、通话、收听和安静时段内保持沉默。
+
+### P2：受控扩展
+
+逐次授权的工具与截图、infra 控制台和训练 UI。streaming adapter 只作为未来入口适配器，复用同一个 turn core，不把直播业务写进运行时。
 
 ## 非目标
 
-| 非目标 | 理由 |
-|---|---|
-| **直播（P5 暂缓）** | 直播前必须先实装输入/输出双向过滤、弹幕队列、素材 license（Live2D 免费模型 + 克隆音色的直播授权）确认。另起调研，不在当前里程碑承诺 |
-| **移动端** | 唯一用户场景是桌面；Live2D 前端走浏览器 + Tauri 2 桌面壳已覆盖 macOS/Windows/Linux；移动端会引入音频会话/权限/后台保活等复杂度，对唯一用户零收益 |
-| 多用户 / 账号体系 | 单用户本地应用，无此需求 |
-| 自研推理引擎 / 自建 VLM | 推理全部调用现有库；视觉（P4）直接调用 `deepseek-v4-flash-vision-exp` |
-| 歌声合成 | 独立子系统（so-vits/RVC 方向），远期另行调研 |
+- 账号体系、多租户和移动端。
+- 自研 Live2D Runtime、推理引擎或模型基础设施。
+- 默认常开麦、默认主动打扰，或未经授权的声音克隆。
+- 在 P0/P1/P2 中承诺直播、平台接入或公开角色授权。
 
-## 检查表
+## 相关文档
 
-- [ ] 首包延迟有可分解的预算表（见 runtime.md）
-- [ ] 每个"像人"支柱都对应到可验收的量化指标
-- [ ] 非目标每条都有理由，且与 roadmap.md 阶段划分一致
-- [ ] 语言要求与模型选型（ASR/TTS/LLM 语种覆盖）一致
+- [路线图](./roadmap.md)
+- [总体架构](../01-architecture/system.md)
+- [桌面宿主](../01-architecture/desktop.md)
+- [操作路径图谱](../01-architecture/workflows.md)

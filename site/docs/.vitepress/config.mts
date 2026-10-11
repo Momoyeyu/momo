@@ -1,65 +1,99 @@
 import { defineConfig } from 'vitepress'
+import { installMermaidFence } from './markdown-fence.mjs'
+import { remapCanonicalLink } from './markdown-links.mjs'
 
 export default defineConfig({
   title: 'momo',
-  description: '本地可跑的 AI 伙伴 · 设计文档与开发指南',
+  description: 'momo 是本地优先的 AI 桌宠：有形象，能听你说话，也能安静陪着你。',
   base: '/momo/',
   lang: 'zh-CN',
   cleanUrls: true,
+  appearance: true,
+  head: [
+    ['link', { rel: 'icon', href: '/momo/favicon.svg', type: 'image/svg+xml' }],
+    ['script', {}, "try{const k='vitepress-theme-appearance';if(!localStorage.getItem(k))localStorage.setItem(k,'light')}catch(e){}"],
+  ],
   themeConfig: {
     nav: [
       { text: '介绍', link: '/' },
-      { text: '架构', link: '/guide/architecture' },
-      { text: '协议', link: '/guide/protocol' },
-      { text: '流水线', link: '/guide/voice-clone' },
-      { text: '路线图', link: '/guide/roadmap' },
-      { text: 'GitHub', link: 'https://github.com/Momoyeyu/momo' }
+      { text: '桌面', link: '/guide/desktop' },
+      { text: '设计图谱', link: '/guide/architecture' },
+      { text: '优先级', link: '/guide/roadmap' },
+      { text: '素材与许可', link: '/guide/credits' },
+      { text: 'GitHub', link: 'https://github.com/Momoyeyu/momo' },
     ],
     sidebar: [
       {
-        text: '总览',
+        text: 'momo',
         items: [
           { text: '项目介绍', link: '/guide/' },
           { text: '总体架构', link: '/guide/architecture' },
-          { text: '部署拓扑', link: '/guide/deployment' }
-        ]
-      },
-      {
-        text: '运行时',
-        items: [
+          { text: '桌面宿主', link: '/guide/desktop' },
+          { text: '操作路径图谱', link: '/guide/workflows' },
           { text: 'momo-ws 协议', link: '/guide/protocol' },
-          { text: '回合状态机', link: '/guide/runtime' },
-          { text: '打断 (barge-in)', link: '/guide/barge-in' }
-        ]
+        ],
       },
       {
-        text: '训练流水线',
+        text: '优先级',
         items: [
-          { text: '声线克隆', link: '/guide/voice-clone' },
-          { text: '人格微调', link: '/guide/persona' },
-          { text: '训练 job 与控制台', link: '/guide/infra-console' }
-        ]
+          { text: 'P0 · 桌宠 MVP', link: '/guide/p0-pipeline' },
+          { text: 'P1 · 熟悉陪伴', link: '/guide/p1-stage' },
+          { text: 'P2 · 能力扩展', link: '/guide/p2-dialogue' },
+          { text: '路线图', link: '/guide/roadmap' },
+        ],
       },
       {
-        text: '工程',
+        text: '体验与运行',
         items: [
-          { text: '配置 (MOMO_*)', link: '/guide/config' },
-          { text: '路线图与里程碑', link: '/guide/roadmap' },
-          { text: '仓库与协作', link: '/guide/repos' }
-        ]
-      }
+          { text: '运行时与打断', link: '/guide/runtime' },
+          { text: '部署与降级', link: '/guide/deployment' },
+          { text: '配置', link: '/guide/config' },
+          { text: '人格与上下文', link: '/guide/persona' },
+          { text: '声线个性化', link: '/guide/voice-clone' },
+          { text: '素材与许可', link: '/guide/credits' },
+        ],
+      },
+      {
+        text: '模块与运维',
+        collapsed: true,
+        items: [
+          { text: 'Monorepo 边界', link: '/guide/repos' },
+          { text: 'app 模块', link: '/guide/momo-app' },
+          { text: 'models 模块', link: '/guide/momo-models' },
+          { text: 'infra 控制面', link: '/guide/infra-console' },
+          { text: '模型获取', link: '/guide/model-fetch' },
+          { text: '降级手册', link: '/guide/degradation' },
+          { text: '借用机器规则', link: '/guide/borrowed-etiquette' },
+        ],
+      },
+      {
+        text: '研究与历史',
+        collapsed: true,
+        items: [
+          { text: '文档索引', link: '/guide/docs-index' },
+          { text: '技术研究', link: '/guide/research' },
+          { text: '架构决策', link: '/guide/decisions' },
+          { text: '旧 P3 兼容页', link: '/guide/p3-soul' },
+          { text: '旧 P4 兼容页', link: '/guide/p4-capabilities' },
+          { text: '旧 P5 兼容页', link: '/guide/p5-streaming' },
+          { text: 'GitHub Project 策略', link: '/guide/github-project' },
+        ],
+      },
     ],
     outline: { level: [2, 3], label: '本页内容' },
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/Momoyeyu/momo' }
-    ],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/Momoyeyu/momo' }],
     footer: {
-      message: 'Docs authored ahead of code — 文档先行',
-      copyright: 'momo · MIT License · by Momoyeyu'
+      message: '让桌面多一个，懂得回应的存在。',
+      copyright: 'momo · 设计文档',
     },
-    search: { provider: 'local' }
+    search: { provider: 'local' },
   },
   markdown: {
-    math: false
-  }
+    math: false,
+    config(md) {
+      installMermaidFence(md)
+      const originalNormalizeLink = md.normalizeLink.bind(md)
+      md.normalizeLink = (url) => originalNormalizeLink(remapCanonicalLink(url))
+    },
+  },
 })

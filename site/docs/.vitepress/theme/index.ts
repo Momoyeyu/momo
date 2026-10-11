@@ -1,14 +1,15 @@
+import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
-import DiagramFrame from './DiagramFrame.vue'
-import Floaties from './Floaties.vue'
-import SvgDiagram from './SvgDiagram.vue'
-import './custom.css'
+import Live2DStage from './Live2DStage.vue'
+import MermaidDiagram from './MermaidDiagram.vue'
+import MomoHome from './MomoHome.vue'
+import './editorial.css'
 
 export default {
   extends: DefaultTheme,
   enhanceApp({ app }) {
-    app.component('DiagramFrame', DiagramFrame)
-    app.component('Floaties', Floaties)
-    app.component('SvgDiagram', SvgDiagram)
-  }
-}
+    app.component('Live2DStage', Live2DStage)
+    app.component('MermaidDiagram', MermaidDiagram)
+    app.component('MomoHome', MomoHome)
+  },
+} satisfies Theme

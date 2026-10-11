@@ -1,0 +1,22 @@
+# Live2D 素材与许可
+
+> 网站提供固定的 Haru 互动 demo；它不是 momo 的专属角色，也不代表桌面应用已经发布。
+
+## 网站 demo
+
+- Sample data：Live2D Cubism Web Samples 的 Haru，固定到 commit `de9eb4bec4326b81fe67a54e84322fdc39bc7446`（official tag4-r.7）。
+- 本地副本位于 `site/docs/public/live2d/haru/`；`Haru.model3.json` 仅移除了 `Sound` 字段，网站不分发或自动播放 sample sound。
+- Cubism Core 不被 vendored 或改许可证；网站从 Live2D 官方版本化地址加载 Core。
+- `pixi-live2d-display` 是 renderer adapter；它的 MIT 许可证不覆盖 Cubism Core 或 Haru sample data。
+
+## 许可链接
+
+- [Live2D Free Material License Agreement](https://www.live2d.com/eula/live2d-free-material-license-agreement_en.html)
+- [Sample Model Terms](https://www.live2d.com/en/learn/sample/model-terms/)
+- [Live2D Proprietary Software License Agreement](https://www.live2d.com/eula/live2d-proprietary-software-license-agreement_en.html)
+
+> This content uses sample data owned and copyrighted by Live2D Inc. The sample data are utilized in accordance with terms and conditions set by Live2D Inc. This content itself is created at the author’s sole discretion.
+
+## 桌面应用边界
+
+网站固定 Haru demo 与未来桌面版的任意-avatar-import 是不同用途。桌面应用在开放用户导入、打包或公开发布前，必须针对实际 SDK、模型来源与发布方式重新确认 publication license。

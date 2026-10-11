@@ -5,7 +5,7 @@
 
 ```mermaid
 flowchart TD
-    ADR001["ADR-001 四仓拆分"] --> ADR002["ADR-002 语言分工<br/>Rust/Python/TS"]
+    ADR001["ADR-001 monorepo<br/>目录边界"] --> ADR002["ADR-002 语言分工<br/>Rust/Python/TS"]
     ADR001 --> ADR003["ADR-003 三段式进程<br/>+ momo-ws 协议"]
     ADR002 --> ADR004["ADR-004 编排器在 app<br/>推理在 models"]
     ADR003 --> ADR008["ADR-008 降级=改 env<br/>不改代码"]
@@ -17,16 +17,16 @@ flowchart TD
     ADR010["ADR-010 TTS 选型梯队"] --> ADR003
     ADR011["ADR-011 Web→Tauri 壳"] --> ADR012["ADR-012 Live2D+口型"]
     ADR013["ADR-013 回合语义/<br/>barge-in 三动作"] --> ADR003
-    ADR019["ADR-019 过滤层预留"] --> P5["P5 直播前置条件"]
+    ADR019["ADR-019 扩展过滤边界"] --> FUTURE["未来 streaming 前置条件"]
 ```
 
 ## 仓库与工程
 
-### ADR-001 拆四个独立仓库（docs / app / models / infra）
+### ADR-001 单一 monorepo，按目录划分模块
 
-- **决策**：`momo-docs`、`momo-app`、`momo-models`、`momo-infra` 四个独立 public 仓库挂在 `Momoyeyu` 账户；上一级 `momo/` 仅本地统合目录。
-- **理由**：边界清晰、各仓 CI/发布节奏独立、文档与代码可分开演进。
-- **被否**：monorepo（Rust/Python/TS 跨语言构建耦合，且文档仓无法单独公开节奏）；双仓（infra 与 app 生命周期和发布物不同——infra 是 CLI 工具集，app 是应用主体）。
+- **决策**：`momo` 是单一仓库；`app/`、`models/`、`infra/`、`site/`、`docs/` 按目录划分所有权，边界见 `01-architecture/boundaries.md`。
+- **理由**：协议、桌面、模型与文档变更需要原子同步；目录级 CI 仍可保持工具链隔离。
+- **被否**：继续维护四个独立仓库（跨仓协议迁移和文档同步无法原子完成）。
 
 ### ADR-002 语言分工：Rust=运行时与工具，Python=模型，TS=薄前端
 
@@ -42,7 +42,7 @@ flowchart TD
 
 ### ADR-020 文档先于代码 + 单一 GitHub Project
 
-- **决策**：4 仓 + 1 个 GitHub Project（Projects V2）排需求；协议/状态机/配置先写文档再实现。
+- **决策**：单一 monorepo + 1 个 GitHub Project（Projects V2）排需求；协议/状态机/配置先写文档再实现。
 - **理由**：单人项目最大的风险是决策漂移，文档是唯一的对齐物。
 - **被否**：先代码后补文档（单人也会忘）；每仓各自 issue 分散排期（全局优先级不可见）。
 
@@ -62,7 +62,7 @@ flowchart TD
 
 ### ADR-003 三段式进程分离 + 进程间 WebSocket
 
-- **决策**：交互端（渲染+音频 IO）/ 编排器（回合、打断、路由、状态机）/ 模型服务（LLM/ASR/TTS）三者进程分离；进程间走 `momo-ws v1`（JSON 文本控制帧 + 音频二进制帧，单连接复用）。规范见 [../01-architecture/protocol.md](../01-architecture/protocol.md)。
+- **决策**：交互端（渲染+音频 IO）/ 编排器（回合、打断、路由、状态机）/ 模型服务（ASR/TTS）进程分离；目标进程协议为 `momo-ws v2`。当前实现仍是 v1 handshake/scaffold，app/models 必须协调迁移。规范见 [../01-architecture/protocol.md](../01-architecture/protocol.md)。
 - **理由**：三段可部署到不同机器（正常档/降级档拓扑不同）；WS 同时承载双向控制与流式音频，打断语义天然契合。
 - **被否**：gRPC/REST（服务端流式 + 双向打断语义不顺手，且浏览器端音频二进制支持繁琐）；进程内单体式（无法跨机部署，mac-studio 收回时无降级路径）。
 
@@ -86,15 +86,15 @@ flowchart TD
 
 ### ADR-013 回合状态机与 barge-in 三动作语义
 
-- **决策**：回合状态机 Idle→Listening→Thinking→Speaking→Idle，Speaking/Thinking 可被 Interrupted；idle 超时触发自发行为。barge-in 固定三动作：**停播、取消上游生成、已播出文本记账入历史**。细则见 [../01-architecture/runtime.md](../01-architecture/runtime.md)。
-- **理由**：「能插话」是拟人对话的体验核心；已播出文本记账保证 LLM 历史与实际说出的话一致。
+- **决策**：`TurnCoordinator` 独占回合状态；`Speaking` 从 `playback.started` 开始。barge-in 先同步停本地播放/嘴型并原子失效旧回合，同时并行取消 LLM/TTS/句切/音频，绝不等待 ACK；随后按 playback ledger 结算确认听见的完整句与部分审计。capture 生命周期独立保留。细则见 [../01-architecture/runtime.md](../01-architecture/runtime.md)。
+- **理由**：「能插话」是桌面陪伴的体验核心；ACK 账本让模型上下文不虚构用户听见的内容。
 - **被否**：打断即整回合丢弃（用户听到的和模型记得的不一致）；排队制不打断（破坏"像人"第一指标）。
 
-### ADR-019 输入输出双向过滤接口预留，P5 前必须实装
+### ADR-019 为外部 ingress/egress 预留过滤边界
 
-- **决策**：过滤层以接口形式在编排器管线中预留（输入侧+输出侧钩子），本地单人阶段可空实现；**P5 直播前必须实装**。
-- **理由**：Neuro 2023 被封的教训——过滤是直播前置条件，不是可选项；预留接口避免 P5 时改管线结构。
-- **被否**：直播时再补（届时管线已固化，改造成本高）。
+- **决策**：P0 本地单用户 turn core 不绑定平台过滤业务；未来 streaming adapter 若接外部输入，必须在 adapter 边界实装输入/输出过滤与一键熔断。
+- **理由**：外部内容的风险模型与本地 companion 不同，过滤必须在公开接入前完成，同时不能污染 turn core。
+- **被否**：把平台过滤写进 P0 runtime；公开接入后再补。
 
 ### ADR-021 无 LLM 网关，编排器直连大脑 OpenAI 端点
 
@@ -102,9 +102,9 @@ flowchart TD
 - **理由**：上游本身已是 OpenAI-compatible，网关只做纯转发、无增量价值，反而多一个进程与故障点；换脑本来就是改 env。
 - **被否**：自建 LLM 网关进程（纯转发层）；把 LLM 纳入 momo-ws 自定义消息（同 ADR-006 被否理由）。
 
-### ADR-022 编排器↔模型服务复用 `momo-ws v1`，不另设 `/v1/*` 协议
+### ADR-022 编排器↔模型服务协调迁移 `momo-ws v2`，不另设运行时 REST 协议
 
-- **决策**：编排器与 ASR/TTS/embed 之间一律说 `momo-ws v1`（`01-architecture/protocol.md` 是唯一协议规范），模型服务端 `hello.client=orchestrator`。模型服务可另挂 `POST /v1/tts/synthesize` 类非流式调试口供 `momoctl bench`/手测，但运行时主路径不经过它。
+- **决策**：目标运行时协议为 `momo-ws v2`（`01-architecture/protocol.md` 唯一规范）；当前 v1 scaffold 保持原样直至 app/models 协调迁移。非流式调试口可供 bench/手测，运行时主路径不经过它。
 - **理由**：打断、取消、流式音频、VAD 事件（`input.vad`）语义已在 momo-ws 定义；再立一套 REST 主协议要维护两份语义且打断语义难表达。
 - **被否**：为模型服务另定义 REST `/v1/*` 作为运行时主协议。
 
@@ -128,35 +128,35 @@ flowchart TD
 - **理由**：克隆声线是产品目标；梯队保证每一档都有已验证退路。
 - **被否**：**MeloTTS**（laptop 无 sudo，fugashi 依赖系统 MeCab 装不了——已否决）；edge-tts 长期用（1937ms 首包远超 1.5s 指标，且依赖外网）。
 
-### ADR-011 交互端 Web 薄前端起步，长期 Tauri 2 壳
+### ADR-011 P0 使用 Tauri 2 桌面宿主，浏览器作为预览 host
 
-- **决策**：短期浏览器 Web（Live2D + 音频 IO），长期 Tauri 2 桌面壳；**前后端协议不变**，跨 macOS/Windows/Linux。
-- **理由**：浏览器是零成本开发环境；Tauri 壳解决桌面分发与音频设备权限，协议不变意味着迁移零协议改造。
-- **被否**：原生客户端分别开发（单人维护不起）；Electron（体积与内存对薄前端过度）；移动端（见 product.md 非目标）。
+- **决策**：P0 在规划目录 `app/src-tauri` 交付透明窗口、system menu、拖拽/缩放、置顶和有可靠恢复入口时的可选点击穿透；浏览器仅用于 preview/development。平台能力不支持时使用普通可见窗口，menu 不可用时禁用点击穿透。
+- **理由**：桌面在场感、权限、tray escape 与生命周期是产品闭环，不是后续包装。
+- **被否**：把 Tauri 延后（会把 P0 退化为浏览器 chatbot）；分别开发原生客户端；Electron。
 
-### ADR-012 Live2D = pixi-live2d-display + Cubism 免费 sample；口型起步 RMS
+### ADR-012 Live2D = Pixi 7 adapter + 官方许可 sample；口型来自实际播放
 
-- **决策**：渲染用 pixi-live2d-display + Cubism 官方免费 sample 模型；口型 v1 用音量 RMS→`ParamMouthOpenY`；长期同一前端进 Tauri 壳。
-- **理由**：免费模型先立起来，license 问题留到 P5 前确认（见 product.md 非目标）。
-- **被否**：viseme 级口型（v1 复杂度不值，RMS 已够用）；3D/VRM 方向（与人设方向不符）。
+- **决策**：复用 Live2D/Pixi 上游，通过自有 `AvatarAdapter`/`MotionDirector` 隔离；网站可用 Haru 官方 sample 作 demo，但它不是 momo 专属角色。口型由实际 AudioWorklet 播放 RMS 驱动。
+- **理由**：先复用官方资源验证真实 Live2D，同时保持角色与 renderer 可替换。Runtime Core、sample 与应用代码许可证分别核验。
+- **被否**：自研 Runtime；用假 CSS 角色替代实际 Live2D；让 emotion motion 覆盖 lipsync。
 
-### ADR-014 记忆 = sqlite-vec + BGE-M3（P3）
+### ADR-014 P1 用户可控记忆 = 本地正文 + 可删除索引
 
-- **决策**：P3 引入 sqlite-vec + 多语 BGE-M3 做记忆检索；此前纯 context。
-- **理由**：本地单文件、无额外服务；BGE-M3 覆盖中/英/日。
-- **被否**：外部向量库服务（本地优先+单用户，杀鸡用牛刀）；永不加记忆（"像人"三支柱缺一角）。
+- **决策**：P0 只保存本地 transcript/persona；P1 的 memory 先 proposal、用户确认再保存，并支持编辑、检索、删除，删除须同时清理正文和 vector/index。embedding 可复用 sqlite-vec + BGE-M3 adapter。
+- **理由**：熟悉感必须可解释、可纠正、可撤销。
+- **被否**：静默自动记忆；只删 UI 记录但保留向量索引；外部常驻向量库。
 
-### ADR-015 action 总线仿 neuro-game-sdk（P4）
+### ADR-015 P2 工具与截图逐次授权
 
-- **决策**：游戏/工具通过 WS 向编排器注册 `{name, description, json_schema}` 的 action；LLM 只输出结构化调用；执行下沉到注册方校验。协议见 [../01-architecture/protocol.md](../01-architecture/protocol.md) `action.*`。
-- **理由**：LLM 不直接执行、执行下沉到注册方——安全边界天然成立。
-- **被否**：LLM 直接生成并执行代码（无安全边界）；让编排器内置游戏逻辑（每接一个游戏改核心）。
+- **决策**：工具/action 是协议 v2 extension group；每次请求向用户展示动作、范围和数据去向，只有 allow 后执行，deny/cancel/late-result 都有显式路径。
+- **理由**：LLM 不直接执行；用户授权与结构化 schema 共同形成安全边界。
+- **被否**：LLM 直接执行代码；本地可信即默认永久授权；把工具业务写进 turn core。
 
-### ADR-016 视觉 = `deepseek-v4-flash-vision-exp` API，不自建 VLM（P4）
+### ADR-016 P2 截图 = 用户逐次授权的 provider adapter
 
-- **决策**：截图输入直接调 DeepSeek 视觉接口。
-- **理由**：不自建模型、不占本地显存；白嫖级成本。
-- **被否**：本地 VLM（8GB 显卡已排满 TTS+ASR，且 P4 才需要）。
+- **决策**：截图先展示采集范围与数据去向；allow once 后交给可配置 vision provider，不自建 VLM。
+- **理由**：屏幕内容敏感，授权边界比具体 provider 更稳定。
+- **被否**：后台自动截图；把单一远端 provider 写死为产品能力。
 
 ### ADR-024 主脑定案 Qwen3-30B-A3B-4bit
 

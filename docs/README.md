@@ -1,101 +1,64 @@
-# docs 目录
+# momo 设计文档
 
-momo 的全部设计文档。momo 是一个本地优先的 AI 虚拟伙伴：Live2D 形象、语音对话、回合状态机、可打断，三段式进程架构（交互端 / 编排器 / 模型服务）。项目原则是**文档先于代码**：协议、状态机、配置先在文档里定稿，再动手实现。
+**让桌面多一个，懂得回应的存在。**
 
-## 仓库地图
+momo 是本地优先的 AI 桌宠：有形象，能听你说话，也能安静陪着你。这里是 monorepo 的设计权威；实现与文档不一致时，先修正文档与决策，再协调实现。
 
-momo 由 4 个独立 GitHub 仓库组成（均 public，挂在 `Momoyeyu` 账户），外加 1 个 GitHub Project（Projects V2）排需求。上一级目录 `momo/` 只是本地统合目录，**不是 monorepo**，不建 git、不放跨仓构建。
+## 当前实现边界
 
-| 仓库 | 语言 | 内容 |
-|---|---|---|
-| `docs 目录` | Markdown | 全部设计文档（本仓库） |
-| `momo-app` | Rust + TypeScript | 应用主体：Rust 实现编排器/运行时/服务；TS 薄前端（Live2D 渲染、音频采集与播放）。短期 Web，长期 Tauri 2 桌面壳，前后端协议不变 |
-| `momo-models` | Python | 模型服务与训练：LLM 接入适配、ASR、TTS、声线克隆/微调、人格微调、评测。推理调用现有库，不重写推理引擎 |
-| `momo-infra` | Rust | 运维工具集 `momoctl`：doctor 诊断、模型下载/校验（hf-mirror）、服务编排启停、降级切换、测量工具、Web 运维控制台（`momoctl web`，P2）。**不承载人设/对话业务，不在运行时数据通路上** |
+目标产品是 P0 完整桌面 companion，协议目标为 `momo-ws v2`；当前代码仍只有 v1 handshake/scaffold，`app/src-tauri` 也是规划目录。文档中的流程是精确设计规范，不代表功能已经实现。
+
+## Monorepo 地图
 
 ```mermaid
 flowchart LR
-    subgraph REPOS["momo 仓库群"]
-        DOCS["docs 目录<br/>设计文档"]
-        APP["momo-app<br/>Rust 编排器 + TS 前端"]
-        MODELS["momo-models<br/>Python 模型服务/训练"]
-        INFRA["momo-infra<br/>Rust 运维 CLI"]
-    end
-
-    APP <-->|"momo-ws v1"| MODELS
-    APP -->|"OpenAI-compatible HTTP"| MODELS
-    INFRA -.->|"env / CLI 启停·诊断"| APP & MODELS
-    DOCS -.->|"先于代码"| APP & MODELS & INFRA
+    DOCS["docs/<br/>产品与设计权威"] -.-> APP["app/<br/>Tauri + TS presentation<br/>Rust runtime"]
+    DOCS -.-> MODELS["models/<br/>Python inference adapters<br/>训练/评估"]
+    DOCS -.-> INFRA["infra/<br/>带外运维/训练编排"]
+    DOCS -.-> SITE["site/<br/>静态产品页/指南"]
+    APP <-->|"momo-ws v2 target<br/>current v1 scaffold"| MODELS
+    APP -->|"OpenAI SSE"| LLM["兼容 LLM endpoint"]
+    INFRA -.->|"启停/探测/产物；不经 turn 数据"| APP & MODELS & LLM
+    SITE -.->|"VitePress include"| DOCS
 ```
 
-跨仓协作只有两类接口：
+## 阅读顺序
 
-- **运行时**：`momo-ws v1` 协议（见 [protocol.md](./01-architecture/protocol.md)）+ OpenAI-compatible HTTP（LLM 推理）。
-- **部署期**：`MOMO_` 前缀环境变量（见 [config.md](./01-architecture/config.md)）+ infra CLI。
+1. [产品定义](./00-context/product.md)
+2. [P0/P1/P2 路线图](./00-context/roadmap.md)
+3. [总体架构](./01-architecture/system.md)
+4. [桌面宿主](./01-architecture/desktop.md)
+5. [运行时](./01-architecture/runtime.md)
+6. [协议 v2 目标](./01-architecture/protocol.md)
+7. [操作路径图谱](./01-architecture/workflows.md)
+8. [模块边界](./01-architecture/boundaries.md)
+9. [配置](./01-architecture/config.md)
 
-## 目录结构与阅读顺序
+## 目录
 
-```
-docs/
-├── README.md                  ← 本文档
-├── 00-context/                ← 项目背景与决策
-│   ├── product.md             产品定义：是什么、为谁、体验指标、非目标
-│   ├── research.md            技术调研：模块划分、算力盘点、选型对比
-│   ├── roadmap.md             分阶段开发路线 P0–P5 + 并行训练轨道
-│   └── decisions.md           ADR 汇总：所有已锁定决策
-├── 01-architecture/           ← 系统设计
-│   ├── system.md              总体架构：三段式、组件职责、两档部署拓扑
-│   ├── boundaries.md          app / models / infra 仓库边界
-│   ├── protocol.md            momo-ws v1 协议规范
-│   ├── runtime.md             编排器运行时：状态机、打断、句切、背压、延迟预算
-│   └── config.md              MOMO_ 环境变量规范
-├── 02-repos/                  ← 各仓库内部设计
-│   ├── momo-app.md            应用仓：Rust 编排器 + TS 薄前端
-│   ├── momo-models.md         模型服务与训练仓（Python）
-│   ├── momo-infra.md          运维工具仓（Rust CLI + Web 控制台，momoctl）
-│   └── docs 目录.md           文档仓自身规范
-├── 03-phases/                 ← 阶段详细设计
-│   ├── p0-pipeline.md         P0 管道骨架：文字→LLM→TTS→出声
-│   ├── p1-stage.md            P1 有脸：WebUI + Live2D + 口型
-│   ├── p2-dialogue.md         P2 对话：语音输入 + barge-in + 本地 TTS
-│   ├── p3-soul.md             P3 灵魂：记忆 + 自发行为 + 微调接入
-│   ├── p4-capabilities.md     P4 能力：action 总线 + 视觉 + 工具
-│   └── p5-streaming.md        P5 直播：暂缓，范围与前置条件
-├── 04-tracks/                 ← 并行训练轨道
-│   ├── persona.md             人格轨道：prompt 逼近 → QLoRA 权重
-│   └── voice-clone.md         声线轨道：克隆声线选型与 SFT
-├── 05-ops/                    ← 运维手册
-│   ├── borrowed-etiquette.md  借用机器规则
-│   ├── degradation.md         降级手册（mac-studio 收回预案）
-│   ├── deployment.md          部署手册：两档拓扑、启动顺序、端口
-│   └── model-fetch.md         模型获取手册（hf-mirror）
-└── 06-management/             ← 项目管理
-    └── github-project.md      GitHub 仓 + Projects V2 排期设计
-```
+| 目录 | 内容 |
+|---|---|
+| `00-context/` | 产品、路线、研究、ADR |
+| `01-architecture/` | 系统、桌面、运行时、协议、操作路径、边界、配置 |
+| `02-repos/` | monorepo 各模块实现边界（旧文件名保留兼容） |
+| `03-phases/` | P0 desktop MVP、P1 companion、P2 extensibility；旧 P3/P4/P5 为兼容页 |
+| `04-tracks/` | persona 与授权声线轨道；既有 prompt/评分/训练门槛保持 |
+| `05-ops/` | 部署、降级、模型获取、借用机器纪律 |
+| `06-management/` | GitHub Project 关系；不代表远端状态变更 |
 
-**新加入者按此顺序读：**
+## 设计不变量
 
-1. `00-context/product.md` — 先知道在做什么、不做什么
-2. `00-context/research.md` → `roadmap.md` — 了解选型依据与里程碑
-3. `00-context/decisions.md` — 所有"为什么这么定"的答案集中在这里
-4. `01-architecture/system.md` → `boundaries.md` — 知道自己要写的代码放哪个仓库
-5. `01-architecture/protocol.md` → `runtime.md` → `config.md` — 动手前把接口、语义、配置读透
-6. `02-repos/` 对应仓库篇 → `03-phases/` 当前阶段篇 → `05-ops/` 运维手册，按需阅读
+- 产品支柱：**在场 / 接话 / 熟悉**；不是 chatbot dashboard，也不以 streaming 为当前目标。
+- `TurnCoordinator` 独占 turn；persona/连接、turn、animation 三套时钟独立。
+- Stop 立即停本地播放与嘴型，同时并行取消上游；不等 ACK 才 cancel。
+- `Speaking` 由实际 `playback.started` 触发；旧 stream 不得进入新 turn。
+- infra 在 turn 数据路径外；静态网站不访问本地 API、密钥或麦克风。
+- 未经平台实测的平台能力使用普通可见窗口与系统菜单 fallback。
+- 上游库、Runtime Core、模型与素材各自核验许可；应用许可证不自动覆盖它们。
 
-## 文档变更约定
+## 文档规则
 
-- **文档先于代码**：改协议、状态机、配置项、仓库边界时，先改本文档库再改实现。实现与文档不一致视为 bug。
-- **决策单点定论**：设计决策只在 `00-context/decisions.md` 写完整理由；其他文档引用结论、不重述理由。
-- **基线优先**：内容与 `00-context/decisions.md` 矛盾时以 decisions.md 为准，并先修正决策再改文档。
-- **实测标注**：引用实测数据必须标「实测」与日期；未实测的量标「预估/待实测」，禁止把估算写成事实。
-- **格式**：文件名 `kebab-case.md`；相互引用用相对路径；每篇至少 1 个 mermaid 图（只用 `flowchart`/`sequenceDiagram`/`stateDiagram-v2`，中文标签一律加引号，节点 id 用英文）；每篇结尾附「检查表」或「验收」一节。
-- **提交**：conventional commit，提交信息只写改动本身。
-
-## 检查表
-
-- [ ] 新文档命名 `kebab-case.md`，放对应编号目录
-- [ ] 每篇 ≥1 个 mermaid 图且符合图型/引号/id 规范
-- [ ] 每篇结尾有可勾选检查表
-- [ ] 实测/预估标注齐全
-- [ ] 新增决策已写入 `00-context/decisions.md`（含被否选项）
-- [ ] 跨文档引用使用相对路径
+- 使用小而聚焦的 Mermaid 图；用户操作写清 entry、decision、effect、terminal/retry/cancel。
+- 不发明性能数据；历史实测标日期，未验证能力写“规划/待实测”。
+- public guide 只 include canonical 文档，不复制图或协议。
+- 协议/状态机先改 `01-architecture/`，再同步模块与 phase 引用。

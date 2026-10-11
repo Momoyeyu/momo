@@ -39,15 +39,15 @@ flowchart LR
 | `MOMO_LLM_TIMEOUT_MS` | LLM 请求总超时 | `30000` | ms | 否 |
 | `MOMO_ASR_ENDPOINT` | ASR 服务 WS 地址 | `ws://127.0.0.1:7810/ws` | ws:// | 否 |
 | `MOMO_TTS_ENDPOINT` | TTS 服务 WS 地址 | `ws://127.0.0.1:7811/ws` | ws:// | 否 |
-| `MOMO_EMBED_ENDPOINT`（P3） | embed 服务 WS 连接地址（编排器→momo-svc-embed） | `ws://127.0.0.1:7812/ws` | ws:// | 否 |
+| `MOMO_EMBED_ENDPOINT`（P1） | embed 服务 WS 连接地址（编排器→momo-svc-embed） | `ws://127.0.0.1:7812/ws` | ws:// | 否 |
 | `MOMO_BARGEIN_ENABLED` | 允许打断 | `true` | bool | 否 |
 | `MOMO_BARGEIN_MIN_MS` | 打断防抖：`input.vad{speech_start}` 须持续该时长才触发 barge-in | `250` | ms | 否 |
 | `MOMO_IDLE_TIMEOUT_S` | 空闲多少秒触发自发行为 | `20` | s，0=关闭 | 否 |
 | `MOMO_SENT_SOFT_CHARS` | 句切弱切阈值 | `25` | 字符数 | 否 |
 | `MOMO_SENT_MAX_CHARS` | 句切硬上限 | `60` | 字符数 | 否 |
 | `MOMO_HISTORY_TURNS` | 注入 LLM 的历史回合数 | `20` | int | 否 |
-| `MOMO_FILTER_ENABLED` | 输入/输出过滤开关（接口预留，P5 前实装） | `false` | bool | 否 |
-| `MOMO_DEEPSEEK_API_KEY` | DeepSeek key：LLM 兜底与 P4 视觉共用 | 空 | str | **是** |
+| `MOMO_FILTER_ENABLED` | 未来外部 ingress/egress 过滤开关（streaming adapter 前置） | `false` | bool | 否 |
+| `MOMO_DEEPSEEK_API_KEY` | DeepSeek key：LLM 兜底与 P2 视觉 provider 共用 | 空 | str | **是** |
 | `MOMO_DATA_COLLECTION` | 会话采集开关（语料落盘供训练/微调） | `on` | `on`/`off` | 否 |
 | `MOMO_DATA_KEEP_AUDIO` | 原始麦音频短期保留（仅显式开启且授权时，供 ASR 排错） | `off` | `on`/`off` | **是** |
 | `MOMO_EMOTION_MAP` | emotion tag → Live2D 表情映射文件路径 | `config/emotion.map.yaml` | path | 否 |
@@ -66,11 +66,11 @@ flowchart LR
 | `MOMO_TTS_VOICE_REF` | 克隆用参考音频路径 | 空 | path | 否 |
 | `MOMO_TTS_MODEL_DIR` | SFT 克隆产物目录（灰度切换/回滚指向） | 空 | path | 否 |
 | `MOMO_TTS_LANG` | 合成默认语言 | `auto` | `zh`/`en`/`ja`/`auto` | 否 |
-| `MOMO_MEMORY_ENABLED`（P3） | 记忆检索开关 | `false` | bool | 否 |
-| `MOMO_MEMORY_DB`（P3） | sqlite-vec 库路径 | `data/momo.vec.db` | path | 否 |
-| `MOMO_VISION_ENDPOINT`（P4） | 视觉 API | `https://api.deepseek.com/v1` | URL | 否 |
-| `MOMO_VISION_MODEL`（P4） | 视觉模型 | `deepseek-v4-flash-vision-exp` | str | 否 |
-| `MOMO_EMBED_LISTEN`（P3） | embed 服务 WS 监听（记忆检索） | `127.0.0.1:7812` | host:port | 否 |
+| `MOMO_MEMORY_ENABLED`（P1） | 记忆检索开关 | `false` | bool | 否 |
+| `MOMO_MEMORY_DB`（P1） | sqlite-vec 库路径 | `data/momo.vec.db` | path | 否 |
+| `MOMO_VISION_ENDPOINT`（P2） | 视觉 API | `https://api.deepseek.com/v1` | URL | 否 |
+| `MOMO_VISION_MODEL`（P2） | 视觉模型 | `deepseek-v4-flash-vision-exp` | str | 否 |
+| `MOMO_EMBED_LISTEN`（P1） | embed 服务 WS 监听（记忆检索） | `127.0.0.1:7812` | host:port | 否 |
 
 ### 2.4 大脑服务启停（infra 读，mac-studio 侧由 infra 远程/本地拉起）
 
@@ -161,15 +161,33 @@ HF_ENDPOINT=https://hf-mirror.com   # laptop 必须
 # MOMO_TTS_PROVIDER=kokoro
 ```
 
+模板中的 `P3`/`P4` 注释是为保持既有 `.env.example` 文本不变而保留的旧 phase 标签；当前范围映射为 P1 memory / P2 vision，不改变任何键或默认值。
+
 ## 4. 敏感项与安全
 
 - **敏感清单**：`MOMO_LLM_API_KEY`、`MOMO_DEEPSEEK_API_KEY`、`MOMO_WEB_TOKEN`、`MOMO_DATA_KEEP_AUDIO`（后续新增一律按"值即密钥/隐私开关"判断）。
 - **敏感数据（非 key）**：`MOMO_DATA_KEEP_AUDIO=on` 时落盘的原始麦音频属隐私数据——key 本身只是开关，但其产物按敏感数据同等纪律处理（短期保留、仅 ASR 排错用途、到期清理、不外传）。
 - `.env` 已在各仓 `.gitignore`；`.env.example` 中敏感项**只留空值占位**，禁止提交真实 key。
 - 日志/诊断输出对敏感值打码（显示前 4 位 + `…`）；`momoctl doctor` 只做"是否设置"检查，不回显。
-- 组件间不转发敏感变量：models/infra 不需要 DS key，由 app 单独持有（P4 视觉若下沉到 models，届时在 decisions.md 补记）。
+- 组件间不转发敏感变量：models/infra 不需要 DS key，由 app 单独持有（P2 视觉若下沉到 models，届时在 decisions.md 补记）。
 
 ## 5. 与配置发布平台的兼容
+
+P2 控制台只编辑配置草稿；UI 偏好（窗口位置、scale、置顶、穿透、输入模式、设备、companion mode）保存在本地 settings，不新增或覆盖本页 env 默认值。
+
+```mermaid
+flowchart TD
+    EDIT["编辑配置草稿"] --> VALIDATE{"schema + 依赖校验通过？"}
+    VALIDATE -->|"否"| FIX["显示字段错误；active 不变"]
+    VALIDATE -->|"是"| TEST["对候选 endpoint/model 做 test"]
+    TEST --> PASS{"readiness 通过？"}
+    PASS -->|"否"| ROLLBACK["丢弃/修正草稿；active 与旧 provider 保留"]
+    PASS -->|"是"| APPLY["原子写入并激活；保留备份"]
+    APPLY --> HEALTH{"激活后健康？"}
+    HEALTH -->|"否"| RESTORE["自动恢复备份"]
+    HEALTH -->|"是"| DONE["完成"]
+    SECRET["密钥 set/unset"] -.-> STORE["独立 secret store；UI/日志不回显"]
+```
 
 - 配置面是**扁平 key=value 环境变量**，无嵌套配置文件——任何支持 env 注入的平台（systemd/Docker/k8s/自研发布平台）都可直接消费。
 - 平台对接约定：以 `.env.example` 的 key 集合为 schema；敏感项由平台密钥管理注入，不写文件。

@@ -1,6 +1,6 @@
 # 借用机器规则（borrowed-etiquette）
 
-> momo 的算力有一半是借的：bigstrong（双 4080S）、mac-studio（实验室）、学校云 4090D。
+> monorepo 的 normal/degraded 设计允许使用借用算力，但任何远端机器都不是桌面 companion 的单点依赖：bigstrong（双 4080S）、mac-studio（实验室）、学校云 4090D。
 > 总原则一句话：**借来的机器按「随时会失去」对待——不动主人的东西，不留唯一的的东西，用完恢复原样。**
 > 由此产生的工程要求（降级方案、产物回传）见 [./degradation.md](./degradation.md) 与 [../04-tracks/voice-clone.md](../04-tracks/voice-clone.md)。
 

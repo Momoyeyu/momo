@@ -20,3 +20,10 @@
 
 - 模块边界见 `docs/01-architecture/boundaries.md`：`app/`（交互+编排）、`models/`（模型服务+训练）、`infra/`（运维）、`site/`（页面）、`docs/`（设计）。
 - 各子目录 `AGENTS.md` 有模块级约定，冲突时以更具体的为准。
+
+## Site verification
+
+- `cd site && pnpm test`
+- `cd site && pnpm build`
+- 文档正文以 `docs/` 为准，`site/docs/guide/` 通过 include 消费 canonical docs。
+- browser smoke 覆盖 Live2D + Mermaid 的 light/dark/mobile。

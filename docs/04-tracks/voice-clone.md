@@ -1,4 +1,28 @@
-# 并行轨道：声线（voice-clone）
+# 声线个性化
+
+> P0 使用现成语音服务，P1 形成有授权、可替换的个人声线。
+
+当前路径只接受有权使用的材料；先试 zero-shot，未通过 frozen gate 时再选择是否 SFT。任何新版本都先 probe、再原子 promote，并保留 rollback 目标。
+
+```mermaid
+flowchart TD
+    MATERIAL["确认有权使用的材料<br/>记录来源与授权"] --> ZERO["zero-shot 候选"]
+    ZERO --> GATE1["复用 frozen evaluation gate"]
+    GATE1 --> PASS1{"通过？"}
+    PASS1 -->|"是"| PROMOTE["probe 后原子 promote"]
+    PASS1 -->|"否"| CHOICE{"选择可选 SFT？"}
+    CHOICE -->|"否"| KEEP["保留现有声线"]
+    CHOICE -->|"是"| SFT["按历史规格训练"] --> GATE2["复用同一 frozen gate"]
+    GATE2 --> PASS2{"通过？"}
+    PASS2 -->|"是"| PROMOTE
+    PASS2 -->|"否"| KEEP
+    PROMOTE --> OBSERVE{"运行健康？"}
+    OBSERVE -->|"否"| ROLLBACK["回滚上一 active 版本"]
+    OBSERVE -->|"是"| ACTIVE["保持 active"]
+```
+
+<details>
+<summary>历史实验规格与复现记录</summary>
 
 > 目标：momo 拥有一条稳定、低延迟、有辨识度的克隆声线。
 > 优先级：高。素材收集与零样本试听不依赖任何代码里程碑，**本周即可开始**。
@@ -164,3 +188,5 @@ SFT 阶段（零样本不达标时）：
 - [ ] 新声线盲听复测达标
 - [ ] env 指向新产物目录，N-1 版本保留可回滚
 - [ ] 实测 VRAM/首包延迟回写本文档（标「实测」+ 日期）
+
+</details>

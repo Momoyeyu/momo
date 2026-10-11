@@ -1,140 +1,207 @@
 # 编排器运行时
 
-> momo-app 的 Rust 编排器（tokio + axum）内部设计：回合状态机、barge-in、取消传播、句切、队列与延迟预算。
-> 协议消息格式见 [protocol.md](./protocol.md)；状态枚举与之一致。
+> **设计目标：** 当前代码仍是 v1 scaffold；`TurnCoordinator`、playback ledger 与完整取消链尚待实现。
 
-## 1. 回合状态机
+## 三个独立时钟
+
+- persona / connection：角色配置、连接与 provider readiness；
+- turn：`TurnCoordinator` 唯一拥有的对话状态；
+- presentation：TS `PresentationDirector` 的动作与嘴型仲裁。
+
+收到文本不等于正在说话，表情动作也不能改变 turn。
+
+## turn 状态机
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Idle
-    Idle --> Listening : input.text 到达 / VAD 语音开始
-    Listening --> Thinking : segment final / 文本提交
-    Listening --> Idle : 空段 / VAD 误触发
-    Thinking --> Speaking : 首个 output.sentence 下发
-    Thinking --> Interrupted : barge-in
-    Thinking --> Idle : LLM 空回复 / 失败
-    Speaking --> Interrupted : barge-in
-    Speaking --> Idle : final 句播完
-    Interrupted --> Listening : 新输入继续
-    Interrupted --> Idle : 无后续输入
-    Idle --> Thinking : idle 超时触发自发行为
+    [*] --> idle
+    idle --> listening: "input.audio.start / VAD speech_start"
+    idle --> thinking: "input.text accepted / voice final"
+    listening --> thinking: "input.audio.segment final"
+    listening --> idle: "cancel / empty / false positive"
+    thinking --> speaking: "playback.started"
+    thinking --> thinking: "new text invalidates old turn then accepts new"
+    thinking --> interrupted: "Stop / PTT / VAD speech_start"
+    thinking --> idle: "LLM failed + turn.finished(failed)"
+    thinking --> idle: "text-only output.complete"
+    speaking --> interrupted: "Stop / PTT / VAD speech_start"
+    speaking --> interrupted: "new input.text"
+    speaking --> thinking: "device / mute / TTS failure; failed streams removed"
+    speaking --> idle: "output.complete + all required completed ACK"
+    speaking --> idle: "LLM failed + invalidate audio + turn.finished(failed)"
+    interrupted --> listening: "new capture remains active"
+    interrupted --> thinking: "new text accepted"
+    interrupted --> idle: "no new input after settlement"
 ```
 
-各状态进入时动作：
+`Speaking` 只由实际 AudioWorklet 的 `playback.started` 进入。静音/纯文字 turn 不进入 speaking。正常完成只有在 `output.complete` 与 required completed ACK 齐备后回 idle；图中的 LLM failure 是显式异常终态，必须先 invalidate audio、清除 pending set 并发送 `turn.finished(failed)`。
 
-| 状态 | 进入动作 |
-|---|---|
-| `Idle` | 重置 idle 计时器；广播 `state.turn{idle}` |
-| `Listening` | 绑定新 `turn_id`；ASR 接收音频；广播 `state.turn{listening}` |
-| `Thinking` | 建取消令牌；组装历史+人设 prompt → 发起 LLM 流；广播 |
-| `Speaking` | 句切器消费 token 流 → `output.sentence` 双发（UI+TTS）；广播 |
-| `Interrupted` | 执行 barge-in 三动作（§2）；广播 |
+## capture 状态机
 
-**idle 自发行为**：`Idle` 持续 `MOMO_IDLE_TIMEOUT_S`（默认 20s，0=关闭）无输入 → 注入内部情境（最近话题/挂机时长）直接进 `Thinking`，不经过 `Listening`。自发回合同样可被 barge-in。连续自发开口需冷却（v1：每轮后重置计时，最多连续 1 次主动回合，防自言自语刷屏——P3 细调）。
+```mermaid
+stateDiagram-v2
+    state "failed" as captureFailure
+    [*] --> closed
+    closed --> opening: "PTT press / VAD opt-in"
+    opening --> capturing: "permission + device ready"
+    opening --> denied: "permission denied / device missing"
+    capturing --> finalizing: "PTT release / speech_end"
+    capturing --> canceled: "Stop listening / focus loss / device loss"
+    finalizing --> closed: "final segment emitted"
+    finalizing --> captureFailure: "ASR failed"
+    denied --> closed: "release mic, use text / retry"
+    canceled --> closed: "release mic, show re-enable"
+    captureFailure --> closed: "release mic, re-record / use text"
+```
 
-## 2. barge-in 三动作
+capture 不属于 reply turn；打断旧回复时不得取消正在形成的新 capture。
 
-触发源：ASR 上报 `input.vad{event:"speech_start"}`（`reason:vad_speech`，防抖持续 `MOMO_BARGEIN_MIN_MS`=250ms）/ 用户手动（`user`）/ 系统（`system`）。`Thinking` 与 `Speaking` 均可被断。固定三动作，顺序执行：
-
-1. **停播**：orch→UI 广播 `control.barge_in{applied:true}`；UI 清空播放缓冲并回报 `played_seq`；同时 orch 丢弃下行音频队列未发送部分。
-2. **取消上游生成**：回合取消令牌触发（§3）——丢弃 LLM HTTP 流、清空 sentence_q、向 TTS 发 `control.cancel{target:turn}`、向 ASR 发 `control.cancel{target:segment}`（若有在途段）。
-3. **已播出文本记账入历史**：`played_seq` 之前的完整句以 assistant 消息入历史，标记 `interrupted:true`；正在播的那一句（`played_seq+1`）按已送出音频估算的文本前缀截断入账；未下发句丢弃。保证模型"记得的"和用户"听到的"一致。
-
-语义约束：三动作幂等（重复 barge_in 同 turn 只执行一次）；`played_seq` 回报超时（500ms）按"已送出即已播"保守估计入账；历史记账完成前不回 `Listening`。
-
-## 3. 取消令牌传播
+## 增量句切
 
 ```mermaid
 flowchart TD
-    ROOT["turn_token<br/>(CancellationToken, 每回合)"] --> LLM["llm_stream 任务"]
-    ROOT --> SPLIT["sentence_splitter"]
-    ROOT --> TTSQ["tts_scheduler"]
-    ROOT --> MUX["audio_mux 下行"]
-    BARGE["barge_in / control.cancel"] -->|"cancel()"| ROOT
-    TTSQ -->|"control.cancel → TTS svc"| EXT1["momo-models"]
-    LLM -->|"abort HTTP 请求"| EXT2["大脑服务"]
+    TOKEN["LLM delta"] --> BUFFER["追加到 incremental buffer"]
+    BUFFER --> TAG{"开头是 8 个已知 emotion tag？"}
+    TAG -->|"是"| STRIP["移除 tag；更新当前 emotion"]
+    TAG -->|"否 / 未知 []"| KEEP["原样保留文本<br/>不吞 markdown 内容"]
+    STRIP --> BOUNDARY{"检查切分边界"}
+    KEEP --> BOUNDARY
+    BOUNDARY -->|"CJK 强标点 / 换行"| EMIT["按 Unicode 边界发 output.sentence"]
+    BOUNDARY -->|"ASCII . ! ?"| LOOK{"小数 / URL / 缩写？<br/>或后接空白 / stream end？"}
+    LOOK -->|"小数 / URL / 缩写"| WAIT["等待 lookahead"]
+    LOOK -->|"空白 / stream end"| EMIT
+    BOUNDARY -->|"逗号且 buffer ≥ 25"| EMIT
+    BOUNDARY -->|"buffer ≥ 60"| HARD["最近安全 Unicode 边界强切"] --> EMIT
+    BOUNDARY -->|"尚未成句"| WAIT
+    EMIT --> NEXT["清已发部分；继续累计"]
+    END["LLM stream end"] --> LEFT{"有 leftover？"}
+    LEFT -->|"是"| FLUSH["flush leftover sentence"] --> COMPLETE["output.complete"]
+    LEFT -->|"否"| COMPLETE
+    CANCEL["turn cancel"] --> DROP["丢弃未 emitted buffer"]
 ```
 
-- 实现：每回合一个 `tokio_util::sync::CancellationToken`，各管线任务持子 token，`select!` 中监听；cancel 后任务在下一个 await 点退出，目标 < 50ms。
-- 对模型服务：取消令牌触发后编排器立即发 `control.cancel`；模型侧须在 200ms 内停产出，迟到的帧由编排器按 `turn_id`/`seq` 丢弃。
-- 对 LLM：OpenAI 协议无取消语义——直接 abort HTTP 请求/断流；已生成未下发的 token 丢弃，已下发句按 §2-3 记账。
-- 令牌不复用：`interrupted` 后进入 `Listening` 是新回合新令牌。
+软切阈值使用既有 `MOMO_SENT_SOFT_CHARS=25`，硬上限使用 `MOMO_SENT_MAX_CHARS=60`。只有固定 8 个 emotion tag 被剥离；其他方括号内容保留。
 
-## 4. 句子切分规则
+## generation、TTS 与播放
 
-输入：LLM token 流（可能含 `[emotion]` tag）。输出：`output.sentence` 序列。规则按序应用：
-
-1. **强切**：遇到 `。！？!?；;…` 或换行，立即成句。CJK 标点无条件切；ASCII `.`/`!`/`?` 仅当**后随空白或流结束**才切（避免 `Mr.`、`3.14`、`...` 误切）。
-2. **弱切**：遇到 `,，、：` 且当前缓冲 ≥ 25 字（`MOMO_SENT_SOFT_CHARS`）时切——避免长句等标点饿死首包。
-3. **硬切**：缓冲达 60 字（`MOMO_SENT_MAX_CHARS`）无标点也强制成句，在最后一个空白/CJK 字边界处切。
-4. **tag 剥离**：`[xxx]` 形式 tag 先从文本移除再计长度；连续 tag 合并取最后一个；表外值归一 `neutral`。
-5. **收尾**：LLM 流结束且缓冲非空 → flush 为 `final:true` 句；空回复 → 回合直接 `Idle`。
-6. **语言**：每句做主导语言检测写入 `lang` 提示 TTS；v1 **不按语言拆句**（code-switch 混说效果是开放问题，见 research.md），TTS provider 自处理。
-
-示例：`[happy] 今晚吃火锅吧！你说呢？` → 两句：`{text:"今晚吃火锅吧！",emotion:"happy"}`、`{text:"你说呢？",emotion:"happy"}`（tag 作用于其后直到下一 tag 的全部句子）。
-
-## 5. 队列与背压
-
-| 队列 | 容量 | 溢出策略 |
-|---|---|---|
-| mic 上行缓冲（orch→ASR） | 2s 音频 | 丢旧帧 + 日志（实时性优先） |
-| `sentence_q`（splitter→TTS scheduler） | 8 句 | 暂停读 LLM 流（select 反压） |
-| TTS 在途 | 1 句并发 | 逐句串行，保序 |
-| 下行音频缓冲（TTS→UI） | 96 帧（≈4.8s@50ms） | 满→停拉 TTS；UI 侧 >512KB→`BACKPRESSURE_OVERFLOW`+取消回合（protocol §7） |
-| VAD 段上限 | 30s | ASR 侧强制 final |
-
-原则：音频流可截不可堵死；控制面永不丢消息；反压沿管线逐级上溯到 LLM 流读取。
-
-## 6. 延迟预算分解
-
-目标：文字回合 < 1.5s 出声；语音回合 < 1.5s（从 VAD 判停起算）。
-
-| 环节 | 文字回合 | 语音回合 | 依据 |
-|---|---|---|---|
-| VAD 尾音判停 | — | 250 ms | silero `silence_ms` 可调 |
-| ASR 转写 | — | ~150 ms（3s 语音）/ 337 ms（8.4s） | **实测** RTF 0.040（2026-10-10） |
-| 编排开销（历史/过滤/路由） | 20 ms | 20 ms | 目标值 |
-| LLM 首 token | 300 ms | 300 ms | **预估**；MLX 8B 实测 121 tok/s（2026-10-10） |
-| 首句成形（到首个句末标点） | 200 ms | 200 ms | ~25 tok @121t/s 推算 |
-| 句切 + tag 剥离 | 10 ms | 10 ms | 目标值 |
-| TTS 首 chunk | 250 ms | 250 ms | Kokoro **实测** 209 ms（2026-10-10）；CosyVoice3 官方标称 150 ms **待实测** |
-| 网络 + 解码 + 播放 jitter | 100 ms | 100 ms | LAN |
-| **合计** | **~0.9 s** | **~1.3 s** | 预算内，余量 ~200–600 ms |
-
-降级档注：laptop 本地小模型首 token 可能显著变慢，预算放宽至 < 2s；DeepSeek 兜底受外网影响单独测量。优化杠杆：VAD `silence_ms` 调小、ASR 流式 partial 提前送 LLM（v1 未实现，候选优化）。
-
-## 7. 建议模块布局（momo-app 单 package：src/ 模块树，bin=momod）
-
-```
-src/
-├── main.rs            # 入口：config → 启动 axum + 管线 supervisor
-├── config.rs          # MOMO_ env 解析（见 config.md）
-├── ws/
-│   ├── proto.rs       # 消息 enum 序列化/反序列化（protocol.md §6）
-│   ├── binary.rs      # 12B 音频帧 codec
-│   ├── ui_link.rs     # /ws/ui
-│   ├── model_link.rs  # orch→ASR/TTS client
-│   └── action_link.rs # /ws/action (P4)
-├── turn/
-│   ├── machine.rs     # 状态机 + state.turn 广播
-│   ├── barge_in.rs    # 三动作执行器
-│   ├── cancel.rs      # CancellationToken 树
-│   └── history.rs     # 会话历史 + 打断记账
-├── pipeline/
-│   ├── sentence_split.rs # §4 规则 + 单测
-│   ├── llm_client.rs     # OpenAI SSE stream
-│   ├── tts_sched.rs      # sentence_q → TTS
-│   └── audio_mux.rs      # 下行帧复用/缓冲
-├── idle.rs            # 空闲计时 + 自发情境注入
-└── filter.rs          # 输入/输出过滤钩子（空实现，P5 前实装）
+```mermaid
+flowchart TD
+    SENT["output.sentence(seq)"] --> TTS{"TTS 成功？"}
+    TTS -->|"是"| OPEN["audio.open(stream → turn/sentence)"]
+    OPEN --> BUFFER{"AudioWorklet 有可播 buffer？"}
+    BUFFER -->|"首播前不足"| WAIT["保持 thinking / 等 chunk"] --> BUFFER
+    BUFFER -->|"后续句不足"| HOLDSTATE["当前 speaking 状态不变"] --> BUFFER
+    BUFFER -->|"足够"| START["playback.started → speaking"]
+    START --> PROGRESS["playback.progress ledger"]
+    PROGRESS --> EOF{"EOS / audio.end 且 buffer EOF？"}
+    EOF -->|"否"| PROGRESS
+    EOF -->|"是"| ACK["校验 total samples 后 completed ACK"]
+    TTS -->|"失败"| CLEAR["清 stream / pending set / 嘴型"] --> TEXT["剩余回复 text-only"]
+    COMPLETE["output.complete"] --> JOIN{"generation 完成且<br/>required final ACK 齐？"}
+    ACK --> JOIN
+    TEXT --> JOIN
+    JOIN -->|"是"| IDLE["turn.finished → idle"]
+    JOIN -->|"否且 deadline 未到"| HOLD["等待 ledger；不重播"]
+    JOIN -->|"deadline 到"| UNCONFIRMED["停止 stream；unconfirmed audit<br/>移除 pending 后关闭 turn"]
 ```
 
-## 检查表
+TTS 失败后不重播已经听过的文字。LLM 部分失败保留可见输出并标记 incomplete。
 
-- [ ] 状态机图与 protocol.md `state.turn` 枚举一致
-- [ ] barge-in 三动作顺序、幂等、played_seq 语义可实现
-- [ ] 取消令牌覆盖 LLM/句切/TTS/音频全部任务
-- [ ] 句切规则有标点集、软/硬上限、tag 剥离、ASCII 例外
-- [ ] 每个队列有容量数字与溢出策略
-- [ ] 延迟预算表每项有实测/预估标注，合计 < 1.5s
+## bounded queue 与 backpressure
+
+```mermaid
+flowchart TD
+    MIC["mic uplink buffer<br/>最多 2s"] --> MICFULL{"overflow / seq gap？"}
+    MICFULL -->|"是"| ABORTCAP["中止 capture；释放 mic<br/>提示重新录制"]
+    MICFULL -->|"否"| ASR["ASR"]
+    LLM["LLM SSE"] --> SQ["sentence_q<br/>容量 8"]
+    SQ --> SQFULL{"队列满？"}
+    SQFULL -->|"是"| BLOCK["暂停读取 LLM SSE"] --> SQ
+    SQFULL -->|"否"| SERIAL["TTS 串行合成<br/>保持 sentence 顺序"]
+    SERIAL --> OUT["output audio buffer<br/>96 × 50ms"]
+    OUT --> OUTFULL{"队列满 / consumer stuck？"}
+    OUTFULL -->|"未满"| PLAY["AudioPlayer"]
+    OUTFULL -->|"满"| PAUSE["暂停拉取 TTS"]
+    PAUSE --> STUCK{"deadline 内恢复？"}
+    STUCK -->|"是"| OUT
+    STUCK -->|"否"| FAIL["invalidate audio；turn 转 text-only<br/>显示失败通知"]
+    CTRL["priority control channel"] -.->|"Stop / cancel 永不排在 data 后"| ASR & SERIAL & PLAY
+```
+
+上行不静默丢旧帧，否则 chunk sequence 与 transcript 都不可信。控制通道具有独立优先级；data backlog 不能阻塞 Stop/cancel。
+
+## interruption：立即取消，限时结算
+
+```mermaid
+flowchart TD
+    TRIGGER["Stop / 新输入 / VAD speech_start"] --> LOCAL["UI 同步 stop + flush<br/>嘴型=0"]
+    TRIGGER --> INVALID["actor 原子 invalidate old turn"]
+    INVALID --> FORK["并行取消 LLM / splitter / TTS / audio"]
+    INVALID --> NOTICE["立即发 stop notice"]
+    NOTICE --> LEDGER["收 playback ACK<br/>settlement deadline 500ms"]
+    LEDGER --> HEARD{"确认听见？"}
+    HEARD -->|"完整句"| CONTEXT["写 spoken context"]
+    HEARD -->|"部分句"| AUDIT["audit: played_samples + partial<br/>无 timestamps 不造文本前缀"]
+    HEARD -->|"缺 ACK / deadline"| OMIT["保持 unconfirmed"]
+    CONTEXT --> FINISH["幂等 finalize<br/>turn.finished 恰好一次"]
+    AUDIT --> FINISH
+    OMIT --> FINISH
+    LATE["迟到 ACK"] --> ANNOTATE["只补 audit annotation<br/>不改 model context"]
+```
+
+取消不等待 ACK；新 capture 单独保留。completed ACK 必须单调、在 total samples 范围内，并与 EOS/audio.end 对齐。
+
+## audio device、mute 与 AudioContext
+
+```mermaid
+flowchart TD
+    EVENT["speaking 中设备变化 / mute"] --> STOP["同步停播 + settlement"]
+    STOP --> REMOVE["清 audio stream 并从 pending set 移除"]
+    REMOVE --> TEXT["剩余 output 以 text-only 完成"]
+    TEXT --> FUTURE["unmute 只影响未来 sentence / turn<br/>不重播漏听音频"]
+    SUSPEND["AudioContext suspended"] --> CTA["显示点击恢复播放"]
+    CTA --> RESUME{"用户触发 resume 成功？"}
+    RESUME -->|"是"| PLAY["仅播放尚未错过的有效 stream"]
+    RESUME -->|"否"| TEXT
+    DEADLINE["playback.started 后<br/>AudioContext running 且 2000ms 无 progress"] --> STOPSTREAM["停止 stream；unconfirmed audit"] --> REMOVE
+```
+
+普通播放的 stall deadline 是 `playback.started` 之后、AudioContext 处于 running 时连续 2000ms 无进度；尚未开始的 queued audio 不计 stall。500ms 只用于 interruption settlement。LLM/synthesis stall 使用既有 `MOMO_LLM_TIMEOUT_MS` 或 turn provider timeout，不复用 500ms。
+
+## stale stream 防线
+
+```mermaid
+flowchart LR
+    FRAME["到达 binary frame"] --> KNOWN{"stream_id 已由 audio.open 绑定？"}
+    KNOWN -->|"否"| DROP1["拒绝 unknown stream"]
+    KNOWN -->|"是"| VALID{"turn 有效 + direction / format 正确？"}
+    VALID -->|"否"| DROP2["丢弃并记协议错误"]
+    VALID -->|"是"| SEQ{"chunk_seq / offset 连续且未重复？"}
+    SEQ -->|"重复"| DROP3["幂等丢弃"]
+    SEQ -->|"gap"| ABORT["中止 stream + retry affordance"]
+    SEQ -->|"连续"| PLAY["交给绑定的 capture / player"]
+```
+
+不能用“最近一次 state.turn”绑定音频。已取消 turn 的迟到帧、TTS 结果或 LLM delta 都不可见。
+
+## presentation 仲裁
+
+```mermaid
+flowchart TD
+    EVENTS["turn + pointer + audio events"] --> DIRECTOR["TS PresentationDirector"]
+    DIRECTOR --> STOP{"Stop / invalid stream？"}
+    STOP -->|"是"| RESET["停止动作与播放<br/>嘴型立即归零"]
+    STOP -->|"否"| SPEAK{"实际 playback 正在进行？"}
+    SPEAK -->|"是"| MOUTH["AudioWorklet RMS 驱动嘴型<br/>表情不得覆盖嘴型"]
+    SPEAK -->|"否"| LT{"listening / thinking？"}
+    LT -->|"是"| STATUS["收听 / 思考 expression"]
+    LT -->|"否"| TAP{"tap reaction 待执行？"}
+    TAP -->|"是"| REACT["短 reaction"]
+    TAP -->|"否"| IDLE["gaze / available idle"]
+```
+
+固定优先级：`stop > speaking mouth from actual AudioWorklet playback > listening/thinking expressions > tap reaction > gaze/idle`。
+
+## 任务与错误所有权
+
+Session actor 串行处理命令；每个 reply turn 建立独立 cancellation token tree，扇出到 LLM、splitter、TTS scheduler、audio mux。任务只能回传事件，不能直接修改 actor 状态。
