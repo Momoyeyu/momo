@@ -1,6 +1,6 @@
 # 总体架构
 
-> **设计目标：** 当前代码只有 `momo-ws v1` 握手/脚手架；Tauri host、完整 companion 流程和协议 v2 尚未实现。
+> 桌面呈现负责在场，回合编排负责接话，模型服务提供理解与表达能力。三层通过清晰的事件与音频边界协作。
 
 ## 运行时组件
 
@@ -12,14 +12,14 @@ flowchart TB
     LLM["回答 · 本地或远端 LLM<br/>OpenAI-compatible SSE"]
     TTS["说出 · models/Python<br/>TTS adapter"]
     DATA[("本地记录<br/>transcript / persona<br/>P1 memory + index")]
-    DESK <-->|"momo-ws v2：输入 / 状态 / 音频"| TURN
+    DESK <-->|"momo-ws：输入 / 状态 / 音频"| TURN
     TURN <-->|"语音 / 转写"| ASR
     TURN <-->|"流式文本"| LLM
     TURN <-->|"句子 / 音频"| TTS
     TURN -->|"确认播出的内容"| DATA
 ```
 
-浏览器只作为 preview/development host；P0 产品宿主是规划中的 `app/src-tauri`。infra 是独立控制面，只负责启停、探测和产物管理，不承载 conversation 数据；详见 [模块边界](./boundaries.md) 与 [infra 控制面](../02-repos/momo-infra.md)。
+`app/src-tauri` 承载桌面产品，浏览器用于网站与开发预览。infra 是独立控制面，只负责启停、探测和产物管理，不承载 conversation 数据；详见 [模块边界](./boundaries.md) 与 [infra 控制面](../02-repos/momo-infra.md)。
 
 ## 呈现的内部协作
 
@@ -89,6 +89,6 @@ normal/degraded 使用同一代码与协议；差异是本机拥有的 child pro
 
 - [桌面宿主与窗口生命周期](./desktop.md)
 - [运行时与状态机](./runtime.md)
-- [协议 v2 目标](./protocol.md)
+- [通信协议](./protocol.md)
 - [用户操作路径图谱](./workflows.md)
 - [模块边界](./boundaries.md)

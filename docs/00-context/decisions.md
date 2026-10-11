@@ -15,7 +15,7 @@ flowchart TD
     ADR006 --> ADR008
     ADR009["ADR-009 ASR+VAD"] --> ADR003
     ADR010["ADR-010 TTS 选型梯队"] --> ADR003
-    ADR011["ADR-011 Web→Tauri 壳"] --> ADR012["ADR-012 Live2D+口型"]
+    ADR011["ADR-011 Tauri 桌面宿主"] --> ADR012["ADR-012 Live2D+口型"]
     ADR013["ADR-013 回合语义/<br/>barge-in 三动作"] --> ADR003
     ADR019["ADR-019 扩展过滤边界"] --> FUTURE["未来 streaming 前置条件"]
 ```
@@ -62,7 +62,7 @@ flowchart TD
 
 ### ADR-003 三段式进程分离 + 进程间 WebSocket
 
-- **决策**：交互端（渲染+音频 IO）/ 编排器（回合、打断、路由、状态机）/ 模型服务（ASR/TTS）进程分离；目标进程协议为 `momo-ws v2`。当前实现仍是 v1 handshake/scaffold，app/models 必须协调迁移。规范见 [../01-architecture/protocol.md](../01-architecture/protocol.md)。
+- **决策**：三层进程分工 + momo-ws 事件与音频协议；LLM 使用 OpenAI-compatible SSE。规范见 [../01-architecture/protocol.md](../01-architecture/protocol.md)。
 - **理由**：三段可部署到不同机器（正常档/降级档拓扑不同）；WS 同时承载双向控制与流式音频，打断语义天然契合。
 - **被否**：gRPC/REST（服务端流式 + 双向打断语义不顺手，且浏览器端音频二进制支持繁琐）；进程内单体式（无法跨机部署，mac-studio 收回时无降级路径）。
 
@@ -102,9 +102,9 @@ flowchart TD
 - **理由**：上游本身已是 OpenAI-compatible，网关只做纯转发、无增量价值，反而多一个进程与故障点；换脑本来就是改 env。
 - **被否**：自建 LLM 网关进程（纯转发层）；把 LLM 纳入 momo-ws 自定义消息（同 ADR-006 被否理由）。
 
-### ADR-022 编排器↔模型服务协调迁移 `momo-ws v2`，不另设运行时 REST 协议
+### ADR-022 编排器与语音服务共享通信契约
 
-- **决策**：目标运行时协议为 `momo-ws v2`（`01-architecture/protocol.md` 唯一规范）；当前 v1 scaffold 保持原样直至 app/models 协调迁移。非流式调试口可供 bench/手测，运行时主路径不经过它。
+- **决策**：编排器与语音服务使用同一份 momo-ws 契约，统一流标识、取消与播放回执；调试接口独立于实时对话通路。
 - **理由**：打断、取消、流式音频、VAD 事件（`input.vad`）语义已在 momo-ws 定义；再立一套 REST 主协议要维护两份语义且打断语义难表达。
 - **被否**：为模型服务另定义 REST `/v1/*` 作为运行时主协议。
 
@@ -130,7 +130,7 @@ flowchart TD
 
 ### ADR-011 P0 使用 Tauri 2 桌面宿主，浏览器作为预览 host
 
-- **决策**：P0 在规划目录 `app/src-tauri` 交付透明窗口、system menu、拖拽/缩放、置顶和有可靠恢复入口时的可选点击穿透；浏览器仅用于 preview/development。平台能力不支持时使用普通可见窗口，menu 不可用时禁用点击穿透。
+- **决策**：Tauri 2 桌面宿主管理透明窗口、system menu、拖拽/缩放、置顶和有可靠恢复入口时的可选点击穿透；浏览器用于网站与开发预览。平台能力不支持时使用普通可见窗口，menu 不可用时禁用点击穿透。
 - **理由**：桌面在场感、权限、tray escape 与生命周期是产品闭环，不是后续包装。
 - **被否**：把 Tauri 延后（会把 P0 退化为浏览器 chatbot）；分别开发原生客户端；Electron。
 
@@ -148,7 +148,7 @@ flowchart TD
 
 ### ADR-015 P2 工具与截图逐次授权
 
-- **决策**：工具/action 是协议 v2 extension group；每次请求向用户展示动作、范围和数据去向，只有 allow 后执行，deny/cancel/late-result 都有显式路径。
+- **决策**：工具/action 使用独立扩展消息组；每次请求向用户展示动作、范围和数据去向，只有 allow 后执行，deny/cancel/late-result 都有显式路径。
 - **理由**：LLM 不直接执行；用户授权与结构化 schema 共同形成安全边界。
 - **被否**：LLM 直接执行代码；本地可信即默认永久授权；把工具业务写进 turn core。
 

@@ -1,16 +1,16 @@
 # P0：桌面 MVP
 
-> P0 交付一个可每天使用的桌面 companion 闭环。当前代码仍为 v1 scaffold；本页是实施目标。
+> 打开 momo，她就在桌面上。你可以打字、说话、随时插话，也能拖动、收起她，再接着上次的话题聊。
 
 ## 交付范围
 
-- `app/src-tauri`（规划）：Tauri 2 单实例、透明 pet 窗口、system menu、drag/scale、always-on-top；click-through 只在可靠恢复入口存在时启用。
+- `app/src-tauri`：Tauri 2 单实例、透明 pet 窗口、system menu、drag/scale、always-on-top；click-through 只在可靠恢复入口存在时启用。
 - TS Pixi 7 + Live2D：真实模型加载、可用 idle/gaze/tap/drag、subtitle/chat overlay、实际 AudioWorklet 播放驱动 lipsync。
 - 文字、PTT、用户 opt-in 连续 VAD；麦克风/ASR 失败时释放 mic 并保留文字输入。
 - Stop/barge-in：同步停本地音频与嘴型，actor 并行取消上游，再按 playback ACK settlement 结算；新 capture 独立保留。
 - Rust tokio+axum session actor 与 `TurnCoordinator`；Python ASR/TTS/Embedding adapters；OpenAI-compatible SSE LLM。
 - 本地 transcript + persona；历史查看、改标题、correction、删除、导出、新对话。
-- 目标协议 `momo-ws v2`；app/models 协调迁移。
+- momo-ws 统一传递输入、状态、字幕与音频。
 
 ## readiness
 
@@ -41,7 +41,7 @@ flowchart TD
 - [ ] menu 不可用时 click-through 已禁用；退出只停止 owned child。
 - [ ] 文字流程覆盖 IME、空输入、4000 字符、重复 id、busy turn 与 Stop。
 - [ ] PTT 覆盖 press/release、无非静音 segment、取消和失焦；VAD 失败释放 mic 并提供重新启用。
-- [ ] `Speaking` 由 `playback.started` 触发；嘴型来自实际播放，Stop 立即归零。
+- [ ] `Speaking` 由实际 `playback.started` 触发；嘴型来自实际播放，Stop 立即归零。
 - [ ] interruption 不等 ACK 才 cancel；settlement deadline 后 unknown 保持 unconfirmed。
 - [ ] TTS/LLM/ASR/设备失败只降级对应能力，已经听过的内容不重播。
 - [ ] history correction 不改 audit；active delete/new-chat 先 cancel；export 事务失败保留数据。

@@ -1,16 +1,16 @@
 # Monorepo 边界与所有权
 
-> momo 是单一 monorepo，以目录而不是独立仓库划分职责。跨边界先改 `docs/01-architecture/`。
+> momo 以单一 monorepo 组织桌面交互、模型能力、运维工具、网站与系统设计，各目录通过清晰契约协作。
 
 ## 工作所有权图
 
 ```mermaid
 flowchart LR
-    DOCS["docs/<br/>设计权威"] -.-> APP["app/<br/>Rust runtime + TS presentation<br/>规划 app/src-tauri"]
+    DOCS["docs/<br/>产品与系统设计"] -.-> APP["app/<br/>Rust runtime + TS presentation<br/>Tauri desktop host"]
     DOCS -.-> MODELS["models/<br/>Python inference adapters<br/>训练与评估"]
     DOCS -.-> INFRA["infra/<br/>带外运维与训练编排"]
     DOCS -.-> SITE["site/<br/>静态产品页 + 文档消费"]
-    APP <-->|"momo-ws v2 目标<br/>当前 v1 scaffold"| MODELS
+    APP <-->|"momo-ws"| MODELS
     APP -->|"OpenAI SSE"| LLM["外部 / 本地兼容 LLM"]
     INFRA -.->|"启停 / 探测 / 产物"| APP & MODELS & LLM
     SITE -.->|"include canonical docs"| DOCS

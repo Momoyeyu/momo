@@ -161,7 +161,7 @@ HF_ENDPOINT=https://hf-mirror.com   # laptop 必须
 # MOMO_TTS_PROVIDER=kokoro
 ```
 
-模板中的 `P3`/`P4` 注释是为保持既有 `.env.example` 文本不变而保留的旧 phase 标签；当前范围映射为 P1 memory / P2 vision，不改变任何键或默认值。
+配置覆盖记忆、语音和视觉服务；具体能力按产品优先级启用。
 
 ## 4. 敏感项与安全
 
@@ -192,7 +192,7 @@ flowchart TD
 - 配置面是**扁平 key=value 环境变量**，无嵌套配置文件——任何支持 env 注入的平台（systemd/Docker/k8s/自研发布平台）都可直接消费。
 - 平台对接约定：以 `.env.example` 的 key 集合为 schema；敏感项由平台密钥管理注入，不写文件。
 - 新增变量流程：同一 PR 内更新 `config.md` 表格 + `.env.example` + 代码默认值，三者不一致视为 bug。
-- 不提供远程热更（v1）；改配置=改 env+重启，由 infra 封装正确顺序。
+- 配置变更通过改 env + 重启生效，由 infra 封装正确顺序。
 
 ## 检查表
 

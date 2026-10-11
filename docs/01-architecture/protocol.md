@@ -1,6 +1,6 @@
-# momo-ws 协议 v2（设计目标）
+# momo-ws 通信协议
 
-> **设计目标：** 本页是拟议的 v2 权威规范；当前 app/models 代码仍为 v1 handshake/scaffold，迁移必须两端协调完成。
+> momo-ws 连接桌面交互、回合编排和语音服务，统一传递输入、状态、字幕与音频。每个事件和音频流都有明确归属，使播放、打断与重连保持一致。
 
 LLM 不使用本协议：`TurnCoordinator` 直接调用 OpenAI-compatible HTTP SSE。
 
@@ -47,7 +47,7 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 
 `hello.client='orchestrator'` 用于 app 连接模型服务；ASR/TTS 的 `hello.ok.role` 分别为 `asr` / `tts`。UI 连接 runtime 时 `client='ui'`，协议不把所有连接强制成 UI 角色。
 
-固定 emotion：`neutral` `happy` `sad` `angry` `surprised` `thinking` `shy` `sleepy`。未来 tool action 消息属于 v2 extension group，不是 P0 实现。
+固定 emotion：`neutral` `happy` `sad` `angry` `surprised` `thinking` `shy` `sleepy`。tool action 使用独立的工具扩展消息组。
 
 ## 认证、Origin 与 session restore
 
@@ -68,7 +68,7 @@ flowchart TD
     HELLO -->|"否"| CLOSE4400["close 4400 malformed / timeout"]
     HELLO -->|"是"| TOKEN{"constant-time token 校验通过？"}
     TOKEN -->|"否"| CLOSE4401["close 4401 unauthorized"]
-    TOKEN -->|"是"| VERSION{"version=v2？"}
+    TOKEN -->|"是"| VERSION{"协议版本受支持？"}
     VERSION -->|"否"| CLOSE4001["close 4001 version mismatch"]
     VERSION -->|"是"| RESUME{"owner + session 可恢复？"}
     RESUME -->|"是"| SNAP["hello.ok + session.snapshot"]

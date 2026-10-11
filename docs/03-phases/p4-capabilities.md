@@ -1,11 +1,13 @@
-# 兼容页：旧 P4「能力」
+# 工具与感知
 
-> 旧 phase 编号已退休。本路径保留以免旧链接失效。
+> 让 momo 在你允许的范围内理解屏幕、调用工具，并把结果带回当前对话。
 
 ```mermaid
 flowchart LR
-    OLD["旧 P4：action / vision"] --> P2["现 P2：逐次授权的工具与截图"]
-    P2 --> FLOW["allow / deny / cancel / result"]
+    REQUEST["对话中的能力请求"] --> PERMISSION{"用户授权？"}
+    PERMISSION -->|"允许一次"| TOOL["工具 / 截图执行"]
+    PERMISSION -->|"拒绝"| DENY["回到对话，不执行"]
+    TOOL --> RESULT["结构化结果回到当前 turn"]
 ```
 
-当前权威范围见 [P2 受控扩展](./p2-dialogue.md) 与 [用户操作路径图谱](../01-architecture/workflows.md)。工具/action 协议属于 v2 extension group，不是 P0 实现。
+详细权限路径见 [P2 受控扩展](./p2-dialogue.md) 与 [用户操作路径图谱](../01-architecture/workflows.md)。工具/action 使用独立扩展消息组。

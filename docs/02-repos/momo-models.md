@@ -1,6 +1,6 @@
 # `models/`：Python inference adapters 与训练实体
 
-> 模型模块复用上游推理/训练库，不重写引擎。服务无 turn 或 memory 所有权；当前通信实现仍是 v1 scaffold，v2 是协调迁移目标。
+> 模型层提供语音识别、语音合成与文本向量能力，通过适配器复用成熟推理库，并与桌面业务和回合状态解耦。
 
 ## 边界
 
@@ -23,9 +23,9 @@ flowchart LR
 
 ## provider 与产物
 
-目标抽象：`AsrAdapter`、`TtsAdapter`、`EmbeddingAdapter`。manifest 固定 revision/checksum；推理服务只读已校验本地产物，不在活动 turn 中在线下载。
+适配器抽象：`AsrAdapter`、`TtsAdapter`、`EmbeddingAdapter`。manifest 固定 revision/checksum；推理服务只读已校验本地产物，不在活动 turn 中在线下载。
 
-现有模型选型、官方标称与 2026-10-10 历史实测保留在 [research.md](../00-context/research.md) 与 [decisions.md](../00-context/decisions.md)，旧测量不是当前环境保证。
+模型选型、官方标称与带日期的实测记录集中在 [research.md](../00-context/research.md) 与 [decisions.md](../00-context/decisions.md)，作为复现与比较基线。
 
 ## 训练边界
 
@@ -35,7 +35,7 @@ flowchart LR
 
 ## 验收指针
 
-- v2 handshake/frame/schema 与 [protocol.md](../01-architecture/protocol.md) 一致；迁移 app/models 同步完成。
+- handshake/frame/schema 与 [通信协议](../01-architecture/protocol.md) 一致。
 - cancel、seq gap、duplicate、wrong direction、unknown stream 与 stale turn 有确定行为。
 - ASR/TTS 失败遵循 [runtime.md](../01-architecture/runtime.md) 的用户可见降级。
 - manifest checksum 失败不 ready、不 activate。

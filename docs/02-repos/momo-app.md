@@ -1,12 +1,12 @@
 # `app/`：桌面 companion 与运行时
 
-> P0 目标包含 Tauri 2 桌面宿主、TS/Pixi 7 presentation 与 Rust tokio+axum session actor；当前实现仍是 v1 scaffold。
+> 应用层把桌面宿主、形象交互和对话运行时连接起来：Tauri 管理窗口与系统集成，TypeScript 呈现角色，Rust 编排完整回合。
 
-## 目标结构
+## 模块结构
 
 ```text
 app/
-├── src-tauri/                 # P0 规划：窗口/menu/权限/生命周期/sidecar
+├── src-tauri/                 # 窗口/menu/权限/生命周期/sidecar
 ├── web/src/
 │   ├── avatar/               # AvatarAdapter + Live2D manifest/load/dispose
 │   ├── presentation/         # PresentationDirector + MotionDirector
@@ -16,7 +16,7 @@ app/
 └── src/
     ├── session/              # session actor
     ├── turn/                 # TurnCoordinator、取消、playback ledger
-    ├── protocol/             # v2 target codec；current v1 scaffold
+    ├── protocol/             # momo-ws 消息与音频 codec
     ├── repository/           # transcript/correction/persona/memory/index
     └── providers/            # LLM SSE、ASR/TTS/Embedding clients
 ```
@@ -29,7 +29,7 @@ flowchart LR
     UI <--> AUDIO["AudioPlayer / Worklet"]
     AUDIO -->|"实际 playback"| PRESENT["PresentationDirector"]
     PRESENT -->|"avatar params"| UI
-    UI <-->|"momo-ws v2 target"| ACTOR["Rust session actor"]
+    UI <-->|"momo-ws"| ACTOR["Rust session actor"]
     ACTOR --> TURN["TurnCoordinator"]
     TURN -->|"domain events"| UI
     TURN --> REPO["local conversation repository"]

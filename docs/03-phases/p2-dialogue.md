@@ -1,6 +1,6 @@
 # P2：受控扩展
 
-> P2 增加工具、截图与运维/训练界面；每个越出对话边界的动作都必须得到用户授权。streaming adapter 只是未来扩展，不作交付承诺。
+> P2 增加工具、截图与运维/训练界面；每个越出对话边界的动作都必须得到用户授权。streaming adapter 作为独立扩展方向，共用既有回合核心。
 
 ## 工具权限路径
 
@@ -22,7 +22,7 @@ flowchart TD
 - 模型：fetch → checksum → probe → activate；失败保持旧版本；保留可回滚版本。
 - 训练 job 使用 `queued / preparing / running / canceling / canceled / recovering / failed / succeeded / promoted`。SSH 断线先按 remote job id 与 process identity 进入 `recovering`，不能只因连接丢失判 `failed`，也不能重复 launch。
 
-训练生命周期、取消、恢复与 promotion 的单一来源见 [`momo-infra.md` 的训练 lifecycle](../02-repos/momo-infra.md#训练-lifecycle-与恢复)。本页不复制训练状态图，也不定义训练配置或评分门槛。
+训练生命周期、取消、恢复与 promotion 集中在 [`momo-infra.md` 的训练 lifecycle](../02-repos/momo-infra.md#训练-lifecycle-与恢复)，沿用既有训练配置与评分门槛。
 
 ## future streaming adapter
 
@@ -43,4 +43,4 @@ adapter 不拥有 turn、persona、memory、推理或 runtime 业务。
 - [ ] 配置 test 失败不改变 active 配置，secret 不进入日志或静态网站。
 - [ ] 模型 checksum/readiness 失败不替换 active 版本，rollback 可用。
 - [ ] 本地/SSH job 断线后可从 job store/checkpoint 判断继续、失败或取消；状态不会假成功。
-- [ ] streaming adapter 只保留扩展契约，不列为当前实现完成项。
+- [ ] streaming adapter 保持独立，只负责平台接入与输出 overlay。

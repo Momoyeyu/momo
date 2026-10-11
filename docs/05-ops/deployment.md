@@ -1,6 +1,6 @@
 # 当前部署手册
 
-> normal/degraded 使用同一代码。P0 桌面 host 与服务编排仍是设计目标。
+> normal/degraded 使用同一代码，按 readiness 组合桌面宿主、运行时与可用 provider。
 
 ## 档位
 
