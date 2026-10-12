@@ -1,8 +1,11 @@
 
 use std::sync::Mutex;
 
+use tokio::sync::mpsc;
+
 use crate::{
     proto::message::{ClientKind, new_id},
+    ws::conn::OutboundFrame,
 };
 
 pub struct SessionManager {
@@ -12,6 +15,11 @@ pub struct SessionManager {
 impl SessionManager {
     }
 
+    pub fn attach(
+        &self,
+        conn_id: &str,
+        client: ClientKind,
+        out_tx: mpsc::Sender<OutboundFrame>,
     }
 
     /// 当前活跃 session（若有）。
