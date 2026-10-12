@@ -1,3 +1,4 @@
+//! mock SSE 服务断言 token 顺序、请求形状、`[DONE]`、错块重组、中途取消与错误映射；全程回环。
 
 use std::{
     convert::Infallible,
