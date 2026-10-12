@@ -45,7 +45,7 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 | `state.turn` | orchestrator→UI | `turn_id,state` | turn domain event |
 | `error` | 双向 | `code,message` | 可恢复/致命错误 |
 
-`hello.client='orchestrator'` 用于 app 连接模型服务；ASR/TTS 的 `hello.ok.role` 分别为 `asr` / `tts`。UI 连接 runtime 时 `client='ui'`，协议不把所有连接强制成 UI 角色。
+`hello.client='orchestrator'` 用于 app 连接模型服务；ASR/TTS 的 `hello.ok.role` 分别为 `asr` / `tts`。UI 连接 runtime 时 `client='ui'`，协议不把所有连接强制成 UI 角色。`/ws/ui` route 只接受 `client='ui'` 的 hello，其余取值按 malformed 处理 close `4400`。
 
 固定 emotion：`neutral` `happy` `sad` `angry` `surprised` `thinking` `shy` `sleepy`。tool action 使用独立的工具扩展消息组。
 
@@ -53,7 +53,9 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 
 Tauri 每次启动生成 ephemeral token，经 desktop IPC 只交给内嵌 UI。UI 把 token 放在 WebSocket 的第一条 `hello.auth_token` 中，**不**放 query URL、日志或 Authorization header。browser dev 由本地 setup 手动取得同类 per-process token；静态网站不持有 token、不连接 localhost，也不请求 API key 或麦克风。
 
-UI route 在 HTTP upgrade 前检查精确配置的 desktop origin / browser-dev origin allowlist，missing 或未批准 Origin 直接拒绝。upgrade 后 5s 内必须收到格式正确且含 token 的 hello；在 token 与版本通过前不接受任何 business frame。token 使用 constant-time comparison。malformed/timeout close `4400`，unauthorized close `4401`，version mismatch close `4001`。
+UI route 在 HTTP upgrade 前检查精确配置的 desktop origin / browser-dev origin allowlist，missing 或未批准 Origin 直接拒绝。allowlist = `MOMO_WEB_ORIGIN`（browser-dev）+ desktop origin `tauri://localhost` / `http://tauri.localhost` / `https://tauri.localhost`（Tauri webview 各平台形态）。upgrade 后 5s 内必须收到格式正确且含 token 的 hello；在 token 与版本通过前不接受任何 business frame。token 使用 constant-time comparison。malformed/timeout close `4400`，unauthorized close `4401`，version mismatch close `4001`。
+
+momod 侧期望 token 由 desktop 启动时经 `MOMO_UI_TOKEN` 注入；standalone dev 下该键未配置时不做比对（`hello.auth_token` 字段仍必填）。同一时刻最多一个活跃 UI 连接：新连接完成握手即顶掉旧连接（旧连接收 close `1000` 断开），session 状态经 `resume_session_id` + snapshot 收敛。
 
 per-process UI token 只保护本机 desktop/dev transport。远端模型 transport 使用独立配置的 peer credential，不能复用 UI token，也不能把本地 launch token 带到公网。ASR/TTS server 在远程部署时同样要求自己的 configured peer credential；具体 credential binding 随实现定稿，不新增本页 env key。
 
