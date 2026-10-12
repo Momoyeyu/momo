@@ -6,6 +6,10 @@
 - 提交信息只写改动本身，不含任何 AI 署名或 trailer。
 - 栈式 PR（base 非 master）在整条链全部 merge 前，禁止删除链上任何分支的远端引用——删 head 会 close 该 PR，删 base 会 close 其全部下游 PR，且重建分支后不可 reopen。本地 worktree/分支清理不受此限。
 
+## 并行与分工
+
+- 跨文件/跨 PR/跨模块的批量整改与全量扫描（风格统一、批量查证等）优先派发 subagent 并行处理；主 session 只做派发、审查与收口，不逐文件串行推进。
+
 ## Review 纪律
 
 - PR comment 只放结果与证据；禁止把验证动作甩给 reviewer（"请手动验证连通性"类评论）。
