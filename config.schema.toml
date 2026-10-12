@@ -34,7 +34,7 @@ key = [
   # ===== 模型服务（models 读） =====
   { name = "MOMO_ASR_LISTEN", type = "string", default = "127.0.0.1:7810", readers = ["models", "infra"], files = ["app", "models", "infra"], description = "ASR WS 监听；infra doctor 探 /healthz" },
   { name = "MOMO_ASR_PROVIDER", type = "enum", values = ["sensevoice"], default = "sensevoice", readers = ["models"], files = ["app", "models"], description = "ASR 后端；云端实现经 registry 同级注册" },
-  { name = "MOMO_ASR_MODEL", type = "string", default = "sensevoice-small", readers = ["models"], files = ["app", "models"], description = "ASR 模型" },
+  { name = "MOMO_ASR_MODEL", type = "string", default = "sense-voice-small-int8", readers = ["models"], files = ["app", "models"], description = "ASR 模型：MANIFEST 条目名（其 dest 即模型目录）" },
   { name = "MOMO_ASR_THREADS", type = "int", default = "4", readers = ["models"], files = ["app", "models"], description = "sherpa-onnx CPU 线程（1–16）" },
   { name = "MOMO_VAD_PROVIDER", type = "enum", values = ["silero"], default = "silero", readers = ["models"], files = ["app", "models"], description = "VAD 后端" },
   { name = "MOMO_VAD_SILENCE_MS", type = "int", default = "250", readers = ["models"], files = ["app", "models"], description = "VAD 判停静音时长（ms）" },

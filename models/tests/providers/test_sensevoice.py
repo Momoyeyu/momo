@@ -1,6 +1,7 @@
 """sensevoice provider 测试：sherpa-onnx 全 mock + 真模型集成（env 门控 skip）。
 
-- 单测：sys.modules 注入假 sherpa_onnx，不依赖重库/权重。
+- 单测：sys.modules 注入假 sherpa_onnx；MANIFEST 也用临时清单替换，
+  不依赖重库/权重。
 - 集成：仅当 $MOMO_MODELS_DIR 下模型文件存在且 sherpa_onnx 可 import 时运行
   （标 slow；CI 无权重自动 skip）。
 """
@@ -15,7 +16,6 @@ import pytest
 
 from momo_models.config import Settings
 from momo_models.providers.asr.sensevoice import (
-    _MODEL_SUBDIR,
     SenseVoiceASRProvider,
     SenseVoiceError,
     _normalize_lang,
@@ -23,6 +23,10 @@ from momo_models.providers.asr.sensevoice import (
     _strip_tag,
 )
 from momo_models.providers.base import Transcript
+
+# 与仓库 MANIFEST（models/models/MANIFEST.toml）的 sense-voice-small-int8 条目对齐。
+_MODEL_SUBDIR = Path("sherpa-onnx") / "sense-voice-zh-en-ja-ko-yue-2024-07-17"
+_ENTRY = "sense-voice-small-int8"
 
 # ---------- 假 sherpa_onnx ----------
 
@@ -120,7 +124,7 @@ def _patch_manifest(
     manifest.write_text(
         f"""
 [[model]]
-name = "sense-voice-small-int8"
+name = "{_ENTRY}"
 repo_id = "fake/repo"
 revision = "main"
 dest = "{_MODEL_SUBDIR.as_posix()}"
@@ -128,6 +132,29 @@ files = [
   {{ path = "{model_name}", sha256 = "{_sha(d / model_name)}" }},
   {{ path = "tokens.txt", sha256 = "{_sha(d / "tokens.txt")}" }},
 ]
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(manifest_mod, "DEFAULT_MANIFEST", manifest)
+
+
+def _patch_manifest_bare(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    name: str = _ENTRY,
+    dest: Path = _MODEL_SUBDIR,
+) -> None:
+    """只登记条目名/dest（无 files），供条目解析与“文件缺失”用例隔离真实仓库清单。"""
+    import momo_models.manifest as manifest_mod
+
+    manifest = tmp_path / "MANIFEST.toml"
+    manifest.write_text(
+        f"""
+[[model]]
+name = "{name}"
+repo_id = "fake/repo"
+revision = "main"
+dest = "{dest.as_posix()}"
 """,
         encoding="utf-8",
     )
@@ -146,6 +173,7 @@ def _prepare(
 
 
 def _settings(tmp_path: Path, **kw) -> Settings:
+    kw.setdefault("asr_model", _ENTRY)
     return Settings(models_dir=tmp_path, **kw)
 
 
@@ -156,19 +184,83 @@ def _pcm(seconds: float = 1.0) -> bytes:
 # ---------- load ----------
 
 
-def test_load_missing_files(tmp_path: Path) -> None:
+def test_load_missing_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_manifest_bare(monkeypatch, tmp_path)
     p = SenseVoiceASRProvider(_settings(tmp_path))
     with pytest.raises(SenseVoiceError, match="模型文件缺失"):
         asyncio.run(p.load())
 
 
-def test_load_missing_tokens_only(tmp_path: Path) -> None:
+def test_load_missing_tokens_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_manifest_bare(monkeypatch, tmp_path)
     d = tmp_path / _MODEL_SUBDIR
     d.mkdir(parents=True)
     (d / "model.int8.onnx").write_bytes(b"fake")
     p = SenseVoiceASRProvider(_settings(tmp_path))
     with pytest.raises(SenseVoiceError, match="tokens.txt"):
         asyncio.run(p.load())
+
+
+def test_load_unknown_model_lists_manifest_entries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """MOMO_ASR_MODEL 不在 MANIFEST 中 → 报错并列出可选条目名。"""
+    _patch_manifest_bare(monkeypatch, tmp_path)
+    p = SenseVoiceASRProvider(_settings(tmp_path, asr_model="sensevoice-small"))
+    with pytest.raises(SenseVoiceError, match="unknown MOMO_ASR_MODEL='sensevoice-small'") as ei:
+        asyncio.run(p.load())
+    assert _ENTRY in str(ei.value)
+
+
+def test_load_manifest_absent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """无 MANIFEST 无法解析模型目录 → 报错而不是回退到硬编码路径。"""
+    import momo_models.manifest as manifest_mod
+
+    monkeypatch.setattr(manifest_mod, "DEFAULT_MANIFEST", tmp_path / "absent.toml")
+    p = SenseVoiceASRProvider(_settings(tmp_path))
+    with pytest.raises(SenseVoiceError, match="MANIFEST.toml not found"):
+        asyncio.run(p.load())
+
+
+def test_model_name_selects_entry_dest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """MOMO_ASR_MODEL 命中的条目 dest 决定实际加载的模型目录（可切换）。"""
+    import momo_models.manifest as manifest_mod
+
+    alt_subdir = Path("sherpa-onnx") / "sense-voice-alt"
+    entries = ((_ENTRY, _MODEL_SUBDIR), ("sense-voice-alt", alt_subdir))
+    for _, subdir in entries:
+        d = tmp_path / subdir
+        d.mkdir(parents=True)
+        (d / "model.int8.onnx").write_bytes(f"fake onnx {subdir.name}".encode())
+        (d / "tokens.txt").write_text("x 0\n", encoding="utf-8")
+
+    manifest = tmp_path / "MANIFEST.toml"
+    manifest.write_text(
+        "\n".join(
+            f"""
+[[model]]
+name = "{name}"
+repo_id = "fake/repo"
+revision = "main"
+dest = "{subdir.as_posix()}"
+files = [
+  {{ path = "model.int8.onnx", sha256 = "todo" }},
+  {{ path = "tokens.txt", sha256 = "todo" }},
+]
+"""
+            for name, subdir in entries
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(manifest_mod, "DEFAULT_MANIFEST", manifest)
+    _install_fake_sherpa(monkeypatch)
+
+    for name, subdir in entries:
+        _FakeRecognizer.reset()
+        p = SenseVoiceASRProvider(_settings(tmp_path, asr_model=name))
+        asyncio.run(p.load())
+        loaded = Path(_FakeRecognizer.builds[0]["model"])
+        assert loaded.parent == tmp_path / subdir
 
 
 def test_load_prefers_int8_and_builds_auto(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -202,7 +294,7 @@ def test_load_sha256_mismatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     manifest.write_text(
         f"""
 [[model]]
-name = "sense-voice-small-int8"
+name = "{_ENTRY}"
 repo_id = "fake/repo"
 revision = "main"
 dest = "{_MODEL_SUBDIR.as_posix()}"

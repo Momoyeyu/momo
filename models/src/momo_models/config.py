@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # ASR（momo-svc-asr）
     asr_listen: str = "127.0.0.1:7810"
     asr_provider: str = "sensevoice"  # sensevoice；云端实现经 registry 注册同级切换
-    asr_model: str = "sensevoice-small"
+    asr_model: str = "sense-voice-small-int8"  # MANIFEST 条目名（dest 即模型目录）
     asr_threads: int = 4
     vad_provider: str = "silero"  # silero
     vad_silence_ms: int = 250
