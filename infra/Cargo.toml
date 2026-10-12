@@ -22,3 +22,7 @@ thiserror = "2"
 dotenvy = "0.15"
 owo-colors = "4"
 sha2 = "0.10"
+
+[dev-dependencies]
+wiremock = "0.6"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

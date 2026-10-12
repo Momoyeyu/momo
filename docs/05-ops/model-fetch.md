@@ -30,6 +30,7 @@ flowchart TD
 - `.part`、未登记目录和旧版本只有在无 active/rollback 引用后才能 GC。
 - provider 运行时不在线拉权重；下载与 turn 数据路径分离。
 - `models.lock` 不记录密钥，下载凭据由独立 secret store 提供。
+- `pull` 期间以 `${MOMO_MODELS_DIR}/pull.lock` 占位互斥（create_new 原子）；崩溃残留需手动删除后重试。
 
 ## 操作检查
 
