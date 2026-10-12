@@ -9,7 +9,7 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 #[command(
     name = "momoctl",
     version,
-    about = "momo 运维 CLI：doctor / pull / serve / switch / bench / gc / config"
+    about = "momo ops CLI: doctor / pull / serve / switch / bench / gc / config"
 )]
 pub struct Cli {
     /// 以 JSON 输出单一对象（schema 版本化，供 CI/脚本消费）

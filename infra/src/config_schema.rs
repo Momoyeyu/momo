@@ -437,7 +437,7 @@ pub fn check_config_md(text: &str, schema: &Schema) -> Vec<DriftItem> {
                 "value",
                 Some(name.as_str()),
                 format!(
-                    "config.md 默认值 '{doc_default}' != schema '{}'",
+                    "config.md default '{doc_default}' != schema '{}'",
                     spec.default
                 ),
             ));
@@ -449,7 +449,7 @@ pub fn check_config_md(text: &str, schema: &Schema) -> Vec<DriftItem> {
                 "table",
                 Some(name.as_str()),
                 format!(
-                    "config.md 敏感={doc_sensitive} != schema {}",
+                    "config.md sensitive={doc_sensitive} != schema {}",
                     spec.sensitive
                 ),
             ));
@@ -462,7 +462,7 @@ pub fn check_config_md(text: &str, schema: &Schema) -> Vec<DriftItem> {
                 drifts.push(DriftItem::new(
                     "table",
                     Some(name.as_str()),
-                    format!("config.md 读取组件 {doc_readers:?} != schema {want:?}"),
+                    format!("config.md readers {doc_readers:?} != schema {want:?}"),
                 ));
             }
         }
