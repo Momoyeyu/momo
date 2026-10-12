@@ -1,8 +1,4 @@
-//! LLM SSE client 用例（issue #12 验收）：
-//! mock OpenAI-compatible SSE 服务（axum + `text/event-stream`），
-//! 断言 token 顺序、请求形状（path/header/body）、`[DONE]` 终止、
-//! 错块切分重组、`CancellationToken` 中途取消与 HTTP 错误映射。
-//! 全部走 127.0.0.1 回环，无真实外网。
+//! mock SSE 服务断言 token 顺序、请求形状、`[DONE]`、错块重组、中途取消与错误映射；全程回环。
 
 use std::{
     convert::Infallible,

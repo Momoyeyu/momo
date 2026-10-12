@@ -1,11 +1,5 @@
-//! `LlmClient` trait + OpenAI-compatible 实现。
-//!
-//! LLM 走 OpenAI-compatible HTTP SSE 直连大脑端点（ADR-006）：
-//! `POST {endpoint}/chat/completions`（`stream:true`），逐 `data:` 行
-//! 解析 `choices[0].delta.content` 增量，`data: [DONE]` / EOF 终止。
-//! 取消语义统一由 `CancellationToken` 承担：token 触发后流立即结束
-//! （不产生错误项），HTTP 连接随 response drop 断开；是否取消由调用方
-//! 查 token 判定（barge-in 见 runtime.md §barge-in）。
+//! `LlmClient` trait + OpenAI-compatible SSE 实现（ADR-006）。
+//! 取消经 `CancellationToken`：触发即终止，不产错误项。
 
 use std::{pin::Pin, sync::Arc, time::Duration};
 
@@ -85,8 +79,7 @@ impl OpenAiCompatLlm {
         &self.model
     }
 
-    /// `{endpoint}/chat/completions`；endpoint 尾 `/` 有无均可（`Url::join`
-    /// 会把末段当文件覆盖，故手工拼接）。
+    /// `Url::join` 会吃掉末段，故手工拼接。
     fn chat_completions_url(&self) -> String {
         format!(
             "{}/chat/completions",
@@ -203,11 +196,8 @@ struct StreamError {
     message: Option<String>,
 }
 
-/// response body → delta content 流。
-///
-/// 逐字节缓冲，只在 `\n` 处切行（UTF-8 多字节序列不含 `0x0A`，行边界切割
-/// 不会截断字符）。`[DONE]`/EOF/取消正常终止（`None`）；JSON 解析失败、
-/// 上游 error 事件、body 错误、总超时各产出一个 `Err` 项后终止。
+/// body → delta 流；只在 `\n` 切行（UTF-8 无裸 `0x0A`，不截字符）。
+/// `[DONE]`/EOF/取消 → `None`；解析/上游/超时错误各产一个 `Err` 后终止。
 fn sse_stream(
     resp: reqwest::Response,
     cancel: CancellationToken,
