@@ -124,7 +124,7 @@ fn down_inner(
                     checks.push(Check::fail(
                         c.name.clone(),
                         format!("pid {pid} did not exit after TERM+KILL"),
-                        "手动检查进程后重试 momoctl serve down",
+                        "inspect processes manually, then retry momoctl serve down",
                     ));
                 }
             }
@@ -181,7 +181,7 @@ fn status_inner(
                 Err(d) => checks.push(Check::warn(
                     c.name.clone(),
                     format!("external {d}"),
-                    "外部 provider 不可达：非 owned，serve 不负责拉起",
+                    "external provider unreachable; not owned, serve does not start it",
                 )),
             }
             continue;
@@ -191,7 +191,7 @@ fn status_inner(
             Ok(pid) if !proc::is_alive(pid) => checks.push(Check::fail(
                 c.name.clone(),
                 format!("pidfile stale: pid {pid} not running"),
-                "momoctl serve down 清理残留 pidfile",
+                "run momoctl serve down to clean stale pidfiles",
             )),
             Ok(pid) => {
                 let up = proc::pidfile_started(&c.name)
@@ -202,7 +202,7 @@ fn status_inner(
                     Some(url) if !net::probe_get(url).ready() => checks.push(Check::warn(
                         c.name.clone(),
                         format!("running pid {pid}{up}; not ready: {url}"),
-                        "组件未就绪：查看 logs 目录下的组件日志",
+                        "component not ready; check its log under logs/",
                     )),
                     _ => checks.push(Check::ok(c.name.clone(), format!("running pid {pid}{up}"))),
                 }
