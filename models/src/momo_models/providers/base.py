@@ -7,7 +7,7 @@
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar
@@ -131,3 +131,41 @@ class ASRProvider(ABC):
     @abstractmethod
     async def transcribe(self, pcm: bytes, *, lang: str | None) -> Transcript:
         """转写一段 PCM s16le 16kHz mono。"""
+
+
+# ---------- VAD ----------
+
+SPEECH_START = "speech_start"
+SPEECH_END = "speech_end"
+
+
+@dataclass(frozen=True)
+class VadEvent:
+    """VAD 边界事件；`pcm` 仅 speech_end 携带（段 PCM s16le 16k mono 供 ASR）。"""
+
+    event: str
+    at_ms: int
+    segment_index: int
+    pcm: bytes = b""
+
+
+class VADProvider(ABC):
+    """16kHz mono PCM 流 → 断句边界 + 语音段；只做断句不做识别。"""
+
+    name: ClassVar[str]
+
+    @abstractmethod
+    async def load(self) -> None:
+        """加载模型；readyz 以此为据。"""
+
+    @abstractmethod
+    def feed(self, pcm: bytes) -> Iterator[VadEvent]:
+        """喂入一块 PCM s16le 16kHz mono，产出 0..n 个边界事件。"""
+
+    @abstractmethod
+    def flush(self) -> Iterator[VadEvent]:
+        """capture 结束时冲刷：残留未满一窗的样本按末尾静音处理。"""
+
+    @abstractmethod
+    def reset(self) -> None:
+        """丢弃流内状态（新 capture 前调用）。"""

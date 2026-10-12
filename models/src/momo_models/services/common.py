@@ -1,21 +1,14 @@
-"""momo-svc-* 统一骨架：app 工厂。
+"""momo-svc-* 骨架：WS /ws + /healthz + /readyz + 调试 POST（协议细节见 protocol.md）。
 
-端点（设计：momo-docs/02-repos/momo-models.md「统一服务接口」）：
-- `WS /ws`      momo-ws v1（protocol.md）：hello{client:orchestrator} → hello.ok{role}
-- `GET /healthz` 进程活（momoctl serve status/doctor 只认此口与 readyz）
-- `GET /readyz`  模型已加载可服务；未就绪 503
-- 调试 POST 口   非流式调试（不在运行时主路径），统一 {"error":{"code","message"}}
-
-协议细节（protocol.md §3/§8）：首帧必须 hello，否则 close 4400；
-version 非 v1 → error{VERSION_MISMATCH} + close 4001。
+业务消息由 `business_factory` 注入的 WsBusiness 处理；未实装消息回 not implemented。
 """
 
 import json
-import secrets
 import time
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Protocol
 
 import uvicorn
 from fastapi import FastAPI, Request, WebSocket
@@ -24,27 +17,35 @@ from starlette.websockets import WebSocketDisconnect, WebSocketState
 
 from momo_models.config import Settings
 from momo_models.logging import get_logger
+from momo_models.proto import ulid_new
 
-PROTOCOL_VERSION = "v1"
+PROTOCOL_VERSION = "v2"
 
-# 协议 §5 消息目录全量；模型服务链路只会上行其中一部分，
-# 骨架阶段一律回 error{INTERNAL, "not implemented"}。
+# protocol.md 必需字段表的消息目录；模型服务链路只会上行其中一部分，
+# 未实装的一律回 error{INTERNAL, "not implemented"}。
 KNOWN_TYPES = frozenset(
     {
         "hello",
         "hello.ok",
+        "session.snapshot",
         "input.text",
-        "input.audio.segment",
+        "input.accepted",
+        "input.rejected",
+        "input.audio.start",
+        "input.audio.end",
+        "input.audio.cancel",
         "input.vad",
+        "input.audio.segment",
+        "audio.open",
+        "audio.end",
         "output.sentence",
-        "audio.chunk",
+        "output.complete",
+        "playback.started",
+        "playback.progress",
         "control.barge_in",
         "control.cancel",
+        "turn.finished",
         "state.turn",
-        "action.register",
-        "action.unregister",
-        "action.invoke",
-        "action.result",
         "error",
     }
 )
@@ -61,12 +62,56 @@ def _error_frame(
     return frame
 
 
+@dataclass
+class WsContext:
+    """已握手连接上下文；envelope/send_error 自动携带单调 event_seq。"""
+
+    ws: WebSocket
+    app: FastAPI
+    session_id: str
+    event_seq: int = 0
+
+    def envelope(self) -> dict[str, Any]:
+        """服务端业务消息公共 envelope（event_seq 每次 +1）。"""
+        self.event_seq += 1
+        return {
+            "session_id": self.session_id,
+            "event_id": ulid_new(),
+            "at_ms": int(time.time() * 1000),
+            "event_seq": self.event_seq,
+        }
+
+    async def send_error(self, code: str, message: str, *, fatal: bool = False) -> None:
+        await self.ws.send_json(
+            {
+                "type": "error",
+                **self.envelope(),
+                "code": code,
+                "message": message,
+                "fatal": fatal,
+            }
+        )
+
+
+class WsBusiness(Protocol):
+    """每连接业务处理器：handle() 返回 True 表示已消费该消息。"""
+
+    async def handle(self, item: dict | bytes) -> bool:
+        """dict=已解析文本消息；bytes=二进制帧。"""
+        ...
+
+    async def aclose(self) -> None:
+        """连接断开时清理（取消在途任务等）。"""
+        ...
+
+
 def make_app(
     *,
     role: str,
     settings: Settings,
     debug_path: str | None = None,
     on_startup: Callable[[FastAPI], Awaitable[None]] | None = None,
+    business_factory: Callable[[WsContext], WsBusiness] | None = None,
 ) -> FastAPI:
     """构建某个角色（asr/tts/embed）的服务 app。"""
 
@@ -79,6 +124,7 @@ def make_app(
         yield
 
     app = FastAPI(title=f"momo-svc-{role}", lifespan=lifespan)
+    app.state.settings = settings
 
     # ---------- 访问日志 ----------
     @app.middleware("http")
@@ -127,7 +173,7 @@ def make_app(
             status_code=500,
         )
 
-    # ---------- momo-ws v1 /ws ----------
+    # ---------- momo-ws v2 /ws ----------
     @app.websocket("/ws")
     async def ws_endpoint(ws: WebSocket) -> None:
         await ws.accept()
@@ -170,7 +216,7 @@ def make_app(
             await ws.close(code=4400)
             return
 
-        session_id = f"sess_{secrets.token_hex(13).upper()}"
+        session_id = f"sess_{ulid_new()}"
         await ws.send_json(
             {
                 "type": "hello.ok",
@@ -182,16 +228,18 @@ def make_app(
             }
         )
         conn.info("ws.hello", session_id=session_id)
+        ctx = WsContext(ws=ws, app=app, session_id=session_id)
+        business = business_factory(ctx) if business_factory is not None else None
 
-        # 骨架阶段：握手后一切消息回 error 帧（known type → INTERNAL not implemented，
-        # 未知 type → BAD_MESSAGE，协议 §2）。
+        # 未消费消息回 error 帧（known→INTERNAL not implemented，未知→BAD_MESSAGE）。
         try:
             while ws.client_state == WebSocketState.CONNECTED:
                 frame = await ws.receive()
-                if frame.get("bytes") is not None:
-                    await ws.send_json(
-                        _error_frame("INTERNAL", "audio.chunk upstream not implemented (P0)")
-                    )
+                data = frame.get("bytes")
+                if data is not None:
+                    if business is not None and await business.handle(data):
+                        continue
+                    await ctx.send_error("INTERNAL", "unexpected binary frame")
                     continue
                 text = frame.get("text")
                 if text is None:
@@ -199,18 +247,23 @@ def make_app(
                 try:
                     msg = json.loads(text)
                 except json.JSONDecodeError:
-                    await ws.send_json(_error_frame("BAD_MESSAGE", "invalid json"))
+                    await ctx.send_error("BAD_MESSAGE", "invalid json")
                     continue
                 msg_type = msg.get("type") if isinstance(msg, dict) else None
                 if msg_type not in KNOWN_TYPES:
-                    await ws.send_json(_error_frame("BAD_MESSAGE", f"unknown type {msg_type!r}"))
+                    await ctx.send_error("BAD_MESSAGE", f"unknown type {msg_type!r}")
                     continue
                 if msg_type == "hello":
-                    await ws.send_json(_error_frame("BAD_MESSAGE", "already negotiated"))
+                    await ctx.send_error("BAD_MESSAGE", "already negotiated")
                     continue
-                await ws.send_json(_error_frame("INTERNAL", f"{msg_type} not implemented (P0)"))
+                if business is not None and await business.handle(msg):
+                    continue
+                await ctx.send_error("INTERNAL", f"{msg_type} not implemented (P0)")
         except WebSocketDisconnect:
             conn.info("ws.disconnect", session_id=session_id)
+        finally:
+            if business is not None:
+                await business.aclose()
 
     return app
 
@@ -220,11 +273,7 @@ def attach_warmup(
     settings: Settings,
     warmup_method: str,
 ) -> Callable[[FastAPI], Awaitable[None]]:
-    """生成 on_startup 钩子：实例化 provider → warmup → 置 ready。
-
-    骨架阶段 warmup 均为 NotImplementedError：记日志、readyz 维持 503。
-    warmup 抛其他异常同样不就绪但不致命（服务仍可握手回报错误）。
-    """
+    """生成 on_startup 钩子：provider → warmup → ready；失败不就绪但不致命。"""
 
     async def _startup(app: FastAPI) -> None:
         try:

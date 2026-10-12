@@ -1,9 +1,4 @@
-"""音频工具：PCM s16le ↔ numpy、wav 封装、重采样。
-
-momo-ws v1 约定（protocol.md §3/§4）：
-- 上行（麦→ASR）：pcm_s16le，16kHz mono，50ms/帧
-- 下行（TTS→播放）：pcm_s16le，24kHz mono，50ms/帧
-"""
+"""音频工具：上行 16k mono / 下行 24k mono pcm_s16le 50ms/帧（protocol.md §3/§4）。"""
 
 import io
 import wave
@@ -43,10 +38,7 @@ def wav_unwrap(data: bytes) -> tuple[bytes, int, int]:
 
 
 def resample(samples: np.ndarray, src_rate: int, dst_rate: int) -> np.ndarray:
-    """线性插值重采样（骨架实现；P0 如需更高质量再换 soxr/polyphase）。
-
-    用途对齐文档：24k（TTS 下行）↔ 16k（ASR 上行）等档位转换。
-    """
+    """线性插值重采样；24k↔16k 档位转换，质量不足再换 soxr。"""
     if src_rate == dst_rate:
         return samples
     duration = len(samples) / src_rate
