@@ -79,13 +79,43 @@ fn check_system() -> CheckGroup {
     CheckGroup::new("system", checks)
 }
 
-/// `sw_vers -productVersion`（macOS）/ `uname -r` 兜底。
+/// 系统版本：macOS `sw_vers -productVersion`；其余 unix `uname -r`；
+/// Windows `cmd /C ver`（无 `uname`）。取不到返回 None，doctor 只显示 os/arch。
+#[cfg(target_os = "macos")]
 fn os_version() -> Option<String> {
-    if cfg!(target_os = "macos") {
-        tool_version("sw_vers", &["-productVersion"])
-    } else {
-        tool_version("uname", &["-r"])
+    tool_version("sw_vers", &["-productVersion"])
+}
+
+/// `uname -r` 是 unix-only 命令，必须 cfg(unix) 限定（Windows 无此命令）。
+#[cfg(all(unix, not(target_os = "macos")))]
+fn os_version() -> Option<String> {
+    tool_version("uname", &["-r"])
+}
+
+#[cfg(windows)]
+fn os_version() -> Option<String> {
+    tool_version("cmd", &["/C", "ver"]).and_then(|v| parse_windows_ver(&v))
+}
+
+/// 既非 unix 也非 windows 的目标：不探版本。
+#[cfg(not(any(unix, windows)))]
+fn os_version() -> Option<String> {
+    None
+}
+
+/// 从 `cmd /C ver` 输出提取版本串（纯函数，便于单测）：
+/// `Microsoft Windows [Version 10.0.22631.3155]` → `10.0.22631.3155`；
+/// 无 `[Version ...]` 标记时退回首个非空行；空输出返回 None。
+#[cfg_attr(not(windows), allow(dead_code))]
+fn parse_windows_ver(stdout: &str) -> Option<String> {
+    let line = stdout.lines().map(str::trim).find(|l| !l.is_empty())?;
+    if let Some((_, rest)) = line.split_once("[Version ") {
+        let v = rest.split(']').next().unwrap_or("").trim();
+        if !v.is_empty() {
+            return Some(v.to_string());
+        }
     }
+    Some(line.to_string())
 }
 
 // ---------- toolchain ----------
@@ -475,4 +505,46 @@ fn check_endpoints(env: &EnvCfg) -> CheckGroup {
         )),
     }
     CheckGroup::new("endpoints", checks)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `cmd /C ver` 典型输出 → 只看 `[Version ...]` 里的版本号。
+    #[test]
+    fn parse_windows_ver_extracts_bracketed_version() {
+        let out = "\r\nMicrosoft Windows [Version 10.0.22631.3155]\r\n";
+        assert_eq!(parse_windows_ver(out).as_deref(), Some("10.0.22631.3155"));
+    }
+
+    /// 多行输出取首个非空行，前导空行不影响。
+    #[test]
+    fn parse_windows_ver_skips_leading_blank_lines() {
+        let out = "\n\nMicrosoft Windows [Version 6.3.9600]\n";
+        assert_eq!(parse_windows_ver(out).as_deref(), Some("6.3.9600"));
+    }
+
+    /// 无 `[Version ]` 标记时退回整行原文。
+    #[test]
+    fn parse_windows_ver_falls_back_to_raw_line() {
+        assert_eq!(
+            parse_windows_ver("Windows unknown build\n").as_deref(),
+            Some("Windows unknown build")
+        );
+    }
+
+    /// 空输出（命令无 stdout）返回 None。
+    #[test]
+    fn parse_windows_ver_empty_output_is_none() {
+        assert_eq!(parse_windows_ver("   \n\n").as_deref(), None);
+    }
+
+    /// unix 实机探测：macOS `sw_vers -productVersion` / Linux `uname -r` 应有输出。
+    #[cfg(unix)]
+    #[test]
+    fn os_version_probe_returns_something_on_unix() {
+        let v = os_version().expect("os_version probe must succeed on unix");
+        assert!(!v.trim().is_empty(), "empty version output");
+    }
 }
