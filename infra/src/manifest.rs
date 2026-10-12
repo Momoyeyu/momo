@@ -151,6 +151,29 @@ impl ModelsLock {
             .map_err(|e| AppError::Manifest(format!("read {}: {e}", path.display())))?;
         toml::from_str(&text).map_err(|e| AppError::Manifest(format!("parse models.lock: {e}")))
     }
+
+    /// 原子写：先写 `models.lock.tmp` 再 rename（同目录 rename 原子）。
+    /// Windows 不允许 rename 覆盖已存在文件，先删目标。
+    pub fn save(&self, path: &Path) -> Result<(), AppError> {
+        let tmp = path.with_extension("tmp");
+        let text = toml::to_string_pretty(self)
+            .map_err(|e| AppError::Manifest(format!("serialize models.lock: {e}")))?;
+        fs::write(&tmp, text)
+            .map_err(|e| AppError::Manifest(format!("write {}: {e}", tmp.display())))?;
+        if path.exists() {
+            fs::remove_file(path)
+                .map_err(|e| AppError::Manifest(format!("replace {}: {e}", path.display())))?;
+        }
+        fs::rename(&tmp, path)
+            .map_err(|e| AppError::Manifest(format!("rename {}: {e}", tmp.display())))
+    }
+
+    /// 按 name/repo 去重后插入（重复 pull 覆盖旧条目）。
+    pub fn upsert(&mut self, entry: LockEntry) {
+        self.entries
+            .retain(|e| e.name != entry.name && e.repo != entry.repo);
+        self.entries.push(entry);
+    }
 }
 
 /// 文件 sha256 复算（校验用）。
