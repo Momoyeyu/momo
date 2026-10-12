@@ -17,7 +17,7 @@ flowchart LR
 
 ## 2. 变量全集
 
-### 2.1 通用（所有组件）
+### 2.1 通用（多组件共用，读取组件见表）
 
 | 名称 | 含义 | 默认值 | 取值 | 读取组件 | 敏感 |
 |---|---|---|---|---|---|
@@ -29,65 +29,65 @@ flowchart LR
 
 ### 2.2 编排器（app 读）
 
-| 名称 | 含义 | 默认值 | 取值 | 敏感 |
-|---|---|---|---|---|
-| `MOMO_ORCH_LISTEN` | WS + 静态 UI 监听地址 | `127.0.0.1:7800` | host:port | 否 |
-| `MOMO_UI_DIR` | 前端静态目录（打包内嵌时忽略） | `./web/dist` | path | 否 |
-| `MOMO_WEB_ORIGIN` | 浏览器来源（CORS/WS Origin 白名单） | `http://localhost:5173` | URL | 否 |
-| `MOMO_UI_TOKEN` | `/ws/ui` hello 的期望 `auth_token`；desktop 启动时注入，空=standalone dev 不比对（字段仍必填） | 空 | str | **是** |
-| `MOMO_LLM_ENDPOINT` | 大脑 OpenAI-compatible base URL | `http://mac-studio.local:7820/v1` | URL | 否 |
-| `MOMO_LLM_MODEL` | 传给大脑的 model 字段 | `qwen3-8b-4bit` | str | 否 |
-| `MOMO_LLM_API_KEY` | `MOMO_LLM_ENDPOINT` 所指上游的鉴权 key（不按厂商分键）；本地可空，远端如 DeepSeek 档必填 | 空 | str | **是** |
-| `MOMO_LLM_TIMEOUT_MS` | LLM 请求总超时 | `30000` | ms | 否 |
-| `MOMO_ASR_ENDPOINT` | ASR 服务 WS 地址 | `ws://127.0.0.1:7810/ws` | ws:// | 否 |
-| `MOMO_TTS_ENDPOINT` | TTS 服务 WS 地址 | `ws://127.0.0.1:7811/ws` | ws:// | 否 |
-| `MOMO_EMBED_ENDPOINT`（P1） | embed 服务 WS 连接地址（编排器→momo-svc-embed） | `ws://127.0.0.1:7812/ws` | ws:// | 否 |
-| `MOMO_BARGEIN_ENABLED` | 允许打断 | `true` | bool | 否 |
-| `MOMO_BARGEIN_MIN_MS` | 打断防抖：`input.vad{speech_start}` 须持续该时长才触发 barge-in | `250` | ms | 否 |
-| `MOMO_IDLE_TIMEOUT_S` | 空闲多少秒触发自发行为 | `20` | s，0=关闭 | 否 |
-| `MOMO_SENT_SOFT_CHARS` | 句切弱切阈值 | `25` | 字符数 | 否 |
-| `MOMO_SENT_MAX_CHARS` | 句切硬上限 | `60` | 字符数 | 否 |
-| `MOMO_HISTORY_TURNS` | 注入 LLM 的历史回合数 | `20` | int | 否 |
-| `MOMO_FILTER_ENABLED` | 未来外部 ingress/egress 过滤开关（streaming adapter 前置） | `false` | bool | 否 |
-| `MOMO_DATA_COLLECTION` | 会话采集开关（语料落盘供训练/微调） | `on` | `on`/`off` | 否 |
-| `MOMO_DATA_KEEP_AUDIO` | 原始麦音频短期保留（仅显式开启且授权时，供 ASR 排错） | `off` | `on`/`off` | **是** |
-| `MOMO_EMOTION_MAP` | emotion tag → Live2D 表情映射文件路径 | `config/emotion.map.yaml` | path | 否 |
+| 名称 | 含义 | 默认值 | 取值 | 读取组件 | 敏感 |
+|---|---|---|---|---|---|
+| `MOMO_ORCH_LISTEN` | WS + 静态 UI 监听地址 | `127.0.0.1:7800` | host:port | app, infra | 否 |
+| `MOMO_UI_DIR` | 前端静态目录（打包内嵌时忽略） | `./web/dist` | path | app | 否 |
+| `MOMO_WEB_ORIGIN` | 浏览器来源（CORS/WS Origin 白名单） | `http://localhost:5173` | URL | app | 否 |
+| `MOMO_UI_TOKEN` | `/ws/ui` hello 的期望 `auth_token`；desktop 启动时注入，空=standalone dev 不比对（字段仍必填） | 空 | str | app | **是** |
+| `MOMO_LLM_ENDPOINT` | 大脑 OpenAI-compatible base URL | `http://mac-studio.local:7820/v1` | URL | app, infra | 否 |
+| `MOMO_LLM_MODEL` | 传给大脑的 model 字段（主脑 Qwen3-30B-A3B-4bit；8B-4bit 为备档，见 ADR-024） | `qwen3-30b-a3b-4bit` | str | app, infra | 否 |
+| `MOMO_LLM_API_KEY` | `MOMO_LLM_ENDPOINT` 所指上游的鉴权 key（不按厂商分键）；本地可空，远端如 DeepSeek 档必填 | 空 | str | app, infra | **是** |
+| `MOMO_LLM_TIMEOUT_MS` | LLM 请求总超时 | `30000` | ms | app | 否 |
+| `MOMO_ASR_ENDPOINT` | ASR 服务 WS 地址 | `ws://127.0.0.1:7810/ws` | ws:// | app, infra | 否 |
+| `MOMO_TTS_ENDPOINT` | TTS 服务 WS 地址 | `ws://127.0.0.1:7811/ws` | ws:// | app, infra | 否 |
+| `MOMO_EMBED_ENDPOINT`（P1） | embed 服务 WS 连接地址（编排器→momo-svc-embed） | `ws://127.0.0.1:7812/ws` | ws:// | app | 否 |
+| `MOMO_BARGEIN_ENABLED` | 允许打断 | `true` | bool | app | 否 |
+| `MOMO_BARGEIN_MIN_MS` | 打断防抖：`input.vad{speech_start}` 须持续该时长才触发 barge-in | `250` | ms | app | 否 |
+| `MOMO_IDLE_TIMEOUT_S` | 空闲多少秒触发自发行为 | `20` | s，0=关闭 | app | 否 |
+| `MOMO_SENT_SOFT_CHARS` | 句切弱切阈值 | `25` | 字符数 | app | 否 |
+| `MOMO_SENT_MAX_CHARS` | 句切硬上限 | `60` | 字符数 | app | 否 |
+| `MOMO_HISTORY_TURNS` | 注入 LLM 的历史回合数 | `20` | int | app | 否 |
+| `MOMO_FILTER_ENABLED` | 未来外部 ingress/egress 过滤开关（streaming adapter 前置） | `false` | bool | app | 否 |
+| `MOMO_DATA_COLLECTION` | 会话采集开关（语料落盘供训练/微调） | `on` | `on`/`off` | app | 否 |
+| `MOMO_DATA_KEEP_AUDIO` | 原始麦音频短期保留（仅显式开启且授权时，供 ASR 排错） | `off` | `on`/`off` | app | **是** |
+| `MOMO_EMOTION_MAP` | emotion tag → Live2D 表情映射文件路径 | `config/emotion.map.yaml` | path | app | 否 |
 
 上游凭据只有一套，按**端点**而非厂商划分：`MOMO_LLM_API_KEY` 就是 `MOMO_LLM_ENDPOINT` 所指上游的 key——把 endpoint 改成 `https://api.deepseek.com/v1` 即切到 DeepSeek，不需要新键（ADR-006 统一 OpenAI 兼容接口；ADR-016 已否掉「把单一远端 provider 写死为产品能力」）。视觉上游同规则，用 `MOMO_VISION_*` 成套通用命名。
 
 ### 2.3 模型服务（models 读）
 
-| 名称 | 含义 | 默认值 | 取值 | 敏感 |
-|---|---|---|---|---|
-| `MOMO_ASR_LISTEN` | ASR WS 监听 | `127.0.0.1:7810` | host:port | 否 |
-| `MOMO_ASR_PROVIDER` | ASR 后端 | `sensevoice` | `sensevoice`；云端实现经 registry 同级注册 | 否 |
-| `MOMO_ASR_MODEL` | ASR 模型 | `sensevoice-small` | str | 否 |
-| `MOMO_ASR_THREADS` | sherpa-onnx CPU 线程 | `4` | 1–16 | 否 |
-| `MOMO_VAD_PROVIDER` | VAD 后端 | `silero` | `silero` | 否 |
-| `MOMO_VAD_SILENCE_MS` | VAD 判停静音时长 | `250` | ms | 否 |
-| `MOMO_TTS_LISTEN` | TTS WS 监听 | `127.0.0.1:7811` | host:port | 否 |
-| `MOMO_TTS_PROVIDER` | TTS 后端 | `kokoro` | `edge`/`kokoro`/`f5`/`cosyvoice3`/`sovits` | 否 |
-| `MOMO_TTS_DEVICE` | TTS 推理设备 | `cuda` | `cuda`/`cpu`/`mps` | 否 |
-| `MOMO_TTS_VOICE` | TTS 音色名（各后端自行解释，如 edge 用 `zh-CN-XiaoxiaoNeural`；空=按 `MOMO_TTS_LANG` 默认） | 空 | str | 否 |
-| `MOMO_TTS_VOICE_REF` | 克隆用参考音频路径 | 空 | path | 否 |
-| `MOMO_TTS_MODEL_DIR` | SFT 克隆产物目录（灰度切换/回滚指向） | 空 | path | 否 |
-| `MOMO_TTS_LANG` | 合成默认语言 | `auto` | `zh`/`en`/`ja`/`auto` | 否 |
-| `MOMO_MEMORY_ENABLED`（P1） | 记忆检索开关 | `false` | bool | 否 |
-| `MOMO_MEMORY_DB`（P1） | sqlite-vec 库路径 | `data/momo.vec.db` | path | 否 |
-| `MOMO_VISION_ENDPOINT`（P2） | 视觉 API | `https://api.deepseek.com/v1` | URL | 否 |
-| `MOMO_VISION_MODEL`（P2） | 视觉模型 | `deepseek-v4-flash-vision-exp` | str | 否 |
-| `MOMO_VISION_API_KEY`（P2） | `MOMO_VISION_ENDPOINT` 所指上游的鉴权 key（通用命名，不按厂商分键） | 空 | str | **是** |
-| `MOMO_EMBED_LISTEN`（P1） | embed 服务 WS 监听（记忆检索） | `127.0.0.1:7812` | host:port | 否 |
+| 名称 | 含义 | 默认值 | 取值 | 读取组件 | 敏感 |
+|---|---|---|---|---|---|
+| `MOMO_ASR_LISTEN` | ASR WS 监听 | `127.0.0.1:7810` | host:port | models, infra | 否 |
+| `MOMO_ASR_PROVIDER` | ASR 后端 | `sensevoice` | `sensevoice`；云端实现经 registry 同级注册 | models | 否 |
+| `MOMO_ASR_MODEL` | ASR 模型 | `sensevoice-small` | str | models | 否 |
+| `MOMO_ASR_THREADS` | sherpa-onnx CPU 线程 | `4` | 1–16 | models | 否 |
+| `MOMO_VAD_PROVIDER` | VAD 后端 | `silero` | `silero` | models | 否 |
+| `MOMO_VAD_SILENCE_MS` | VAD 判停静音时长 | `250` | ms | models | 否 |
+| `MOMO_TTS_LISTEN` | TTS WS 监听 | `127.0.0.1:7811` | host:port | models, infra | 否 |
+| `MOMO_TTS_PROVIDER` | TTS 后端 | `kokoro` | `edge`/`kokoro`/`f5`/`cosyvoice3`/`sovits` | models | 否 |
+| `MOMO_TTS_DEVICE` | TTS 推理设备 | `cuda` | `cuda`/`cpu`/`mps` | models | 否 |
+| `MOMO_TTS_VOICE` | TTS 音色名（各后端自行解释，如 edge 用 `zh-CN-XiaoxiaoNeural`；空=按 `MOMO_TTS_LANG` 默认） | 空 | str | models | 否 |
+| `MOMO_TTS_VOICE_REF` | 克隆用参考音频路径 | 空 | path | models | 否 |
+| `MOMO_TTS_MODEL_DIR` | SFT 克隆产物目录（灰度切换/回滚指向） | 空 | path | models | 否 |
+| `MOMO_TTS_LANG` | 合成默认语言 | `auto` | `zh`/`en`/`ja`/`auto` | models | 否 |
+| `MOMO_MEMORY_ENABLED`（P1） | 记忆检索开关 | `false` | bool | models | 否 |
+| `MOMO_MEMORY_DB`（P1） | sqlite-vec 库路径 | `data/momo.vec.db` | path | models | 否 |
+| `MOMO_VISION_ENDPOINT`（P2） | 视觉 API | `https://api.deepseek.com/v1` | URL | models | 否 |
+| `MOMO_VISION_MODEL`（P2） | 视觉模型 | `deepseek-v4-flash-vision-exp` | str | models | 否 |
+| `MOMO_VISION_API_KEY`（P2） | `MOMO_VISION_ENDPOINT` 所指上游的鉴权 key（通用命名，不按厂商分键） | 空 | str | models | **是** |
+| `MOMO_EMBED_LISTEN`（P1） | embed 服务 WS 监听（记忆检索） | `127.0.0.1:7812` | host:port | models | 否 |
 
 ### 2.4 infra 读（大脑服务启停、`momoctl web` 鉴权；mac-studio 侧大脑由 infra 远程/本地拉起）
 
-| 名称 | 含义 | 默认值 | 取值 | 敏感 |
-|---|---|---|---|---|
-| `MOMO_LLM_API_KEY` | 见 §2.2；infra 侧仅 `momoctl doctor` 查 set/unset，不取值不回显 | 空 | str | **是** |
-| `MOMO_WEB_TOKEN` | `momoctl web` 控制台鉴权 token；`--listen` 放宽出 localhost 时必填（未设拒绝启动） | 空 | str | **是** |
-| `MOMO_BRAIN_BACKEND` | 大脑后端类型 | `mlx` | `mlx`/`vllm`/`deepseek`/`local` | 否 |
-| `MOMO_BRAIN_MODEL_PATH` | 本地模型目录 | `~/models/Qwen3-8B-4bit` | path | 否 |
-| `MOMO_BRAIN_PORT` | 大脑服务端口（对应 `MOMO_LLM_ENDPOINT`） | `7820` | port | 否 |
+| 名称 | 含义 | 默认值 | 取值 | 读取组件 | 敏感 |
+|---|---|---|---|---|---|
+| `MOMO_LLM_API_KEY` | 见 §2.2；infra 侧仅 `momoctl doctor` 查 set/unset，不取值不回显 | 空 | str | app, infra | **是** |
+| `MOMO_WEB_TOKEN` | `momoctl web` 控制台鉴权 token；`--listen` 放宽出 localhost 时必填（未设拒绝启动） | 空 | str | infra | **是** |
+| `MOMO_BRAIN_BACKEND` | 大脑后端类型 | `mlx` | `mlx`/`vllm`/`deepseek`/`local` | infra | 否 |
+| `MOMO_BRAIN_MODEL_PATH` | 本地模型目录 | `~/models/Qwen3-8B-4bit` | path | infra | 否 |
+| `MOMO_BRAIN_PORT` | 大脑服务端口（对应 `MOMO_LLM_ENDPOINT`） | `7820` | port | infra | 否 |
 
 降级档本地脑（laptop 上 llama.cpp GGUF）同样监听 `MOMO_BRAIN_PORT`（默认 7820）；切换只是 `MOMO_LLM_ENDPOINT` 换 host，端口不变。
 
@@ -118,12 +118,12 @@ MOMO_UI_DIR=./web/dist
 MOMO_WEB_ORIGIN=http://localhost:5173   # 浏览器来源白名单（vite dev）
 MOMO_UI_TOKEN=               # 敏感：/ws/ui hello auth_token；desktop 启动注入，空=dev 不校验
 MOMO_LLM_ENDPOINT=http://mac-studio.local:7820/v1
-MOMO_LLM_MODEL=qwen3-8b-4bit
+MOMO_LLM_MODEL=qwen3-30b-a3b-4bit
 MOMO_LLM_API_KEY=              # 敏感：本地 mlx_lm 可空；DeepSeek 时填 sk-...
 MOMO_LLM_TIMEOUT_MS=30000
 MOMO_ASR_ENDPOINT=ws://127.0.0.1:7810/ws
 MOMO_TTS_ENDPOINT=ws://127.0.0.1:7811/ws
-MOMO_EMBED_ENDPOINT=ws://127.0.0.1:7812/ws   # P3 编排器→momo-svc-embed
+MOMO_EMBED_ENDPOINT=ws://127.0.0.1:7812/ws   # P1 编排器→momo-svc-embed
 MOMO_BARGEIN_ENABLED=true
 MOMO_BARGEIN_MIN_MS=250        # speech_start 持续该时长才触发打断
 MOMO_IDLE_TIMEOUT_S=20
@@ -154,7 +154,7 @@ MOMO_MEMORY_DB=data/momo.vec.db
 MOMO_VISION_ENDPOINT=https://api.deepseek.com/v1
 MOMO_VISION_MODEL=deepseek-v4-flash-vision-exp
 MOMO_VISION_API_KEY=         # 敏感：视觉 provider 鉴权 key；与 MOMO_VISION_ENDPOINT 配套
-MOMO_EMBED_LISTEN=127.0.0.1:7812   # P3 记忆检索服务
+MOMO_EMBED_LISTEN=127.0.0.1:7812   # P1 记忆检索服务
 
 # momo-infra（大脑启停 / web 控制台）
 MOMO_BRAIN_BACKEND=mlx
@@ -165,6 +165,7 @@ MOMO_WEB_TOKEN=                # 敏感：momoctl web --listen 放宽出 localho
 # 上游直通（非 MOMO_ 前缀）
 HF_ENDPOINT=https://hf-mirror.com   # laptop 必须
 # UV_INDEX_URL=
+# PIP_INDEX_URL=
 # HTTPS_PROXY=
 
 # ===== 降级档参考（degraded）：只改这几行 =====
