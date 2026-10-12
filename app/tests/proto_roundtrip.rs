@@ -1,16 +1,383 @@
-//! 消息序列化与 golden JSON 对拍（momo-app.md §测试策略）。
+//! 消息序列化与 golden JSON 对拍，以及二进制音频帧 roundtrip。
 //!
-//! 字段以 protocol.md §6 样例为 golden；codec 头常量同步断言。
+//! 字段以 `docs/01-architecture/protocol.md` 为唯一权威；
+//! `tests/golden/*.json` 逐类型覆盖协议必需字段表，encode/decode 双向对拍。
+
+use std::path::Path;
 
 use momo_app::proto::{
     codec::{self, AudioHeader, DIR_DOWNLINK, DIR_UPLINK, Direction, FLAG_EOS},
     message::{
-        ClientKind, ClientMsg, ControlCancelMsg, ErrorCode, HelloMsg, InputTextMsg, ServerMsg,
-        ServerRole, StateTurnMsg, TurnState,
+        AudioCodec, AudioEndMsg, AudioOpenMsg, BargeInMsg, BargeInReason, CancelTarget,
+        CaptureMode, ClientKind, ControlCancelMsg, EmotionTag, Envelope, ErrorCode, ErrorMsg,
+        HelloMsg, HelloOkMsg, InputAcceptedMsg, InputAudioMsg, InputAudioSegmentMsg,
+        InputAudioStartMsg, InputReceipt, InputRejectedMsg, InputTextMsg, InputVadMsg, Msg,
+        OutputCompleteMsg, OutputSentenceMsg, PlaybackProgressMsg, PlaybackStartedMsg,
+        ReceiptStatus, ServerEnvelope, ServerRole, SessionSnapshotMsg, SnapshotTurn, StateTurnMsg,
+        TurnFinishedMsg, TurnOutcome, TurnState, VadEvent,
     },
 };
 use serde_json::json;
 use ulid::Ulid;
+
+const SESSION: &str = "sess_01J5M0N8T1RZ8K2W4V7H6X9P3A";
+const EVENT: &str = "01J5M0N8T1RZ8K2W4V7H6X9P3B";
+const TURN: &str = "t_01J5M0N8T1RZ8K2W4V7H6X9P3C";
+const CAPTURE: &str = "cap_01J5M0N8T1RZ8K2W4V7H6X9P3D";
+const STREAM: &str = "st_01J5M0N8T1RZ8K2W4V7H6X9P3E";
+const RECEIPT: &str = "r_01J5M0N8T1RZ8K2W4V7H6X9P3F";
+const AT_MS: u64 = 1_730_000_000_000;
+const EVENT_SEQ: u64 = 42;
+
+fn env() -> Envelope {
+    Envelope {
+        session_id: SESSION.into(),
+        event_id: EVENT.into(),
+        at_ms: AT_MS,
+        reply_to: None,
+    }
+}
+
+fn senv() -> ServerEnvelope {
+    ServerEnvelope {
+        session_id: SESSION.into(),
+        event_id: EVENT.into(),
+        at_ms: AT_MS,
+        reply_to: None,
+        event_seq: EVENT_SEQ,
+    }
+}
+
+fn golden(name: &str) -> serde_json::Value {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/golden")
+        .join(name);
+    serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap()
+}
+
+/// protocol.md 必需字段表全类型覆盖：encode 对拍 golden，decode golden 还原。
+#[test]
+fn all_message_types_match_golden_json() {
+    let cases: Vec<(&str, Msg)> = vec![
+        (
+            "hello.json",
+            Msg::Hello(HelloMsg {
+                protocol: "momo-ws".into(),
+                version: "v2".into(),
+                client: ClientKind::Ui,
+                auth_token: "ephemeral-token".into(),
+                resume_session_id: Some(SESSION.into()),
+            }),
+        ),
+        (
+            "hello.ok.json",
+            Msg::HelloOk(HelloOkMsg {
+                version: "v2".into(),
+                session_id: SESSION.into(),
+                role: ServerRole::Orchestrator,
+                capabilities: vec!["barge_in".into(), "emotion_tags".into()],
+            }),
+        ),
+        (
+            "session.snapshot.json",
+            Msg::SessionSnapshot(SessionSnapshotMsg {
+                session_id: SESSION.into(),
+                turn: Some(SnapshotTurn {
+                    id: TURN.into(),
+                    state: TurnState::Speaking,
+                }),
+                receipts: vec![InputReceipt {
+                    id: RECEIPT.into(),
+                    turn_id: TURN.into(),
+                    status: ReceiptStatus::Completed,
+                }],
+                capabilities: vec!["barge_in".into(), "emotion_tags".into()],
+                last_event_seq: 41,
+            }),
+        ),
+        (
+            "input.text.json",
+            Msg::InputText(InputTextMsg {
+                env: env(),
+                id: RECEIPT.into(),
+                text: "今晚吃什么".into(),
+                lang: "zh".into(),
+            }),
+        ),
+        (
+            "input.accepted.json",
+            Msg::InputAccepted(InputAcceptedMsg {
+                env: senv(),
+                ref_id: RECEIPT.into(),
+                turn_id: TURN.into(),
+            }),
+        ),
+        (
+            "input.rejected.json",
+            Msg::InputRejected(InputRejectedMsg {
+                env: senv(),
+                ref_id: RECEIPT.into(),
+                reason: "empty_input".into(),
+            }),
+        ),
+        (
+            "input.audio.start.json",
+            Msg::InputAudioStart(InputAudioStartMsg {
+                env: env(),
+                capture_id: CAPTURE.into(),
+                mode: CaptureMode::Ptt,
+            }),
+        ),
+        (
+            "input.audio.end.json",
+            Msg::InputAudioEnd(InputAudioMsg {
+                env: env(),
+                capture_id: CAPTURE.into(),
+            }),
+        ),
+        (
+            "input.audio.cancel.json",
+            Msg::InputAudioCancel(InputAudioMsg {
+                env: env(),
+                capture_id: CAPTURE.into(),
+            }),
+        ),
+        (
+            "input.vad.json",
+            Msg::InputVad(InputVadMsg {
+                env: senv(),
+                capture_id: CAPTURE.into(),
+                event: VadEvent::SpeechStart,
+            }),
+        ),
+        (
+            "input.audio.segment.json",
+            Msg::InputAudioSegment(InputAudioSegmentMsg {
+                env: senv(),
+                capture_id: CAPTURE.into(),
+                text: "你好".into(),
+                is_final: true,
+            }),
+        ),
+        (
+            "audio.open.uplink.json",
+            Msg::AudioOpen(AudioOpenMsg {
+                env: env(),
+                event_seq: None,
+                stream_id: STREAM.into(),
+                direction: Direction::Uplink,
+                capture_id: Some(CAPTURE.into()),
+                turn_id: None,
+                sentence_seq: None,
+                codec: AudioCodec::PcmS16le,
+                sample_rate: 16000,
+                channels: 1,
+            }),
+        ),
+        (
+            "audio.open.downlink.json",
+            Msg::AudioOpen(AudioOpenMsg {
+                env: env(),
+                event_seq: Some(EVENT_SEQ),
+                stream_id: STREAM.into(),
+                direction: Direction::Downlink,
+                capture_id: None,
+                turn_id: Some(TURN.into()),
+                sentence_seq: Some(2),
+                codec: AudioCodec::PcmS16le,
+                sample_rate: 24000,
+                channels: 1,
+            }),
+        ),
+        (
+            "audio.end.json",
+            Msg::AudioEnd(AudioEndMsg {
+                env: env(),
+                event_seq: None,
+                stream_id: STREAM.into(),
+                last_chunk_seq: 7,
+            }),
+        ),
+        (
+            "output.sentence.json",
+            Msg::OutputSentence(OutputSentenceMsg {
+                env: senv(),
+                turn_id: TURN.into(),
+                seq: 2,
+                text: "今晚吃面吧。".into(),
+                emotion: EmotionTag::Happy,
+                lang: "zh".into(),
+            }),
+        ),
+        (
+            "output.complete.json",
+            Msg::OutputComplete(OutputCompleteMsg {
+                env: senv(),
+                turn_id: TURN.into(),
+                last_sentence_seq: 3,
+            }),
+        ),
+        (
+            "playback.started.json",
+            Msg::PlaybackStarted(PlaybackStartedMsg {
+                env: env(),
+                stream_id: STREAM.into(),
+                sentence_seq: 2,
+            }),
+        ),
+        (
+            "playback.progress.json",
+            Msg::PlaybackProgress(PlaybackProgressMsg {
+                env: env(),
+                stream_id: STREAM.into(),
+                sentence_seq: 2,
+                played_samples: 48000,
+                completed: false,
+            }),
+        ),
+        (
+            "control.barge_in.json",
+            Msg::ControlBargeIn(BargeInMsg {
+                env: env(),
+                turn_id: TURN.into(),
+                reason: BargeInReason::User,
+            }),
+        ),
+        (
+            "control.cancel.json",
+            Msg::ControlCancel(ControlCancelMsg {
+                env: senv(),
+                target: CancelTarget::Turn,
+                id: TURN.into(),
+            }),
+        ),
+        (
+            "turn.finished.json",
+            Msg::TurnFinished(TurnFinishedMsg {
+                env: senv(),
+                turn_id: TURN.into(),
+                outcome: TurnOutcome::Interrupted,
+            }),
+        ),
+        (
+            "state.turn.json",
+            Msg::StateTurn(StateTurnMsg {
+                env: senv(),
+                turn_id: TURN.into(),
+                state: TurnState::Speaking,
+            }),
+        ),
+        (
+            "error.json",
+            Msg::Error(ErrorMsg {
+                session_id: Some(SESSION.into()),
+                event_id: Some(EVENT.into()),
+                at_ms: Some(AT_MS),
+                event_seq: Some(EVENT_SEQ),
+                code: ErrorCode::BadMessage,
+                message: "unknown message type".into(),
+            }),
+        ),
+    ];
+    assert_eq!(cases.len(), 23, "protocol.md 全类型应有 23 个 golden");
+    for (file, msg) in cases {
+        let want = golden(file);
+        let got = serde_json::to_value(&msg).unwrap();
+        assert_eq!(got, want, "{file}: encode mismatch");
+        let back: Msg = serde_json::from_value(want).unwrap();
+        assert_eq!(back, msg, "{file}: decode mismatch");
+    }
+}
+
+#[test]
+fn audio_open_validate_enforces_direction_binding() {
+    let mut open = AudioOpenMsg {
+        env: env(),
+        event_seq: None,
+        stream_id: STREAM.into(),
+        direction: Direction::Uplink,
+        capture_id: Some(CAPTURE.into()),
+        turn_id: None,
+        sentence_seq: None,
+        codec: AudioCodec::PcmS16le,
+        sample_rate: 16000,
+        channels: 1,
+    };
+    assert!(open.validate().is_ok());
+    // uplink 不得带 sentence_seq。
+    open.sentence_seq = Some(1);
+    assert!(open.validate().is_err());
+    // downlink 必须带 turn_id + sentence_seq，不得带 capture_id。
+    open.direction = Direction::Downlink;
+    open.sentence_seq = Some(1);
+    open.turn_id = Some(TURN.into());
+    assert!(open.validate().is_err()); // 仍带 capture_id
+    open.capture_id = None;
+    assert!(open.validate().is_ok());
+}
+
+#[test]
+fn rejects_wrong_protocol_and_version() {
+    let mut hello = HelloMsg {
+        protocol: "other".into(),
+        version: "v2".into(),
+        client: ClientKind::Ui,
+        auth_token: "t".into(),
+        resume_session_id: None,
+    };
+    assert!(codec::check_hello(&hello).is_err());
+    hello.protocol = "momo-ws".into();
+    assert!(codec::check_hello(&hello).is_ok());
+    hello.version = "v1".into();
+    assert!(codec::check_hello(&hello).is_err());
+}
+
+#[test]
+fn error_frame_without_envelope_decodes() {
+    // 握手期错误无 session envelope（protocol：仅 code,message 必需）。
+    let msg = codec::decode_msg(r#"{"type":"error","code":"UNAUTHORIZED","message":"bad token"}"#)
+        .unwrap();
+    let Msg::Error(err) = msg else {
+        panic!("expected error, got {msg:?}")
+    };
+    assert_eq!(err.code, ErrorCode::Unauthorized);
+    assert!(err.session_id.is_none());
+    // 表外 code 解码为 Unknown，不产生解析失败。
+    let msg = codec::decode_msg(r#"{"type":"error","code":"FUTURE_CODE","message":"x"}"#).unwrap();
+    assert!(matches!(msg, Msg::Error(e) if e.code == ErrorCode::Unknown));
+}
+
+#[test]
+fn unknown_type_maps_to_unknown_variant() {
+    let msg = codec::decode_msg(r#"{"type":"future.msg","x":1}"#).unwrap();
+    assert_eq!(msg, Msg::Unknown);
+    // 未知字段被忽略。
+    let msg = codec::decode_msg(
+        r#"{"type":"input.text","session_id":"s","event_id":"e","at_ms":0,"id":"r","text":"hi","lang":"zh","extra":true}"#,
+    )
+    .unwrap();
+    assert!(matches!(msg, Msg::InputText(_)));
+}
+
+#[test]
+fn emotion_unknown_normalizes_to_neutral() {
+    let tag: EmotionTag = serde_json::from_value(json!("excited")).unwrap();
+    assert_eq!(tag, EmotionTag::Unknown);
+    assert_eq!(tag.normalized(), EmotionTag::Neutral);
+    assert_eq!(serde_json::to_value(tag).unwrap(), json!("neutral"));
+}
+
+#[test]
+fn error_code_serializes_screaming_snake() {
+    assert_eq!(
+        serde_json::to_value(ErrorCode::VersionMismatch).unwrap(),
+        json!("VERSION_MISMATCH")
+    );
+    assert_eq!(
+        serde_json::to_value(ErrorCode::BackpressureOverflow).unwrap(),
+        json!("BACKPRESSURE_OVERFLOW")
+    );
+}
 
 #[test]
 fn audio_header_constants_match_protocol() {
@@ -89,142 +456,4 @@ fn audio_header_rejects_malformed() {
         ..header
     };
     assert!(AudioHeader::decode(&codec::encode_audio_frame(bad_seq, b"\x00\x00")).is_err());
-}
-
-#[test]
-fn decodes_hello_golden_json() {
-    // protocol §3 样例逐字段对拍。
-    let text = json!({
-        "type": "hello",
-        "protocol": "momo-ws",
-        "version": "v1",
-        "client": "ui",
-        "audio": {
-            "uplink":   {"codec": "pcm_s16le", "sample_rate": 16000, "channels": 1, "chunk_ms": 50},
-            "downlink": {"codec": "pcm_s16le", "sample_rate": 24000, "channels": 1, "chunk_ms": 50}
-        }
-    })
-    .to_string();
-
-    let msg = codec::decode_client_msg(&text).unwrap();
-    let ClientMsg::Hello(hello) = msg else {
-        panic!("expected hello, got {msg:?}")
-    };
-    assert_eq!(hello.protocol, "momo-ws");
-    assert_eq!(hello.version, "v1");
-    assert_eq!(hello.client, ClientKind::Ui);
-    let uplink = &hello.audio.as_ref().unwrap().uplink;
-    assert_eq!(uplink.as_ref().unwrap().sample_rate, 16000);
-    assert!(codec::check_hello(&hello).is_ok());
-}
-
-#[test]
-fn rejects_wrong_protocol_and_version() {
-    let mut hello = HelloMsg {
-        protocol: "other".into(),
-        version: "v1".into(),
-        client: ClientKind::Ui,
-        audio: None,
-    };
-    assert!(codec::check_hello(&hello).is_err());
-    hello.protocol = "momo-ws".into();
-    hello.version = "v2".into();
-    assert!(codec::check_hello(&hello).is_err());
-}
-
-#[test]
-fn decodes_input_text_golden() {
-    let text = r#"{"type":"input.text","id":"r_01JXXX","text":"今晚吃什么","lang":"auto","at_ms":1730000000000}"#;
-    let msg = codec::decode_client_msg(text).unwrap();
-    let ClientMsg::InputText(InputTextMsg {
-        id,
-        text,
-        lang,
-        at_ms,
-    }) = msg
-    else {
-        panic!("expected input.text")
-    };
-    assert_eq!(id, "r_01JXXX");
-    assert_eq!(text, "今晚吃什么");
-    assert_eq!(lang.as_deref(), Some("auto"));
-    assert_eq!(at_ms, Some(1730000000000));
-}
-
-#[test]
-fn encodes_hello_ok_golden() {
-    let msg = ServerMsg::HelloOk(momo_app::proto::message::HelloOkMsg {
-        version: "v1".into(),
-        session_id: "sess_01JXXX".into(),
-        server: "momod".into(),
-        role: ServerRole::Orchestrator,
-        capabilities: vec!["barge_in".into(), "actions".into(), "emotion_tags".into()],
-    });
-    let got: serde_json::Value =
-        serde_json::from_str(&codec::encode_server_msg(&msg).unwrap()).unwrap();
-    assert_eq!(
-        got,
-        json!({
-            "type": "hello.ok",
-            "version": "v1",
-            "session_id": "sess_01JXXX",
-            "server": "momod",
-            "role": "orchestrator",
-            "capabilities": ["barge_in", "actions", "emotion_tags"]
-        })
-    );
-}
-
-#[test]
-fn encodes_state_turn_with_optional_ref_id() {
-    let msg = ServerMsg::StateTurn(StateTurnMsg {
-        turn_id: "t_01JXXX".into(),
-        state: TurnState::Thinking,
-        seq: 3,
-        at_ms: 1730000000000,
-        ref_id: Some("r_01JXXX".into()),
-    });
-    let got: serde_json::Value =
-        serde_json::from_str(&codec::encode_server_msg(&msg).unwrap()).unwrap();
-    assert_eq!(got["type"], "state.turn");
-    assert_eq!(got["state"], "thinking");
-    assert_eq!(got["ref_id"], "r_01JXXX");
-}
-
-#[test]
-fn encodes_control_cancel_golden() {
-    let msg = ServerMsg::ControlCancel(ControlCancelMsg {
-        target: momo_app::proto::message::CancelTarget::Turn,
-        id: "t_01JXXX".into(),
-        reason: Some(momo_app::proto::message::CancelReason::BargeIn),
-    });
-    let got: serde_json::Value =
-        serde_json::from_str(&codec::encode_server_msg(&msg).unwrap()).unwrap();
-    assert_eq!(
-        got,
-        json!({"type": "control.cancel", "target": "turn", "id": "t_01JXXX", "reason": "barge_in"})
-    );
-}
-
-#[test]
-fn unknown_type_maps_to_unknown_variant() {
-    let msg = codec::decode_client_msg(r#"{"type":"future.msg","x":1}"#).unwrap();
-    assert_eq!(msg, ClientMsg::Unknown);
-    // 未知字段被忽略（protocol §2 兼容规则）。
-    let msg =
-        codec::decode_client_msg(r#"{"type":"input.text","id":"r_x","text":"hi","extra":true}"#)
-            .unwrap();
-    assert!(matches!(msg, ClientMsg::InputText(_)));
-}
-
-#[test]
-fn error_code_serializes_screaming_snake() {
-    assert_eq!(
-        serde_json::to_value(ErrorCode::VersionMismatch).unwrap(),
-        json!("VERSION_MISMATCH")
-    );
-    assert_eq!(
-        serde_json::to_value(ErrorCode::BackpressureOverflow).unwrap(),
-        json!("BACKPRESSURE_OVERFLOW")
-    );
 }
