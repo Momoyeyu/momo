@@ -10,7 +10,7 @@ use ulid::Ulid;
 
 use crate::{
     error::AppError,
-    proto::message::{ClientMsg, HelloMsg, PROTOCOL_NAME, PROTOCOL_VERSION, ServerMsg},
+    proto::message::{HelloMsg, Msg, PROTOCOL_NAME, PROTOCOL_VERSION},
 };
 
 /// 二进制音频帧头长度（protocol.md 二进制帧一节）。
@@ -149,13 +149,13 @@ pub fn encode_audio_frame(header: AudioHeader, payload: &[u8]) -> Bytes {
     buf.freeze()
 }
 
-/// 文本帧 → `ClientMsg`；JSON 非法/字段非法 → `BAD_MESSAGE`。
-pub fn decode_client_msg(text: &str) -> Result<ClientMsg, AppError> {
+/// 文本帧 → `Msg`；JSON 非法/字段非法 → `BAD_MESSAGE`。
+pub fn decode_msg(text: &str) -> Result<Msg, AppError> {
     serde_json::from_str(text).map_err(|e| AppError::BadMessage(e.to_string()))
 }
 
-/// `ServerMsg` → 文本帧。
-pub fn encode_server_msg(msg: &ServerMsg) -> Result<String, AppError> {
+/// `Msg` → 文本帧。
+pub fn encode_msg(msg: &Msg) -> Result<String, AppError> {
     serde_json::to_string(msg).map_err(|e| AppError::Internal(e.to_string()))
 }
 

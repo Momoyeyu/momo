@@ -1,0 +1,8 @@
+{
+  "type": "hello",
+  "protocol": "momo-ws",
+  "version": "v2",
+  "client": "ui",
+  "auth_token": "ephemeral-token",
+  "resume_session_id": "sess_01J5M0N8T1RZ8K2W4V7H6X9P3A"
+}

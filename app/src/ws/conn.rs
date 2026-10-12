@@ -16,7 +16,7 @@ use crate::{
     error::AppError,
     proto::{
         codec::{self, CLOSE_INTERNAL, CLOSE_PROTOCOL_VIOLATION, CLOSE_VERSION_MISMATCH},
-        message::{ClientMsg, ErrorMsg, HelloOkMsg, ServerMsg, ServerRole, new_id},
+        message::{ErrorMsg, HelloOkMsg, Msg, ServerRole, new_id},
     },
     session::{SessionCmd, SessionHandle},
     ws::server::AppState,
@@ -28,7 +28,7 @@ pub const CONN_TX_CAP: usize = 256;
 /// conn_tx 的出站单元：JSON 文本帧 / 二进制音频帧 / 关闭帧。
 #[derive(Debug)]
 pub enum OutboundFrame {
-    Json(ServerMsg),
+    Json(Msg),
     /// `audio.chunk`：头 + PCM 载荷。
     Audio(codec::AudioHeader, Bytes),
     Close(u16, &'static str),
@@ -49,33 +49,25 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
         return;
     };
 
-    // conn_rx 循环：帧 → ClientMsg → Session。
+    // conn_rx 循环：帧 → Msg → Session。
     let cmd_tx = session.cmd_tx.clone();
     while let Some(msg) = stream.next().await {
         match msg {
-            Ok(Message::Text(text)) => match codec::decode_client_msg(text.as_str()) {
-                Ok(ClientMsg::Unknown) => {
+            Ok(Message::Text(text)) => match codec::decode_msg(text.as_str()) {
+                Ok(Msg::Unknown) => {
                     let _ = tx
-                        .send(OutboundFrame::Json(error_frame(
-                            &AppError::BadMessage("unknown message type".into()),
-                            None,
-                            false,
-                        )))
+                        .send(OutboundFrame::Json(error_frame(&AppError::BadMessage(
+                            "unknown message type".into(),
+                        ))))
                         .await;
                 }
                 Ok(client_msg) => {
-                    if cmd_tx
-                        .send(SessionCmd::ClientMsg(client_msg))
-                        .await
-                        .is_err()
-                    {
+                    if cmd_tx.send(SessionCmd::Msg(client_msg)).await.is_err() {
                         break;
                     }
                 }
                 Err(err) => {
-                    let _ = tx
-                        .send(OutboundFrame::Json(error_frame(&err, None, false)))
-                        .await;
+                    let _ = tx.send(OutboundFrame::Json(error_frame(&err))).await;
                 }
             },
             Ok(Message::Binary(bytes)) => {
@@ -85,9 +77,7 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
                         debug!(%conn_id, seq = header.chunk_seq, dir = ?header.direction, "uplink audio chunk dropped (P2 stub)");
                     }
                     Err(err) => {
-                        let _ = tx
-                            .send(OutboundFrame::Json(error_frame(&err, None, false)))
-                            .await;
+                        let _ = tx.send(OutboundFrame::Json(error_frame(&err))).await;
                     }
                 }
             }
@@ -103,8 +93,8 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
     debug!(%conn_id, "ws connection closed");
 }
 
-/// 握手：首消息必须是 `hello{protocol:"momo-ws", version:"v1"}`，
-/// 不匹配回 `error` + 按 §8 close code 断连。
+/// 握手：首消息必须是 `hello{protocol:"momo-ws", version:"v2"}`，
+/// 不匹配回 `error` + 按 close code 表断连。
 async fn handshake(
     conn_id: &str,
     stream: &mut (impl StreamExt<Item = Result<Message, axum::Error>> + Unpin),
@@ -126,8 +116,8 @@ async fn handshake(
         }
     };
 
-    let hello = match codec::decode_client_msg(first.as_str()) {
-        Ok(ClientMsg::Hello(hello)) => hello,
+    let hello = match codec::decode_msg(first.as_str()) {
+        Ok(Msg::Hello(hello)) => hello,
         other => {
             let err = match other {
                 Err(e) => e,
@@ -147,14 +137,15 @@ async fn handshake(
         return None;
     }
 
+    // TODO(P0): auth_token 的 constant-time 校验（expected token 由 desktop
+    // IPC 注入 AppState；校验失败 close 4401）。当前只做字段存在性检查（serde）。
     // 单活跃 session 策略：后连顶掉前连（SessionManager::attach）。
     let session = state.sessions.attach(conn_id, hello.client);
-    let hello_ok = ServerMsg::HelloOk(HelloOkMsg {
+    let hello_ok = Msg::HelloOk(HelloOkMsg {
         version: crate::proto::message::PROTOCOL_VERSION.to_string(),
         session_id: session.id.clone(),
-        server: "momod".into(),
         role: ServerRole::Orchestrator,
-        capabilities: vec!["barge_in".into(), "actions".into(), "emotion_tags".into()],
+        capabilities: vec!["barge_in".into(), "emotion_tags".into()],
     });
     if tx.send(OutboundFrame::Json(hello_ok)).await.is_err() {
         return None;
@@ -170,7 +161,7 @@ async fn tx_loop(
 ) {
     while let Some(frame) = rx.recv().await {
         let (msg, is_close) = match frame {
-            OutboundFrame::Json(m) => match codec::encode_server_msg(&m) {
+            OutboundFrame::Json(m) => match codec::encode_msg(&m) {
                 Ok(text) => (Message::Text(Utf8Bytes::from(text)), false),
                 Err(err) => {
                     warn!(%err, "failed to encode server msg");
@@ -197,9 +188,7 @@ async fn tx_loop(
 
 /// 回 `error{fatal:true}` 后按协议 close code 断连。
 async fn send_fatal(tx: &mpsc::Sender<OutboundFrame>, err: &AppError, code: u16) {
-    let _ = tx
-        .send(OutboundFrame::Json(error_frame(err, None, true)))
-        .await;
+    let _ = tx.send(OutboundFrame::Json(error_frame(err))).await;
     let reason: &'static str = match code {
         CLOSE_VERSION_MISMATCH => "version mismatch",
         CLOSE_PROTOCOL_VIOLATION => "protocol violation",
@@ -210,11 +199,15 @@ async fn send_fatal(tx: &mpsc::Sender<OutboundFrame>, err: &AppError, code: u16)
 }
 
 /// `AppError` → 协议 `error` 帧。
-fn error_frame(err: &AppError, ref_id: Option<String>, fatal: bool) -> ServerMsg {
-    ServerMsg::Error(ErrorMsg {
+///
+/// 握手期错误尚无 session envelope（`code`+`message` 即可表达）。
+fn error_frame(err: &AppError) -> Msg {
+    Msg::Error(ErrorMsg {
+        session_id: None,
+        event_id: None,
+        at_ms: None,
+        event_seq: None,
         code: err.code(),
         message: err.to_string(),
-        ref_id,
-        fatal,
     })
 }

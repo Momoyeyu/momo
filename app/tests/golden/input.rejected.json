@@ -1,0 +1,9 @@
+{
+  "type": "input.rejected",
+  "session_id": "sess_01J5M0N8T1RZ8K2W4V7H6X9P3A",
+  "event_id": "01J5M0N8T1RZ8K2W4V7H6X9P3B",
+  "at_ms": 1730000000000,
+  "event_seq": 42,
+  "ref_id": "r_01J5M0N8T1RZ8K2W4V7H6X9P3F",
+  "reason": "empty_input"
+}
