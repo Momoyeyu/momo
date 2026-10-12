@@ -9,6 +9,7 @@ use crate::{
 #[derive(Debug)]
 pub enum SessionCmd {
     /// conn_rx 解码出的客户端消息。
+    Msg(Msg),
     Shutdown,
 }
 
@@ -55,6 +56,7 @@ impl Session {
     async fn run(mut self, mut cmd_rx: mpsc::Receiver<SessionCmd>) {
         while let Some(cmd) = cmd_rx.recv().await {
             match cmd {
+                SessionCmd::Msg(msg) => self.on_client_msg(msg).await,
                     break;
                 }
             }
@@ -63,6 +65,7 @@ impl Session {
         debug!(session = %self.id, "session actor exit");
     }
 
+    async fn on_client_msg(&mut self, msg: Msg) {
         match msg {
             }
             }

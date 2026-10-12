@@ -18,6 +18,7 @@ pub const CONN_TX_CAP: usize = 256;
 
 #[derive(Debug)]
 pub enum OutboundFrame {
+    Json(Msg),
     /// `audio.chunk`：头 + PCM 载荷。
     Audio(codec::AudioHeader, Bytes),
     Close(u16, &'static str),
@@ -35,12 +36,16 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
         return;
     };
 
+    // conn_rx 循环：帧 → Msg → Session。
     let cmd_tx = session.cmd_tx.clone();
         match msg {
+            Ok(Message::Text(text)) => match codec::decode_msg(text.as_str()) {
+                Ok(Msg::Unknown) => {
                     let _ = tx
                         .await;
                 }
                 Ok(client_msg) => {
+                    if cmd_tx.send(SessionCmd::Msg(client_msg)).await.is_err() {
                         break;
                     }
                 }
@@ -64,6 +69,8 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
     debug!(%conn_id, "ws connection closed");
 }
 
+/// 握手：首消息必须是 `hello{protocol:"momo-ws", version:"v2"}`，
+/// 不匹配回 `error` + 按 close code 表断连。
     conn_id: &str,
     tx: &mpsc::Sender<OutboundFrame>,
     state: &Arc<AppState>,
@@ -78,6 +85,8 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
         }
     };
 
+    let hello = match codec::decode_msg(first.as_str()) {
+        Ok(Msg::Hello(hello)) => hello,
         other => {
             let err = match other {
                 Err(e) => e,
@@ -97,9 +106,11 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
         return None;
     }
 
+    let hello_ok = Msg::HelloOk(HelloOkMsg {
         version: crate::proto::message::PROTOCOL_VERSION.to_string(),
         session_id: session.id.clone(),
         role: ServerRole::Orchestrator,
+        capabilities: vec!["barge_in".into(), "emotion_tags".into()],
     });
     if tx.send(OutboundFrame::Json(hello_ok)).await.is_err() {
         return None;
@@ -111,6 +122,7 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
 /// conn_tx：Session/管线 → encode → 写帧。
     while let Some(frame) = rx.recv().await {
         let (msg, is_close) = match frame {
+            OutboundFrame::Json(m) => match codec::encode_msg(&m) {
                 Ok(text) => (Message::Text(Utf8Bytes::from(text)), false),
                 Err(err) => {
                     warn!(%err, "failed to encode server msg");
@@ -144,6 +156,9 @@ async fn send_fatal(tx: &mpsc::Sender<OutboundFrame>, err: &AppError, code: u16)
 }
 
 /// `AppError` → 协议 `error` 帧。
+///
+    Msg::Error(ErrorMsg {
+        event_seq: None,
         code: err.code(),
         message: err.to_string(),
     })
