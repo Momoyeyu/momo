@@ -35,6 +35,7 @@ MOMO_LOG_LEVEL=info
 MOMO_LOG_FORMAT=pretty         # pretty | json
 MOMO_MODELS_DIR=~/.cache/momo/models
 
+# 编排器（momo-app / momod）
 MOMO_ORCH_LISTEN=127.0.0.1:7800
 MOMO_UI_DIR=./web/dist
 MOMO_WEB_ORIGIN=http://localhost:5173   # 浏览器来源白名单（vite dev）
