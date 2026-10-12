@@ -1,10 +1,4 @@
-"""silero VAD provider 测试：sherpa-onnx VadModel 全 mock + 真模型集成（env 门控）。
-
-- 单测：sys.modules 注入假 sherpa_onnx（VadModel.is_speech 走脚本），
-  覆盖窗口状态机 → speech_start / speech_end 边界与段 PCM 截取。
-- 集成：仅当 $MOMO_MODELS_DIR 下 silero_vad.onnx 存在且 sherpa_onnx 可
-  import 时运行（标 slow；CI 无权重自动 skip）。
-"""
+"""silero VAD 测试：mock sherpa_onnx 驱动状态机；真模型用例标 slow，无权重自动 skip。"""
 
 import asyncio
 import importlib.util

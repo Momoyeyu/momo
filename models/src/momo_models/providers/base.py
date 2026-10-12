@@ -141,11 +141,7 @@ SPEECH_END = "speech_end"
 
 @dataclass(frozen=True)
 class VadEvent:
-    """VAD 边界事件（对应协议 `input.vad` 的 speech_start / speech_end）。
-
-    `at_ms` 为自 reset() 起的流内时间戳（估计值，详见 provider 注释）。
-    `pcm` 仅 speech_end 携带：该语音段的 PCM s16le 16kHz mono，供 ASR 转写。
-    """
+    """VAD 边界事件；`pcm` 仅 speech_end 携带（段 PCM s16le 16k mono 供 ASR）。"""
 
     event: str
     at_ms: int

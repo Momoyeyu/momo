@@ -1,18 +1,8 @@
 """silero-vad via sherpa-onnx VadModel（纯 CPU）：断句，不做识别。
 
-模型权重 = $MOMO_MODELS_DIR/snakers4/silero-vad/silero_vad.onnx
-（MANIFEST 条目 `silero-vad`），不经 silero-vad pip 包（会拖入 torch）。
-
-sherpa-onnx `VadModel.is_speech(window)` 是有状态判定：内部已应用
-threshold + min_speech_duration + min_silence_duration 迟滞与
-max_speech_duration 强制切分，本类只做窗口对齐、边界事件与段 PCM 截取：
-
-- False→True 翻转点之前 `min_speech_duration` 处估为 speech_start；
-- True→False 翻转点之前 `min_silence_duration` 处估为 speech_end
-  （剥掉尾部静音，段 PCM 一并回传供 ASR）。
-
-at_ms 为流内估计时间戳（ms）；协议 `input.vad` 只带事件本身，时间戳
-仅供本地审计与调试。
+权重 = MANIFEST `silero-vad` 条目；不走 silero-vad pip 包（拖入 torch）。
+is_speech 内部已做迟滞与 max_speech 切分；本类只对齐窗口、翻转点回推
+迟滞时长得 speech_start/speech_end，并截取段 PCM 供 ASR。
 """
 
 import asyncio
@@ -53,12 +43,7 @@ def _import_sherpa():
 
 
 class SileroVadProvider(VADProvider):
-    """sherpa-onnx VadModel(silero_vad) → VadEvent 流。
-
-    - load()：定位 onnx、按 MANIFEST 校验 sha256、构建 VadModel。
-    - feed()：缓冲到 window_size 逐窗判定；翻转点回推迟滞时长得到
-      speech_start / speech_end 边界，speech_end 携带段 PCM。
-    """
+    """VadModel → VadEvent；speech_end 携带段 PCM。"""
 
     name = "silero"
 
