@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     tts_listen: str = "127.0.0.1:7811"
     tts_provider: str = "kokoro"  # edge | kokoro | f5 | cosyvoice3 | sovits
     tts_device: str = "cuda"  # cuda | cpu | mps
+    tts_voice: str = ""  # 音色名（各 provider 自行解释；空=后端默认）
     tts_voice_ref: str = ""  # 克隆用参考音频路径
     tts_model_dir: str = ""  # SFT 克隆产物目录（灰度切换/回滚）
     tts_lang: str = "auto"  # zh | en | ja | auto
