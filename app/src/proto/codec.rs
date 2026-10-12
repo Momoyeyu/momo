@@ -1,68 +1,143 @@
 //! 帧编解码：文本帧 JSON / 二进制音频帧分流，版本握手检查。
 //!
-//! 二进制 `audio.chunk` 头布局见 protocol.md §4：固定 12B
-//! `[ver:u8][stream:u8][flags:u16][seq:u32][tag:u32]`，多字节字段大端序。
+//! 二进制音频帧头布局见 protocol.md「32-byte 二进制帧」：固定 32B
+//! `[ver:u8][direction:u8][flags:u16][stream_id:16B][chunk_seq:u32]`
+//! `[sentence_seq:u32][sample_offset:u32]`，多字节字段小端序。
 
 use bytes::{Bytes, BytesMut};
+use serde::{Deserialize, Serialize};
+use ulid::Ulid;
 
 use crate::{
     error::AppError,
     proto::message::{ClientMsg, HelloMsg, PROTOCOL_NAME, PROTOCOL_VERSION, ServerMsg},
 };
 
-/// `audio.chunk` 二进制头长度（protocol §4）。
-pub const AUDIO_HEADER_LEN: usize = 12;
-/// 头 `ver` 字段恒为 1。
-pub const AUDIO_VER: u8 = 1;
-/// `stream`：上行（麦→ASR）。
-pub const STREAM_UPLINK: u8 = 0x01;
-/// `stream`：下行（TTS→播放）。
-pub const STREAM_DOWNLINK: u8 = 0x02;
-/// `flags` bit0：EOS，本段/本句最后一帧。
+/// 二进制音频帧头长度（protocol.md 二进制帧一节）。
+pub const AUDIO_HEADER_LEN: usize = 32;
+/// 头 `ver` 字段恒为 2（protocol v2）。
+pub const AUDIO_VER: u8 = 2;
+/// `direction`：上行（UI→orchestrator→ASR）。
+pub const DIR_UPLINK: u8 = 1;
+/// `direction`：下行（TTS→orchestrator→UI）。
+pub const DIR_DOWNLINK: u8 = 2;
+/// `flags` bit0：EOS，本 stream 最后一帧；其余 bit 为 reserved，非零即拒绝。
 pub const FLAG_EOS: u16 = 0x0001;
 
-/// WS close code（protocol §8）。
+/// WS close code（protocol.md close code 一节）。
 pub const CLOSE_NORMAL: u16 = 1000;
 /// 版本不匹配。
 pub const CLOSE_VERSION_MISMATCH: u16 = 4001;
-/// 协议违反（如首消息非 hello）。
+/// hello timeout / malformed / 协议违反。
 pub const CLOSE_PROTOCOL_VIOLATION: u16 = 4400;
+/// 未授权（token 校验失败）。
+pub const CLOSE_UNAUTHORIZED: u16 = 4401;
 /// 服务端内部错误。
 pub const CLOSE_INTERNAL: u16 = 1011;
 
-/// `audio.chunk` 12B 头（payload 不含在内）。
+/// 帧头 `direction` / `audio.open.direction` 共用枚举。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Direction {
+    /// 上行：UI → orchestrator → ASR。
+    Uplink,
+    /// 下行：TTS → orchestrator → UI。
+    Downlink,
+}
+
+impl Direction {
+    /// 帧头字节值：`1` uplink / `2` downlink。
+    pub fn as_u8(self) -> u8 {
+        match self {
+            Direction::Uplink => DIR_UPLINK,
+            Direction::Downlink => DIR_DOWNLINK,
+        }
+    }
+
+    fn from_u8(v: u8) -> Option<Self> {
+        match v {
+            DIR_UPLINK => Some(Direction::Uplink),
+            DIR_DOWNLINK => Some(Direction::Downlink),
+            _ => None,
+        }
+    }
+}
+
+/// 二进制音频帧 32B 头（payload 不含在内）。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AudioHeader {
-    pub stream: u8,
+    pub direction: Direction,
+    /// bit0=EOS；reserved bit 非零的帧在 [`AudioHeader::decode`] 时即被拒绝。
     pub flags: u16,
-    pub seq: u32,
-    pub tag: u32,
+    /// 所属 stream 的原始 ULID（128-bit，非文字前缀）。
+    pub stream_id: Ulid,
+    /// 每 stream 从 `0` 开始严格递增的帧序号。
+    pub chunk_seq: u32,
+    /// 所属 `output.sentence.seq`；uplink 固定 `0`。
+    pub sentence_seq: u32,
+    /// 本帧首 sample 的偏移；从 `0` 开始按每声道 PCM sample 累计。
+    pub sample_offset: u32,
 }
 
 impl AudioHeader {
-    /// 编码为 12B 头（`ver` 自动置 [`AUDIO_VER`]）。
+    /// 编码为 32B 头（`ver` 自动置 [`AUDIO_VER`]）。
     pub fn encode(self) -> [u8; AUDIO_HEADER_LEN] {
         let mut buf = [0u8; AUDIO_HEADER_LEN];
         buf[0] = AUDIO_VER;
-        buf[1] = self.stream;
-        buf[2..4].copy_from_slice(&self.flags.to_be_bytes());
-        buf[4..8].copy_from_slice(&self.seq.to_be_bytes());
-        buf[8..12].copy_from_slice(&self.tag.to_be_bytes());
+        buf[1] = self.direction.as_u8();
+        buf[2..4].copy_from_slice(&self.flags.to_le_bytes());
+        buf[4..20].copy_from_slice(&self.stream_id.to_bytes());
+        buf[20..24].copy_from_slice(&self.chunk_seq.to_le_bytes());
+        buf[24..28].copy_from_slice(&self.sentence_seq.to_le_bytes());
+        buf[28..32].copy_from_slice(&self.sample_offset.to_le_bytes());
         buf
     }
 
-    /// 解码头并返回载荷切片；长度不足或 `ver` 不符返回 `None`。
-    pub fn decode(frame: &[u8]) -> Option<(Self, &[u8])> {
-        if frame.len() < AUDIO_HEADER_LEN || frame[0] != AUDIO_VER {
-            return None;
+    /// 解码头并返回载荷切片。
+    ///
+    /// 拒绝（`BadMessage`）：长度不足 32B、`ver`/`direction` 非法、reserved
+    /// flags 非零、payload 为奇数字节（pcm_s16le）、非 EOS 空载荷，
+    /// 以及 uplink 帧 `sentence_seq != 0`。unknown stream、seq gap、
+    /// sample_offset 错位等需要 stream 状态的检查由上层负责。
+    pub fn decode(frame: &[u8]) -> Result<(Self, &[u8]), AppError> {
+        fn bad(why: &str) -> AppError {
+            AppError::BadMessage(format!("audio frame: {why}"))
+        }
+        if frame.len() < AUDIO_HEADER_LEN {
+            return Err(bad("header shorter than 32 bytes"));
+        }
+        if frame[0] != AUDIO_VER {
+            return Err(bad("unsupported version"));
+        }
+        let direction = Direction::from_u8(frame[1]).ok_or_else(|| bad("invalid direction"))?;
+        let flags = u16::from_le_bytes(frame[2..4].try_into().expect("4-byte field"));
+        if flags & !FLAG_EOS != 0 {
+            return Err(bad("reserved flags set"));
         }
         let header = AudioHeader {
-            stream: frame[1],
-            flags: u16::from_be_bytes(frame[2..4].try_into().ok()?),
-            seq: u32::from_be_bytes(frame[4..8].try_into().ok()?),
-            tag: u32::from_be_bytes(frame[8..12].try_into().ok()?),
+            direction,
+            flags,
+            stream_id: Ulid::from_bytes(frame[4..20].try_into().expect("16-byte field")),
+            chunk_seq: u32::from_le_bytes(frame[20..24].try_into().expect("4-byte field")),
+            sentence_seq: u32::from_le_bytes(frame[24..28].try_into().expect("4-byte field")),
+            sample_offset: u32::from_le_bytes(frame[28..32].try_into().expect("4-byte field")),
         };
-        Some((header, &frame[AUDIO_HEADER_LEN..]))
+        let payload = &frame[AUDIO_HEADER_LEN..];
+        if payload.len() % 2 != 0 {
+            return Err(bad("odd payload length (pcm_s16le)"));
+        }
+        if payload.is_empty() && !header.eos() {
+            return Err(bad("empty payload without EOS"));
+        }
+        if header.direction == Direction::Uplink && header.sentence_seq != 0 {
+            return Err(bad("uplink sentence_seq must be 0"));
+        }
+        Ok((header, payload))
+    }
+
+    /// EOS：本 stream/sentence 数据结束（可携带空载荷表示零长度 capture）。
+    pub fn eos(&self) -> bool {
+        self.flags & FLAG_EOS != 0
     }
 }
 
@@ -84,7 +159,7 @@ pub fn encode_server_msg(msg: &ServerMsg) -> Result<String, AppError> {
     serde_json::to_string(msg).map_err(|e| AppError::Internal(e.to_string()))
 }
 
-/// 版本协商（protocol §3/§8）：`protocol` 必须 `momo-ws`，`version` 只支持 `v1`。
+/// 版本协商（protocol 认证一节）：`protocol` 必须 `momo-ws`，`version` 必须匹配。
 pub fn check_hello(hello: &HelloMsg) -> Result<(), AppError> {
     if hello.protocol != PROTOCOL_NAME {
         return Err(AppError::Protocol(format!(
