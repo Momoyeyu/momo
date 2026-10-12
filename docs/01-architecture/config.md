@@ -63,6 +63,7 @@ flowchart LR
 | `MOMO_TTS_LISTEN` | TTS WS 监听 | `127.0.0.1:7811` | host:port | 否 |
 | `MOMO_TTS_PROVIDER` | TTS 后端 | `kokoro` | `edge`/`kokoro`/`f5`/`cosyvoice3`/`sovits` | 否 |
 | `MOMO_TTS_DEVICE` | TTS 推理设备 | `cuda` | `cuda`/`cpu`/`mps` | 否 |
+| `MOMO_TTS_VOICE` | TTS 音色名（各后端自行解释，如 edge 用 `zh-CN-XiaoxiaoNeural`；空=按 `MOMO_TTS_LANG` 默认） | 空 | str | 否 |
 | `MOMO_TTS_VOICE_REF` | 克隆用参考音频路径 | 空 | path | 否 |
 | `MOMO_TTS_MODEL_DIR` | SFT 克隆产物目录（灰度切换/回滚指向） | 空 | path | 否 |
 | `MOMO_TTS_LANG` | 合成默认语言 | `auto` | `zh`/`en`/`ja`/`auto` | 否 |
@@ -134,6 +135,7 @@ MOMO_VAD_SILENCE_MS=250
 MOMO_TTS_LISTEN=127.0.0.1:7811
 MOMO_TTS_PROVIDER=kokoro       # 目标 cosyvoice3；部署需求待实测
 MOMO_TTS_DEVICE=cuda
+MOMO_TTS_VOICE=              # 音色名（后端各自解释；空=按 MOMO_TTS_LANG 默认）
 MOMO_TTS_VOICE_REF=
 MOMO_TTS_MODEL_DIR=            # SFT 克隆产物目录（灰度切换/回滚）
 MOMO_TTS_LANG=auto
