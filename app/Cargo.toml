@@ -37,3 +37,4 @@ dotenvy = "0.15"
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
+futures-channel = { version = "0.3", features = ["sink"] }
