@@ -4,7 +4,7 @@
 export const PROTOCOL_NAME = "momo-ws";
 export const PROTOCOL_VERSION = "v1";
 
-// ---------- 二进制 audio.chunk 帧（protocol §4） ----------
+// ---------- 二进制 audio.chunk 帧（protocol §6） ----------
 // 固定 12B 头 [ver:u8][stream:u8][flags:u16][seq:u32][tag:u32]，多字节字段大端。
 
 export const AUDIO_HEADER_LEN = 12;
@@ -53,7 +53,7 @@ export function decodeAudioFrame(
   };
 }
 
-// ---------- 枚举（protocol §2 lower_snake / §6 SCREAMING error code） ----------
+// ---------- 枚举（protocol §1 类型 / §2 必需字段表 SCREAMING error code） ----------
 
 export type ClientKind = "ui" | "action" | "orchestrator";
 export type ServerRole = "orchestrator" | "asr" | "tts";
@@ -63,7 +63,7 @@ export type CancelTarget = "turn" | "segment" | "invoke" | "stream";
 export type CancelReason = "barge_in" | "user" | "timeout" | "shutdown";
 export type TurnState = "idle" | "listening" | "thinking" | "speaking" | "interrupted";
 
-/** v1 固定 8 值；表外取值一律按 neutral 处理（protocol §6）。 */
+/** v1 固定 8 值；表外取值一律按 neutral 处理（protocol §2）。 */
 export type EmotionTag =
   | "neutral"
   | "happy"

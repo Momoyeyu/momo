@@ -1,4 +1,4 @@
-"""音频工具：上行 16k mono / 下行 24k mono pcm_s16le 50ms/帧（protocol.md §3/§4）。"""
+"""音频工具：上行 16k mono / 下行 24k mono pcm_s16le 50ms/帧（protocol.md §6）。"""
 
 import io
 import wave

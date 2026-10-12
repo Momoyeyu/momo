@@ -2,7 +2,7 @@
 
 接入：CosyVoice 官方推理栈（不发 PyPI，源码部署）。依赖重：pynini 在
 py3.12/WSL 历史经验需折腾；显存需求待实测，预留 kokoro 兜底。
-见 momo-docs/02-repos/momo-models.md 后端表。
+见 docs/02-repos/momo-models.md「provider 与产物」。
 """
 
 from collections.abc import AsyncIterator

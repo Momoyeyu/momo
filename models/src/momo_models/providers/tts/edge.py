@@ -3,7 +3,7 @@
 接入：`edge-tts` pip 包（`tts` extra）。服务端固定回
 `audio-24khz-48kbitrate-mono-mp3`（7.x 无 output_format 入参），经
 soundfile（libsndfile/mpg123）解码并统一到契约口径 PCM s16le 24kHz mono
-后逐块产出。见 momo-docs/02-repos/momo-models.md「各后端接入方式与已知坑」。
+后逐块产出。见 docs/02-repos/momo-models.md「provider 与产物」。
 """
 
 import asyncio

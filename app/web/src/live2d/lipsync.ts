@@ -25,7 +25,7 @@ export function mouthOpenY(
 
 /** emotion tag → Live2D 表情/动作组名。
  *
- * 具体映射表是前端实现细节（protocol §6，不入协议）；
+ * 具体映射表是前端实现细节（protocol §2，不入协议）；
  * 正式表由 MOMO_EMOTION_MAP 文件驱动，此处给骨架默认。
  */
 export function emotionToExpression(tag: EmotionTag): string {

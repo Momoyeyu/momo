@@ -1,4 +1,4 @@
-"""Provider 抽象基类：签名对齐 momo-docs/02-repos/momo-models.md「统一服务接口」。
+"""Provider 抽象基类：签名对齐 docs/02-repos/momo-models.md「provider 与产物」。
 
 - LLMProvider 仅供 eval/bench 薄客户端使用；运行时编排器经 MOMO_LLM_ENDPOINT
   直连大脑，不经本层。
@@ -104,7 +104,7 @@ class TTSProvider(ABC):
 
     @abstractmethod
     async def cancel(self, req_id: str) -> None:
-        """尽力取消在途合成（200ms 内停止产出，协议 §6 control.cancel）。"""
+        """尽力取消在途合成（200ms 内停止产出，协议 §8 control.cancel）。"""
 
 
 # ---------- ASR ----------

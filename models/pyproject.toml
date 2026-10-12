@@ -23,7 +23,7 @@ momo-svc-embed = "momo_models.services.embed_service:main"
 
 # ===== 重模型依赖（按需安装，默认 sync 不带）=====
 #
-# torch 平台档（torch/torchaudio 版本必须对齐，见 momo-models.md「依赖红线」）：
+# torch 平台档（torch/torchaudio 版本必须对齐，见 docs/00-context/decisions.md「ADR-018」）：
 #   mac-studio（无 CUDA，PyPI 默认轮即 MPS/CPU 版）：
 #     uv sync --extra torch-mac --extra tts
 #   laptop（linux + CUDA，走 pytorch cu124 index）：

@@ -179,7 +179,7 @@ def make_app(
         await ws.accept()
         conn = log.bind(role=role, remote=str(ws.client))
 
-        # 首帧必须文本 hello（protocol §3/§8）
+        # 首帧必须文本 hello（protocol §4）
         first = await ws.receive()
         if first.get("text") is None:
             await ws.close(code=4400)

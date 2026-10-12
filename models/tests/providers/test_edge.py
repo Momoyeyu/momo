@@ -84,7 +84,7 @@ def test_synth_stream_empty_text(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_cancel_stops_stream(monkeypatch: pytest.MonkeyPatch) -> None:
-    """cancel 后在下一 chunk 边界停止产出（协议 §6 尽力取消）。"""
+    """cancel 后在下一 chunk 边界停止产出（协议 §8 尽力取消）。"""
     mod = _fake_edge_tts([{"type": "audio", "data": b"\xff" * 1000} for _ in range(5)])
     monkeypatch.setitem(sys.modules, "edge_tts", mod)
     monkeypatch.setattr(edge, "mp3_to_pcm", _fake_decode)

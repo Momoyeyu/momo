@@ -1,6 +1,6 @@
 // momo-ws 客户端：自动重连、二进制帧分发、状态事件（momo-app.md §前端）。
 //
-// 重连退避：指数 0.5s→8s，±20% 抖动（protocol §7）。
+// 重连退避：指数 0.5s→8s，±20% 抖动（protocol §5）。
 // 握手：open 后第一帧必须 hello{protocol:"momo-ws",version:"v1",client:"ui"}。
 
 import {
@@ -22,7 +22,7 @@ const BACKOFF_MIN_MS = 500;
 const BACKOFF_MAX_MS = 8000;
 const BACKOFF_JITTER = 0.2;
 
-/** 指数退避：0.5s→8s，±20% 抖动（protocol §7）。纯函数便于测试。 */
+/** 指数退避：0.5s→8s，±20% 抖动（protocol §5）。纯函数便于测试。 */
 export function backoffDelay(attempt: number, rand: () => number = Math.random): number {
   const base = Math.min(BACKOFF_MAX_MS, BACKOFF_MIN_MS * 2 ** attempt);
   const jitter = base * BACKOFF_JITTER * (rand() * 2 - 1);
@@ -94,7 +94,7 @@ export class WsClient {
     this.ws = ws;
 
     ws.onopen = () => {
-      // 第一帧必须是 hello（protocol §3）。
+      // 第一帧必须是 hello（protocol §4）。
       this.send({
         type: "hello",
         protocol: PROTOCOL_NAME,

@@ -35,7 +35,7 @@ impl Turn {
         }
     }
 
-    /// barge-in 三动作（protocol §6 `control.barge_in`，时序约束见 §9）：
+    /// barge-in 三动作（protocol §8 `control.barge_in` / settlement）：
     /// 1. `AudioSink::stop` + 广播 `control.barge_in{applied:true}`，等 UI 回报 `played_seq`；
     /// 2. `self.cancel.cancel()` 扇出终止 LLM stream，并向 TTS/ASR 发 `control.cancel`；
     /// 3. `committed[..=played_seq]` 拼一条 assistant(partial) 写入 history。

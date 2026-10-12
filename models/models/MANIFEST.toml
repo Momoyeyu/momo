@@ -1,5 +1,5 @@
 # MANIFEST.toml —— 模型下载清单（口径见 src/momo_models/manifest.py 与
-# momo-docs/05-ops/model-fetch.md「操作检查」）。
+# docs/02-repos/momo-models.md「provider 与产物」）。
 #
 # 权重实体在 $MOMO_MODELS_DIR（默认 ~/.cache/momo/models，不入库），
 # dest 镜像 <owner>/<repo> 布局。下载与校验由 momo-infra `momoctl pull` 执行；
