@@ -32,7 +32,6 @@ flowchart LR
 | `MOMO_ORCH_LISTEN` | WS + 静态 UI 监听地址 | `127.0.0.1:7800` | host:port | 否 |
 | `MOMO_UI_DIR` | 前端静态目录（打包内嵌时忽略） | `./web/dist` | path | 否 |
 | `MOMO_WEB_ORIGIN` | 浏览器来源（CORS/WS Origin 白名单） | `http://localhost:5173` | URL | 否 |
-| `MOMO_WEB_TOKEN` | `momoctl web` 控制台鉴权 token；`--listen` 放宽出 localhost 时必填（未设拒绝启动） | 空 | str | **是** |
 | `MOMO_LLM_ENDPOINT` | 大脑 OpenAI-compatible base URL | `http://mac-studio.local:7820/v1` | URL | 否 |
 | `MOMO_LLM_MODEL` | 传给大脑的 model 字段 | `qwen3-8b-4bit` | str | 否 |
 | `MOMO_LLM_API_KEY` | 大脑端点鉴权 key；本地可为空 | 空 | str | **是** |
@@ -72,10 +71,11 @@ flowchart LR
 | `MOMO_VISION_MODEL`（P2） | 视觉模型 | `deepseek-v4-flash-vision-exp` | str | 否 |
 | `MOMO_EMBED_LISTEN`（P1） | embed 服务 WS 监听（记忆检索） | `127.0.0.1:7812` | host:port | 否 |
 
-### 2.4 大脑服务启停（infra 读，mac-studio 侧由 infra 远程/本地拉起）
+### 2.4 infra 读（大脑服务启停、`momoctl web` 鉴权；mac-studio 侧大脑由 infra 远程/本地拉起）
 
 | 名称 | 含义 | 默认值 | 取值 | 敏感 |
 |---|---|---|---|---|
+| `MOMO_WEB_TOKEN` | `momoctl web` 控制台鉴权 token；`--listen` 放宽出 localhost 时必填（未设拒绝启动） | 空 | str | **是** |
 | `MOMO_BRAIN_BACKEND` | 大脑后端类型 | `mlx` | `mlx`/`vllm`/`deepseek`/`local` | 否 |
 | `MOMO_BRAIN_MODEL_PATH` | 本地模型目录 | `~/models/Qwen3-8B-4bit` | path | 否 |
 | `MOMO_BRAIN_PORT` | 大脑服务端口（对应 `MOMO_LLM_ENDPOINT`） | `7820` | port | 否 |
@@ -103,7 +103,7 @@ MOMO_LOG_FORMAT=pretty         # pretty | json
 MOMO_PROFILE=normal            # normal | degraded（降级=改 env 不改代码）
 MOMO_MODELS_DIR=~/.cache/momo/models
 
-# 编排器（momo-app）
+# 编排器（momo-app / momod）
 MOMO_ORCH_LISTEN=127.0.0.1:7800
 MOMO_UI_DIR=./web/dist
 MOMO_WEB_ORIGIN=http://localhost:5173   # 浏览器来源白名单（vite dev）
@@ -143,10 +143,11 @@ MOMO_VISION_ENDPOINT=https://api.deepseek.com/v1
 MOMO_VISION_MODEL=deepseek-v4-flash-vision-exp
 MOMO_EMBED_LISTEN=127.0.0.1:7812   # P3 记忆检索服务
 
-# 大脑启停（momo-infra）
+# momo-infra（大脑启停 / web 控制台）
 MOMO_BRAIN_BACKEND=mlx
 MOMO_BRAIN_MODEL_PATH=~/models/Qwen3-8B-4bit
 MOMO_BRAIN_PORT=7820
+MOMO_WEB_TOKEN=                # 敏感：momoctl web --listen 放宽出 localhost 时必填
 
 # 上游直通（非 MOMO_ 前缀）
 HF_ENDPOINT=https://hf-mirror.com   # laptop 必须
