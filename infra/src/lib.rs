@@ -5,6 +5,7 @@
 
 pub mod cli;
 pub mod cmds;
+pub mod config_schema;
 pub mod env_cfg;
 pub mod manifest;
 pub mod net;
@@ -31,6 +32,7 @@ pub fn run(cli: Cli) -> i32 {
         Command::Switch(args) => cmds::switch::run(args, &ctx),
         Command::Bench(args) => cmds::bench::run(args, &ctx),
         Command::Gc(args) => cmds::gc::run(args, &ctx),
+        Command::Config(args) => cmds::config::run(args, &ctx),
     };
     finish(result)
 }

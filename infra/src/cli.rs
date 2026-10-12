@@ -9,7 +9,7 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 #[command(
     name = "momoctl",
     version,
-    about = "momo 运维 CLI：doctor / pull / serve / switch / bench / gc"
+    about = "momo ops CLI: doctor / pull / serve / switch / bench / gc / config"
 )]
 pub struct Cli {
     /// 以 JSON 输出单一对象（schema 版本化，供 CI/脚本消费）
@@ -42,6 +42,8 @@ pub enum Command {
     Bench(BenchArgs),
     /// 模型 GC：N-1 代清理、models.lock 联动
     Gc(GcArgs),
+    /// env schema 漂移检查（config.schema.toml ↔ .env.example / config.md）
+    Config(ConfigArgs),
 }
 
 /// 部署档位（与 MOMO_PROFILE 取值一致）。
@@ -151,6 +153,25 @@ pub struct BenchArgs {
     /// 超标（>=1.5s 出声）时以退出码 3 结束
     #[arg(long)]
     pub strict: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ConfigArgs {
+    #[command(subcommand)]
+    pub action: ConfigAction,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ConfigAction {
+    /// 校验三侧 .env.example 与 config.md 是否和 config.schema.toml 一致
+    Check(ConfigCheckArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct ConfigCheckArgs {
+    /// 仓库根目录（默认从 CWD 向上定位 config.schema.toml）
+    #[arg(long, value_name = "PATH")]
+    pub root: Option<PathBuf>,
 }
 
 #[derive(Debug, Args)]

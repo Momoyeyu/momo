@@ -1,6 +1,7 @@
 //! 子命令实现。`Ctx` 为 dispatch 时注入的全局上下文。
 
 pub mod bench;
+pub mod config;
 pub mod doctor;
 pub mod gc;
 pub mod pull;
