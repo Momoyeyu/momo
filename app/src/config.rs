@@ -16,6 +16,9 @@ pub struct Config {
     pub orch_listen: SocketAddr,
     /// `MOMO_WEB_ORIGIN`，浏览器来源（CORS/WS Origin 白名单）。
     pub web_origin: String,
+    /// `MOMO_UI_TOKEN`，`/ws/ui` hello 的期望 `auth_token`；敏感。
+    /// 空=standalone dev，不比对（hello.auth_token 字段仍必填）。
+    pub ui_token: Option<SecretString>,
     /// `MOMO_LLM_ENDPOINT`，大脑 OpenAI-compatible base URL（直连，无网关）。
     pub llm_endpoint: Url,
     /// `MOMO_LLM_MODEL`，传给大脑的 model 字段。
@@ -88,6 +91,9 @@ impl Config {
             &mut errors,
         );
         let web_origin = parse("MOMO_WEB_ORIGIN", "http://localhost:5173").unwrap_or_default();
+        let ui_token = get("MOMO_UI_TOKEN")
+            .filter(|v| !v.is_empty())
+            .map(SecretString::new);
         let llm_endpoint = typed(
             &mut parse,
             "MOMO_LLM_ENDPOINT",
@@ -134,6 +140,7 @@ impl Config {
         Ok(Config {
             orch_listen: orch_listen.unwrap(),
             web_origin,
+            ui_token,
             llm_endpoint: llm_endpoint.unwrap(),
             llm_model,
             llm_api_key,

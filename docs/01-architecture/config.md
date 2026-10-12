@@ -32,6 +32,7 @@ flowchart LR
 | `MOMO_ORCH_LISTEN` | WS + 静态 UI 监听地址 | `127.0.0.1:7800` | host:port | 否 |
 | `MOMO_UI_DIR` | 前端静态目录（打包内嵌时忽略） | `./web/dist` | path | 否 |
 | `MOMO_WEB_ORIGIN` | 浏览器来源（CORS/WS Origin 白名单） | `http://localhost:5173` | URL | 否 |
+| `MOMO_UI_TOKEN` | `/ws/ui` hello 的期望 `auth_token`；desktop 启动时注入，空=standalone dev 不比对（字段仍必填） | 空 | str | **是** |
 | `MOMO_LLM_ENDPOINT` | 大脑 OpenAI-compatible base URL | `http://mac-studio.local:7820/v1` | URL | 否 |
 | `MOMO_LLM_MODEL` | 传给大脑的 model 字段 | `qwen3-8b-4bit` | str | 否 |
 | `MOMO_LLM_API_KEY` | 大脑端点鉴权 key；本地可为空 | 空 | str | **是** |
@@ -109,6 +110,7 @@ MOMO_MODELS_DIR=~/.cache/momo/models
 MOMO_ORCH_LISTEN=127.0.0.1:7800
 MOMO_UI_DIR=./web/dist
 MOMO_WEB_ORIGIN=http://localhost:5173   # 浏览器来源白名单（vite dev）
+MOMO_UI_TOKEN=               # 敏感：/ws/ui hello auth_token；desktop 启动注入，空=dev 不校验
 MOMO_LLM_ENDPOINT=http://mac-studio.local:7820/v1
 MOMO_LLM_MODEL=qwen3-8b-4bit
 MOMO_LLM_API_KEY=              # 敏感：本地 mlx_lm 可空；DeepSeek 时填 sk-...
@@ -170,7 +172,7 @@ HF_ENDPOINT=https://hf-mirror.com   # laptop 必须
 
 ## 4. 敏感项与安全
 
-- **敏感清单**：`MOMO_LLM_API_KEY`、`MOMO_DEEPSEEK_API_KEY`、`MOMO_WEB_TOKEN`、`MOMO_DATA_KEEP_AUDIO`（后续新增一律按"值即密钥/隐私开关"判断）。
+- **敏感清单**：`MOMO_LLM_API_KEY`、`MOMO_DEEPSEEK_API_KEY`、`MOMO_WEB_TOKEN`、`MOMO_UI_TOKEN`、`MOMO_DATA_KEEP_AUDIO`（后续新增一律按"值即密钥/隐私开关"判断）。
 - **敏感数据（非 key）**：`MOMO_DATA_KEEP_AUDIO=on` 时落盘的原始麦音频属隐私数据——key 本身只是开关，但其产物按敏感数据同等纪律处理（短期保留、仅 ASR 排错用途、到期清理、不外传）。
 - `.env` 已在各仓 `.gitignore`；`.env.example` 中敏感项**只留空值占位**，禁止提交真实 key。
 - 日志/诊断输出对敏感值打码（显示前 4 位 + `…`）；`momoctl doctor` 只做"是否设置"检查，不回显。

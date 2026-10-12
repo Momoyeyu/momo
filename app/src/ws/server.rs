@@ -7,7 +7,7 @@ use std::{net::SocketAddr, sync::Arc, time::Instant};
 use axum::{
     Router,
     extract::{State, ws::WebSocketUpgrade},
-    http::{HeaderValue, Method, StatusCode, header},
+    http::{HeaderMap, HeaderValue, Method, StatusCode, header},
     response::{IntoResponse, Response},
     routing::get,
 };
@@ -64,10 +64,36 @@ async fn healthz(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     )
 }
 
+/// Tauri webview 各平台的 desktop Origin 形态（protocol §认证）。
+const DESKTOP_ORIGINS: &[&str] = &[
+    "tauri://localhost",       // macOS/Linux custom scheme
+    "http://tauri.localhost",  // Windows WebView2
+    "https://tauri.localhost", // 部分 webkit 打包形态
+];
+
 /// UI 链路 upgrade；握手与逐连接 actor 在 [`conn`]。
-async fn ws_ui(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) -> Response {
+///
+/// upgrade 前 Origin 白名单：missing 或未批准直接 403（protocol §认证）。
+async fn ws_ui(
+    ws: WebSocketUpgrade,
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+) -> Response {
+    if !origin_allowed(&headers, &state.config) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
     ws.on_upgrade(move |socket| conn::run(socket, state))
         .into_response()
+}
+
+/// Origin ∈ {desktop origins} ∪ {`MOMO_WEB_ORIGIN`}；missing 一律拒绝。
+///
+/// `pub` 供测试直接对拍白名单逻辑（真 upgrade 路径由 axum extractor 链保证）。
+pub fn origin_allowed(headers: &HeaderMap, config: &Config) -> bool {
+    let Some(origin) = headers.get(header::ORIGIN).and_then(|v| v.to_str().ok()) else {
+        return false;
+    };
+    origin == config.web_origin || DESKTOP_ORIGINS.contains(&origin)
 }
 
 /// CORS：`MOMO_WEB_ORIGIN` 白名单；解析失败退化为放开（dev 兜底）。
