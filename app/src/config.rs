@@ -100,7 +100,7 @@ impl Config {
             "http://mac-studio.local:7820/v1",
             &mut errors,
         );
-        let llm_model = parse("MOMO_LLM_MODEL", "qwen3-8b-4bit").unwrap_or_default();
+        let llm_model = parse("MOMO_LLM_MODEL", "qwen3-30b-a3b-4bit").unwrap_or_default();
         let llm_api_key = get("MOMO_LLM_API_KEY")
             .filter(|v| !v.is_empty())
             .map(SecretString::new);

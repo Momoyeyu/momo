@@ -14,7 +14,7 @@ key = [
   { name = "MOMO_UI_TOKEN", type = "string", default = "", sensitive = true, readers = ["app"], files = ["app"], description = "/ws/ui hello 的期望 auth_token；desktop 启动时注入，空=standalone dev 不比对（字段仍必填）" },
   { name = "MOMO_WEB_ORIGIN", type = "url", default = "http://localhost:5173", readers = ["app"], files = ["app"], description = "浏览器来源（CORS/WS Origin 白名单）" },
   { name = "MOMO_LLM_ENDPOINT", type = "url", default = "http://mac-studio.local:7820/v1", readers = ["app", "infra"], files = ["app", "infra"], examples = { infra = "http://mac-studio:7820/v1" }, description = "大脑 OpenAI-compatible base URL；infra doctor 探 /models" },
-  { name = "MOMO_LLM_MODEL", type = "string", default = "qwen3-8b-4bit", readers = ["app", "infra"], files = ["app", "infra"], examples = { infra = "qwen3-30b-a3b-4bit" }, description = "传给大脑的 model 字段" },
+  { name = "MOMO_LLM_MODEL", type = "string", default = "qwen3-30b-a3b-4bit", readers = ["app", "infra"], files = ["app", "infra"], description = "传给大脑的 model 字段" },
   { name = "MOMO_LLM_API_KEY", type = "string", default = "", sensitive = true, readers = ["app", "infra"], files = ["app", "infra"], description = "大脑端点鉴权 key；本地可为空" },
   { name = "MOMO_LLM_TIMEOUT_MS", type = "int", default = "30000", readers = ["app"], files = ["app"], description = "LLM 请求总超时（ms）" },
   { name = "MOMO_ASR_ENDPOINT", type = "url", default = "ws://127.0.0.1:7810/ws", readers = ["app", "infra"], files = ["app", "infra"], description = "ASR 服务 WS 地址" },
