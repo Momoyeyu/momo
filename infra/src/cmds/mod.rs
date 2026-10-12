@@ -11,5 +11,4 @@ pub mod switch;
 #[derive(Debug, Clone, Copy)]
 pub struct Ctx {
     pub json: bool,
-    pub verbose: u8,
 }

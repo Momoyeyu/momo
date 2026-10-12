@@ -21,10 +21,7 @@ pub fn run(cli: Cli) -> i32 {
         eprintln!("error: {e}");
         return e.exit_code();
     }
-    let ctx = cmds::Ctx {
-        json: cli.json,
-        verbose: cli.verbose,
-    };
+    let ctx = cmds::Ctx { json: cli.json };
     let result = match &cli.command {
         Command::Doctor(args) => cmds::doctor::run(args, &ctx),
         Command::Pull(args) => cmds::pull::run(args, &ctx),
