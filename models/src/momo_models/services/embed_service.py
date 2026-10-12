@@ -1,6 +1,6 @@
 """momo-svc-embed：BGE-M3 embedding 服务（P3；默认 127.0.0.1:7812 / MOMO_EMBED_LISTEN）。
 
-端点：momo-ws v1 /ws + /healthz + /readyz（embed 消息类型 P3 定稿，
+端点：momo-ws v2 /ws + /healthz + /readyz（embed 消息类型 P3 定稿，
 当前握手后一律 error not implemented）。
 """
 

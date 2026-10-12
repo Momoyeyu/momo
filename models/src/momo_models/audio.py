@@ -1,6 +1,6 @@
 """音频工具：PCM s16le ↔ numpy、wav 封装、重采样。
 
-momo-ws v1 约定（protocol.md §3/§4）：
+momo-ws v2 约定（protocol.md §3/§4）：
 - 上行（麦→ASR）：pcm_s16le，16kHz mono，50ms/帧
 - 下行（TTS→播放）：pcm_s16le，24kHz mono，50ms/帧
 """
