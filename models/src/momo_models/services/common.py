@@ -1,16 +1,6 @@
-"""momo-svc-* 统一骨架：app 工厂。
+"""momo-svc-* 骨架：WS /ws + /healthz + /readyz + 调试 POST（协议细节见 protocol.md）。
 
-端点（设计：momo-docs/02-repos/momo-models.md「统一服务接口」）：
-- `WS /ws`      momo-ws v2（protocol.md）：hello{client:orchestrator} → hello.ok{role}
-- `GET /healthz` 进程活（momoctl serve status/doctor 只认此口与 readyz）
-- `GET /readyz`  模型已加载可服务；未就绪 503
-- 调试 POST 口   非流式调试（不在运行时主路径），统一 {"error":{"code","message"}}
-
-协议细节（protocol.md §3/§8）：首帧必须 hello，否则 close 4400；
-version 非 v2 → error{VERSION_MISMATCH} + close 4001。
-
-业务消息由 `business_factory` 注入的 WsBusiness 逐连接处理（tts 实装
-output.sentence→音频流；asr/embed 暂无 handler，全部回 not implemented）。
+业务消息由 `business_factory` 注入的 WsBusiness 处理；未实装消息回 not implemented。
 """
 
 import json
@@ -74,11 +64,7 @@ def _error_frame(
 
 @dataclass
 class WsContext:
-    """已握手连接上下文：session_id + 服务端 event_seq 单调计数。
-
-    ServerEnvelope 消息（audio.open / audio.end / error 等）经
-    `envelope()`/`send_error()` 发出，自动携带 event_seq。
-    """
+    """已握手连接上下文；envelope/send_error 自动携带单调 event_seq。"""
 
     ws: WebSocket
     app: FastAPI
@@ -245,9 +231,7 @@ def make_app(
         ctx = WsContext(ws=ws, app=app, session_id=session_id)
         business = business_factory(ctx) if business_factory is not None else None
 
-        # 消息循环：二进制帧与已知 type 先交 business handler；未消费则
-        # 回 error 帧（known type → INTERNAL not implemented，未知 type →
-        # BAD_MESSAGE，协议 §close code）。
+        # 未消费消息回 error 帧（known→INTERNAL not implemented，未知→BAD_MESSAGE）。
         try:
             while ws.client_state == WebSocketState.CONNECTED:
                 frame = await ws.receive()
@@ -289,11 +273,7 @@ def attach_warmup(
     settings: Settings,
     warmup_method: str,
 ) -> Callable[[FastAPI], Awaitable[None]]:
-    """生成 on_startup 钩子：实例化 provider → warmup → 置 ready。
-
-    骨架阶段 warmup 均为 NotImplementedError：记日志、readyz 维持 503。
-    warmup 抛其他异常同样不就绪但不致命（服务仍可握手回报错误）。
-    """
+    """生成 on_startup 钩子：provider → warmup → ready；失败不就绪但不致命。"""
 
     async def _startup(app: FastAPI) -> None:
         try:

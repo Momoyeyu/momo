@@ -1,18 +1,4 @@
-"""momo-ws v2 编解码：ULID + 32B 二进制音频帧头（镜像 app/src/proto/codec.rs）。
-
-二进制帧头布局（protocol.md「32-byte 二进制帧」，多字节字段小端）：
-
-| 字节 | 字段 | 规范 |
-|---|---|---|
-| 0 | version | `2` |
-| 1 | direction | `1` uplink / `2` downlink |
-| 2..3 | flags | u16 LE；仅 bit0=EOS，reserved 非零即拒绝 |
-| 4..19 | stream_id | 原始 ULID 128-bit（JSON 侧为 `st_<ULID>` 文本） |
-| 20..23 | chunk_seq | u32 LE；每 stream 从 0 严格递增 |
-| 24..27 | sentence_seq | u32 LE；uplink 固定 0 |
-| 28..31 | sample_offset | u32 LE；按每声道 PCM sample 累计 |
-| 32.. | payload | PCM s16le |
-"""
+"""momo-ws v2 编解码：ULID + 32B 音频帧头；帧布局见 protocol.md「32-byte 二进制帧」。"""
 
 import secrets
 import time
@@ -113,10 +99,8 @@ class AudioHeader:
     def decode(frame: bytes) -> tuple["AudioHeader", bytes]:
         """解码头并返回 (header, payload)；非法帧抛 FrameError。
 
-        校验同 app 侧 codec.rs：长度不足 32B、ver/direction 非法、
-        reserved flags 非零、payload 奇数字节、非 EOS 空载荷、
-        uplink 帧 sentence_seq != 0。unknown stream / seq gap /
-        sample_offset 错位等需要 stream 状态的检查由上层负责。
+        校验口径同 app 侧 codec.rs；依赖 stream 状态的检查（seq gap
+        等）由上层负责。
         """
         if len(frame) < AUDIO_HEADER_LEN:
             raise FrameError("header shorter than 32 bytes")

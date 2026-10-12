@@ -1,16 +1,7 @@
-"""momo-svc-tts：TTS 服务（默认 127.0.0.1:7811 / MOMO_TTS_LISTEN）。
+"""momo-svc-tts：/ws（v2）+ health/ready + 调试 POST /v1/tts/synthesize。
 
-端点：momo-ws v2 /ws + /healthz + /readyz；调试口 POST /v1/tts/synthesize
-（整段 wav 返回，供 momoctl bench 与手测，不在运行时主路径）。
-后端由 MOMO_TTS_PROVIDER 选择（providers/registry.py）。
-
-/ws 业务面（protocol.md：TTS→orchestrator 下行）：
-
-- `output.sentence{turn_id,seq,text,emotion,lang}`（synth 请求）
-  → `audio.open{direction:downlink}` + 二进制音频帧（chunk_seq/sample_offset
-  递增）+ EOS 帧 + `audio.end{last_chunk_seq}`；
-- `control.cancel{target:turn|stream,id}` → 取消在途合成；
-- 其余消息按骨架口径回 error 帧。
+业务面：output.sentence → audio.open + PCM 帧 + EOS + audio.end；
+control.cancel 取消在途合成（消息形状见 protocol.md）。
 """
 
 import asyncio

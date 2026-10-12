@@ -1,9 +1,6 @@
-"""momo-svc-asr：ASR 服务（默认 127.0.0.1:7810 / MOMO_ASR_LISTEN）。
+"""momo-svc-asr：/ws（v2）+ health/ready + 调试 POST /v1/asr/transcribe。
 
-端点：momo-ws v2 /ws + /healthz + /readyz；调试口 POST /v1/asr/transcribe
-（收 PCM/wav 返回转写 JSON，不在运行时主路径）。
 内部管线：silero-vad 断句 → SenseVoice 识别 → input.vad / input.audio.segment。
-模型由 MOMO_ASR_MODEL 选择（providers/registry.py 固定 sensevoice 线）。
 """
 
 from fastapi import FastAPI

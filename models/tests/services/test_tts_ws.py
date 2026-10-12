@@ -1,8 +1,4 @@
-"""momo-svc-tts /ws 集成测试：hello→hello.ok，output.sentence→
-audio.open + 二进制帧 + EOS + audio.end，control.cancel 取消。
-
-provider 用假 PCM 源注入 app.state（edge 依赖外网，不在测试路径）。
-"""
+"""tts /ws 集成测试：握手、sentence→音频帧流、cancel；provider 用假 PCM 源注入。"""
 
 import asyncio
 import contextlib
