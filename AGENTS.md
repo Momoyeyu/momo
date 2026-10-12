@@ -4,6 +4,17 @@
 
 - conventional commit：`<type>: <what changed>`，`type` in `feat|fix|refactor|docs|chore|test|build`，一行说完一件事。
 - 提交信息只写改动本身，不含任何 AI 署名或 trailer。
+- 栈式 PR（base 非 master）在整条链全部 merge 前，禁止删除链上任何分支的远端引用——删 head 会 close 该 PR，删 base 会 close 其全部下游 PR，且重建分支后不可 reopen。本地 worktree/分支清理不受此限。
+
+## Review 纪律
+
+- PR comment 只放结果与证据；禁止把验证动作甩给 reviewer（"请手动验证连通性"类评论）。
+- 被资源卡住（API key、算力、账号权限、可达网络）→ 直接在会话中向用户索要，不在 PR/issue comment 里索要或绕开。
+- PR 正文的「手动验证」小节是给 reviewer 的复现路径，前提是"已自测通过"；不能用它替代自己应跑的验证。
+
+## 输出与日志
+
+- 面向用户的输出一律英文：CLI 日志、错误提示、hint、报告文本（测试断言同样适用）。源码注释与 `docs/` 文档保持中文。
 
 ## 文档先行
 
