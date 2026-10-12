@@ -22,10 +22,33 @@ repo_id = "owner/repo"
 revision = "abc123"
 dest = "owner/repo"
 notes = "test"
+license = {{ spdx = "apache-2.0", source = "https://example.com/license" }}
 files = [
   {{ path = "a.bin", sha256 = "{SHA_A}" }},
   {{ path = "b.bin", sha256 = "TODO" }},
 ]
+"""
+
+# 非 SPDX 自定义许可：spdx = "other" 时必须带 name。
+MANIFEST_CUSTOM_LICENSE = """
+[[model]]
+name = "custom-license-model"
+repo_id = "owner/repo"
+revision = "main"
+dest = "owner/repo"
+license = { spdx = "other", name = "Model License v1.1", source = "https://example.com/license" }
+files = []
+"""
+
+# license.spdx = "other" 却缺 name → 非法。
+MANIFEST_OTHER_NO_NAME = """
+[[model]]
+name = "bad-license-model"
+repo_id = "owner/repo"
+revision = "main"
+dest = "owner/repo"
+license = { spdx = "other", source = "https://example.com/license" }
+files = []
 """
 
 MANIFEST_BAD = """
@@ -33,6 +56,16 @@ MANIFEST_BAD = """
 name = "broken"
 repo_id = "owner/repo"
 # 缺 revision / dest
+files = []
+"""
+
+# 合法但未声明 license：license 可选，缺省解析为 None。
+MANIFEST_NO_LICENSE = """
+[[model]]
+name = "no-license"
+repo_id = "owner/repo"
+revision = "main"
+dest = "owner/repo"
 files = []
 """
 
@@ -53,6 +86,33 @@ def test_load_manifest_fields(tmp_path: Path) -> None:
     assert e.dest == "owner/repo"
     assert [f.path for f in e.files] == ["a.bin", "b.bin"]
     assert e.files[0].sha256 == SHA_A
+
+
+def test_load_manifest_license_fields(tmp_path: Path) -> None:
+    e = load_manifest(_write_manifest(tmp_path))[0]
+    assert e.license is not None
+    assert e.license.spdx == "apache-2.0"
+    assert e.license.source == "https://example.com/license"
+    assert e.license.name == ""
+
+
+def test_load_manifest_license_absent_is_none(tmp_path: Path) -> None:
+    """license 为可选字段：缺省时不报错，解析为 None。"""
+    e = load_manifest(_write_manifest(tmp_path, MANIFEST_NO_LICENSE))[0]
+    assert e.license is None
+
+
+def test_load_manifest_custom_license(tmp_path: Path) -> None:
+    e = load_manifest(_write_manifest(tmp_path, MANIFEST_CUSTOM_LICENSE))[0]
+    assert e.license is not None
+    assert e.license.spdx == "other"
+    assert e.license.name == "Model License v1.1"
+    assert e.license.source == "https://example.com/license"
+
+
+def test_load_manifest_other_license_requires_name(tmp_path: Path) -> None:
+    with pytest.raises(ManifestError):
+        load_manifest(_write_manifest(tmp_path, MANIFEST_OTHER_NO_NAME))
 
 
 def test_load_manifest_missing_field(tmp_path: Path) -> None:
@@ -106,3 +166,25 @@ def test_real_manifest_parses() -> None:
     assert {"kokoro-82m", "f5-tts-v1", "sense-voice-small-int8"} <= names
     for e in entries:
         assert e.repo_id and e.dest
+
+
+def test_real_manifest_declares_license() -> None:
+    """机读校验：仓内每条目都须声明结构化 license（spdx + source）。"""
+    from momo_models.manifest import DEFAULT_MANIFEST
+
+    entries = load_manifest(DEFAULT_MANIFEST)
+    assert entries
+    for e in entries:
+        assert e.license is not None, f"{e.name}: missing license"
+        assert e.license.spdx, f"{e.name}: missing license.spdx"
+        assert e.license.source, f"{e.name}: missing license.source"
+
+    by_name = {e.name: e.license for e in entries}
+    # 逐条许可按上游核对（见 PR 证据）；这里 pin 关键值防回退。
+    assert by_name["kokoro-82m"].spdx == "apache-2.0"
+    assert by_name["cosyvoice3-0.5b"].spdx == "apache-2.0"
+    assert by_name["f5-tts-v1"].spdx == "cc-by-nc-4.0"
+    assert by_name["silero-vad"].spdx == "mit"
+    # 非 SPDX 自定义许可：spdx = "other" 且带 name。
+    assert by_name["sense-voice-small-int8"].spdx == "other"
+    assert by_name["sense-voice-small-int8"].name
