@@ -57,6 +57,7 @@ flowchart LR
 | 名称 | 含义 | 默认值 | 取值 | 敏感 |
 |---|---|---|---|---|
 | `MOMO_ASR_LISTEN` | ASR WS 监听 | `127.0.0.1:7810` | host:port | 否 |
+| `MOMO_ASR_PROVIDER` | ASR 后端 | `sensevoice` | `sensevoice`；云端实现经 registry 同级注册 | 否 |
 | `MOMO_ASR_MODEL` | ASR 模型 | `sensevoice-small` | str | 否 |
 | `MOMO_ASR_THREADS` | sherpa-onnx CPU 线程 | `4` | 1–16 | 否 |
 | `MOMO_VAD_SILENCE_MS` | VAD 判停静音时长 | `250` | ms | 否 |
@@ -128,6 +129,7 @@ MOMO_EMOTION_MAP=config/emotion.map.yaml   # tag → Live2D 表情映射
 
 # 模型服务（momo-models）
 MOMO_ASR_LISTEN=127.0.0.1:7810
+MOMO_ASR_PROVIDER=sensevoice   # 本地 sherpa；云端实现注册后同级可选
 MOMO_ASR_MODEL=sensevoice-small
 MOMO_ASR_THREADS=4
 MOMO_VAD_SILENCE_MS=250

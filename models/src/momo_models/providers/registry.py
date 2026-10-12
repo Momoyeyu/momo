@@ -1,7 +1,7 @@
 """名称 → provider 类映射；env 选择。
 
 - TTS：`MOMO_TTS_PROVIDER=edge|kokoro|f5|cosyvoice3|sovits`
-- ASR：固定 sensevoice 线（`MOMO_ASR_MODEL` 只选模型，不进 registry）
+- ASR：`MOMO_ASR_PROVIDER=sensevoice`；本地 sherpa 与云端实现同级注册
 - embed：单实现（P3），无需 registry env
 - LLM：无 registry —— 无网关后上游就是 `MOMO_LLM_ENDPOINT`，归 app 侧
 """
@@ -43,6 +43,25 @@ def create_tts_provider(settings: Settings) -> TTSProvider:
     return cls(settings)
 
 
+ASR_PROVIDERS: dict[str, type[ASRProvider]] = {
+    "sensevoice": SenseVoiceASRProvider,
+}
+
+
+def asr_provider_names() -> list[str]:
+    return sorted(ASR_PROVIDERS)
+
+
+def get_asr_provider_class(name: str) -> type[ASRProvider]:
+    try:
+        return ASR_PROVIDERS[name]
+    except KeyError:
+        raise ValueError(
+            f"unknown MOMO_ASR_PROVIDER={name!r}; valid: {asr_provider_names()}"
+        ) from None
+
+
 def create_asr_provider(settings: Settings) -> ASRProvider:
-    """ASR 固定 sensevoice 线；`settings.asr_model`（MOMO_ASR_MODEL）选模型。"""
-    return SenseVoiceASRProvider(settings)
+    """按 `settings.asr_provider`（MOMO_ASR_PROVIDER）实例化后端。"""
+    cls = get_asr_provider_class(settings.asr_provider)
+    return cls(settings)
