@@ -46,8 +46,9 @@ tts = [
     "f5-tts>=1.1",     # providers/tts/f5.py（零样本克隆，需干净参考音）
 ]
 asr = [
-    "sherpa-onnx>=1.12",  # providers/asr/sensevoice.py（纯 CPU）
-    "silero-vad>=6.0",    # providers/asr/vad.py 断句
+    "sherpa-onnx>=1.12",       # providers/asr/sensevoice.py（纯 CPU）
+    "sherpa-onnx-core>=1.12",  # sherpa-onnx 原生库（上游把 requires-dist 标成 Dynamic，解析器漏拉）
+    "silero-vad>=6.0",         # providers/asr/vad.py 断句
     "soundfile>=0.13",
 ]
 embed = [
