@@ -4,6 +4,7 @@
 
 use std::fs;
 use std::path::PathBuf;
+use std::process::Stdio;
 
 use crate::output::AppError;
 
@@ -51,6 +52,47 @@ pub fn remove_pidfile(component: &str) -> Result<(), AppError> {
         fs::remove_file(p)?;
     }
     Ok(())
+}
+
+/// 组件日志落盘：`logs/<name>.log`，stdout/stderr 追加写同一文件。
+pub fn log_stdio(component: &str) -> Result<(PathBuf, Stdio, Stdio), AppError> {
+    fs::create_dir_all(log_dir())?;
+    let path = log_dir().join(format!("{component}.log"));
+    let out = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&path)?;
+    let err = out.try_clone()?;
+    Ok((path, Stdio::from(out), Stdio::from(err)))
+}
+
+/// 终止指定 pid：unix `kill`（SIGTERM），windows `taskkill /F`，其他平台 no-op。
+pub fn kill_pid(pid: u32) -> bool {
+    #[cfg(unix)]
+    {
+        std::process::Command::new("kill")
+            .arg(pid.to_string())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+    }
+    #[cfg(windows)]
+    {
+        std::process::Command::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/F"])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        let _ = pid;
+        false
+    }
 }
 
 /// pid 存活探测：unix 走 `kill -0`；其他平台保守返回 false。

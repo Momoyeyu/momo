@@ -30,7 +30,7 @@ env = { MOMO_BRAIN_BACKEND = "local", MOMO_BRAIN_PORT = "7820" }
 [[component]]
 name = "momo-svc-asr"
 order = 10
-cwd = "../momo-models"
+cwd = "../models"
 cmd = "uv"
 args = ["run", "momo-svc-asr"]
 ready = "http://127.0.0.1:7810/readyz"
@@ -40,7 +40,7 @@ env = { MOMO_ASR_LISTEN = "127.0.0.1:7810", MOMO_ASR_MODEL = "sensevoice-small",
 [[component]]
 name = "momo-svc-tts"
 order = 20
-cwd = "../momo-models"
+cwd = "../models"
 cmd = "uv"
 args = ["run", "momo-svc-tts"]
 ready = "http://127.0.0.1:7811/readyz"
