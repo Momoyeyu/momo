@@ -1,6 +1,4 @@
-//! `momoctl config check` 集成测试：
-//! 1) 真实仓库（含 config.schema.toml 的 monorepo 根）必须通过 → CI 漂移门禁；
-//! 2) 临时 fixture 上的 missing/extra 漂移 → 退出码 3。
+//! `momoctl config check` 集成测试：真实仓库必须零漂移；fixture 漂移 → 退出码 3。
 
 use std::fs;
 use std::path::{Path, PathBuf};

@@ -1,9 +1,4 @@
-//! `config.schema.toml` 加载/校验 + 漂移检测（issue #69 单源 schema）。
-//!
-//! 仓库根 `config.schema.toml` 是 `MOMO_*` env 键的机器可读权威；
-//! 本模块校验三侧 `<mod>/.env.example` 与 `docs/01-architecture/config.md`
-//! （§2 表格 + §3 .env.example 模板）是否与它一致：缺键/多键/默认值
-//! 或敏感标记不一致即 drift。
+//! `config.schema.toml` 加载 + 漂移检测；口径见 config.md §6。
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;

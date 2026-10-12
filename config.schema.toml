@@ -1,21 +1,4 @@
-# config.schema.toml —— MOMO_* 环境变量单源 schema（单一事实来源）
-#
-# 口径：docs/01-architecture/config.md §2 变量全集；本文件是机器可读权威，
-# config.md 表格 / §3 模板 / 三个 `.env.example` 必须与它一致，
-# 由 `momoctl config check` 校验（CI: ci-config.yml），漂移即失败。
-#
-# 每行一个键，字段：
-#   name        env 键名（MOMO_ 前缀；上游直通变量见下方 passthrough）
-#   type        string | bool | int | path | url | enum（供渲染/校验用）
-#   values      type=enum 时的合法取值
-#   default     内置默认值（空字符串 = 无默认/留空占位；敏感项一律为空）
-#   sensitive   敏感标记，仅在为 true 时书写（日志/doctor 打码，配置页掩码）
-#   readers     消费该键的模块：app | models | infra
-#   files       该键必须以非注释行出现在哪些 `<mod>/.env.example`：app | models | infra
-#               （config.md §3 完整模板期望集合恒等于 "app"）
-#   examples    可选：某文件示例值偏离 default 时的覆盖，如 { infra = "warn" }
-#   description 含义（与 config.md「含义」列一致）
-
+# MOMO_* env 单源 schema；字段口径与同步规则见 docs/01-architecture/config.md §6
 schema = 1
 
 key = [
@@ -74,8 +57,7 @@ key = [
   { name = "MOMO_BRAIN_PORT", type = "int", default = "7820", readers = ["infra"], files = ["app", "infra"], description = "大脑服务端口（对应 MOMO_LLM_ENDPOINT）" },
 ]
 
-# ===== 上游工具直通变量（非 MOMO_ 前缀，第三方库自读，config.md §2.5） =====
-# files = [] 表示只允许以注释形式出现在 .env.example（如 UV_INDEX_URL）。
+# 上游工具直通变量（非 MOMO_ 前缀，config.md §2.5）
 passthrough = [
   { name = "HF_ENDPOINT", type = "url", default = "https://hf-mirror.com", files = ["app", "models", "infra"], description = "HF 镜像；laptop 必须（huggingface.co 不通，ADR-017）" },
   { name = "UV_INDEX_URL", type = "url", default = "", files = [], description = "PyPI 镜像（uv）；仅安装期生效" },

@@ -1,6 +1,4 @@
-//! `momoctl config check [--root PATH] [--json]`：env schema 漂移检测。
-//! 校验 `config.schema.toml` ↔ 三侧 `.env.example` ↔ `docs/01-architecture/config.md`
-//! （§2 键表 + §3 模板）一致。退出码：无漂移 0；有漂移 3；schema 坏/参数错 2。
+//! `momoctl config check`：schema ↔ .env.example ↔ config.md 漂移检测；退出码 0/3/2。
 
 use std::path::{Path, PathBuf};
 
