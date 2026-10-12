@@ -46,6 +46,32 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 固定 emotion：`neutral` `happy` `sad` `angry` `surprised` `thinking` `shy` `sleepy`。tool action 使用独立的工具扩展消息组。
 
 
+`app/tests/golden/` 入库 23 个 golden JSON fixture，逐 `type` 覆盖上表必需字段，是 wire 格式的对拍基准：
+
+| 文件 | 覆盖消息 |
+|---|---|
+| `hello.json` / `hello.ok.json` | 握手与能力确认 |
+| `session.snapshot.json` | 无音频重放的状态收敛 |
+| `input.text.json` / `input.accepted.json` / `input.rejected.json` | 幂等文字输入与回执 |
+| `input.audio.start/end/cancel.json` `input.vad.json` `input.audio.segment.json` | capture 生命周期、VAD、partial/final 段 |
+| `audio.open.uplink.json` / `audio.open.downlink.json` / `audio.end.json` | stream 绑定（方向约束两形态）与显式结束 |
+| `output.sentence.json` / `output.complete.json` | 逐句输出与 generation 结束 |
+| `playback.started.json` / `playback.progress.json` | 播放账本 |
+| `control.barge_in.json` / `control.cancel.json` / `turn.finished.json` / `state.turn.json` | 打断、取消、turn 终态与状态事件 |
+| `error.json` | 错误帧（带完整 ServerEnvelope） |
+
+用途：固定字段名/枚举值/ULID 形态，防 serde rename、flatten envelope 或 snake_case 漂移。对拍方式：`app/tests/proto_roundtrip.rs` 对每个 fixture 做 decode→断言字段 + encode→字节级比对的双向对拍；二进制音频帧以 `audio.open` 绑定的 `stream_id` 与 32B 头布局在 codec 单测中对拍（不落 golden JSON）。
+
+代表性向量（`hello.json` 与 `error.json`）：
+
+```json
+{"type":"hello","protocol":"momo-ws","version":"v2","client":"ui","auth_token":"ephemeral-token","resume_session_id":"sess_01J5M0N8T1RZ8K2W4V7H6X9P3A"}
+```
+
+```json
+```
+
+
 Tauri 每次启动生成 ephemeral token，经 desktop IPC 只交给内嵌 UI。UI 把 token 放在 WebSocket 的第一条 `hello.auth_token` 中，**不**放 query URL、日志或 Authorization header。browser dev 由本地 setup 手动取得同类 per-process token；静态网站不持有 token、不连接 localhost，也不请求 API key 或麦克风。
 
 UI route 在 HTTP upgrade 前检查精确配置的 desktop origin / browser-dev origin allowlist，missing 或未批准 Origin 直接拒绝。allowlist = `MOMO_WEB_ORIGIN`（browser-dev）+ desktop origin `tauri://localhost` / `http://tauri.localhost` / `https://tauri.localhost`（Tauri webview 各平台形态）。upgrade 后 5s 内必须收到格式正确且含 token 的 hello；在 token 与版本通过前不接受任何 business frame。token 使用 constant-time comparison。malformed/timeout close `4400`，unauthorized close `4401`，version mismatch close `4001`。
