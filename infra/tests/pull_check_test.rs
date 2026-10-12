@@ -55,8 +55,8 @@ repo_id = "c/d"
 files = [ { path = "x.bin", sha256 = "TODO" } ]
 "#;
 
-fn fixture() -> (PathBuf, PathBuf) {
-    let root = tmpdir("case");
+fn fixture(tag: &str) -> (PathBuf, PathBuf) {
+    let root = tmpdir(tag);
     let manifest = write_manifest(&root, MANIFEST);
     let models = root.join("models");
     let dest = models.join("a/b");
@@ -70,7 +70,7 @@ fn fixture() -> (PathBuf, PathBuf) {
 
 #[test]
 fn reports_missing_placeholder_and_mismatch() {
-    let (manifest, models) = fixture();
+    let (manifest, models) = fixture("report");
     let out = run_check(&manifest, &models, &[]);
     let stdout = String::from_utf8_lossy(&out.stdout);
 
@@ -88,7 +88,7 @@ fn reports_missing_placeholder_and_mismatch() {
 
 #[test]
 fn json_output_is_parseable() {
-    let (manifest, models) = fixture();
+    let (manifest, models) = fixture("json");
     let out = run_check(&manifest, &models, &["--json"]);
     assert_eq!(out.status.code(), Some(5));
     let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
@@ -102,7 +102,7 @@ fn json_output_is_parseable() {
 
 #[test]
 fn only_filters_entries() {
-    let (manifest, models) = fixture();
+    let (manifest, models) = fixture("only");
     let out = run_check(&manifest, &models, &["--json", "--only", "m"]);
     assert_eq!(out.status.code(), Some(5));
     let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
@@ -115,7 +115,7 @@ fn only_filters_entries() {
 
 #[test]
 fn unknown_only_is_usage_error() {
-    let (manifest, models) = fixture();
+    let (manifest, models) = fixture("unknown");
     let out = run_check(&manifest, &models, &["--only", "nope"]);
     assert_eq!(out.status.code(), Some(2));
 }
