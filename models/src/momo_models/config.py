@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     asr_provider: str = "sensevoice"  # sensevoice；云端实现经 registry 注册同级切换
     asr_model: str = "sensevoice-small"
     asr_threads: int = 4
+    vad_provider: str = "silero"  # silero
     vad_silence_ms: int = 250
 
     # TTS（momo-svc-tts）

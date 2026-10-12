@@ -2,18 +2,20 @@
 
 - TTS：`MOMO_TTS_PROVIDER=edge|kokoro|f5|cosyvoice3|sovits`
 - ASR：`MOMO_ASR_PROVIDER=sensevoice`；本地 sherpa 与云端实现同级注册
+- VAD：`MOMO_VAD_PROVIDER=silero`
 - embed：单实现（P3），无需 registry env
 - LLM：无 registry —— 无网关后上游就是 `MOMO_LLM_ENDPOINT`，归 app 侧
 """
 
 from momo_models.config import Settings
 from momo_models.providers.asr.sensevoice import SenseVoiceASRProvider
-from momo_models.providers.base import ASRProvider, TTSProvider
+from momo_models.providers.base import ASRProvider, TTSProvider, VADProvider
 from momo_models.providers.tts.cosyvoice3 import CosyVoice3Provider
 from momo_models.providers.tts.edge import EdgeTTSProvider
 from momo_models.providers.tts.f5 import F5TTSProvider
 from momo_models.providers.tts.kokoro import KokoroTTSProvider
 from momo_models.providers.tts.sovits import SoVITSProvider
+from momo_models.providers.vad.silero import SileroVadProvider
 
 TTS_PROVIDERS: dict[str, type[TTSProvider]] = {
     "edge": EdgeTTSProvider,
@@ -64,4 +66,28 @@ def get_asr_provider_class(name: str) -> type[ASRProvider]:
 def create_asr_provider(settings: Settings) -> ASRProvider:
     """按 `settings.asr_provider`（MOMO_ASR_PROVIDER）实例化后端。"""
     cls = get_asr_provider_class(settings.asr_provider)
+    return cls(settings)
+
+
+VAD_PROVIDERS: dict[str, type[VADProvider]] = {
+    "silero": SileroVadProvider,
+}
+
+
+def vad_provider_names() -> list[str]:
+    return sorted(VAD_PROVIDERS)
+
+
+def get_vad_provider_class(name: str) -> type[VADProvider]:
+    try:
+        return VAD_PROVIDERS[name]
+    except KeyError:
+        raise ValueError(
+            f"unknown MOMO_VAD_PROVIDER={name!r}; valid: {vad_provider_names()}"
+        ) from None
+
+
+def create_vad_provider(settings: Settings) -> VADProvider:
+    """按 `settings.vad_provider`（MOMO_VAD_PROVIDER）实例化后端。"""
+    cls = get_vad_provider_class(settings.vad_provider)
     return cls(settings)

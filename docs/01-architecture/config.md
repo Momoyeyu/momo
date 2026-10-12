@@ -59,6 +59,7 @@ flowchart LR
 | `MOMO_ASR_PROVIDER` | ASR 后端 | `sensevoice` | `sensevoice`；云端实现经 registry 同级注册 | 否 |
 | `MOMO_ASR_MODEL` | ASR 模型 | `sensevoice-small` | str | 否 |
 | `MOMO_ASR_THREADS` | sherpa-onnx CPU 线程 | `4` | 1–16 | 否 |
+| `MOMO_VAD_PROVIDER` | VAD 后端 | `silero` | `silero` | 否 |
 | `MOMO_VAD_SILENCE_MS` | VAD 判停静音时长 | `250` | ms | 否 |
 | `MOMO_TTS_LISTEN` | TTS WS 监听 | `127.0.0.1:7811` | host:port | 否 |
 | `MOMO_TTS_PROVIDER` | TTS 后端 | `kokoro` | `edge`/`kokoro`/`f5`/`cosyvoice3`/`sovits` | 否 |
@@ -133,6 +134,7 @@ MOMO_ASR_LISTEN=127.0.0.1:7810
 MOMO_ASR_PROVIDER=sensevoice   # 本地 sherpa；云端实现注册后同级可选
 MOMO_ASR_MODEL=sensevoice-small
 MOMO_ASR_THREADS=4
+MOMO_VAD_PROVIDER=silero
 MOMO_VAD_SILENCE_MS=250
 MOMO_TTS_LISTEN=127.0.0.1:7811
 MOMO_TTS_PROVIDER=kokoro       # 目标 cosyvoice3；部署需求待实测
