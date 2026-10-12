@@ -11,6 +11,11 @@ use tracing::{debug, warn};
 use crate::{
     error::AppError,
     proto::{
+        codec::{
+            self, CLOSE_INTERNAL, CLOSE_NORMAL, CLOSE_PROTOCOL_VIOLATION, CLOSE_UNAUTHORIZED,
+            CLOSE_VERSION_MISMATCH,
+        },
+        message::{ClientKind, ErrorMsg, HelloOkMsg, Msg, ServerRole, new_id},
     },
     session::{SessionCmd, SessionHandle},
     ws::server::AppState,
@@ -18,6 +23,9 @@ use crate::{
 
 /// conn_tx 有界队列上限（momo-app.md §ws 子系统）。
 pub const CONN_TX_CAP: usize = 256;
+
+/// hello deadline：upgrade 后 5s 内必须收到合法 hello（protocol §认证）。
+pub const HELLO_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// conn_tx 单帧写 socket 的 stall deadline：超时说明对端消费不动，直接关连。
 pub const CONN_TX_STALL: Duration = Duration::from_secs(5);
@@ -52,11 +60,28 @@ where
     let tx_task = tokio::spawn(tx_loop(sink, rx));
 
     let Some(session) = handshake(&conn_id, &mut stream, &tx, &state).await else {
+        drop(tx);
+        let _ = tx_task.await;
         return;
     };
 
     // conn_rx 循环：帧 → Msg → Session。
     let cmd_tx = session.cmd_tx.clone();
+    loop {
+        let msg = tokio::select! {
+            next = stream.next() => next,
+                    let _ = tx
+                        .send(OutboundFrame::Close(
+                            CLOSE_NORMAL,
+                            "superseded by new ui connection",
+                        ))
+                        .await;
+                    break;
+                }
+                continue;
+            }
+        };
+        let Some(msg) = msg else { break };
         match msg {
             Ok(Message::Text(text)) => match codec::decode_msg(text.as_str()) {
                 Ok(Msg::Unknown) => {
@@ -100,10 +125,24 @@ where
     St: Stream<Item = Result<Message, StErr>> + Unpin,
     StErr: Display,
 {
+    // upgrade 后 5s 内必须收到 hello（protocol §认证），超时 close 4400。
+    let first = match tokio::time::timeout(HELLO_TIMEOUT, stream.next()).await {
+        Ok(Some(Ok(Message::Text(text)))) => text,
         // 静默断连（如对端直接关闭）不视为协议违反。
+        Ok(Some(Ok(Message::Close(_)))) | Ok(None) => return None,
+        Ok(_) => {
             send_fatal(
                 tx,
                 &AppError::Protocol("first frame must be a text hello".into()),
+                CLOSE_PROTOCOL_VIOLATION,
+            )
+            .await;
+            return None;
+        }
+        Err(_) => {
+            send_fatal(
+                tx,
+                &AppError::Protocol("hello timeout".into()),
                 CLOSE_PROTOCOL_VIOLATION,
             )
             .await;
@@ -130,6 +169,31 @@ where
         };
         send_fatal(tx, &err, code).await;
         return None;
+    }
+
+    // /ws/ui 只接受 UI 角色（protocol §必需字段表注）。
+    if hello.client != ClientKind::Ui {
+        send_fatal(
+            tx,
+            &AppError::Protocol("/ws/ui requires hello.client='ui'".into()),
+            CLOSE_PROTOCOL_VIOLATION,
+        )
+        .await;
+        return None;
+    }
+
+    // token 恒时比较；`MOMO_UI_TOKEN` 未配置（standalone dev）不比对，
+    // `hello.auth_token` 字段本身已由 serde 保证必填（protocol §认证）。
+    if let Some(expected) = state.config.ui_token.as_ref() {
+        if !token_eq(&hello.auth_token, expected.expose()) {
+            send_fatal(
+                tx,
+                &AppError::Unauthorized("hello.auth_token mismatch".into()),
+                CLOSE_UNAUTHORIZED,
+            )
+            .await;
+            return None;
+        }
     }
 
     let hello_ok = Msg::HelloOk(HelloOkMsg {
@@ -198,10 +262,20 @@ async fn send_fatal(tx: &mpsc::Sender<OutboundFrame>, err: &AppError, code: u16)
     let reason: &'static str = match code {
         CLOSE_VERSION_MISMATCH => "version mismatch",
         CLOSE_PROTOCOL_VIOLATION => "protocol violation",
+        CLOSE_UNAUTHORIZED => "unauthorized",
         CLOSE_INTERNAL => "internal error",
         _ => "closing",
     };
     let _ = tx.send(OutboundFrame::Close(code, reason)).await;
+}
+
+/// constant-time 字符串比较（protocol §认证：token 不落日志、不用早退比较）。
+fn token_eq(got: &str, expected: &str) -> bool {
+    let (a, b) = (got.as_bytes(), expected.as_bytes());
+    if a.len() != b.len() {
+        return false;
+    }
+    a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }
 
 /// `AppError` → 协议 `error` 帧。

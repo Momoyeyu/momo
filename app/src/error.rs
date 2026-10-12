@@ -24,6 +24,10 @@ pub enum AppError {
     #[error("version mismatch: {0}")]
     VersionMismatch(String),
 
+    /// hello.auth_token 校验失败 → `UNAUTHORIZED` + close 4401。
+    #[error("unauthorized: {0}")]
+    Unauthorized(String),
+
     /// 上游模型服务断连 → `MODEL_UNREACHABLE`。
     #[error("model service unreachable: {0}")]
     ModelUnreachable(String),
@@ -39,6 +43,7 @@ impl AppError {
             AppError::BadMessage(_) => ErrorCode::BadMessage,
             AppError::Protocol(_) => ErrorCode::Internal,
             AppError::VersionMismatch(_) => ErrorCode::VersionMismatch,
+            AppError::Unauthorized(_) => ErrorCode::Unauthorized,
             AppError::ModelUnreachable(_) => ErrorCode::ModelUnreachable,
         }
     }
