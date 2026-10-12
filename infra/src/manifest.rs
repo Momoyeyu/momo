@@ -93,7 +93,7 @@ impl Manifest {
                     )));
                 }
                 if let Some(h) = &f.sha256 {
-                    if !is_sha256_hex(h) {
+                    if !is_sha256_hex(h) && !is_placeholder_sha(h) {
                         return Err(AppError::Manifest(format!(
                             "model '{}': file '{}': sha256 must be 64 hex chars",
                             m.name, f.path
@@ -166,6 +166,12 @@ pub fn sha256_file(path: &Path) -> Result<String, AppError> {
 
 fn is_sha256_hex(s: &str) -> bool {
     s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+/// MANIFEST 允许的 sha256 占位值（pull 实装前按实际文件补齐）。
+/// 占位项可解析但不能通过校验：`pull --check` 逐项上报。
+pub fn is_placeholder_sha(s: &str) -> bool {
+    s.trim().eq_ignore_ascii_case("todo")
 }
 
 fn hex_lower(bytes: &[u8]) -> String {
