@@ -82,6 +82,7 @@ flowchart LR
 | 名称 | 含义 | 默认值 | 取值 | 敏感 |
 |---|---|---|---|---|
 | `MOMO_WEB_TOKEN` | `momoctl web` 控制台鉴权 token；`--listen` 放宽出 localhost 时必填（未设拒绝启动） | 空 | str | **是** |
+| `MOMO_DEEPSEEK_API_KEY` | DeepSeek key：LLM 兜底与 P2 视觉 provider 共用；infra 侧仅 `momoctl doctor` 查 set/unset，不取值不回显（见 §2.2） | 空 | str | **是** |
 | `MOMO_BRAIN_BACKEND` | 大脑后端类型 | `mlx` | `mlx`/`vllm`/`deepseek`/`local` | 否 |
 | `MOMO_BRAIN_MODEL_PATH` | 本地模型目录 | `~/models/Qwen3-8B-4bit` | path | 否 |
 | `MOMO_BRAIN_PORT` | 大脑服务端口（对应 `MOMO_LLM_ENDPOINT`） | `7820` | port | 否 |
@@ -180,7 +181,7 @@ HF_ENDPOINT=https://hf-mirror.com   # laptop 必须
 - **敏感数据（非 key）**：`MOMO_DATA_KEEP_AUDIO=on` 时落盘的原始麦音频属隐私数据——key 本身只是开关，但其产物按敏感数据同等纪律处理（短期保留、仅 ASR 排错用途、到期清理、不外传）。
 - `.env` 已在各仓 `.gitignore`；`.env.example` 中敏感项**只留空值占位**，禁止提交真实 key。
 - 日志/诊断输出对敏感值打码（显示前 4 位 + `…`）；`momoctl doctor` 只做"是否设置"检查，不回显。
-- 组件间不转发敏感变量：models/infra 不需要 DS key，由 app 单独持有（P2 视觉若下沉到 models，届时在 decisions.md 补记）。
+- 组件间不转发敏感变量：DeepSeek key 由 app 持有并注入 LLM 请求；infra 只在 `momoctl doctor` 里检查其 set/unset（不回显、不取值，见 §2.4），models 不读（P2 视觉若下沉到 models，届时在 decisions.md 补记）。
 
 ## 5. 与配置发布平台的兼容
 
@@ -207,7 +208,7 @@ flowchart TD
 
 ## 6. 机器可读 schema：`config.schema.toml`
 
-仓库根 `config.schema.toml` 是 `MOMO_*` 键的单一事实来源；§2 表格、§3 模板、三个 `.env.example` 均由它派生，`momoctl config check`（CI: `ci-config.yml`）校验四者一致，漂移即失败。维护者新增/修改键时只需要这一张表，因此字段口径必须写全：
+仓库根 `config.schema.toml` 是 `MOMO_*` 键的权威来源（single source of truth），但**不是生成器**：仓库只有校验器，没有从 schema 产出本文档或 `.env.example` 的代码——`infra/src/config_schema.rs` 与 `infra/src/cmds/config.rs` 全程只读，不含任何写文件调用。§2 表格、§3 模板与三个 `.env.example` 仍须在同一个 PR 内手工同步；`momoctl config check`（CI: `ci-config.yml`）只做**比对校验**，四处不一致即失败，但不会替你改。因此字段口径必须写全：
 
 ```toml
 schema = 1            # 文件格式版本
