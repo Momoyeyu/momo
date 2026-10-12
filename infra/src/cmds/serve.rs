@@ -1,19 +1,16 @@
-//! `momoctl serve <up|down|status|logs|restart> [--profile X] [--only C] [--app-bin P]`。
-//! `up`：profile 组件表解析 → 按 order 依序 spawn → pidfile + 日志落盘，
-//! 带 `ready` URL 的组件做 bounded readiness 轮询；失败即清理本次 spawn 的子进程
-//! （momo-infra.md service 操作流程）。external 组件只探活不拉起。
-//! `down`：逆序按 pidfile SIGTERM→SIGKILL，幂等（未运行即 no-op）。
-//! `status`：pidfile + 存活 + ready 探测报 running/dead/stopped 与 uptime。
-//! `restart` = down + up。`logs` 仍 stub。
+//! `momoctl serve <up|down|status|logs|restart>`：按 profile 组件表 spawn/停止/探测，
+//! pidfile + 日志落盘；external 组件只探活不拉起（momo-infra.md service 操作流程）。
 
-use std::io::Write;
+use std::collections::HashMap;
+use std::io::{Read, Seek, SeekFrom, Write};
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
 
-use crate::cli::{ServeAction, ServeArgs, ServeCommon};
+use crate::cli::{LogsArgs, ServeAction, ServeArgs, ServeCommon};
 use crate::env_cfg::{self, EnvCfg};
 use crate::net;
 use crate::output::{not_implemented, AppError, Check, CheckStatus, ExitCode, Summary};
@@ -25,6 +22,8 @@ const READY_TIMEOUT: Duration = Duration::from_secs(15);
 const READY_POLL: Duration = Duration::from_millis(200);
 /// down 时 SIGTERM 后的宽限期，超时升级 SIGKILL。
 const TERM_GRACE: Duration = Duration::from_secs(10);
+/// serve logs -f 轮询间隔。
+const FOLLOW_POLL: Duration = Duration::from_millis(300);
 
 #[derive(Debug, Serialize)]
 struct ServeReport {
@@ -36,6 +35,11 @@ struct ServeReport {
 }
 
 pub fn run(args: &ServeArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
+    if let ServeAction::Logs(largs) = &args.action {
+        let profile = EnvCfg.profile(largs.common.profile);
+        let doc = ServeProfile::load_builtin(profile.as_str())?;
+        return logs(&doc, largs, profile.as_str(), ctx);
+    }
     let (action, common) = split(&args.action);
     let profile = EnvCfg.profile(common.profile);
     let doc = ServeProfile::load_builtin(profile.as_str())?;
@@ -240,6 +244,159 @@ fn restart(
         ctx,
     )?;
     Ok(if up_code != 0 { up_code } else { down_code })
+}
+
+/// `serve logs`：每组件 tail `logs/<name>.log` 最后 N 行；-f 轮询追加内容。
+fn logs(
+    doc: &ServeProfile,
+    args: &LogsArgs,
+    profile: &str,
+    ctx: &super::Ctx,
+) -> Result<i32, AppError> {
+    let selected = select_components(doc.start_order(), &args.common, profile)?;
+
+    let mut entries = Vec::new();
+    // follow 监听列表（含尚无日志文件的组件，出现后从头跟随）。
+    let mut watched: Vec<(String, PathBuf)> = Vec::new();
+    for c in selected {
+        let path = proc::log_dir().join(format!("{}.log", c.name));
+        watched.push((c.name.clone(), path.clone()));
+        if path.is_file() {
+            let lines = read_last_lines(&path, args.lines)?;
+            entries.push(LogEntry {
+                component: c.name.clone(),
+                path: Some(path.display().to_string()),
+                lines,
+            });
+        } else {
+            entries.push(LogEntry {
+                component: c.name.clone(),
+                path: None,
+                lines: Vec::new(),
+            });
+        }
+    }
+
+    if ctx.json {
+        let report = serde_json::json!({
+            "schema": 1,
+            "command": "serve logs",
+            "profile": profile,
+            "logs": entries,
+        });
+        println!("{}", serde_json::to_string_pretty(&report).unwrap());
+    } else {
+        let mut w = std::io::stdout().lock();
+        for e in &entries {
+            match &e.path {
+                Some(p) => writeln!(w, "== {} ({p}) ==", e.component)?,
+                None => writeln!(w, "== {} (no log file) ==", e.component)?,
+            }
+            for line in &e.lines {
+                writeln!(w, "{line}")?;
+            }
+        }
+    }
+
+    if args.follow {
+        follow_logs(&watched, ctx)?;
+    }
+    Ok(ExitCode::Ok as i32)
+}
+
+#[derive(Debug, Serialize)]
+struct LogEntry {
+    component: String,
+    path: Option<String>,
+    lines: Vec<String>,
+}
+
+/// 读文件最后 n 行：先只读末尾 1 MiB 窗口，不够再全量重读。
+fn read_last_lines(path: &Path, n: usize) -> Result<Vec<String>, AppError> {
+    const WINDOW: u64 = 1 << 20;
+    let mut f = std::fs::File::open(path)?;
+    let len = f.metadata()?.len();
+    let start = len.saturating_sub(WINDOW);
+    let mut lines = tail_lines(&mut f, start, n)?;
+    if start > 0 && lines.len() < n {
+        lines = tail_lines(&mut f, 0, n)?;
+    }
+    Ok(lines)
+}
+
+fn tail_lines(f: &mut std::fs::File, start: u64, n: usize) -> Result<Vec<String>, AppError> {
+    f.seek(SeekFrom::Start(start))?;
+    let mut buf = Vec::new();
+    f.read_to_end(&mut buf)?;
+    let text = String::from_utf8_lossy(&buf);
+    let mut lines: Vec<String> = text
+        .split('\n')
+        .map(|s| s.trim_end_matches('\r').to_string())
+        .collect();
+    if lines.last().is_some_and(|l| l.is_empty()) {
+        lines.pop();
+    }
+    if start > 0 && !lines.is_empty() {
+        // 窗口首行可能是半行，丢弃。
+        lines.remove(0);
+    }
+    Ok(lines
+        .into_iter()
+        .rev()
+        .take(n)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect())
+}
+
+/// `-f` 跟随：轮询各日志文件 offset 之后的新增内容并输出。
+/// json 模式下每批输出一行 NDJSON `{"component","lines"}`。Ctrl-C 退出。
+fn follow_logs(watched: &[(String, PathBuf)], ctx: &super::Ctx) -> Result<(), AppError> {
+    let multi = watched.len() > 1;
+    let mut offsets: HashMap<PathBuf, u64> = watched
+        .iter()
+        .map(|(_, p)| {
+            let len = std::fs::metadata(p).map(|m| m.len()).unwrap_or(0);
+            (p.clone(), len)
+        })
+        .collect();
+    loop {
+        for (name, path) in watched {
+            let len = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+            let offset = offsets.entry(path.clone()).or_insert(0);
+            if len < *offset {
+                *offset = 0; // 日志被截断/轮转：从头读
+            }
+            if len <= *offset {
+                continue;
+            }
+            let mut f = std::fs::File::open(path)?;
+            f.seek(SeekFrom::Start(*offset))?;
+            let mut buf = Vec::new();
+            f.read_to_end(&mut buf)?;
+            *offset = len;
+            let text = String::from_utf8_lossy(&buf);
+            let lines: Vec<&str> = text.lines().collect();
+            if lines.is_empty() {
+                continue;
+            }
+            if ctx.json {
+                let body = serde_json::json!({ "component": name, "lines": lines });
+                println!("{}", serde_json::to_string(&body).unwrap());
+            } else {
+                let mut w = std::io::stdout().lock();
+                for line in lines {
+                    if multi {
+                        writeln!(w, "{name}: {line}")?;
+                    } else {
+                        writeln!(w, "{line}")?;
+                    }
+                }
+            }
+        }
+        thread::sleep(FOLLOW_POLL);
+    }
 }
 
 /// `serve up`：按 start_order 逐个拉起；任一 fail → 停止本次 owned children。
@@ -550,7 +707,7 @@ fn split(action: &ServeAction) -> (&'static str, &ServeCommon) {
         ServeAction::Up(c) => ("up", c),
         ServeAction::Down(c) => ("down", c),
         ServeAction::Status(c) => ("status", c),
-        ServeAction::Logs(c) => ("logs", c),
+        ServeAction::Logs(l) => ("logs", &l.common),
         ServeAction::Restart(c) => ("restart", c),
     }
 }
@@ -790,5 +947,24 @@ args = ["-c", "import time; time.sleep(60)"]
         assert_eq!(down(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
         std::env::remove_var("XDG_STATE_HOME");
         let _ = fs::remove_dir_all(state.parent().unwrap());
+    }
+
+    #[test]
+    fn read_last_lines_tails_file() {
+        let dir = std::env::temp_dir().join(format!("momo-logs-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("x.log");
+        fs::write(&p, "l1\nl2\nl3\nl4\n").unwrap();
+        assert_eq!(read_last_lines(&p, 2).unwrap(), vec!["l3", "l4"]);
+        // n 超过行数 → 全量返回
+        assert_eq!(
+            read_last_lines(&p, 99).unwrap(),
+            vec!["l1", "l2", "l3", "l4"]
+        );
+        // 无尾换行
+        fs::write(&p, "a\nb").unwrap();
+        assert_eq!(read_last_lines(&p, 1).unwrap(), vec!["b"]);
+        let _ = fs::remove_dir_all(&dir);
     }
 }

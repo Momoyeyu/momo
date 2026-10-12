@@ -96,8 +96,8 @@ pub enum ServeAction {
     Down(ServeCommon),
     /// pid 存活 + /healthz 探测
     Status(ServeCommon),
-    /// tail 组件日志（--only 过滤）
-    Logs(ServeCommon),
+    /// tail 组件日志（-n 行数，-f 持续跟随）
+    Logs(LogsArgs),
     /// down + up
     Restart(ServeCommon),
 }
@@ -109,12 +109,26 @@ pub struct ServeCommon {
     pub profile: Option<Profile>,
 
     /// 只作用于指定组件（可重复）
-    #[arg(long, value_name = "COMPONENT")]
+    #[arg(long, value_name = "COMPONENT", visible_alias = "component")]
     pub only: Vec<String>,
 
     /// momod 二进制路径（默认 PATH 查找）
     #[arg(long, value_name = "PATH")]
     pub app_bin: Option<PathBuf>,
+}
+
+#[derive(Debug, Args)]
+pub struct LogsArgs {
+    #[command(flatten)]
+    pub common: ServeCommon,
+
+    /// 每个组件输出最后 N 行
+    #[arg(short = 'n', long = "lines", default_value_t = 50, value_name = "N")]
+    pub lines: usize,
+
+    /// 持续跟随新增日志（Ctrl-C 退出）
+    #[arg(short = 'f', long)]
+    pub follow: bool,
 }
 
 #[derive(Debug, Args)]
