@@ -41,9 +41,10 @@ torch-cu124 = [
     "torchaudio==2.6.*",
 ]
 tts = [
-    "edge-tts>=7.0",   # providers/tts/edge.py（P0 过渡，依赖外网）
-    "kokoro>=0.9.4",   # providers/tts/kokoro.py（实测兜底；g2p 依赖 espeak-ng/misaki）
-    "f5-tts>=1.1",     # providers/tts/f5.py（零样本克隆，需干净参考音）
+    "edge-tts>=7.0",     # providers/tts/edge.py（P0 过渡，依赖外网）
+    "kokoro>=0.9.4",     # providers/tts/kokoro.py（实测兜底；g2p 依赖 espeak-ng/misaki）
+    "f5-tts>=1.1",       # providers/tts/f5.py（零样本克隆，需干净参考音）
+    "soundfile>=0.13",   # edge.py MP3→PCM 解码（libsndfile/mpg123）
 ]
 asr = [
     "sherpa-onnx>=1.12",  # providers/asr/sensevoice.py（纯 CPU）

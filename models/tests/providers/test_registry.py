@@ -48,10 +48,12 @@ def test_create_tts_provider_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_all_tts_stubs_satisfy_contract() -> None:
     """每个 stub 都能实例化、报能力集、在未实现处抛 NotImplementedError。"""
     settings = Settings()
-    for cls in TTS_PROVIDERS.values():
+    for name, cls in TTS_PROVIDERS.items():
         p = cls(settings)
         caps = p.capabilities()
         assert caps.languages
+        if name == "edge":
+            continue  # 已实装，行为见 test_edge.py
         with pytest.raises(NotImplementedError):
             asyncio.run(p.warmup())
 
