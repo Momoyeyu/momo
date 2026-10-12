@@ -50,6 +50,7 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
             Ok(Message::Binary(bytes)) => {
                 match codec::AudioHeader::decode(&bytes) {
                     }
+                    Err(err) => {
                     }
                 }
             }
