@@ -1,10 +1,5 @@
-//! `momoctl serve <up|down|status|logs|restart> [--profile X] [--only C] [--app-bin P]`。
-//! `up`：profile 组件表解析 → 按 order 依序 spawn → pidfile + 日志落盘，
-//! 带 `ready` URL 的组件做 bounded readiness 轮询；失败即清理本次 spawn 的子进程
-//! （momo-infra.md service 操作流程）。external 组件只探活不拉起。
-//! `down`：逆序按 pidfile SIGTERM→SIGKILL，幂等（未运行即 no-op）。
-//! `status`：pidfile + 存活 + ready 探测报 running/dead/stopped 与 uptime。
-//! `restart` = down + up。`logs`：tail `logs/<component>.log`（-n 行数 / -f 跟随）。
+//! `momoctl serve <up|down|status|logs|restart>`：按 profile 组件表 spawn/停止/探测，
+//! pidfile + 日志落盘；external 组件只探活不拉起（momo-infra.md service 操作流程）。
 
 use std::collections::HashMap;
 use std::io::{Read, Seek, SeekFrom, Write};

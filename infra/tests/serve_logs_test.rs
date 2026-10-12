@@ -1,7 +1,4 @@
-//! `momoctl serve logs` 二进制级回归：
-//! - 按组件 tail `logs/<name>.log` 最后 N 行；
-//! - `-n` 限制行数；`--only`/`--component` 过滤；
-//! - 未知组件 → 退出码 2；无日志文件 → exit 0 并标注 (no log file)。
+//! `serve logs` 回归：组件 tail、-n/--only 过滤、未知组件 exit 2、无日志文件 exit 0。
 
 use std::fs;
 use std::path::PathBuf;
