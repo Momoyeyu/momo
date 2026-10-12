@@ -80,17 +80,13 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
             },
             Ok(Message::Binary(bytes)) => {
                 match codec::AudioHeader::decode(&bytes) {
-                    Some((header, _payload)) => {
-                        // TODO(P2): 上行 audio.chunk 转发 ASR uplink task。
-                        debug!(%conn_id, seq = header.seq, stream = header.stream, "uplink audio chunk dropped (P2 stub)");
+                    Ok((header, _payload)) => {
+                        // TODO(P2): 上行音频帧转发 ASR uplink task。
+                        debug!(%conn_id, seq = header.chunk_seq, dir = ?header.direction, "uplink audio chunk dropped (P2 stub)");
                     }
-                    None => {
+                    Err(err) => {
                         let _ = tx
-                            .send(OutboundFrame::Json(error_frame(
-                                &AppError::BadMessage("malformed audio frame".into()),
-                                None,
-                                false,
-                            )))
+                            .send(OutboundFrame::Json(error_frame(&err, None, false)))
                             .await;
                     }
                 }
