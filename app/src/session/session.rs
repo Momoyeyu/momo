@@ -7,7 +7,7 @@ use tokio::sync::{mpsc, watch};
 use tracing::{debug, warn};
 
 use crate::{
-    proto::message::{ClientKind, ClientMsg, TurnState},
+    proto::message::{ClientKind, Msg, TurnState},
     session::{history::History, turn::Turn},
 };
 
@@ -15,7 +15,7 @@ use crate::{
 #[derive(Debug)]
 pub enum SessionCmd {
     /// conn_rx 解码出的客户端消息。
-    ClientMsg(ClientMsg),
+    Msg(Msg),
     /// WS 断开：取消活动回合、保留会话历史（protocol §7）。
     ConnClosed,
     /// 被新连接顶掉 / 进程关停。
@@ -76,7 +76,7 @@ impl Session {
         debug!(session = %self.id, client = ?self.client, "session actor started");
         while let Some(cmd) = cmd_rx.recv().await {
             match cmd {
-                SessionCmd::ClientMsg(msg) => self.on_client_msg(msg).await,
+                SessionCmd::Msg(msg) => self.on_client_msg(msg).await,
                 SessionCmd::ConnClosed => {
                     // TODO(P0): 取消活动回合（turn.cancel），保留 history。
                     debug!(session = %self.id, "conn closed");
@@ -93,23 +93,23 @@ impl Session {
     }
 
     /// 客户端消息分派；回合/管线逻辑为 P0 占位。
-    async fn on_client_msg(&mut self, msg: ClientMsg) {
+    async fn on_client_msg(&mut self, msg: Msg) {
         match msg {
-            ClientMsg::InputText(input) => {
+            Msg::InputText(input) => {
                 // TODO(P0): 开新回合 → llm stream → splitter → tts → audio sink。
                 debug!(session = %self.id, id = %input.id, "input.text received (turn pipeline stub)");
             }
-            ClientMsg::ControlBargeIn(barge_in) => {
+            Msg::ControlBargeIn(barge_in) => {
                 // TODO(P0): turn.rs barge-in 三动作（停播/取消上游/已播记账）。
                 debug!(session = %self.id, turn = %barge_in.turn_id, "control.barge_in received (stub)");
             }
-            ClientMsg::InputVad(vad) => {
+            Msg::InputVad(vad) => {
                 // TODO(P2): VAD 触发 barge-in（MOMO_BARGEIN_MIN_MS 防抖）。
-                debug!(session = %self.id, event = ?vad.event, "input.vad received (stub)");
+                debug!(session = %self.id, capture = %vad.capture_id, event = ?vad.event, "input.vad received (stub)");
             }
-            ClientMsg::InputAudioSegment(seg) => {
+            Msg::InputAudioSegment(seg) => {
                 // TODO(P2): final 段 → 开语音回合；镜像给 UI。
-                debug!(session = %self.id, segment = %seg.segment_id, "input.audio.segment received (stub)");
+                debug!(session = %self.id, capture = %seg.capture_id, "input.audio.segment received (stub)");
             }
             other => warn!(session = %self.id, ?other, "unhandled client msg (stub)"),
         }
