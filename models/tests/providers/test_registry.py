@@ -66,12 +66,15 @@ def test_all_tts_stubs_satisfy_contract() -> None:
             asyncio.run(p.cancel("r_x"))
 
 
-def test_asr_fixed_sensevoice_line() -> None:
+def test_asr_fixed_sensevoice_line(tmp_path) -> None:
     """ASR 无 registry env：固定 sensevoice 线，MOMO_ASR_MODEL 只选模型。"""
-    settings = Settings(asr_model="sensevoice-small", asr_threads=4)
+    settings = Settings(asr_model="sensevoice-small", asr_threads=4, models_dir=tmp_path)
     p = create_asr_provider(settings)
     assert isinstance(p, ASRProvider)
     assert p.name == "sensevoice"
     assert p.model == "sensevoice-small"
-    with pytest.raises(NotImplementedError):
+    # 实装后 load 不再是 stub：模型文件缺失时抛 SenseVoiceError（readyz 拒绝就绪）。
+    from momo_models.providers.asr.sensevoice import SenseVoiceError
+
+    with pytest.raises(SenseVoiceError, match="模型文件缺失"):
         asyncio.run(p.load())
