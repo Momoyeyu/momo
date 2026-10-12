@@ -66,6 +66,23 @@ MOMO_EMOTION_MAP=config/emotion.map.yaml   # tag → Live2D 表情映射
 
 - 配置面是**扁平 key=value 环境变量**，无嵌套配置文件——任何支持 env 注入的平台（systemd/Docker/k8s/自研发布平台）都可直接消费。
 
+## 6. 机器可读 schema：`config.schema.toml`
+
+
+```toml
+schema = 1            # 文件格式版本
+passthrough = [ { name, type?, default, files, description } ]   # 非 MOMO_ 前缀，第三方库自读
+```
+
+| 字段 | 口径 |
+|---|---|
+| `name` | env 键名，`MOMO_` 前缀；非前缀变量进 `passthrough` |
+| `type` | `string`/`bool`/`int`/`path`/`url`/`enum`；供配置页渲染与校验用 |
+| `values` | `type=enum` 时的合法取值集合 |
+| `readers` | 代码中消费该键的模块：`app`/`models`/`infra` |
+| `description` | 含义，与 §2「含义」列保持一致 |
+
+
 ## 检查表
 
 - [ ] 默认值与 protocol.md、runtime.md 中的数字一致（端口、队列、句切阈值、VAD）
