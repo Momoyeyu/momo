@@ -1,14 +1,15 @@
 //! 单连接 actor：rx/tx task、帧编解码、背压。
 //!
-//! 拓扑（momo-app.md §tokio 任务拓扑）：
+//! 拓扑（momo-app.md §ws 子系统）：
 //! `conn_rx`（读帧→decode→`mpsc` 给 Session）、`conn_tx`（Session→encode→写帧）。
-//! tx 用有界 mpsc 做背压；JSON 控制帧永不丢弃，对端消费不动则关连（protocol §7）。
+//! tx 用有界 mpsc 做背压：单队列保序不丢帧；JSON 控制帧永不丢弃，对端消费
+//! 不动（stall 超 [`CONN_TX_STALL`]）则关连（protocol §7）。
 
-use std::sync::Arc;
+use std::{fmt::Display, sync::Arc, time::Duration};
 
 use axum::extract::ws::{CloseFrame, Message, Utf8Bytes, WebSocket};
 use bytes::Bytes;
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{Sink, SinkExt, Stream, StreamExt};
 use tokio::sync::mpsc;
 use tracing::{debug, warn};
 
@@ -22,8 +23,11 @@ use crate::{
     ws::server::AppState,
 };
 
-/// conn_tx 有界队列上限（momo-app.md §ws）。
+/// conn_tx 有界队列上限（momo-app.md §ws 子系统）。
 pub const CONN_TX_CAP: usize = 256;
+
+/// conn_tx 单帧写 socket 的 stall deadline：超时说明对端消费不动，直接关连。
+pub const CONN_TX_STALL: Duration = Duration::from_secs(5);
 
 /// conn_tx 的出站单元：JSON 文本帧 / 二进制音频帧 / 关闭帧。
 #[derive(Debug)]
@@ -36,10 +40,22 @@ pub enum OutboundFrame {
 
 /// 一条 `/ws/ui` 连接的完整生命周期。
 pub async fn run(socket: WebSocket, state: Arc<AppState>) {
+    let (sink, stream) = socket.split();
+    serve(stream, sink, state).await;
+}
+
+/// 连接驱动本体，与 transport 解耦：`stream`/`sink` 可以是真 socket，
+/// 也可以是测试注入的帧通道（`Message` 为 axum ws 帧类型）。
+pub async fn serve<St, Si, StErr, SiErr>(mut stream: St, sink: Si, state: Arc<AppState>)
+where
+    St: Stream<Item = Result<Message, StErr>> + Unpin + Send + 'static,
+    Si: Sink<Message, Error = SiErr> + Unpin + Send + 'static,
+    StErr: Display,
+    SiErr: Display + Send + 'static,
+{
     let conn_id = new_id("conn");
     debug!(%conn_id, "ws connection opened");
 
-    let (sink, mut stream) = socket.split();
     let (tx, rx) = mpsc::channel::<OutboundFrame>(CONN_TX_CAP);
     let tx_task = tokio::spawn(tx_loop(sink, rx));
 
@@ -95,12 +111,16 @@ pub async fn run(socket: WebSocket, state: Arc<AppState>) {
 
 /// 握手：首消息必须是 `hello{protocol:"momo-ws", version:"v2"}`，
 /// 不匹配回 `error` + 按 close code 表断连。
-async fn handshake(
+async fn handshake<St, StErr>(
     conn_id: &str,
-    stream: &mut (impl StreamExt<Item = Result<Message, axum::Error>> + Unpin),
+    stream: &mut St,
     tx: &mpsc::Sender<OutboundFrame>,
     state: &Arc<AppState>,
-) -> Option<SessionHandle> {
+) -> Option<SessionHandle>
+where
+    St: Stream<Item = Result<Message, StErr>> + Unpin,
+    StErr: Display,
+{
     let first = match stream.next().await {
         Some(Ok(Message::Text(text))) => text,
         // 静默断连（如对端直接关闭）不视为协议违反。
@@ -138,9 +158,9 @@ async fn handshake(
     }
 
     // TODO(P0): auth_token 的 constant-time 校验（expected token 由 desktop
-    // IPC 注入 AppState；校验失败 close 4401）。当前只做字段存在性检查（serde）。
+    // 启动注入 AppState；校验失败 close 4401）。当前只做字段存在性检查（serde）。
     // 单活跃 session 策略：后连顶掉前连（SessionManager::attach）。
-    let session = state.sessions.attach(conn_id, hello.client);
+    let session = state.sessions.attach(conn_id, hello.client, tx.clone());
     let hello_ok = Msg::HelloOk(HelloOkMsg {
         version: crate::proto::message::PROTOCOL_VERSION.to_string(),
         session_id: session.id.clone(),
@@ -155,10 +175,14 @@ async fn handshake(
 }
 
 /// conn_tx：Session/管线 → encode → 写帧。
-async fn tx_loop(
-    mut sink: impl SinkExt<Message, Error = axum::Error> + Unpin,
-    mut rx: mpsc::Receiver<OutboundFrame>,
-) {
+///
+/// `rx.recv()` 逐帧消费保证顺序；`sink.send` 套 [`CONN_TX_STALL`] deadline，
+/// 对端消费不动时停止写并关连，不静默丢控制帧。
+async fn tx_loop<Si, E>(mut sink: Si, mut rx: mpsc::Receiver<OutboundFrame>)
+where
+    Si: Sink<Message, Error = E> + Unpin,
+    E: Display,
+{
     while let Some(frame) = rx.recv().await {
         let (msg, is_close) = match frame {
             OutboundFrame::Json(m) => match codec::encode_msg(&m) {
@@ -180,13 +204,25 @@ async fn tx_loop(
                 true,
             ),
         };
-        if sink.send(msg).await.is_err() || is_close {
-            break;
+        match tokio::time::timeout(CONN_TX_STALL, sink.send(msg)).await {
+            Ok(Ok(())) if is_close => break,
+            Ok(Ok(())) => {}
+            Ok(Err(err)) => {
+                warn!(%err, "ws sink send failed, closing connection");
+                break;
+            }
+            Err(_) => {
+                warn!(
+                    stall_s = CONN_TX_STALL.as_secs(),
+                    "conn_tx stalled, closing connection"
+                );
+                break;
+            }
         }
     }
 }
 
-/// 回 `error{fatal:true}` 后按协议 close code 断连。
+/// 回 `error` 帧后按协议 close code 断连。
 async fn send_fatal(tx: &mpsc::Sender<OutboundFrame>, err: &AppError, code: u16) {
     let _ = tx.send(OutboundFrame::Json(error_frame(err))).await;
     let reason: &'static str = match code {

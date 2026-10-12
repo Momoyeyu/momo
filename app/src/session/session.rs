@@ -9,6 +9,7 @@ use tracing::{debug, warn};
 use crate::{
     proto::message::{ClientKind, Msg, TurnState},
     session::{history::History, turn::Turn},
+    ws::conn::OutboundFrame,
 };
 
 /// 汇入 Session actor 的命令。
@@ -29,6 +30,8 @@ pub struct SessionHandle {
     /// 该 session 所属连接的 client 类型（hello.client）。
     pub client: ClientKind,
     pub cmd_tx: mpsc::Sender<SessionCmd>,
+    /// conn_tx 出站队列（有界 mpsc 背压）；Session/管线经它向连接推帧。
+    pub out_tx: mpsc::Sender<OutboundFrame>,
     pub state_rx: watch::Receiver<TurnState>,
 }
 
@@ -40,6 +43,9 @@ pub struct Session {
     conn_id: String,
     client: ClientKind,
     state_tx: watch::Sender<TurnState>,
+    /// conn_tx 出站队列；回合/管线 domain event 经它按序推帧（有界背压）。
+    #[allow(dead_code)] // TODO(P0): 回合事件（input.accepted / output.* / state.turn）出站
+    out_tx: mpsc::Sender<OutboundFrame>,
     /// 当前回合；barge-in 时新回合用新 CancellationToken（momo-app.md §拓扑）。
     #[allow(dead_code)] // TODO(P0): input.text / input.audio.segment 开回合
     turn: Option<Turn>,
@@ -49,8 +55,13 @@ pub struct Session {
 }
 
 impl Session {
-    /// 创建 actor task 并返回句柄。
-    pub fn spawn(id: String, conn_id: String, client: ClientKind) -> SessionHandle {
+    /// 创建 actor task 并返回句柄；`out_tx` 是该连接的 conn_tx 出站队列。
+    pub fn spawn(
+        id: String,
+        conn_id: String,
+        client: ClientKind,
+        out_tx: mpsc::Sender<OutboundFrame>,
+    ) -> SessionHandle {
         // 会话命令队列；容量无协议硬约束，取与 conn_tx 同量级。
         let (cmd_tx, cmd_rx) = mpsc::channel(64);
         let (state_tx, state_rx) = watch::channel(TurnState::Idle);
@@ -59,6 +70,7 @@ impl Session {
             conn_id,
             client,
             state_tx,
+            out_tx: out_tx.clone(),
             turn: None,
             history: History::default(),
         };
@@ -67,6 +79,7 @@ impl Session {
             id,
             client,
             cmd_tx,
+            out_tx,
             state_rx,
         }
     }
