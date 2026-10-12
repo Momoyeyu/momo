@@ -2,6 +2,8 @@
 
 > 一切环境差异与密钥走 `MOMO_` 前缀环境变量（ADR-005）。仓库只提交 `.env.example`（占位无值），本地 `.env` 不入库。
 > 读取组件缩写：`app`=momo-app 编排器/前端；`models`=momo-models 服务；`infra`=momo-infra CLI。
+> 机器可读单源 schema：仓库根 `config.schema.toml`（名称/类型/默认值/敏感/读取组件/各 `.env.example` 归属）。
+> `momoctl config check` 校验本文档 §2 表格、§3 模板与三个 `.env.example` 同 schema 一致（CI 漂移检查）。
 
 ## 1. 解析优先级
 
@@ -199,14 +201,15 @@ flowchart TD
 ```
 
 - 配置面是**扁平 key=value 环境变量**，无嵌套配置文件——任何支持 env 注入的平台（systemd/Docker/k8s/自研发布平台）都可直接消费。
-- 平台对接约定：以 `.env.example` 的 key 集合为 schema；敏感项由平台密钥管理注入，不写文件。
-- 新增变量流程：同一 PR 内更新 `config.md` 表格 + `.env.example` + 代码默认值，三者不一致视为 bug。
+- 平台对接约定：以 `config.schema.toml` 的 key 集合为 schema；敏感项由平台密钥管理注入，不写文件。
+- 新增变量流程：同一 PR 内更新 `config.schema.toml` + `config.md` 表格 + `.env.example` + 代码默认值，四者不一致视为 bug（`momoctl config check` 校验前三者）。
 - 配置变更通过改 env + 重启生效，由 infra 封装正确顺序。
 
 ## 检查表
 
 - [ ] 每个变量有：含义/默认值/取值范围/读取组件/敏感标记
 - [ ] `.env.example` 与 §2 表格 key 集合完全一致
+- [ ] `config.schema.toml` 与 §2 表格/§3 模板/三个 `.env.example` 一致（`momoctl config check` 通过）
 - [ ] 默认值与 protocol.md、runtime.md 中的数字一致（端口、队列、句切阈值、VAD）
 - [ ] 敏感项在日志与 doctor 输出中打码
 - [ ] 降级档切换所需修改的行已在模板注释中列出
