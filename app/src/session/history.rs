@@ -21,6 +21,13 @@ fn is_false(v: &bool) -> bool {
     !*v
 }
 
+/// 按 `index` 保序拼接句文本（记账文本只认序，不认到达顺序）。
+fn join_sentences(sentences: &[Sentence]) -> String {
+    let mut sorted: Vec<&Sentence> = sentences.iter().collect();
+    sorted.sort_by_key(|s| s.index);
+    sorted.iter().map(|s| s.text.as_str()).collect()
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Role {
@@ -56,16 +63,43 @@ impl History {
         self.trim();
     }
 
-    /// barge-in 记账：已播句拼一条 `partial` assistant。
-    pub fn commit_partial(&mut self, played: &[Sentence]) {
-        if played.is_empty() {
+    /// 正常完成记账：user + 全量生成句拼一条 assistant。
+    pub fn commit(&mut self, user: &str, generated: &[Sentence]) {
+        self.push_user(user);
+        let content = join_sentences(generated);
+        if content.is_empty() {
             return;
         }
-        let content: String = played.iter().map(|s| s.text.as_str()).collect();
+        self.push(ChatMessage {
+            role: Role::Assistant,
+            content,
+            partial: false,
+        });
+    }
+
+    /// barge-in 记账：user + 已播句前缀拼一条 `partial` assistant。
+    /// 未播 sentence 不进入 history。
+    pub fn commit_partial(&mut self, user: &str, played: &[Sentence]) {
+        self.push_user(user);
+        let content = join_sentences(played);
+        if content.is_empty() {
+            return;
+        }
         self.push(ChatMessage {
             role: Role::Assistant,
             content,
             partial: true,
+        });
+    }
+
+    fn push_user(&mut self, text: &str) {
+        if text.is_empty() {
+            return;
+        }
+        self.push(ChatMessage {
+            role: Role::User,
+            content: text.into(),
+            partial: false,
         });
     }
 
