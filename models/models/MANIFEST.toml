@@ -60,9 +60,21 @@ notes = "F5-TTS v1 零样本克隆（实测兜底）：RTF 0.535、VRAM 0.8GB；
 # 权重为 CC-BY-NC-4.0（非商用）；上游代码仓 SWivid/F5-TTS 自身为 MIT。
 license = { spdx = "cc-by-nc-4.0", source = "https://huggingface.co/SWivid/F5-TTS" }
 files = [
-  # F5TTS_v1_Base；vocos 声码器另列条目时再补
+  # F5TTS_v1_Base；vocos 声码器在 charactr/vocos-mel-24khz 仓，见 vocos-mel-24khz 条目
   { path = "F5TTS_v1_Base/model_1250000.safetensors", sha256 = "670900fd14e6c458b95da6e9ed317cdb20dbaf7a1c02ac06a05475a9d32b6a38", size = 1348435761 },
   { path = "F5TTS_v1_Base/vocab.txt", sha256 = "2a05f992e00af9b0bd3800a8d23e78d520dbd705284ed2eedb5f4bd29398fa3c", size = 13800 },
+]
+
+[[model]]
+name = "vocos-mel-24khz"
+repo_id = "charactr/vocos-mel-24khz"
+revision = "main"
+dest = "charactr/vocos-mel-24khz"
+notes = "vocos mel→24kHz 声码器（config.yaml + pytorch_model.bin）；f5-tts-v1 推理必需，load_vocoder 的默认 vocoder"
+license = { spdx = "mit", source = "https://huggingface.co/charactr/vocos-mel-24khz" }
+files = [
+  { path = "config.yaml", sha256 = "da9033922f969a47f0c160010226919e59f27761fd5066f3828d46de6650b0fc", size = 461 },
+  { path = "pytorch_model.bin", sha256 = "97ec976ad1fd67a33ab2682d29c0ac7df85234fae875aefcc5fb215681a91b2a", size = 54365991 },
 ]
 
 [[model]]

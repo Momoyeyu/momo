@@ -184,6 +184,7 @@ def test_real_manifest_declares_license() -> None:
     assert by_name["kokoro-82m"].spdx == "apache-2.0"
     assert by_name["cosyvoice3-0.5b"].spdx == "apache-2.0"
     assert by_name["f5-tts-v1"].spdx == "cc-by-nc-4.0"
+    assert by_name["vocos-mel-24khz"].spdx == "mit"
     assert by_name["silero-vad"].spdx == "mit"
     # 非 SPDX 自定义许可：spdx = "other" 且带 name。
     assert by_name["sense-voice-small-int8"].spdx == "other"
