@@ -1,8 +1,5 @@
-//! `MOMO_*` env 加载与校验。
-//!
-//! 权威定义：momo-docs `01-architecture/config.md` §2.2。
-//! 只认环境变量（dotenvy 读 `.env`），不引入配置文件；
-//! 非法值启动即报错并列出全部问题。
+//! `MOMO_*` env 加载与校验（权威定义：momo-docs `01-architecture/config.md` §2.2）。
+//! 只认环境变量（dotenvy 读 `.env`）；非法值启动即报错并列出全部问题。
 
 use std::{fmt, net::SocketAddr, path::PathBuf, str::FromStr, time::Duration};
 

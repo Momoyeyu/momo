@@ -1,9 +1,6 @@
-//! `momoctl serve down/status/restart` 二进制级回归：
-//! - 未运行系统上 down/status 是幂等 no-op（exit 0）；
-//! - `--only` 未命中 → 退出码 2；
-//! - status --json 可解析且带 schema。
-//!
-//! 内置 profile 组件依赖真实 uv/momod，故本文件只覆盖「全停」稳态。
+//! `momoctl serve down/status/restart` 二进制级回归：全停稳态幂等 no-op；
+//! `--only` 未命中 → 2；status --json 可解析。内置 profile 依赖真实
+//! uv/momod，故只覆盖「全停」。
 
 use std::fs;
 use std::path::PathBuf;

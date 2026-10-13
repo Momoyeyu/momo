@@ -1,8 +1,7 @@
 """GPT-SoVITS（备选克隆路线）：官方标 4060Ti RTF 0.028（未实测）。
 
-接入：GPT-SoVITS 官方 api 或其推理包薄封装。代码侵入性强，
-建议子进程隔离而非 import。
-见 docs/02-repos/momo-models.md「provider 与产物」与 training/voice/sft_sovits.md。
+代码侵入性强，建议子进程隔离而非 import。见 momo-models.md「provider
+与产物」与 training/voice/sft_sovits.md。
 """
 
 from collections.abc import AsyncIterator

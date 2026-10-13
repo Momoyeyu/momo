@@ -1,11 +1,6 @@
-//! 增量句切：标点 + 上限 + 情感 tag 提取（runtime.md §增量句切）。
-//!
-//! 规则：CJK 句末标点 `。！？；;` 与换行立即切；ASCII `.!?` 仅在后接空白时切
-//! （小数 `3.14`、URL `a.b`、缩写 `Mr.`/`e.g.` 靠 lookahead 豁免；buffer 末尾
-//! 等待下一 token 或由 `flush` 收句）；逗号 `，,` 在 buffer ≥ `soft_chars` 时
-//! 软切；buffer ≥ `max_chars` 在最近逗号处切（无则硬切）；行首 `[happy]` 类
-//! tag 提取进 `emotion` 并从 `text` 剔除；code block（``` 围栏）内不切。
-//! 纯字符串操作、无依赖，是单元测试重点。
+//! 增量句切：标点 + 上限 + 情感 tag 提取（规则全集见 runtime.md §增量句切）。
+//! 要点：`,` 软切阈值 `soft_chars`、硬上限 `max_chars`，`[tag]` → `emotion`，
+//! code block 内不切。纯字符串操作、无依赖，单测重点。
 
 use crate::proto::message::EmotionTag;
 

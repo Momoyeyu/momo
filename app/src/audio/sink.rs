@@ -1,11 +1,7 @@
-//! `AudioSink`：按 `sentence.index` 严格保序把 `AudioChunk` 封装为二进制
-//! 音频帧推给 `conn_tx`。
-//!
-//! 播放时机在端侧（前端调度）；sink 内部是一条有界命令队列 + worker task：
-//! `push` 只入队，worker 串行完成 `audio.open` → 二进制帧 → `audio.end`
-//! 的 stream 生命周期。这样 `stop` 能真正丢弃"已入队未下发"的部分，
-//! `drain` 能等到排空确认，队列上限就是每回合缓冲上限（96 帧 ≈ 4.8s），
-//! 溢出 `error{BACKPRESSURE_OVERFLOW}` + `control.cancel{turn}`。
+//! `AudioSink`：按 `sentence.index` 保序把 `AudioChunk` 封装为二进制帧推 `conn_tx`。
+//! 有界命令队列 + worker 串行走完 `audio.open` → 帧 → `audio.end`；`stop` 丢弃
+//! 未下发部分，`drain` 等排空；上限 96 帧 ≈ 4.8s，溢出回 `BACKPRESSURE_OVERFLOW`
+//! + `control.cancel{turn}`。
 
 use bytes::Bytes;
 use tokio::{
@@ -82,11 +78,9 @@ impl AudioSink {
         }
     }
 
-    /// 把 TTS chunk 排入下发队列；worker 按入队序封装下发。
-    ///
-    /// `tag` = 所属 `output.sentence.seq`。积压达到
-    /// [`DOWNLINK_BUFFER_FRAMES`] 时下发 `error{BACKPRESSURE_OVERFLOW}`
-    /// + `control.cancel{turn}` 并返回 `Err`（永不静默丢帧）。
+    /// 把 TTS chunk 排入下发队列（`tag` = 所属 `output.sentence.seq`）。
+    /// 积压达 [`DOWNLINK_BUFFER_FRAMES`] → `error{BACKPRESSURE_OVERFLOW}`
+    /// + `control.cancel{turn}` + `Err`（不静默丢帧）。
     pub fn push(&self, chunk: AudioChunk) -> Result<(), AppError> {
         if self.stop.is_cancelled() {
             return Err(AppError::Internal("audio sink stopped".into()));

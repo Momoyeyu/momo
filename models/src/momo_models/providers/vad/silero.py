@@ -1,8 +1,7 @@
 """silero-vad via sherpa-onnx VadModel（纯 CPU）：断句，不做识别。
 
-权重 = MANIFEST `silero-vad` 条目；不走 silero-vad pip 包（拖入 torch）。
-is_speech 内部已做迟滞与 max_speech 切分；本类只对齐窗口、翻转点回推
-迟滞时长得 speech_start/speech_end，并截取段 PCM 供 ASR。
+权重 = MANIFEST `silero-vad` 条目（不走 silero-vad pip 包，避免拖入 torch）；
+本类只做窗口对齐与翻转点回推，产出 speech_start/speech_end 与段 PCM。
 """
 
 import asyncio

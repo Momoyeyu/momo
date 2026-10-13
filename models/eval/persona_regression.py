@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""人格回归评测：固定 20 问跑当前主脑+人设 prompt，输出逐题打分与 diff 报告（P3 实现，当前 stub）。
+"""人格回归评测：固定 20 问跑主脑+人设 prompt，输出打分与 diff 报告（P3 stub）。
 
-口径见 docs/02-repos/momo-models.md「训练边界」：
-LoRA 候选也用同一套；走 providers/llm/openai_compat 薄客户端（MOMO_LLM_ENDPOINT）。
+LoRA 候选同套；走 providers/llm/openai_compat 薄客户端（MOMO_LLM_ENDPOINT）。
 """
 
 

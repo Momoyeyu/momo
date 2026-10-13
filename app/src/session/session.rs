@@ -1,9 +1,7 @@
 //! `Session` actor：命令循环、回合状态机接线、管线回传。
 //!
-//! Session actor 是唯一可变状态持有者：所有事件（客户端消息、管线回调、
-//! 定时器）都汇进它的 `mpsc`，内部不共享锁（momo-app.md §ws 子系统）。
-//! 状态迁移逐行对齐 runtime.md「turn 状态机」：变更经 `state_tx`（watch）
-//! + `state.turn{turn_id,state}` 推给 UI；`turn.finished` 每 turn 恰好一次。
+//! 唯一可变状态持有者：所有事件汇进它的 `mpsc`，内部不共享锁
+//! （momo-app.md §ws 子系统）；迁移对齐 runtime.md「turn 状态机」。
 
 use std::{collections::VecDeque, sync::Arc, time::Duration};
 

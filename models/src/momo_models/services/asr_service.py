@@ -1,11 +1,7 @@
 """momo-svc-asr：/ws（v2）+ health/ready + 调试 POST /v1/asr/transcribe。
 
-内部管线：audio.open(uplink) 绑 capture → 32B 头二进制 PCM 帧 →
-VADProvider.feed 断句 → input.vad{speech_start|speech_end}；
-speech_end 段 PCM → ASRProvider.transcribe →
-input.audio.segment{capture_id,text,final:true}（形状见 protocol.md）。
-收尾：EOS 帧 / audio.end → VAD flush 后关 stream；
-control.cancel / input.audio.cancel → 丢弃缓存段并关 stream。
+管线：audio.open 绑 capture → PCM 帧 → VAD 断句 → speech_end 段转写 →
+input.audio.segment（消息形状见 protocol.md）；cancel/end 丢弃缓存并关 stream。
 """
 
 import asyncio

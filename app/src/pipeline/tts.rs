@@ -1,14 +1,7 @@
-//! `TtsClient` trait + WS 流式实现（momo-ws v2 客户端）。
-//!
-//! 编排器作为客户端连 momo-svc-tts：`hello{client=orchestrator}` 握手并校验
-//! `hello.ok.role==tts`；每个 `Sentence` 发一条 `output.sentence{turn_id,seq,
-//! text,emotion,lang}`，服务端回 `audio.open{downlink}` 绑定的下行流：32B
-//! 二进制 PCM 帧（`chunk_seq` 递增）→ EOS 帧 → `audio.end{last_chunk_seq}`
-//! （protocol.md §2/§6）。在途合成数经 [`SENT_QUEUE_CAP`] 信号量限流——
-//! runtime.md `sentence_q`（容量 8）：满则 `synth_stream` 等待，上游暂停拉取；
-//! `cancel` 发 `control.cancel{target:turn}`（protocol §8 尽力取消），已取消
-//! 流的迟到帧按 stale stream 规则丢弃。
-//! PCM 格式：s16le 24kHz mono chunk。
+//! `TtsClient` trait + WS 流式实现（momo-ws v2 客户端，握手/帧流见 protocol.md §2/§4/§6）。
+//! 在途合成经 [`SENT_QUEUE_CAP`] 信号量限流（runtime.md `sentence_q`，容量 8）；
+//! `cancel` 发 `control.cancel{target:turn}`，迟到帧按 stale stream 丢弃。
+//! PCM：s16le 24kHz mono。
 
 use std::collections::HashMap;
 use std::fmt;

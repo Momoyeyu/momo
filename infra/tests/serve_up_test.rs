@@ -1,9 +1,6 @@
-//! `momoctl serve up` 二进制级回归：
-//! - `--only` 未命中 → 退出码 2；
-//! - external brain 探活失败 → 退出码 1，本次 spawn 的组件被回收；
-//! - `--json` 输出可解析且带 schema。
-//!
-//! 测试不依赖真实 uv/momod：探活失败在 spawn 前即中止。
+//! `momoctl serve up` 二进制级回归：`--only` 未命中 → 2；external brain
+//! 探活失败 → 1 且回收已 spawn 组件；`--json` 可解析带 schema。
+//! 不依赖真实 uv/momod：探活失败在 spawn 前即中止。
 
 use std::fs;
 use std::path::PathBuf;

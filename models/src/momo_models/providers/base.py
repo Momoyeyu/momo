@@ -1,9 +1,7 @@
-"""Provider 抽象基类：签名对齐 docs/02-repos/momo-models.md「provider 与产物」。
+"""Provider 抽象基类（签名对齐 docs/02-repos/momo-models.md「provider 与产物」）。
 
-- LLMProvider 仅供 eval/bench 薄客户端使用；运行时编排器经 MOMO_LLM_ENDPOINT
-  直连大脑，不经本层。
-- TTSProvider：momo-svc-tts 后端统一契约，输出 PCM 24k mono。
-- ASRProvider：momo-svc-asr 后端统一契约，输入 PCM 16k mono。
+TTS 输出 PCM 24k mono、ASR 输入 PCM 16k mono；LLM 薄客户端仅供 eval/bench
+（运行时经 MOMO_LLM_ENDPOINT 直连，不经本层）。
 """
 
 from abc import ABC, abstractmethod

@@ -1,9 +1,6 @@
-//! Session actor 回合接线：input/capture → turn 生命周期、
-//! `state.turn`/`turn.finished` 帧、已播记账经下轮 LLM prompt 可见
-//! （`history.messages()` → `ChatRequest.messages`）。
-//!
-//! 不经真 socket：直接 `Session::spawn` + `cmd_tx` 投递 `SessionCmd`，
-//! 从 `out_tx` 收 `OutboundFrame` 断言出站序列。
+//! Session actor 回合接线：input/capture → turn 生命周期、`state.turn`/
+//! `turn.finished` 帧、已播记账回灌下轮 LLM prompt。
+//! 不经真 socket：`Session::spawn` + `cmd_tx` 投递，从 `out_tx` 断言出站序列。
 
 use std::{
     sync::{Arc, Mutex},

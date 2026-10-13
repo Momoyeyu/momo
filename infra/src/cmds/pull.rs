@@ -1,10 +1,7 @@
 //! `momoctl pull [--manifest PATH] [--only NAME] [--check]`：模型下载 + sha256 校验。
-//! 下载：`{HF_ENDPOINT:-hf-mirror}/{repo}/resolve/{rev}/{path}` → `<dest>/<path>.part`
-//! （Range 头续传）→ size+sha256 复算 → rename 落位 → 按条目写 `models.lock`。
-//! `pull.lock`（`create_new` 原子占位，Drop 清理）防止并发 pull 写坏同一目录。
-//! `--check`：定位 MANIFEST.toml → 逐文件存在性 + sha256 复算，占位（"TODO"）
-//! 与缺失文件按 fail 上报，退出码 5。
-//! 退出码：usage/config=2，网络=4，校验=5，成功=0（02-repos/momo-infra.md）。
+//! `.part` + Range 续传 → size+sha256 复算 → rename → `models.lock`；`pull.lock`
+//! 原子占位防并发。`--check` 只校验不下载（占位 "TODO"/缺失按 fail）。
+//! 退出码：2 usage/config、4 网络、5 校验（02-repos/momo-infra.md）。
 
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};

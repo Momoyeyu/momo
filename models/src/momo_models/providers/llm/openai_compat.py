@@ -1,7 +1,6 @@
 """OpenAI-compatible 薄客户端：通吃 mlx_lm.server / vLLM / DeepSeek。
 
-**仅 eval/bench 脚本用**——运行时编排器经 MOMO_LLM_ENDPOINT 直连大脑，
-不经本层（无 LLM 网关，ADR-006）。已知坑：vLLM 实测曾 502，评测需容忍。
+**仅 eval/bench 用**——运行时经 MOMO_LLM_ENDPOINT 直连，不经本层（ADR-006）。
 """
 
 from collections.abc import AsyncIterator

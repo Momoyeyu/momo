@@ -1,16 +1,8 @@
 #!/usr/bin/env python3
-"""ASR RTF 复测：SenseVoice-Small（sherpa-onnx 纯 CPU）对一段 wav 解码计时。
+"""ASR RTF 复测：SenseVoice-Small 对一段 wav 解码计时（基线 CPU×4 RTF 0.040，research.md）。
 
-口径见 docs/00-context/research.md 实测基线：laptop CPU×4 RTF 0.040（8.4s→337ms）。
-
-用法：
-
-    cd models && uv sync --extra asr
-    uv run python eval/asr_rtf.py <16kHz wav> [--runs N] [--lang auto]
-
-wav 需 16kHz mono s16le（协议上行口径）；自动按 PCM 长度算 RTF。
-依赖 sherpa-onnx 与 $MOMO_MODELS_DIR 下 sense-voice-small-int8 条目
-（`momoctl pull` 或 hf CLI 手动下载）。
+用法：`uv sync --extra asr && uv run python eval/asr_rtf.py <16kHz mono wav>
+[--runs N]`；权重走 MANIFEST `sense-voice-small-int8`（`momoctl pull`）。
 """
 
 import argparse

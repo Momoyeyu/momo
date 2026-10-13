@@ -1,9 +1,7 @@
 """edge-tts（P0 过渡）：实测首包 ~1937ms，依赖外网，仅作过渡。
 
-接入：`edge-tts` pip 包（`tts` extra）。服务端固定回
-`audio-24khz-48kbitrate-mono-mp3`（7.x 无 output_format 入参），经
-soundfile（libsndfile/mpg123）解码并统一到契约口径 PCM s16le 24kHz mono
-后逐块产出。见 docs/02-repos/momo-models.md「provider 与产物」。
+`edge-tts` pip 包（`tts` extra）；回 `audio-24khz-48kbitrate-mono-mp3`，
+经 soundfile 解码统一到契约口径 PCM s16le 24kHz mono。
 """
 
 import asyncio
