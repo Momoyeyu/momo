@@ -1,6 +1,6 @@
 # momo-infra
 
-运维工具集 momoctl：doctor / pull / serve / switch / bench / gc / config。不承载业务，不在数据通路上。
+运维工具集 momoctl：doctor / pull / serve / switch / bench / gc / config / web。不承载业务，不在数据通路上。
 
 目标平台：Linux + Windows（开发环境 macOS；Windows 支持逐步实装中）。
 
@@ -20,6 +20,7 @@ momoctl switch --to degraded [--restart]
 momoctl bench [--turns N] [--strict]
 momoctl gc [--dry-run] [--keep N] [--yes]
 momoctl config check [--root PATH]   # env schema 漂移检查
+momoctl web [--listen ADDR]          # Web 控制台（默认 127.0.0.1:7900；非 loopback 需 MOMO_WEB_TOKEN）
 ```
 
 全局 flag：`--json`（单一 JSON 对象，schema 版本化）、`--env-file PATH`。无 `-v/-vv`；日志级别由 `MOMO_LOG_LEVEL` 控制（内置默认 `info`）。
@@ -42,7 +43,7 @@ momoctl config check [--root PATH]   # env schema 漂移检查
 ## 布局
 
 - `profiles/normal.toml` / `degraded.toml`：serve 组件表（组件、启动顺序、env 覆盖）
-- `src/cmds/`：子命令；`src/serve/`：进程管理与 profile 解析
+- `src/cmds/`：子命令；`src/serve/`：进程管理与 profile 解析；`src/web/`：axum server（api 路由树 / include_dir SPA / 启动守卫）；`web/`：内嵌 SPA 源
 - 状态目录固定 `${XDG_STATE_HOME:-~/.local/state}/momo/`（pid/、logs/、active_profile；口径与各平台落点见 [momo-infra.md「状态目录与进程管理」](../docs/02-repos/momo-infra.md#状态目录与进程管理)）；探活/终止走系统调用，不依赖外部 kill/ps/tasklist
 
 ## 开发

@@ -2,7 +2,7 @@
 name = "momo-infra"
 version = "0.1.0"
 edition = "2021"
-description = "momo ops CLI: doctor / pull / serve / switch / bench / gc / config"
+description = "momo ops CLI: doctor / pull / serve / switch / bench / gc / config / web"
 
 [lib]
 name = "momo_infra"
@@ -23,6 +23,13 @@ dotenvy = "0.15"
 owo-colors = "4"
 sha2 = "0.10"
 ulid = "1"
+axum = "0.8.9"
+# web server 运行时：rt-multi-thread + TcpListener + Ctrl-C + broadcast(SSE)。
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal", "sync"] }
+# /api/events SSE 复用 broadcast::Receiver。
+tokio-stream = { version = "0.1.19", features = ["sync"] }
+# SPA 编译期内嵌（infra/web/），不依赖部署目录。
+include_dir = "0.7.4"
 
 # 进程探活/信号走 syscall（serve/proc.rs），不 spawn 外部 kill/ps。
 [target.'cfg(unix)'.dependencies]
@@ -34,4 +41,3 @@ windows-sys = { version = "0.52", features = ["Win32_Foundation", "Win32_System_
 
 [dev-dependencies]
 wiremock = "0.6"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

@@ -25,6 +25,7 @@
 | `bench` | 端到端延迟测量（p50/p95，目标 <1.5s 出声） | 已实现 |
 | `gc` | 模型 GC：N-1 代清理、`models.lock` 联动 | 已实现 |
 | `config check` | env schema 漂移检查（`config.schema.toml` ↔ 三侧 `.env.example` / `config.md`） | 已实现 |
+| `web` | Web 控制台基座：axum server + include_dir 内嵌 SPA + `/api` 路由树 + SSE | 已实现 |
 
 ### 子命令参数
 
@@ -49,6 +50,7 @@
 | `gc` | `--keep N` | `2` | 微调产物保留代数（N-1 中保留最新两代） |
 | `gc` | `--yes` | off | 确认执行删除（不带 `--yes` 时等价 `--dry-run`） |
 | `config check` | `--root PATH` | 从 CWD 向上定位 `config.schema.toml` | 仓库根目录 |
+| `web` | `--listen ADDR` | `127.0.0.1:7900` | 监听地址；解析结果任一非 loopback 时 `MOMO_WEB_TOKEN` 必填，未设拒启（exit 2） |
 
 ### 全局 flag
 
@@ -105,6 +107,15 @@ flowchart LR
     SERVICES -.-> ADAPTERS["models services"]
     CORE -.-> NOTE["不进入 turn 数据通路"]
 ```
+
+## Web 控制台
+
+`momoctl web` 起 axum server（tokio runtime，Ctrl-C 优雅退出），默认监听 `127.0.0.1:7900`：
+
+- **启动守卫**：`--listen` 的解析结果任一非 loopback（`to_socket_addrs`，`localhost` 需全部回环）且 `MOMO_WEB_TOKEN` 未设 → 拒启，exit 2。请求级认证链（Bearer 校验 + state-changing CSRF header）为独立 issue 的中间件，layer 到 `/api` 子树。
+- **`/api` 路由树**：集中注册。`GET /api/` 路由索引；`GET /api/healthz` / `readyz`（server 自身探针）；`GET /api/events` SSE 通道（broadcast 基座，jobs/serve 日志复用）；`doctor`/`serve`/`models`/`jobs`/`config` 为 501 占位，由各功能 issue 挂 handler。`handler` 只做 HTTP↔core 适配，业务复用 `cmds`/`serve`/`manifest`/`env_cfg`；JSON 顶层恒 `schema:1`，与 `--json` 同口径。`/api` 子树内未命中 → JSON 404。
+- **SPA**：`include_dir!` 编译期内嵌 `infra/web/`（无部署目录依赖）；命中按扩展名给 content-type，未命中回退 `index.html`（前端路由），与 `/api` 404 分流不误判。
+- **输出**：启动打印监听地址与 token 提示（值不落日志）；`--json` 输出 `{schema:1, command:"web", listen, url}`。
 
 ## service 操作
 

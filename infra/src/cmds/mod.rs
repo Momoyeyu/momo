@@ -7,6 +7,7 @@ pub mod gc;
 pub mod pull;
 pub mod serve;
 pub mod switch;
+pub mod web;
 
 #[derive(Debug, Clone)]
 pub struct Ctx {
