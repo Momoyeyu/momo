@@ -205,6 +205,75 @@ pub struct LogBatch<'a> {
     pub lines: Vec<&'a str>,
 }
 
+/// `GET /api/models` 单文件状态（MANIFEST + models.lock merge）。
+#[derive(Debug, Serialize)]
+pub struct ModelFileStatus {
+    /// MANIFEST 声明的相对路径。
+    pub path: String,
+    /// `missing`（不在盘）/ `unverified`（在盘但未过 lock/manifest 校验）/
+    /// `verified`（在盘且 lock 记录 size 一致）。
+    pub state: &'static str,
+    /// MANIFEST 声明的期望字节数（未声明为 null）。
+    pub expected_size: Option<u64>,
+    /// 磁盘实际字节数（文件缺失为 null）。
+    pub actual_size: Option<u64>,
+    /// MANIFEST sha256 为占位 `TODO`（无法内容校验）。
+    pub sha256_placeholder: bool,
+}
+
+/// `GET /api/models` 单模型条目。
+#[derive(Debug, Serialize)]
+pub struct ModelStatus {
+    pub name: String,
+    pub repo_id: String,
+    pub revision: String,
+    pub dest: String,
+    pub notes: Option<String>,
+    /// `missing`（无文件在盘）/ `partial`（部分在盘或有未验证项）/
+    /// `verified`（全部文件在盘且校验一致）。
+    pub state: &'static str,
+    /// 当前激活选择是否引用本条目（MOMO_ASR_MODEL / MOMO_LLM_MODEL /
+    /// MOMO_TTS_VOICE 任一命中 name）。
+    pub active: bool,
+    /// 人工核对项：占位 sha256、lock 与 MANIFEST 不一致等。
+    pub warn: Vec<String>,
+    pub files: Vec<ModelFileStatus>,
+}
+
+/// 激活选择快照（只读；写回走 #56 `/api/config` 通路，未实装）。
+/// 对应 env：ASR=`MOMO_ASR_PROVIDER`/`MOMO_ASR_MODEL`，
+/// 声线=`MOMO_TTS_PROVIDER`/`MOMO_TTS_VOICE`/`MOMO_TTS_LANG`，
+/// 大脑=`MOMO_LLM_ENDPOINT`/`MOMO_LLM_MODEL`。未设置为 null。
+#[derive(Debug, Serialize)]
+pub struct ActiveSelection {
+    pub asr_provider: Option<String>,
+    pub asr_model: Option<String>,
+    pub tts_provider: Option<String>,
+    pub tts_voice: Option<String>,
+    pub tts_lang: Option<String>,
+    pub brain_endpoint: Option<String>,
+    pub brain_model: Option<String>,
+}
+
+/// `GET /api/models`：MANIFEST + models.lock merge 清单 + 激活选择。
+#[derive(Debug, Serialize)]
+pub struct ModelsReport {
+    pub schema: u8,
+    /// MANIFEST.toml 定位结果；未找到为 null（models 为空 + warn 提示）。
+    pub manifest: Option<String>,
+    pub models_dir: String,
+    pub models: Vec<ModelStatus>,
+    pub active: ActiveSelection,
+    /// 报告级提示（MANIFEST 缺失等）。
+    pub warn: Vec<String>,
+}
+
+/// `POST /api/models/pull` 请求体：拉取单个 MANIFEST 条目。
+#[derive(Debug, Deserialize)]
+pub struct ModelsPullRequest {
+    pub name: String,
+}
+
 /// `momoctl pull [--check] --json`。
 #[derive(Debug, Serialize)]
 pub struct PullReport {

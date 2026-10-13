@@ -1,12 +1,13 @@
 //! `/api/*` 路由树基座：本文件是唯一注册点。
 //! 已实装：`healthz`/`readyz`/`events`/`csrf`/`doctor`/`serve status`/
-//! `serve components`（只读）、`serve {up|down|restart}`（POST）、
-//! `serve logs/{name}/stream`（SSE）与 `jobs`（REST + SSE 日志）；
-//! `models`/`config` 其余为 501 占位——真实 handler 由后续 issue 挂接。
-//! handler 只做 HTTP↔core 适配，业务复用 `cmds`/`serve`/`manifest`/`env_cfg`
-//! 现有 core 函数；出入参一律 `api::dto` 结构化类型（不手写 `json!`），
-//! 与 CLI `--json` 同 schema；错误统一 `{schema:1, error:{code,message}}`。
->>>>>> 91dbba2 (feat: web console components page + serve control/log endpoints (#55))
+//! `serve components`/`models`（只读）、`serve {up|down|restart}`/
+//! `models/pull`（POST）、`serve logs/{name}/stream`（SSE）与 `jobs`
+//! （REST + SSE 日志）；`config` 与其余子路由为 501 占位——真实 handler
+//! 由后续 issue 挂接。handler 只做 HTTP↔core 适配，业务复用 `cmds`/`serve`/
+//! `models`/`manifest`/`env_cfg` 现有 core 函数；出入参一律 `api::dto`
+//! 结构化类型（不手写 `json!`），与 CLI `--json` 同 schema；错误统一
+//! `{schema:1, error:{code,message}}`。
+
 
 use std::convert::Infallible;
 use std::io::{Read, Seek, SeekFrom};
@@ -50,7 +51,10 @@ pub fn router(state: Arc<WebState>) -> Router {
         // 占位路由：any 接全方法（后续写操作经 CSRF 中间件后挂真实 handler）。
         .route("/doctor/{*rest}", any(placeholder))
         .route("/serve", any(placeholder))
-        .route("/models", any(placeholder))
+        .route("/models", any(models))
+        // 写端点：POST /api/models/pull {name}（CSRF 经守卫中间件）；
+        // 与 /models/{*rest} 不冲突——静态段优先于通配。
+        .route("/models/pull", any(models_pull))
         .route("/models/{*rest}", any(placeholder))
         // jobs 已挂真实 handler（web/jobs.rs）；其余命名空间仍是 501 占位。
         .nest("/jobs", super::jobs::router())
@@ -77,6 +81,8 @@ pub(crate) async fn index() -> Json<dto::IndexReport> {
             "GET /api/serve/components",
             "POST /api/serve/{up|down|restart}",
             "GET /api/serve/logs/{name}/stream (SSE)",
+            "GET /api/models",
+            "POST /api/models/pull",
             "/api/models/* (placeholder)",
             "GET /api/jobs",
             "POST /api/jobs",
@@ -404,6 +410,80 @@ fn send_log_batch(
             .data(data),
     )
     .is_ok()
+}
+
+/// `GET /api/models`：MANIFEST + models.lock merge 清单 + 激活选择（只读）。
+/// core 为 `models::collect_report`；MANIFEST 缺失返回 200 + `manifest:null`
+/// + warn（区分「未部署清单」与故障），其余 core 错误 → 500。
+async fn models(method: Method) -> Response {
+    if !matches!(method, Method::GET | Method::HEAD) {
+        return error(
+            StatusCode::METHOD_NOT_ALLOWED,
+            "method_not_allowed",
+            format!("{method} is not allowed on this read-only endpoint"),
+        );
+    }
+    match tokio::task::spawn_blocking(crate::models::collect_report).await {
+        Ok(Ok(report)) => Json(report).into_response(),
+        Ok(Err(e)) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("models report failed: {e}"),
+        ),
+        Err(e) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("models report task failed: {e}"),
+        ),
+    }
+}
+
+/// `POST /api/models/pull`：拉取单个 MANIFEST 条目（`{name}`）。
+/// 与 `momoctl pull --only <name>` 同 core（`cmds::pull::pull_report`），
+/// spawn_blocking 直跑等结果——逐文件进度流待 jobs runner（#54）。
+/// 响应 `PullReport`（fail 是数据非 HTTP 错误，恒 200）；
+/// body/name 非法、MANIFEST/条目缺失 → 400。
+async fn models_pull(method: Method, body: Bytes) -> Response {
+    if method != Method::POST {
+        return error(
+            StatusCode::METHOD_NOT_ALLOWED,
+            "method_not_allowed",
+            format!("{method} is not allowed; use POST"),
+        );
+    }
+    let req: dto::ModelsPullRequest = match serde_json::from_slice(&body) {
+        Ok(r) => r,
+        Err(e) => {
+            return error(
+                StatusCode::BAD_REQUEST,
+                "bad_request",
+                format!("invalid body: {e}"),
+            )
+        }
+    };
+    if req.name.trim().is_empty() {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "bad_request",
+            "field 'name' is required",
+        );
+    }
+    match tokio::task::spawn_blocking(move || crate::cmds::pull::pull_report(None, vec![req.name]))
+        .await
+    {
+        Ok(Ok((report, _code))) => Json(report).into_response(),
+        Ok(Err(AppError::Config(m))) => error(StatusCode::BAD_REQUEST, "bad_request", m),
+        Ok(Err(e)) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("pull failed: {e}"),
+        ),
+        Err(e) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("pull task failed: {e}"),
+        ),
+    }
 }
 
 /// GET/HEAD → Some(profile 解析结果)；其余方法或非法 profile → None

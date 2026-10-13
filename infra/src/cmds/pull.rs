@@ -33,10 +33,23 @@ pub fn run(args: &PullArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
 }
 
 fn pull(args: &PullArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
-    let manifest_path = locate_manifest(args)?;
+    let (report, code) = pull_report(args.manifest.clone(), args.only.clone())?;
+    render(&report, ctx)?;
+    Ok(code)
+}
+
+/// `POST /api/models/pull` 与 CLI `pull` 共用 core：`.part` 续传 + 校验 +
+/// `models.lock` 登记，返回 `PullReport` + CLI 退出码口径。
+/// GB 级权重长时间阻塞且带 stderr 进度行，web 侧须 `spawn_blocking` 调用；
+/// 逐文件进度流待 jobs runner（#54）挂接，当前为直跑等结果。
+pub fn pull_report(
+    manifest: Option<PathBuf>,
+    only: Vec<String>,
+) -> Result<(PullReport, i32), AppError> {
+    let manifest_path = locate_manifest(manifest.as_deref())?;
     let manifest = Manifest::load(&manifest_path)?;
     let models_dir = EnvCfg.models_dir();
-    let selected = select(&manifest, args)?;
+    let selected = select(&manifest, &only)?;
 
     // 并发保护：pull.lock 占位失败即拒跑（05-ops/model-fetch.md）。
     let _guard = PullGuard::acquire(&models_dir)?;
@@ -108,8 +121,7 @@ fn pull(args: &PullArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
         summary: Summary::from_checks(&checks),
         checks,
     };
-    render(&report, ctx)?;
-    Ok(code as i32)
+    Ok((report, code as i32))
 }
 
 /// 单文件取回结果：check 上报 + models.lock 条目 + 失败类别（决定退出码）。
@@ -372,26 +384,26 @@ fn hf_endpoint() -> String {
         .to_string()
 }
 
-fn select<'m>(manifest: &'m Manifest, args: &PullArgs) -> Result<Vec<&'m ModelEntry>, AppError> {
+fn select<'m>(manifest: &'m Manifest, only: &[String]) -> Result<Vec<&'m ModelEntry>, AppError> {
     let selected: Vec<_> = manifest
         .models
         .iter()
-        .filter(|m| args.only.is_empty() || args.only.iter().any(|o| o == &m.name))
+        .filter(|m| only.is_empty() || only.iter().any(|o| o == &m.name))
         .collect();
     if selected.is_empty() {
         return Err(AppError::Config(format!(
             "no manifest entry matches --only {:?}",
-            args.only
+            only
         )));
     }
     Ok(selected)
 }
 
 fn check(args: &PullArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
-    let manifest_path = locate_manifest(args)?;
+    let manifest_path = locate_manifest(args.manifest.as_deref())?;
     let manifest = Manifest::load(&manifest_path)?;
     let models_dir = EnvCfg.models_dir();
-    let selected = select(&manifest, args)?;
+    let selected = select(&manifest, &args.only)?;
 
     let mut checks = Vec::new();
     for m in selected {
@@ -487,17 +499,17 @@ fn check_file(path: PathBuf, model: &str, f: &FileEntry) -> Check {
     }
 }
 
-/// MANIFEST.toml 定位：`--manifest` 优先；否则按常见仓布局探测
+/// MANIFEST.toml 定位：显式路径优先；否则按常见仓布局探测
 /// （候选清单见 manifest::default_manifest_path）。
-fn locate_manifest(args: &PullArgs) -> Result<PathBuf, AppError> {
-    if let Some(p) = &args.manifest {
+fn locate_manifest(manifest: Option<&Path>) -> Result<PathBuf, AppError> {
+    if let Some(p) = manifest {
         if !p.is_file() {
             return Err(AppError::Config(format!(
                 "manifest not found: {}",
                 p.display()
             )));
         }
-        return Ok(p.clone());
+        return Ok(p.to_path_buf());
     }
     crate::manifest::default_manifest_path().ok_or_else(|| {
         AppError::Config(format!(

@@ -266,7 +266,7 @@ async fn error_envelope_contract() {
     assert_error_envelope(&v, "not_found");
 
     // 占位路由（GET 只读）→ 501 not_implemented
-    let (status, v) = call(app.clone(), req("GET", "/api/models")).await;
+    let (status, v) = call(app.clone(), req("GET", "/api/jobs")).await;
     assert_eq!(status, 501);
     assert_error_envelope(&v, "not_implemented");
 
@@ -494,4 +494,85 @@ async fn serve_log_stream_contract() {
         res.headers()["content-type"].to_str().unwrap(),
         "text/event-stream"
     );
+}
+
+// ---------- models 端点（#52） ----------
+
+#[tokio::test]
+async fn models_contract() {
+    let app = web::router(state(None));
+
+    let (status, v) = call(app.clone(), req("GET", "/api/models")).await;
+    assert_eq!(status, 200);
+    assert_eq!(v["schema"], 1, "{v}");
+    // manifest 可定位与否取决于 cwd；两种合法形态都断言关键字段存在。
+    assert!(v.get("manifest").is_some(), "{v}");
+    assert!(v["models_dir"].is_string(), "{v}");
+    assert!(v["models"].is_array(), "{v}");
+    assert!(v["warn"].is_array(), "{v}");
+    for m in v["models"].as_array().unwrap() {
+        assert!(m["name"].is_string(), "{m}");
+        assert!(
+            ["missing", "partial", "verified"].contains(&m["state"].as_str().unwrap()),
+            "model.state: {m}"
+        );
+        assert!(m["active"].is_boolean(), "{m}");
+        for f in m["files"].as_array().expect("files array") {
+            assert!(f["path"].is_string(), "{f}");
+            assert!(
+                ["missing", "unverified", "verified"].contains(&f["state"].as_str().unwrap()),
+                "file.state: {f}"
+            );
+        }
+    }
+    // 激活选择快照：键固定、值 string|null
+    let a = &v["active"];
+    for k in [
+        "asr_provider",
+        "asr_model",
+        "tts_provider",
+        "tts_voice",
+        "tts_lang",
+        "brain_endpoint",
+        "brain_model",
+    ] {
+        let val = &a[k];
+        assert!(val.is_string() || val.is_null(), "active.{k}: {a}");
+    }
+
+    // 只读端点：POST → 405
+    let (status, v) = call(app, post("/api/models", None)).await;
+    assert_eq!(status, 405);
+    assert_error_envelope(&v, "method_not_allowed");
+}
+
+#[tokio::test]
+async fn models_pull_contract() {
+    let app = web::router(state(None));
+
+    // 写端点：GET → 405
+    let (status, v) = call(app.clone(), req("GET", "/api/models/pull")).await;
+    assert_eq!(status, 405);
+    assert_error_envelope(&v, "method_not_allowed");
+
+    // 缺 name / 非法 body → 400
+    for body in [Some("{}"), Some("{oops"), Some(r#"{"name":"  "}"#), None] {
+        let (status, v) = call(app.clone(), post("/api/models/pull", body)).await;
+        assert_eq!(status, 400, "body={body:?}");
+        assert_error_envelope(&v, "bad_request");
+    }
+
+    // 未知名称 → 400（manifest 缺失也归同一错误面，不触发下载）
+    let (status, v) = call(
+        app.clone(),
+        post("/api/models/pull", Some(r#"{"name":"__missing__"}"#)),
+    )
+    .await;
+    assert_eq!(status, 400);
+    assert_error_envelope(&v, "bad_request");
+
+    // 无 CSRF → 403（守卫先于 handler）
+    let (status, v) = call(app, req("POST", "/api/models/pull")).await;
+    assert_eq!(status, 403);
+    assert_error_envelope(&v, "csrf");
 }
