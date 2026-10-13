@@ -3,11 +3,16 @@
 // output.sentence.emotion → 气泡情感位（8 个固定 tag，样式表映射）。
 // input.audio.segment：partial → 灰字斜体草稿气泡原地更新；final → 定稿
 // 为正式 user 气泡（#147）；capture 取消/中断时 clearDraft 丢弃草稿。
+// 视觉：直播间风格——assistant 气泡带 momo 头像，user 气泡右对齐；
+// #chat-toggle 折叠/展开聊天面板（body.chat-closed）。
 
 import type { EmotionTag } from "../net/protocol";
 
-/** 气泡数上限：超出即裁掉最旧（含草稿占位），防长会话无界堆积。 */
-const MAX_BUBBLES = 50;
+/** 气泡历史上限：超出后从最旧开始丢弃（草稿恒在末尾不受影响）。 */
+const MAX_BUBBLES = 120;
+
+/** 窄屏默认折叠聊天面板，舞台优先。 */
+const COLLAPSE_MEDIA = "(max-width: 760px)";
 
 /** 初始化聊天 UI；返回后的 onSubmit 回调由 main.ts 接到 ws-client。 */
 export function initChat(root: HTMLElement): {
@@ -30,10 +35,11 @@ export function initChat(root: HTMLElement): {
     draftCaptureId = null;
   }
 
-  /** 追加后裁剪：从头部移除最旧气泡；草稿永远是尾节点，不会被误裁。 */
-  function trimHistory(): void {
+  function capBubbles(): void {
     while (root.childElementCount > MAX_BUBBLES) {
-      root.firstElementChild?.remove();
+      const oldest = root.firstElementChild;
+      if (!oldest || oldest === draftEl) break;
+      oldest.remove();
     }
   }
 
@@ -42,19 +48,29 @@ export function initChat(root: HTMLElement): {
     addBubble(role: "user" | "assistant", text: string, emotion?: EmotionTag): void {
       const div = document.createElement("div");
       div.className = `bubble ${role}`;
+      if (role === "assistant") {
+        const avatar = document.createElement("span");
+        avatar.className = "bubble-avatar";
+        avatar.textContent = "m";
+        avatar.setAttribute("aria-hidden", "true");
+        div.appendChild(avatar);
+      }
+      const content = document.createElement("span");
+      content.className = "bubble-content";
       if (emotion) {
         // 情感位：tag 文本 + emotion-* 样式类（style.css 定义 8 tag 映射）。
         const tag = document.createElement("span");
         tag.className = `emotion-tag emotion-${emotion}`;
         tag.textContent = emotion;
-        div.appendChild(tag);
+        content.appendChild(tag);
       }
       const body = document.createElement("span");
       body.className = "bubble-text";
       body.textContent = text;
-      div.appendChild(body);
+      content.appendChild(body);
+      div.appendChild(content);
       root.appendChild(div);
-      trimHistory();
+      capBubbles();
       root.scrollTop = root.scrollHeight;
     },
     setDraft(captureId: string, text: string): void {
@@ -68,7 +84,6 @@ export function initChat(root: HTMLElement): {
         body.className = "bubble-text";
         draftEl.appendChild(body);
         root.appendChild(draftEl);
-        trimHistory();
       }
       draftCaptureId = captureId;
       const body = draftEl.firstElementChild;
@@ -98,6 +113,15 @@ export function initChat(root: HTMLElement): {
     chat.onSubmit?.(text);
     if (input) input.value = "";
   });
+
+  // 面板折叠：按钮切换；窄屏默认收起（可再点开）。
+  const toggle = document.querySelector<HTMLButtonElement>("#chat-toggle");
+  toggle?.addEventListener("click", () => {
+    document.body.classList.toggle("chat-closed");
+  });
+  if (window.matchMedia(COLLAPSE_MEDIA).matches) {
+    document.body.classList.add("chat-closed");
+  }
 
   return chat;
 }
