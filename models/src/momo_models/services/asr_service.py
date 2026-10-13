@@ -350,15 +350,11 @@ class _AsrLink:
             if cap is not None and cap.stream_id == obj_id:
                 await self._close(cap, discard=True)
             else:
-                await ctx.send_error(
-                    "BAD_MESSAGE", f"unknown stream {obj_id!r}", stream_id=obj_id
-                )
+                await ctx.send_error("BAD_MESSAGE", f"unknown stream {obj_id!r}", stream_id=obj_id)
         elif target == "turn":
             log.info("asr.cancel_ignored", target=target, id=obj_id)  # 非 ASR 职责
         else:
-            await ctx.send_error(
-                "BAD_MESSAGE", f"unknown cancel target {target!r}", ref_id=obj_id
-            )
+            await ctx.send_error("BAD_MESSAGE", f"unknown cancel target {target!r}", ref_id=obj_id)
 
     async def _close(self, cap: _Capture, *, discard: bool = False) -> None:
         """关 stream；discard=True 丢弃未转写段并取消 worker。"""

@@ -55,9 +55,7 @@ log = get_logger(__name__)
 
 
 # error 帧可选归因字段（protocol §2；#132 异步失败定位到 stream/capture/turn）。
-_ERROR_ATTR_FIELDS = frozenset(
-    {"ref_id", "turn_id", "capture_id", "stream_id", "sentence_seq"}
-)
+_ERROR_ATTR_FIELDS = frozenset({"ref_id", "turn_id", "capture_id", "stream_id", "sentence_seq"})
 
 
 def _error_frame(code: str, message: str, **attribution: Any) -> dict:
@@ -70,11 +68,7 @@ def _error_frame(code: str, message: str, **attribution: Any) -> dict:
         "type": "error",
         "code": code,
         "message": message,
-        **{
-            k: v
-            for k, v in attribution.items()
-            if k in _ERROR_ATTR_FIELDS and v is not None
-        },
+        **{k: v for k, v in attribution.items() if k in _ERROR_ATTR_FIELDS and v is not None},
     }
 
 

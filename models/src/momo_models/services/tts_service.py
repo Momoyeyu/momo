@@ -81,14 +81,10 @@ class _TtsLink:
         text = msg.get("text")
         attr = msg_attribution(msg)
         if not isinstance(turn_id, str) or not turn_id:
-            await self._ctx.send_error(
-                "BAD_MESSAGE", "output.sentence requires turn_id", **attr
-            )
+            await self._ctx.send_error("BAD_MESSAGE", "output.sentence requires turn_id", **attr)
             return
         if not isinstance(seq, int) or isinstance(seq, bool) or not (0 <= seq <= 0xFFFFFFFF):
-            await self._ctx.send_error(
-                "BAD_MESSAGE", "output.sentence requires u32 seq", **attr
-            )
+            await self._ctx.send_error("BAD_MESSAGE", "output.sentence requires u32 seq", **attr)
             return
         if not isinstance(text, str) or not text.strip():
             await self._ctx.send_error(
@@ -101,9 +97,7 @@ class _TtsLink:
             return
         key = (turn_id, seq)
         if key in self._seen:
-            await self._ctx.send_error(
-                "BAD_MESSAGE", f"duplicate sentence {turn_id}#{seq}", **attr
-            )
+            await self._ctx.send_error("BAD_MESSAGE", f"duplicate sentence {turn_id}#{seq}", **attr)
             return
         emotion = msg.get("emotion")
         if emotion not in EMOTION_TAGS:
@@ -162,9 +156,7 @@ class _TtsLink:
             return
         if first is None:
             # 空产出不开空 stream（下行可播放句不允许零长度音频）。
-            await ctx.send_error(
-                "TTS_FAILED", f"provider produced no audio for seq {seq}", **attr
-            )
+            await ctx.send_error("TTS_FAILED", f"provider produced no audio for seq {seq}", **attr)
             await stream.aclose()
             return
 

@@ -163,13 +163,19 @@ fn web_base_routes_and_spa_fallback() {
     }
 
     // 占位路由：GET（只读）→ 501 错误 DTO
-    let r = client.get(format!("{base}/api/models/_placeholder")).send().unwrap();
+    let r = client
+        .get(format!("{base}/api/models/_placeholder"))
+        .send()
+        .unwrap();
     assert_eq!(r.status(), 501);
     let v: serde_json::Value = serde_json::from_str(&r.text().unwrap()).unwrap();
     assert_error(&v, "not_implemented");
 
     // 占位路由 mutation：无 CSRF → 403；回带签发 token → 到达 handler（501）
-    let r = client.post(format!("{base}/api/models/_placeholder")).send().unwrap();
+    let r = client
+        .post(format!("{base}/api/models/_placeholder"))
+        .send()
+        .unwrap();
     assert_eq!(r.status(), 403);
     let v: serde_json::Value = serde_json::from_str(&r.text().unwrap()).unwrap();
     assert_error(&v, "csrf");
