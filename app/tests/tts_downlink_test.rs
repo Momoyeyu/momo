@@ -506,7 +506,13 @@ async fn reply_streams_tts_audio_downlink() {
     assert_eq!(seen.ends[0], (seen.opens[0].0.clone(), 2));
     // 每 stream 3 帧：chunk_seq 0..2，sample_offset 按 1200 累计，末帧 EOS。
     for (stream_id, sent_seq) in &seen.opens {
-        let raw = Ulid::from_string(stream_id).expect("stream ulid");
+        // 下行 stream_id 按协议约定 st_<ULID>（与 golden audio.open.downlink 同形态）。
+        let raw = Ulid::from_string(
+            stream_id
+                .strip_prefix("st_")
+                .expect("downlink stream_id carries st_ prefix"),
+        )
+        .expect("stream ulid");
         let fs: Vec<_> = seen
             .frames
             .iter()
