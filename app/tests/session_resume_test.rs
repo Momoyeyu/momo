@@ -15,6 +15,7 @@ use futures_util::{SinkExt, StreamExt};
 use momo_app::{
     config::Config,
     error::AppError,
+    persona::Persona,
     pipeline::llm::{ChatRequest, ChatStream, LlmClient},
     proto::{
         codec::{self, CLOSE_NORMAL},
@@ -79,6 +80,7 @@ fn test_state(llm: Option<Arc<MockLlm>>, resume_ttl: Duration) -> Arc<AppState> 
         barge_in_enabled: true,
         barge_in_min: Duration::from_millis(250),
         resume_ttl,
+        persona: Persona::new(std::path::PathBuf::from("persona/momo.yaml")),
     };
 }
 
@@ -263,6 +265,15 @@ async fn resume_recovers_session_and_sends_snapshot() {
     let _ = recv_until(&mut b, |m| matches!(m, Msg::InputAccepted(_))).await;
     let _feed2 = take_feed(&llm).await;
     let req = llm.requests.lock().expect("mock")[1].clone();
+    assert_eq!(req.len(), 4);
+    assert_eq!(req[0].role, Role::System);
+    assert!(req[0].content.contains("momo"), "system prompt = persona");
+    assert_eq!(req[1].role, Role::User);
+    assert_eq!(req[1].content, "你好");
+    assert_eq!(req[2].role, Role::Assistant);
+    assert_eq!(req[2].content, "第一句。");
+    assert_eq!(req[3].role, Role::User);
+    assert_eq!(req[3].content, "再问");
 }
 
 /// 回合在途时断线：turn 取消、receipt 标 interrupted、已播记账保留；
@@ -311,6 +322,10 @@ async fn resume_after_mid_turn_disconnect_reports_interrupted_receipt() {
     let _ = recv_until(&mut b, |m| matches!(m, Msg::InputAccepted(_))).await;
     let _feed2 = take_feed(&llm).await;
     let req = llm.requests.lock().expect("mock")[1].clone();
+    assert_eq!(req.len(), 3);
+    assert_eq!(req[0].role, Role::System);
+    assert_eq!(req[1].content, "问");
+    assert_eq!(req[2].content, "再问");
 }
 
 /// 单活跃语义：旧 conn 仍连着时新 conn 带 resume_session_id →

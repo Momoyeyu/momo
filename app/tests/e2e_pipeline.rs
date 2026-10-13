@@ -1147,6 +1147,12 @@ async fn resume_recovers_session_snapshot() {
     let t2 = open_text_turn(&mut b, "in_2", "再说一遍").await;
     let call2 = recv_llm_call(&mut llm_rx).await;
     let req_msgs = call2.body["messages"].as_array().expect("messages array");
+    assert_eq!(req_msgs[0]["role"], "system");
+    assert_eq!(req_msgs[1]["role"], "user");
+    assert_eq!(req_msgs[1]["content"], "你好");
+    assert_eq!(req_msgs[2]["role"], "assistant");
+    assert_eq!(req_msgs[2]["content"], "你好呀。");
+    assert_eq!(req_msgs[3]["content"], "再说一遍");
     call2.feed.send("你好呀。".into()).await.expect("delta");
     drop(call2.feed);
     let mut opens = 0usize;

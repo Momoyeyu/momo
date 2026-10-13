@@ -18,6 +18,7 @@ use futures_util::{SinkExt, StreamExt};
 use momo_app::{
     config::Config,
     error::AppError,
+    persona::Persona,
     pipeline::{
         asr::MomoWsAsr,
         llm::{ChatRequest, ChatStream, LlmClient},
@@ -226,6 +227,7 @@ fn test_state(
         barge_in_enabled: true,
         barge_in_min,
         resume_ttl: Duration::from_secs(60),
+        persona: Persona::new(std::path::PathBuf::from("persona/momo.yaml")),
     };
 }
 
@@ -767,6 +769,15 @@ async fn final_segment_after_barge_in_carries_spoken_context() {
     // 新 prompt：已播句以 partial assistant 注入 + 新 user 转写。
     let _feed2 = take_feed(&llm).await;
     let req = llm.requests.lock().expect("mock")[1].clone();
+    assert_eq!(req.len(), 4);
+    assert_eq!(req[0].role, Role::System);
+    assert_eq!(req[1].role, Role::User);
+    assert_eq!(req[1].content, "问");
+    assert_eq!(req[2].role, Role::Assistant);
+    assert_eq!(req[2].content, "第一句。");
+    assert!(req[2].partial, "interrupted spoken context is partial");
+    assert_eq!(req[3].role, Role::User);
+    assert_eq!(req[3].content, "追问");
 }
 
 /// #14：chunk_seq gap → 中止 capture：UI 收 error + control.cancel{capture}，
