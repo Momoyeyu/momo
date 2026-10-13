@@ -37,7 +37,7 @@ flowchart LR
 | `MOMO_UI_TOKEN` | `/ws/ui` hello 的期望 `auth_token`；desktop 启动时注入，空=standalone dev 不比对（字段仍必填） | 空 | str | **是** |
 | `MOMO_LLM_ENDPOINT` | 大脑 OpenAI-compatible base URL | `http://mac-studio.local:7820/v1` | URL | 否 |
 | `MOMO_LLM_MODEL` | 传给大脑的 model 字段 | `qwen3-8b-4bit` | str | 否 |
-| `MOMO_LLM_API_KEY` | `MOMO_LLM_ENDPOINT` 所指上游的鉴权 key（不按厂商分键）；本地可空，远端如 DeepSeek 档必填 | 空 | str | **是** |
+| `MOMO_LLM_API_KEY` | `MOMO_LLM_ENDPOINT` 所指上游的鉴权 key；本地可空，远端如 DeepSeek 档必填 | 空 | str | **是** |
 | `MOMO_LLM_TIMEOUT_MS` | LLM 请求总超时 | `30000` | ms | 否 |
 | `MOMO_ASR_ENDPOINT` | ASR 服务 WS 地址 | `ws://127.0.0.1:7810/ws` | ws:// | 否 |
 | `MOMO_TTS_ENDPOINT` | TTS 服务 WS 地址 | `ws://127.0.0.1:7811/ws` | ws:// | 否 |
@@ -76,7 +76,7 @@ flowchart LR
 | `MOMO_MEMORY_DB`（P1） | sqlite-vec 库路径 | `data/momo.vec.db` | path | 否 |
 | `MOMO_VISION_ENDPOINT`（P2） | 视觉 API | `https://api.deepseek.com/v1` | URL | 否 |
 | `MOMO_VISION_MODEL`（P2） | 视觉模型 | `deepseek-v4-flash-vision-exp` | str | 否 |
-| `MOMO_VISION_API_KEY`（P2） | `MOMO_VISION_ENDPOINT` 所指上游的鉴权 key（通用命名，不按厂商分键） | 空 | str | **是** |
+| `MOMO_VISION_API_KEY`（P2） | 视觉上游的鉴权 key | 空 | str | **是** |
 | `MOMO_EMBED_LISTEN`（P1） | embed 服务 WS 监听（记忆检索） | `127.0.0.1:7812` | host:port | 否 |
 
 ### 2.4 infra 读（大脑服务启停、`momoctl web` 鉴权；mac-studio 侧大脑由 infra 远程/本地拉起）
@@ -153,7 +153,7 @@ MOMO_MEMORY_ENABLED=false
 MOMO_MEMORY_DB=data/momo.vec.db
 MOMO_VISION_ENDPOINT=https://api.deepseek.com/v1
 MOMO_VISION_MODEL=deepseek-v4-flash-vision-exp
-MOMO_VISION_API_KEY=         # 敏感：视觉 provider 鉴权 key；与 MOMO_VISION_ENDPOINT 配套
+MOMO_VISION_API_KEY=         # 敏感：视觉 provider key
 MOMO_EMBED_LISTEN=127.0.0.1:7812   # P3 记忆检索服务
 
 # momo-infra（大脑启停 / web 控制台）

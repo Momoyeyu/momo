@@ -321,7 +321,7 @@ fn check_env(env: &EnvCfg, profile: Profile) -> CheckGroup {
         checks.push(Check::ok(format!("env.{key}"), detail));
     }
 
-    // 条件必需：LLM 端点指 DeepSeek 时必须有 key（MOMO_LLM_API_KEY 为唯一上游凭据）。
+    // 条件必需：LLM 端点指 DeepSeek 时必须有 key。
     if let Some(ep) = env.llm_endpoint() {
         if ep.contains("deepseek.com") && env.get("MOMO_LLM_API_KEY").is_none() {
             checks.push(Check::fail(
