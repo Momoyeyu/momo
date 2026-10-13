@@ -14,6 +14,8 @@ export function s16leToFloat32(pcm: Uint8Array): Float32Array {
 }
 
 export interface PlayedChunk {
+  /** 所属 output.sentence.seq（帧头 sentence_seq，protocol §6）。 */
+  sentence_seq: number;
   samples: Float32Array;
   eos: boolean;
 }
@@ -30,6 +32,7 @@ export class AudioPlayer {
   }
 
   enqueue(header: AudioHeader, payload: Uint8Array): void {
+      sentence_seq: header.sentence_seq,
       samples: s16leToFloat32(payload),
       eos: (header.flags & FLAG_EOS) !== 0,
   }
