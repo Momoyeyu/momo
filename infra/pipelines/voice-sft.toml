@@ -8,6 +8,10 @@ description = "CosyVoice3 SFT: dataset prep -> 4090D train -> artifact fetch -> 
 # gc 按 engine 分代保留 N-1（active+rollback），models.lock 引用额外保护。
 artifact_dir = "tts/ft-cosyvoice3-{date}"
 
+# promote 激活键：写 `.env.<profile>` 的 MOMO_TTS_MODEL_DIR 指向产物目录
+# （.bak 即回滚目标；config.md §5 口径——env 变更经 `serve restart` 生效）。
+activate_env = "MOMO_TTS_MODEL_DIR"
+
 [vars.input]
 description = "raw voice material directory (T2 set, 10-60min clean single-speaker audio)"
 required = true

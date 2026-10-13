@@ -31,6 +31,11 @@ pub struct PipelineDef {
     pub description: String,
     /// 产物落点（相对 `MOMO_MODELS_DIR`，支持 `{date}` 占位）。
     pub artifact_dir: String,
+    /// 产物激活 env 键（可选）：promote 通过把该键写回 `.env.<profile>`
+    /// 指向 artifact_dir 完成激活（voice-clone.md「只改 env」灰度口径；
+    /// `.bak` 即回滚目标）。未声明 → promote 只迁移状态不碰 env。
+    #[serde(default)]
+    pub activate_env: Option<String>,
     #[serde(default)]
     pub vars: BTreeMap<String, VarDef>,
     #[serde(rename = "step", default)]

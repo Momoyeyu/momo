@@ -54,7 +54,18 @@ fn list(args: &PipelineDirArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
             name: d.name.clone(),
             description: d.description.clone(),
             artifact_dir: d.artifact_dir.clone(),
+            activate_env: d.activate_env.clone(),
             steps: d.steps.iter().map(|s| s.name.clone()).collect(),
+            vars: d
+                .vars
+                .iter()
+                .map(|(name, v)| crate::api::dto::PipelineVarInfo {
+                    name: name.clone(),
+                    description: v.description.clone(),
+                    required: v.required,
+                    default: v.default.clone(),
+                })
+                .collect(),
             path: path.display().to_string(),
         })
         .collect();

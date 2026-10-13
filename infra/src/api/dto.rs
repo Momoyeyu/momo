@@ -401,8 +401,25 @@ pub struct PipelineInfo {
     pub description: String,
     /// `{date}` 未展开的产物相对路径（MOMO_MODELS_DIR 下）。
     pub artifact_dir: String,
+    /// 产物激活 env 键（promote 写回目标；未声明为 null）。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub activate_env: Option<String>,
     pub steps: Vec<String>,
+    /// `[vars]` 定义（web wizard 表单依据：required/default/description）。
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub vars: Vec<PipelineVarInfo>,
     pub path: String,
+}
+
+/// `pipeline list` 的 `[vars]` 条目（BTreeMap 展开为有序数组）。
+#[derive(Debug, Serialize)]
+pub struct PipelineVarInfo {
+    pub name: String,
+    pub description: String,
+    /// `--set` 未注入且无 default 时 run 拒绝（exit 2 / API 422）。
+    pub required: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<String>,
 }
 
 /// `pipeline list --json`。
@@ -464,7 +481,10 @@ pub struct ProfileQuery {
 
 // ---------- jobs ----------
 
-/// `POST /api/jobs` 请求体：`{kind?, executor?, ssh?, args, desc?}`。
+/// `POST /api/jobs` 请求体：`{kind?, executor?, ssh?, args, desc?}` 或
+/// `{kind?, pipeline, set?, dry_run?, executor?, desc?}`（pipeline 快捷提交：
+/// 服务端把 pipeline 定义展开为 `<momoctl> pipeline run --name <p> [--dry-run]
+/// --set k=v ...` argv，与 `args` 互斥）。
 #[derive(Debug, Deserialize)]
 pub struct JobSubmitRequest {
     /// job 类别；缺省 `train`。
@@ -482,6 +502,19 @@ pub struct JobSubmitRequest {
     pub args: Vec<String>,
     #[serde(default)]
     pub desc: Option<String>,
+    /// pipeline 名（`infra/pipelines/<name>.toml`）；与 `args` 互斥。
+    #[serde(default)]
+    pub pipeline: Option<String>,
+    /// pipeline `--set KEY=VALUE` 注入（required 缺项 → 422 fields）。
+    #[serde(default)]
+    pub set: BTreeMap<String, String>,
+    /// pipeline 提交追加 `--dry-run`（只展开计划不执行/登记）。
+    #[serde(default)]
+    pub dry_run: bool,
+    /// 执行器：`local`（缺省，exec_local runner）；
+    /// `ssh:<host>` 等远端执行器属 #51，当前一律 422 字段级拒绝。
+    #[serde(default)]
+    pub executor: Option<String>,
 }
 
 /// `GET /api/jobs` 列表响应。
@@ -492,7 +525,43 @@ pub struct JobListReport {
     pub jobs: Vec<JobRecord>,
 }
 
-/// `GET /api/jobs/{id}` / `POST /api/jobs` / `POST /api/jobs/{id}/cancel` 响应。
+/// `POST /api/jobs/{id}/promote` 请求体（可空）：显式激活覆盖。
+/// 缺省按 job args 解析 pipeline → def.activate_env + run.artifact_dir。
+#[derive(Debug, Default, Deserialize)]
+pub struct JobPromoteRequest {
+    /// 激活 env 键覆盖（须 schema 已知 `MOMO_*` 键；值域校验同 PUT /api/config）。
+    #[serde(default)]
+    pub env_key: Option<String>,
+    /// 产物目录覆盖（须存在且含 train-manifest.json——frozen gate 通过证据）。
+    #[serde(default)]
+    pub artifact_dir: Option<String>,
+}
+
+/// `GET /api/jobs/{id}/metrics`：单 step 的 metrics 拾取
+/// （`<artifact>/metrics.json` / register 步登记结果）。
+#[derive(Debug, Serialize)]
+pub struct JobStepMetrics {
+    pub name: String,
+    pub status: String,
+    pub metrics: serde_json::Value,
+}
+
+/// `GET /api/jobs/{id}/metrics` 响应：关联 pipeline run + train-manifest 原文。
+/// 非 pipeline job / 未找到 run 时 `run_id`/`artifact_dir`/`manifest` 为 null，
+/// `steps` 为空——200 而非 404（「无曲线可画」是数据不是错误）。
+#[derive(Debug, Serialize)]
+pub struct JobMetricsReport {
+    pub schema: u8,
+    pub status: &'static str,
+    pub job: String,
+    pub run_id: Option<String>,
+    pub artifact_dir: Option<String>,
+    /// `<artifact_dir>/train-manifest.json` 解析结果（loss 曲线数据源）。
+    pub manifest: Option<serde_json::Value>,
+    pub steps: Vec<JobStepMetrics>,
+}
+
+/// `GET /api/jobs/{id}` / `POST /api/jobs` / `POST /api/jobs/{id}/cancel|promote` 响应。
 #[derive(Debug, Serialize)]
 pub struct JobReport {
     pub schema: u8,
