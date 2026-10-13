@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,11 +10,12 @@
       <canvas id="stage"></canvas>
       <div id="chat"></div>
       <form id="composer">
-        <input id="composer-input" type="text" autocomplete="off" placeholder="说点什么…" />
-        <button id="composer-send" type="submit">发送</button>
+        <input id="composer-input" type="text" autocomplete="off" placeholder="Say something…" />
+        <button id="composer-send" type="submit">Send</button>
         <button id="mic" type="button">Hold to talk</button>
       </form>
-      <div id="status">连接中…</div>
+      <div id="status">Connecting…</div>
+      <div id="avatar-fallback" hidden role="alert"></div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

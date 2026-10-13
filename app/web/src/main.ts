@@ -1,7 +1,7 @@
 // 启动装配：canvas + ws-client + ui + PTT mic capture（momo-app.md §前端）。
 
 import "./style.css";
-import { uiToken, wsUrl } from "./config";
+import { avatarModelUrl, uiToken, wsUrl } from "./config";
 import { WsClient } from "./net/ws-client";
 import { newId, normalizeEmotion } from "./net/protocol";
 import { AudioPlayer } from "./audio/player";
@@ -15,14 +15,22 @@ const stageEl = document.querySelector<HTMLCanvasElement>("#stage");
 const chatEl = document.querySelector<HTMLElement>("#chat");
 const statusEl = document.querySelector<HTMLElement>("#status");
 const micBtn = document.querySelector<HTMLButtonElement>("#mic");
+const fallbackEl = document.querySelector<HTMLElement>("#avatar-fallback");
 if (!stageEl || !chatEl || !statusEl) {
   throw new Error("index.html 缺少 #stage/#chat/#status 挂载点");
 }
 
-// 装配（骨架：模型路径等 P0 实装时接入）。
 const stage = new Live2DStage();
 stage.init(stageEl);
-// TODO(P0): stage.loadModel(assetBase() + "models/<cubism-sample>/model.json")
+
+// 模型加载失败不阻断聊天：可见降级提示（#95）。
+stage.loadModel(avatarModelUrl()).catch((err: unknown) => {
+  console.error("live2d model load failed:", err);
+  if (fallbackEl) {
+    fallbackEl.hidden = false;
+    fallbackEl.textContent = "Avatar failed to load — chat still works. Check the model assets and reload.";
+  }
+});
 
 const player = new AudioPlayer();
 const status = new StatusIndicator(statusEl);

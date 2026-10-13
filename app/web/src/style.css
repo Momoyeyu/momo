@@ -96,6 +96,25 @@ body,
   color: #a5b4fc;
 }
 
+/* 模型加载失败降级提示：可见但不阻断聊天。 */
+#avatar-fallback {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  max-width: 280px;
+  padding: 10px 14px;
+  border: 1px solid #7f1d1d;
+  border-radius: 10px;
+  background: rgba(24, 24, 27, 0.92);
+  color: #fca5a5;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#avatar-fallback[hidden] {
+  display: none;
+}
+
 .bubble.user {
   align-self: flex-end;
   background: #3b82f6;
