@@ -969,6 +969,7 @@ impl Session {
                     text: sentence.text,
                     emotion: sentence.emotion.unwrap_or_default(),
                     lang,
+                    audio,
                 }))
                 .await;
             }

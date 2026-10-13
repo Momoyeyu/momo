@@ -417,6 +417,8 @@ pub struct OutputSentenceMsg {
     pub text: String,
     pub emotion: EmotionTag,
     pub lang: String,
+    /// 该句是否有 TTS 下行；`false` = text-only（UI 立即短显字幕）。
+    pub audio: bool,
 }
 
 /// `output.complete`（orchestrator→UI）：generation 结束，不依赖末尾标点。

@@ -35,7 +35,7 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 | `audio.open` uplink | UI→orchestrator→ASR | `stream_id,direction,capture_id,codec,sample_rate,channels` | stream 绑定 capture；UI 不绕过 orchestrator；不得带 sentence_seq |
 | `audio.open` downlink | TTS→orchestrator→UI | `stream_id,direction,turn_id,sentence_seq,codec,sample_rate,channels` | stream 绑定 turn/sentence；TTS 不绕过 orchestrator；不得带 capture_id |
 | `audio.end` | stream sender→receiver | `stream_id,last_chunk_seq` | 显式结束 stream |
-| `output.sentence` | orchestrator→UI/TTS | `turn_id,seq,text,emotion,lang` | 字幕与逐句合成 |
+| `output.sentence` | orchestrator→UI/TTS | `turn_id,seq,text,emotion,lang,audio` | 字幕与逐句合成；`audio=false` 即该句无 TTS 下行（text-only） |
 | `output.complete` | orchestrator→UI | `turn_id,last_sentence_seq` | generation 结束 |
 | `playback.started` | UI→orchestrator | `stream_id,sentence_seq` | 实际开播并进入 speaking |
 | `playback.progress` | UI→orchestrator | `stream_id,sentence_seq,played_samples,completed` | 听见账本 |
@@ -182,7 +182,7 @@ sequenceDiagram
 
 provider 只在下一 turn 前执行 warmup → probe → 原子 activate；成功前保留旧 provider，失败 rollback。活动 turn 存在时先由用户明确取消。凭据只在服务端保存。
 
-UI 侧 text-only 判定：`output.sentence` 不携带音频可用性标记，一句是否配音只能由「downlink stream 是否到来」推断——`turn.finished` 前始终未绑定 `audio.open` 的句子即 text-only，UI 以字幕短显（约 3s）呈现后归入气泡历史。合成并发使 `audio.open` 的跨句顺序不作保证（帧可交错、一句可对应多条 stream），UI 不得以「已见到更大 `sentence_seq` 的 open」推断前句无音频。
+UI 侧 text-only 判定：`output.sentence.audio=false` 即该句确定无配音，UI 可立即以字幕短显（约 3s）呈现并归入气泡历史，不必等 `turn.finished`。`audio=true` 但至 `turn.finished` 仍未绑定 `audio.open` 的句（合成中途失败降级）同样按 text-only 短显。合成并发使 `audio.open` 的跨句顺序不作保证（帧可交错、一句可对应多条 stream），UI 不得以「已见到更大 `sentence_seq` 的 open」推断前句无音频。
 
 ## 10. close code
 

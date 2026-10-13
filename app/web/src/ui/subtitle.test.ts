@@ -41,7 +41,7 @@ class FakeSink implements SubtitleSink {
 }
 
 let seq = 0;
-function sentence(turn: string, n: number, text = `s${n}`): OutputSentenceMsg {
+function sentence(turn: string, n: number, text = `s${n}`, audio = true): OutputSentenceMsg {
   return {
     type: "output.sentence",
     session_id: "s",
@@ -53,6 +53,7 @@ function sentence(turn: string, n: number, text = `s${n}`): OutputSentenceMsg {
     text,
     emotion: "happy",
     lang: "zh",
+    audio,
   };
 }
 
@@ -150,6 +151,18 @@ describe("SubtitleController 语音字幕", () => {
 describe("SubtitleController text-only 短显", () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
+
+  it("audio=false 的句到达即短显，不等 turn.finished", () => {
+    const { sink, ctl } = make();
+    ctl.onSentence(sentence("t1", 1, "无声句", true));
+    ctl.onSentence(sentence("t1", 2, "降级句", false));
+    expect(sink.lastShow()).toMatchObject({ text: "降级句", textOnly: true });
+    vi.advanceTimersByTime(TEXT_ONLY_FLASH_MS);
+    expect(sink.calls.at(-1)).toEqual({ kind: "hide" });
+    // audio=true 的 seq1 仍 pending：finished 时按其原有逻辑短显。
+    ctl.onTurnFinished("t1");
+    expect(sink.lastShow()).toMatchObject({ text: "无声句", textOnly: true });
+  });
 
   it("turn.finished 时未绑定 stream 的句按序各短显 ~3s", () => {
     const { sink, ctl } = make();

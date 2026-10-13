@@ -207,6 +207,7 @@ fn all_message_types_match_golden_json() {
                 text: "今晚吃面吧。".into(),
                 emotion: EmotionTag::Happy,
                 lang: "zh".into(),
+                audio: true,
             }),
         ),
         (

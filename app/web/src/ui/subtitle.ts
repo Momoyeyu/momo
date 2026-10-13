@@ -75,12 +75,19 @@ export class SubtitleController {
     this.sink = sink;
   }
 
-  /** output.sentence：登记映射；若正是正播 stream 的句则立即上屏。 */
+  /** output.sentence：登记映射；audio=false 的 text-only 句立即进短显队列
+   * （到达序≈句序，pumpFlash 只在无正播音频时推进，保序）；
+   * audio=true 登记 pending 等 stream；若正是正播 stream 的句则立即上屏。 */
   onSentence(msg: OutputSentenceMsg): void {
     if (this.retired.has(msg.turn_id)) return;
     const track = this.track(msg.turn_id);
     const sentence: Sentence = { text: msg.text, emotion: msg.emotion };
     track.sentences.set(msg.seq, sentence);
+    if (msg.audio === false) {
+      this.flashQueue.push({ turnId: msg.turn_id, sentence });
+      this.pumpFlash();
+      return;
+    }
     track.pending.add(msg.seq);
     if (this.active && this.active.turnId === msg.turn_id && this.active.seq === msg.seq) {
       this.sink.show(sentence.text, sentence.emotion, false);
