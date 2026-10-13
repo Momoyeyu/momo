@@ -21,7 +21,10 @@ pub fn run(cli: Cli) -> i32 {
         eprintln!("error: {e}");
         return e.exit_code();
     }
-    let ctx = cmds::Ctx { json: cli.json };
+    let ctx = cmds::Ctx {
+        json: cli.json,
+        env_file: cli.env_file.clone(),
+    };
     let result = match &cli.command {
         Command::Doctor(args) => cmds::doctor::run(args, &ctx),
         Command::Pull(args) => cmds::pull::run(args, &ctx),

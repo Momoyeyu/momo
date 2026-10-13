@@ -92,7 +92,7 @@ fn down(
     Ok(code)
 }
 
-fn down_inner(
+pub(crate) fn down_inner(
     doc: &ServeProfile,
     common: &ServeCommon,
     profile: &str,
@@ -420,7 +420,7 @@ fn up(
     Ok(code)
 }
 
-fn up_inner(
+pub(crate) fn up_inner(
     doc: &ServeProfile,
     common: &ServeCommon,
     profile: &str,
@@ -722,7 +722,10 @@ mod tests {
     static LOCK: Mutex<()> = Mutex::new(());
 
     fn test_ctx() -> super::super::Ctx {
-        super::super::Ctx { json: false }
+        super::super::Ctx {
+            json: false,
+            env_file: None,
+        }
     }
 
     fn common() -> ServeCommon {

@@ -21,9 +21,9 @@
 | `doctor` | 环境检查矩阵（system/toolchain/python/network/env/models/endpoints） | 已实现 |
 | `pull` | 按 momo-models `MANIFEST.toml` 下载 + sha256 校验 | 已实现 |
 | `serve up\|down\|status\|logs\|restart` | profile 组件表启停、存活/就绪探测、日志 tail | 已实现 |
-| `switch --to` | normal ↔ degraded 档位切换（`.env` 符号链接重指） | 未实现（stub，exit 1） |
-| `bench` | 端到端延迟测量（p50/p95，目标 <1.5s 出声） | 未实现（stub，exit 1） |
-| `gc` | 模型 GC：N-1 代清理、`models.lock` 联动 | 未实现（stub，exit 1） |
+| `switch --to` | normal ↔ degraded 档位切换（`.env` 符号链接重指） | 已实现 |
+| `bench` | 端到端延迟测量（p50/p95，目标 <1.5s 出声） | 已实现 |
+| `gc` | 模型 GC：N-1 代清理、`models.lock` 联动 | 已实现 |
 | `config check` | env schema 漂移检查（`config.schema.toml` ↔ 三侧 `.env.example` / `config.md`） | 已实现 |
 
 ### 子命令参数

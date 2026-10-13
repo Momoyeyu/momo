@@ -22,6 +22,7 @@ thiserror = "2"
 dotenvy = "0.15"
 owo-colors = "4"
 sha2 = "0.10"
+ulid = "1"
 
 # 进程探活/信号走 syscall（serve/proc.rs），不 spawn 外部 kill/ps。
 [target.'cfg(unix)'.dependencies]

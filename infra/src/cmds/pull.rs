@@ -500,8 +500,8 @@ fn check_file(path: PathBuf, model: &str, f: &FileEntry) -> Check {
     }
 }
 
-/// MANIFEST.toml 定位：`--manifest` 优先；否则按常见仓布局探测。
-/// 候选：momo-models 仓内 cwd、monorepo 根、infra/ 子目录、momo-models 兄弟仓。
+/// MANIFEST.toml 定位：`--manifest` 优先；否则按常见仓布局探测
+/// （候选清单见 manifest::default_manifest_path）。
 fn locate_manifest(args: &PullArgs) -> Result<PathBuf, AppError> {
     if let Some(p) = &args.manifest {
         if !p.is_file() {
@@ -512,22 +512,12 @@ fn locate_manifest(args: &PullArgs) -> Result<PathBuf, AppError> {
         }
         return Ok(p.clone());
     }
-    const CANDIDATES: &[&str] = &[
-        "models/MANIFEST.toml",
-        "models/models/MANIFEST.toml",
-        "../models/models/MANIFEST.toml",
-        "../momo-models/models/MANIFEST.toml",
-    ];
-    CANDIDATES
-        .iter()
-        .map(PathBuf::from)
-        .find(|p| p.is_file())
-        .ok_or_else(|| {
-            AppError::Config(format!(
-                "MANIFEST.toml not found (tried {}); use --manifest PATH",
-                CANDIDATES.join(", ")
-            ))
-        })
+    crate::manifest::default_manifest_path().ok_or_else(|| {
+        AppError::Config(format!(
+            "MANIFEST.toml not found (tried {}); use --manifest PATH",
+            crate::manifest::manifest_candidates().join(", ")
+        ))
+    })
 }
 
 fn summarize(checks: &[Check]) -> Summary {
