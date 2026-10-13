@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- momo Web 控制台 SPA：无构建链的 ES module 页面，由 infra/web 编译期内嵌。
-     路由（/ /components /models /config）由 assets/app.js 前端路由分发；
+     路由（/ /components /models /train /config）由 assets/app.js 前端路由分发；
      服务端对非 /api 未命中一律回退本文件（web/spa.rs）。 -->
 <html lang="zh-CN">
   <head>
@@ -17,6 +17,7 @@
         <a href="/" data-route="/">概览</a>
         <a href="/components" data-route="/components">组件</a>
         <a href="/models" data-route="/models">模型</a>
+        <a href="/train" data-route="/train">训练</a>
         <a href="/config" data-route="/config">配置</a>
       </nav>
       <span class="topbar-right" id="topbar-right"></span>

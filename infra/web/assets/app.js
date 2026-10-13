@@ -250,6 +250,7 @@ const ROUTES = new Map([
   ["/", "overview"],
   ["/components", "components"],
   ["/models", "models"],
+  ["/train", "train"],
   ["/config", "config"],
 ]);
 
