@@ -182,6 +182,8 @@ sequenceDiagram
 
 provider 只在下一 turn 前执行 warmup → probe → 原子 activate；成功前保留旧 provider，失败 rollback。活动 turn 存在时先由用户明确取消。凭据只在服务端保存。
 
+UI 侧 text-only 判定：`output.sentence` 不携带音频可用性标记，一句是否配音只能由「downlink stream 是否到来」推断——`turn.finished` 前始终未绑定 `audio.open` 的句子即 text-only，UI 以字幕短显（约 3s）呈现后归入气泡历史。合成并发使 `audio.open` 的跨句顺序不作保证（帧可交错、一句可对应多条 stream），UI 不得以「已见到更大 `sentence_seq` 的 open」推断前句无音频。
+
 ## 10. close code
 
 `1000` 正常；`4001` 版本不匹配；`4400` hello timeout / malformed / 协议违反；`4401` unauthorized；`1011` 服务端错误。未知 message type 可回 non-fatal `error`；无法恢复的状态分叉关闭连接。控制消息不得静默丢弃。500ms 仅是 interruption settlement；LLM/synthesis stall 使用 `MOMO_LLM_TIMEOUT_MS` 或 turn provider timeout。
