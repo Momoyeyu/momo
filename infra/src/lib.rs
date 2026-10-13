@@ -14,6 +14,7 @@ pub mod manifest;
 pub mod models;
 pub mod net;
 pub mod output;
+pub mod pipeline;
 pub mod serve;
 pub mod web;
 
@@ -37,6 +38,7 @@ pub fn run(cli: Cli) -> i32 {
         Command::Switch(args) => cmds::switch::run(args, &ctx),
         Command::Bench(args) => cmds::bench::run(args, &ctx),
         Command::Gc(args) => cmds::gc::run(args, &ctx),
+        Command::Pipeline(args) => cmds::pipeline::run(args, &ctx),
         Command::Config(args) => cmds::config::run(args, &ctx),
         Command::Web(args) => cmds::web::run(args, &ctx),
         Command::Jobs(args) => cmds::jobs::run(args, &ctx),

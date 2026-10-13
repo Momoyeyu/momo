@@ -391,6 +391,37 @@ pub struct WebReport {
     pub url: String,
 }
 
+// ---------- pipeline（训练编排；持久化形态即 RunState，--json 与其同构） ----------
+
+/// `pipeline list` 单条定义摘要。
+#[derive(Debug, Serialize)]
+pub struct PipelineInfo {
+    pub name: String,
+    pub description: String,
+    /// `{date}` 未展开的产物相对路径（MOMO_MODELS_DIR 下）。
+    pub artifact_dir: String,
+    pub steps: Vec<String>,
+    pub path: String,
+}
+
+/// `pipeline list --json`。
+#[derive(Debug, Serialize)]
+pub struct PipelineListReport {
+    pub schema: u8,
+    pub command: String,
+    pub dir: String,
+    pub pipelines: Vec<PipelineInfo>,
+}
+
+/// `pipeline run|resume|status --json`：run 状态平铺（含 steps 数组）。
+#[derive(Debug, Serialize)]
+pub struct PipelineRunReport {
+    pub schema: u8,
+    pub command: String,
+    #[serde(flatten)]
+    pub run: crate::pipeline::RunState,
+}
+
 /// 未实现子命令的统一 JSON（`{schema, command, status:"not_implemented"}`）。
 #[derive(Debug, Serialize)]
 pub struct CommandStatus {

@@ -40,6 +40,8 @@ pub enum Command {
     Bench(BenchArgs),
     /// Model GC: keep N-1 generations, reconcile models.lock
     Gc(GcArgs),
+    /// Training pipelines: list/run/resume/status (defs in infra/pipelines/*.toml)
+    Pipeline(PipelineArgs),
     /// env schema drift check (config.schema.toml vs .env.example / config.md)
     Config(ConfigArgs),
     /// Web console: axum server, embedded SPA + /api route base
@@ -261,4 +263,94 @@ pub struct GcArgs {
     /// Confirm deletion (without --yes this is equivalent to --dry-run)
     #[arg(long)]
     pub yes: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct PipelineArgs {
+    #[command(subcommand)]
+    pub action: PipelineAction,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum PipelineAction {
+    /// List pipeline definitions (--dir or auto-detected infra/pipelines/)
+    List(PipelineDirArgs),
+    /// Start a new run: serial steps, per-step manifest, artifact registration
+    Run(PipelineRunArgs),
+    /// Resume a run from its first non-succeeded step (default: latest run)
+    Resume(PipelineResumeArgs),
+    /// Show a run's step table (default: latest run)
+    Status(PipelineStatusArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct PipelineDirArgs {
+    /// Pipeline definitions directory (default: auto-detect infra/pipelines/)
+    #[arg(long, value_name = "PATH")]
+    pub dir: Option<PathBuf>,
+}
+
+#[derive(Debug, Args)]
+pub struct PipelineRunArgs {
+    /// Pipeline name (infra/pipelines/<name>.toml)
+    #[arg(long, value_name = "NAME")]
+    pub name: String,
+
+    /// Inject a [vars] value, repeatable (--set input=/path/to/raw)
+    #[arg(long, value_name = "KEY=VALUE")]
+    pub set: Vec<String>,
+
+    /// Expand the plan without executing commands or registering artifacts
+    #[arg(long)]
+    pub dry_run: bool,
+
+    /// Artifact generation date yyyymmdd (default: today UTC)
+    #[arg(long, value_name = "YYYYMMDD")]
+    pub date: Option<String>,
+
+    /// MANIFEST.toml the register step appends to (default: auto-detect)
+    #[arg(long, value_name = "PATH")]
+    pub manifest: Option<PathBuf>,
+
+    /// Pipeline definitions directory (default: auto-detect infra/pipelines/)
+    #[arg(long, value_name = "PATH")]
+    pub dir: Option<PathBuf>,
+}
+
+#[derive(Debug, Args)]
+pub struct PipelineResumeArgs {
+    /// Pipeline name
+    #[arg(long, value_name = "NAME")]
+    pub name: String,
+
+    /// Run id to resume (default: latest run of the pipeline)
+    #[arg(long, value_name = "ID")]
+    pub run_id: Option<String>,
+
+    /// Inject/override a [vars] value, repeatable
+    #[arg(long, value_name = "KEY=VALUE")]
+    pub set: Vec<String>,
+
+    /// MANIFEST.toml the register step appends to (default: auto-detect)
+    #[arg(long, value_name = "PATH")]
+    pub manifest: Option<PathBuf>,
+
+    /// Pipeline definitions directory (default: auto-detect infra/pipelines/)
+    #[arg(long, value_name = "PATH")]
+    pub dir: Option<PathBuf>,
+}
+
+#[derive(Debug, Args)]
+pub struct PipelineStatusArgs {
+    /// Pipeline name
+    #[arg(long, value_name = "NAME")]
+    pub name: String,
+
+    /// Run id (default: latest run of the pipeline)
+    #[arg(long, value_name = "ID")]
+    pub run_id: Option<String>,
+
+    /// Pipeline definitions directory (default: auto-detect infra/pipelines/)
+    #[arg(long, value_name = "PATH")]
+    pub dir: Option<PathBuf>,
 }

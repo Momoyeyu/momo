@@ -24,6 +24,7 @@
 | `switch --to` | normal ↔ degraded 档位切换（`.env` 符号链接重指） | 已实现 |
 | `bench` | 端到端延迟测量（p50/p95，目标 <1.5s 出声） | 已实现 |
 | `gc` | 模型 GC：N-1 代清理、`models.lock` 联动 | 已实现 |
+| `pipeline list\|run\|resume\|status` | 训练 pipeline 编排：`infra/pipelines/*.toml` 定义，串行 step + exec_local/exec_ssh + 断点续跑 + 产物登记 | 已实现 |
 | `config check` | env schema 漂移检查（`config.schema.toml` ↔ 三侧 `.env.example` / `config.md`） | 已实现 |
 | `web` | Web 控制台基座：axum server + include_dir 内嵌 SPA + `/api` 路由树 + SSE | 已实现 |
 | `jobs submit\|list\|status\|log\|cancel` | job runner：exec_local 执行器、状态机、日志 tail；store 落 state dir（`jobs exec` 为内部 helper） | 已实现 |
@@ -50,6 +51,13 @@
 | `gc` | `--dry-run` | 默认行为 | 只报告不删除 |
 | `gc` | `--keep N` | `2` | 微调产物保留代数（N-1 中保留最新两代） |
 | `gc` | `--yes` | off | 确认执行删除（不带 `--yes` 时等价 `--dry-run`） |
+| `pipeline run` | `--name NAME` | — | pipeline 定义名（`infra/pipelines/<name>.toml`） |
+| `pipeline run` | `--set KEY=VALUE`（可重复） | — | 注入定义 `[vars]` 变量；required 变量缺失 → exit 2 |
+| `pipeline run` | `--dry-run` | off | 不执行命令不登记，只展开 step 计划与命令（状态不落盘） |
+| `pipeline run` | `--date YYYYMMDD` | 当日 UTC | 产物代际日期（`{date}` 占位与 `ft-*-<yyyymmdd>` 命名） |
+| `pipeline run` | `--manifest PATH` | 自动探测 momo-models `models/MANIFEST.toml` | register step 追加条目的清单 |
+| `pipeline run/resume/status` | `--dir PATH` | 自动探测 `infra/pipelines/` | pipeline 定义目录 |
+| `pipeline resume/status` | `--run-id ID` | 最近一个未完成 / 最新 run | 目标 run |
 | `config check` | `--root PATH` | 从 CWD 向上定位 `config.schema.toml` | 仓库根目录 |
 | `web` | `--listen ADDR` | `127.0.0.1:7900` | 监听地址；解析结果任一非 loopback 时 `MOMO_WEB_TOKEN` 必填，未设拒启（exit 2） |
 | `jobs submit` | `--kind pull\|serve\|train` | `train` | job 来源域（执行器恒为 exec_local） |
@@ -216,7 +224,41 @@ stateDiagram-v2
 | `GET /api/jobs/{id}` | 单条 record；未知 id → JSON 404 |
 | `POST /api/jobs/{id}/cancel` | 同 `jobs cancel`；终态幂等 |
 | `GET /api/jobs/{id}/logs?cursor=N` | SSE tail：`event: log` 携 `{cursor, chunk}`；终态排空后 `event: end` 关流；cursor 越界（截断）从 0 重读 |
+## 训练 pipeline 编排（`momoctl pipeline`）
 
+`infra/pipelines/*.toml` 声明 pipeline，infra 只做编排不实现训练/推理（ADR-025）：step 只编排名称、执行方式、命令、产物路径与重试策略，训练实体仍调 momo-models `training/`、`eval/` 脚本。内置两条定义：`voice-sft`（prepare → upload → `sft_cosyvoice3`（ssh）→ rsync 回传 → frozen gate 盲听 → register）与 `persona-qlora`（build → regression-20 基线 → upload → `lora_qwen`（ssh）→ 回传 → frozen gate 回归 ≥34 且无 0 分 → register）。
+
+定义 schema：
+
+```toml
+name = "voice-sft"
+description = "..."
+artifact_dir = "tts/ft-cosyvoice3-{date}"   # 相对 ${MOMO_MODELS_DIR}，register step 落点
+
+[vars.input]
+description = "raw voice material directory (10-60min clean speech)"
+required = true                              # 由 `pipeline run --set input=...` 注入，缺失 exit 2
+
+[vars.train_host]
+default = "bigstrong"                        # 训练机 ssh alias（4090D）
+
+[[step]]
+name = "sft-cosyvoice3"
+exec = "ssh"                                 # local | ssh | register
+ssh_host = "{var:train_host}"                # exec=ssh 必填
+workdir = "{var:remote_root}/models"         # local：相对 repo 根；ssh：远端路径字面量
+command = "uv run python training/voice/sft_cosyvoice3.py ..."
+artifact = "{artifact_dir}"                  # 可选；per-step manifest 记录 + metrics.json 拾取
+retries = 1                                  # 失败额外重试次数（默认 0）
+```
+
+命令支持占位符：`{date}`（run 日 yyyymmdd）、`{run_id}`、`{run_dir}`、`{models_dir}`、`{artifact_dir}`/`{artifact_rel}`、`{repo_root}`、`{var:NAME}`；`$ENV` 展开交给 shell（ssh 侧在远端展开）。`exec=ssh` 经 `ssh <host> bash -lc '<cd workdir && command>'` 非交互派发（stdout/stderr 落 `logs/<step>-attempt<N>.log`）。
+
+执行模型：step 严格串行；run 状态落在 `${XDG_STATE_HOME:-~/.local/state}/momo/pipeline-runs/<pipeline>/<run_id>/`（run_id 为 ULID，字典序即时间序），`run.json` 聚合全量状态，每步另写 `steps/<step>.json`——per-step artifact manifest 含 step、artifact 路径、metrics（自动拾取 `<artifact>/metrics.json`，register 步写入 files/bytes/登记名）、起止时间戳，tmp+rename 原子落盘。`resume` 跳过 `succeeded` step、从首个 failed/pending step 续跑（中途崩溃留 `running` 态按 failed 重跑）；`status` 输出 run 表（`--json` 同 DTO）。step 失败 → run `failed`、exit 1；run not found → exit 2。
+
+`register` 是内建 step 类型（无 command）：要求 `{artifact_dir}/train-manifest.json` 已存在（训练脚本产出，含基座 revision、数据量、lr/steps/loss，缺失字段记 metrics.warnings 不硬拦）；递归复算产物文件 size+sha256 → 追加 `[[model]]` 条目（`name=ft-<engine>-<date>`、`repo_id=dest`、`revision=<date>`、`[[model.files]]` 全量 hash，`pull --check` 口径一致）+ upsert `models.lock`（`repo = "<dest>@<date>"`，同 `pull` 写入格式）。激活不改 env——按 voice-clone.md「只改 env」灰度，`MOMO_TTS_MODEL_DIR` 指向新目录即 promote，旧目录在 lock/gc N-1 代内天然是 rollback 目标。
+
+评测骨架随定义落盘：`evals/persona/regression-20.yaml`（persona.md 六类 20 题、0/1/2 三档 ≥34 且无 0 分）与 `evals/voice/testset-15.yaml`（voice-clone.md 15 句覆盖 + 3 段固定参考音占位）。
 ## 模型激活
 
 fetch 写临时目录 → checksum/revision 校验 → provider warmup/probe → 原子 activate。任一步失败保留 active 版本；promotion 后至少保留可回滚版本。详见 [model-fetch.md](../05-ops/model-fetch.md)。
