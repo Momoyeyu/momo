@@ -251,9 +251,54 @@ pub fn pidfile_started(component: &str) -> Option<SystemTime> {
 }
 
 /// `PATH` 查找可执行文件（momod 定位；`--app-bin` 优先于此）。
+/// windows 可执行文件带 `.exe` 后缀：`bin` 未以 `.exe` 结尾时追加 `bin.exe` 探测。
 pub fn find_in_path(bin: &str) -> Option<PathBuf> {
     let path = std::env::var_os("PATH")?;
     std::env::split_paths(&path)
-        .map(|dir| dir.join(bin))
+        .flat_map(|dir| candidates(dir, bin))
         .find(|p| p.is_file())
+}
+
+/// 各平台候选文件名：unix 仅 `bin`；windows 追加 `.exe`（已带 .exe 不重复探测）。
+#[cfg(windows)]
+fn candidates(dir: PathBuf, bin: &str) -> Vec<PathBuf> {
+    let mut v = vec![dir.join(bin)];
+    if !bin.to_ascii_lowercase().ends_with(".exe") {
+        v.push(dir.join(format!("{bin}.exe")));
+    }
+    v
+}
+
+/// unix 无扩展名探测：可执行判定靠文件存在（权限位由 spawn 阶段兜底）。
+#[cfg(not(windows))]
+fn candidates(dir: PathBuf, bin: &str) -> Vec<PathBuf> {
+    vec![dir.join(bin)]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 自身 pid 必活；`is_alive` 不能把它误判为死。
+    /// （win: OpenProcess 自查；unix: kill(pid,0) 自查。）
+    #[test]
+    fn is_alive_reports_self() {
+        assert!(is_alive(std::process::id()));
+    }
+
+    /// 不可能存活的 pid 必判死（4_000_000 超出常见 pid 空间）。
+    #[test]
+    fn is_alive_reports_dead_pid() {
+        assert!(!is_alive(4_000_000));
+        // pid 0 在 kill(2)/OpenProcess 都是特殊语义，显式判死。
+        assert!(!is_alive(0));
+    }
+
+    /// `find_in_path` 能找到 PATH 上真实存在的工具（cargo 是构建依赖，必在）。
+    /// windows 分支顺带验证 `.exe` 追加探测路径可达。
+    #[test]
+    fn find_in_path_locates_cargo() {
+        assert!(find_in_path("cargo").is_some());
+        assert!(find_in_path("definitely-not-a-real-bin-momo").is_none());
+    }
 }
