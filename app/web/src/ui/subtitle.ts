@@ -1,4 +1,5 @@
 // 字幕条（#147）：Live2D 画面下方「正在说的这句」浮层，与聊天气泡的
+// 全量历史并存。
 //
 // 驱动源（protocol §2/§6）：
 //   - output.sentence：登记 turn 内 seq→{text,emotion} 映射并计入 pending；
@@ -208,6 +209,7 @@ export class SubtitleController {
   }
 }
 
+/** 逐字显现节奏（ms/字）。 */
 const TYPEWRITER_MS = 26;
 
 /** 绑定 #subtitle 对话框 DOM（名牌 + #subtitle-text）；返回控制器供 main.ts 接 ws 事件。 */
