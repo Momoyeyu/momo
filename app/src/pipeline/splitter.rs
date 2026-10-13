@@ -1,17 +1,28 @@
 //! 增量句切：标点 + 上限 + 情感 tag 提取（momo-app.md §splitter）。
 //!
-//! 规则：句末标点 `。！？!?；;` 立即切；超 `max_chars` 在次级标点 `，,` 处切
-//! （无次级标点则硬切）；行首 `[happy]` 类 tag 提取进 `emotion` 并从 `text`
-//! 剔除；code block（``` 围栏）内不切。纯字符串操作、无依赖，是单元测试重点。
+//! 规则：CJK 句末标点 `。！？；;` 与换行立即切；ASCII `.!?` 仅在后接空白时切
+//! （小数 `3.14`、URL `a.b`、缩写 `Mr.`/`e.g.` 靠 lookahead 豁免；buffer 末尾
+//! 等待下一 token 或由 `flush` 收句）；逗号 `，,` 在 buffer ≥ `soft_chars` 时
+//! 软切；buffer ≥ `max_chars` 在最近逗号处切（无则硬切）；行首 `[happy]` 类
+//! tag 提取进 `emotion` 并从 `text` 剔除；code block（``` 围栏）内不切。
+//! 纯字符串操作、无依赖，是单元测试重点。
 
 use crate::proto::message::EmotionTag;
 
-/// 句末标点：立即切。
-const SENT_END: &[char] = &['。', '！', '？', '!', '?', '；', ';'];
-/// 次级标点：超上限时优先在此切。
+/// CJK 句末强标点与换行：立即切（`\r\n` 由 `\n` 触发，`\r` 不单独处理）。
+const SENT_END: &[char] = &['。', '！', '？', '；', ';', '\n'];
+/// ASCII 句末标点：仅在后接空白时切（需 lookahead）。
+const ASCII_END: &[char] = &['.', '!', '?'];
+/// 逗号：buffer ≥ `soft_chars` 时软切；超上限兜底也优先在最近逗号处切。
 const SECONDARY: &[char] = &['，', ','];
 /// code block 围栏。
 const CODE_FENCE: &str = "```";
+/// 常见英文缩写（小写、不含尾点）：`Mr. `/`e.g. ` 这类 `.`+空白不是句末。
+/// 非穷举，只覆盖高频情形；表外缩写后接空白仍按句末处理。
+const ABBREVIATIONS: &[&str] = &[
+    "mr", "mrs", "ms", "dr", "st", "jr", "sr", "prof", "vs", "etc", "no", "vol", "fig", "approx",
+    "dept", "inc", "ltd", "co", "corp", "mt", "ft", "e.g", "i.e", "a.m", "p.m",
+];
 
 /// 一条成形句：`output.sentence` 的数据来源。
 #[derive(Debug, Clone, PartialEq)]
@@ -28,15 +39,20 @@ pub struct Sentence {
 pub struct SentenceSplitter {
     buf: String,
     next_index: u32,
+    /// `MOMO_SENT_SOFT_CHARS` 软切阈值：buffer 达到后遇逗号即切。
+    soft_chars: usize,
     /// `MOMO_SENT_MAX_CHARS` 硬上限。
     max_chars: usize,
 }
 
 impl SentenceSplitter {
-    pub fn new(max_chars: usize) -> Self {
+    /// `soft_chars` 对应 `Config::sent_soft_chars`，`max_chars` 对应
+    /// `Config::sent_max_chars`；预期 `soft_chars <= max_chars`。
+    pub fn new(soft_chars: usize, max_chars: usize) -> Self {
         Self {
             buf: String::new(),
             next_index: 1,
+            soft_chars,
             max_chars,
         }
     }
@@ -79,13 +95,20 @@ impl SentenceSplitter {
             let ch = self.buf[i..].chars().next()?;
             let end = i + ch.len_utf8();
             if !in_code {
+                chars += 1;
                 if SENT_END.contains(&ch) {
+                    return Some(end);
+                }
+                if ASCII_END.contains(&ch) && self.is_ascii_sentence_end(i, end, ch) {
                     return Some(end);
                 }
                 if SECONDARY.contains(&ch) {
                     last_secondary = Some(end);
+                    // 软切：buffer 达阈值后在第一个逗号处收句。
+                    if chars >= self.soft_chars {
+                        return Some(end);
+                    }
                 }
-                chars += 1;
                 if chars >= self.max_chars {
                     // 超上限：有次级标点切那里，否则硬切当前位置。
                     return Some(last_secondary.unwrap_or(end));
@@ -94,6 +117,39 @@ impl SentenceSplitter {
             i = end;
         }
         None
+    }
+
+    /// ASCII `.!?` 的 lookahead：仅在后接空白时成句；buffer 末尾不算切点，
+    /// 等下一 token 或 `flush`——否则 `e.`（`e.g.` 的增量前缀）会被误切。
+    /// 后接非空白时直接豁免：`3.14`、`example.com`、`a.b/c`、`?!` 连写。
+    fn is_ascii_sentence_end(&self, start: usize, end: usize, ch: char) -> bool {
+        let Some(next) = self.buf[end..].chars().next() else {
+            return false;
+        };
+        if !next.is_whitespace() {
+            return false;
+        }
+        // 后接空白时，`.` 再排除缩写（`Mr. `、`e.g. `）与词首字母（`J. R.`）。
+        ch != '.' || !self.is_abbreviation(start)
+    }
+
+    /// `dot` 处 `.` 的前置词（`e.g` / `Mr` / `J`）是否为缩写或词首字母。
+    /// 词取 `.` 前连续的 ASCII 字母数字与内嵌 `.`（`e.g` 整体算一个词）。
+    fn is_abbreviation(&self, dot: usize) -> bool {
+        let mut begin = dot;
+        while begin > 0 {
+            let prev = self.buf[..begin].chars().next_back().expect("begin > 0");
+            if prev.is_ascii_alphanumeric() || prev == '.' {
+                begin -= prev.len_utf8();
+            } else {
+                break;
+            }
+        }
+        let word = &self.buf[begin..dot];
+        if word.len() == 1 && word.chars().next().is_some_and(|c| c.is_ascii_alphabetic()) {
+            return true; // 单字母词首：`J.` `A.`。
+        }
+        ABBREVIATIONS.contains(&word.to_ascii_lowercase().as_str())
     }
 
     /// 提取行首 `[tag]`，产出 `Sentence`；纯空白丢弃。
