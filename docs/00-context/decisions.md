@@ -5,15 +5,23 @@
 
 ```mermaid
 flowchart TD
+    ADR001["ADR-001 monorepo<br/>协作期形态 → 拆分"] --> ADR027["ADR-027 终态拆分<br/>app=momo / models+infra=momo-infra"]
+    ADR001 --> ADR002["ADR-002 语言分工<br/>Rust/Python/TS"]
     ADR001 --> ADR003["ADR-003 三段式进程<br/>+ momo-ws 协议"]
     ADR002 --> ADR004["ADR-004 编排器在 app<br/>推理在 models"]
+    ADR028["ADR-028 app 单槽位 provider<br/>容灾在服务侧"] --> ADR029["ADR-029 momo-infra<br/>训练 + serving gateway"]
+    ADR011["ADR-011 Web 优先迭代<br/>Tauri 后置复刻"] --> ADR012["ADR-012 Live2D+口型"]
     ADR013["ADR-013 回合语义/<br/>barge-in 三动作"] --> ADR003
     ADR019["ADR-019 扩展过滤边界"] --> FUTURE["未来 streaming 前置条件"]
 ```
 
 ## 仓库与工程
 
+### ADR-001 协作期 monorepo，按目录划分模块（非终态）
 
+- **决策**：当前 `momo` 以单一仓库组织；`app/`、`models/`、`infra/`、`site/`、`docs/` 按目录划分所有权，边界见 `01-architecture/boundaries.md`。**monorepo 只是协作期形态**，终态拆分见 ADR-027。
+- **理由**：协议、模型与文档变更需要原子同步；目录级 CI 仍可保持工具链隔离。
+- **被否**：现在就拆成多个仓库（跨仓协议迁移和文档同步无法原子完成，拆分在模块契约稳定后进行）。
 
 ### ADR-002 语言分工：Rust=运行时与工具，Python=模型，TS=薄前端
 
@@ -28,8 +36,23 @@ flowchart TD
 
 ### ADR-020 文档先于代码 + 单一 GitHub Project
 
+- **决策**：协作期内单一 monorepo + 1 个 GitHub Project（Projects V2）排需求；协议/状态机/配置先写文档再实现。仓库拆分后 project 归属随之迁移。
 - **理由**：单人项目最大的风险是决策漂移，文档是唯一的对齐物。
 - **被否**：先代码后补文档（单人也会忘）；每仓各自 issue 分散排期（全局优先级不可见）。
+
+### ADR-027 终态仓库拆分：`app` → `momo`，`models`+`infra` → `momo-infra`
+
+- **决策**：模块契约稳定后仓库按产品边界拆分——`app/`（含随行的 `site/` 与产品 `docs/`）独立为 **`momo`**（终端用户产品仓）；`models/` + `infra/` 合并为 **`momo-infra`**（自有 AI 基础设施仓）。拆分前 monorepo 内的目录边界即按终态仓库边界设计。
+- **理由**：app 是给终端用户的产品（轻、可分发、provider 由用户配置）；momo-infra 是自有训练/serving 底座（重、面向自己）——两者的用户、发布节奏与依赖体量完全不同，终态必然分仓。
+- **被否**：把 monorepo 定为终态（用户产品与重型 AI infra 混在一仓，分发与依赖都无法收敛）；现在立即拆仓（协议与边界未稳定，跨仓同步成本高——ADR-001 已述）。
+
+### ADR-028 app 边界：单槽位 provider 配置，容灾在服务侧
+
+- **决策**：app 面向终端用户，每类能力只持有**一个**可配置 endpoint——OpenAI-compatible LLM、ASR 服务、TTS 服务各一；Live2D 模型可替换（默认 Hiyori）。app **不内置**多 provider 容灾、内部降级编排或负载均衡——provider 不可用只做 UI 层呈现降级（字幕兜底、禁用语音输入等），多路容灾由服务侧或 momo-infra gateway 承担。
+- **理由**：把降级编排放进 app 会让轻产品膨胀并与 provider 实现耦合；单一 endpoint 语义使「换服务 = 改配置」对用户和 app 都最简单。
+- **被否**：app 内建多 provider 列表+故障切换（臃肿且与 momo-infra gateway 职责重叠）；app 内嵌推理（同 ADR-004 被否理由）。
+
+
 
 ## 架构与协议
 
@@ -59,7 +82,11 @@ flowchart TD
 - **理由**：外部内容的风险模型与本地 companion 不同，过滤必须在公开接入前完成，同时不能污染 turn core。
 - **被否**：把平台过滤写进 turn core runtime；公开接入后再补。
 
+### ADR-021 app 直连单一 LLM 端点；gateway 属 momo-infra
 
+- **决策**：**app 侧不设 gateway**——编排器直连配置的 OpenAI-compatible endpoint（SSE），上游可为 vLLM / DeepSeek / llama.cpp / momo-infra gateway，对 app 只是 `MOMO_LLM_ENDPOINT` 指向不同。多模型容灾、负载均衡等 gateway 能力归属 **momo-infra**（ADR-029），对内可做，对外（对 app）仍是单一接口。
+- **理由**：app 保持薄——一个 endpoint 就是全部认知；gateway 价值在多后端编排，那是 infra 的事，对 app 透明。
+- **被否**：app 内置多 endpoint failover（ADR-028）；把 LLM 纳入 momo-ws 自定义消息（同 ADR-006 被否理由）。
 
 ### ADR-022 编排器与语音服务共享通信契约
 
@@ -68,7 +95,11 @@ flowchart TD
 - **被否**：为模型服务另定义 REST `/v1/*` 作为运行时主协议。
 
 
+### ADR-011 Web 优先迭代，Tauri 后置复刻
 
+- **决策**：**Web（momod + Web UI）是交互主迭代面**——所有对话、呈现与相处体验先在浏览器内定稿；Tauri 2 桌面宿主在交互验证完成后落地，**复刻同一套 Web 交互**（透明窗口、system menu、拖拽/缩放、置顶与可选 click-through），不与 Web 双轨并行。平台能力不支持时使用普通可见窗口，menu 不可用时禁用点击穿透。
+- **理由**：Web 迭代成本远低于 Tauri；交互形态（字幕、打断、动效节奏）需要快速试错，先锁宿主等于给未定稿的交互上双份约束。桌面在场感仍是终态闭环的一部分，只是顺序后置。
+- **被否**：Tauri 先行/并行（交互未定稿时双端维护，拖慢迭代；且当前实装的 momod+Web 已验证全链路可行）；放弃桌面宿主（在场感是产品闭环，终态仍需要）。
 
 ### ADR-012 Live2D = Pixi 7 adapter + 官方许可 sample；口型来自实际播放
 
@@ -76,7 +107,11 @@ flowchart TD
 - **理由**：先复用官方资源验证真实 Live2D，同时保持角色与 renderer 可替换。Runtime Core、sample 与应用代码许可证分别核验。
 - **被否**：自研 Runtime；用假 CSS 角色替代实际 Live2D；让 emotion motion 覆盖 lipsync。
 
+### ADR-014 长期记忆 = momo 自主管理 + 用户可审计可撤销
 
+- **决策**：长期记忆由 **momo 自主管理**——自主归纳、整理、引用与遗忘，这是「像人」与自进化的核心，不做逐条人工确认制。用户侧保留完整监督面：查看记忆正文与来源、编辑、检索、删除，删除须同时清理正文和 vector/index。embedding 可复用 sqlite-vec + BGE-M3 adapter。
+- **理由**：像人的核心是"她记得"，不是"用户替她记"；自进化要求记忆系统是角色自身能力而非用户管理负担。可解释与可撤销仍是底线，落在审计与撤销能力上而非确认门槛上。
+- **被否**：逐条 proposal+确认（把记忆管理变成用户负担，阻断自进化）；只删 UI 记录但保留向量索引；外部常驻向量库。
 
 ### ADR-015 工具与截图逐次授权
 

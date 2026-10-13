@@ -71,6 +71,7 @@ flowchart TB
 
 ASR/TTS 不就绪不阻止 LLM 文字回复；LLM 不就绪时只保留 draft、设置与 idle avatar。
 
+## 可用性与容灾边界
 
 
 ## 核心不变量
