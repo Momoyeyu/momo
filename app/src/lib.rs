@@ -8,6 +8,7 @@ pub mod audio;
 pub mod config;
 pub mod error;
 pub mod logging;
+pub mod persona;
 pub mod pipeline;
 pub mod proto;
 pub mod session;

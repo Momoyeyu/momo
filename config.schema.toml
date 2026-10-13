@@ -11,6 +11,7 @@ key = [
   # ===== 编排器（app 读） =====
   { name = "MOMO_ORCH_LISTEN", type = "string", default = "127.0.0.1:7800", readers = ["app", "infra"], files = ["app", "infra"], description = "WS + 静态 UI 监听地址；infra doctor 探 /healthz" },
   { name = "MOMO_UI_DIR", type = "path", default = "./web/dist", readers = ["app"], files = ["app"], description = "前端静态目录（打包内嵌时忽略）" },
+  { name = "MOMO_PERSONA_FILE", type = "path", default = "persona/momo.yaml", readers = ["app"], files = ["app"], description = "persona card 路径；读不到回退内嵌 card，每回合重读（热加载）" },
   { name = "MOMO_UI_TOKEN", type = "string", default = "", sensitive = true, readers = ["app"], files = ["app"], description = "/ws/ui hello 的期望 auth_token；desktop 启动时注入，空=standalone dev 不比对（字段仍必填）" },
   { name = "MOMO_WEB_ORIGIN", type = "url", default = "http://localhost:5173", readers = ["app"], files = ["app"], description = "浏览器来源（CORS/WS Origin 白名单）" },
   { name = "MOMO_LLM_ENDPOINT", type = "url", default = "http://mac-studio.local:7820/v1", readers = ["app", "infra"], files = ["app", "infra"], examples = { infra = "http://mac-studio:7820/v1" }, description = "大脑 OpenAI-compatible base URL；infra doctor 探 /models" },

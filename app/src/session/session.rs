@@ -20,6 +20,7 @@ use crate::{
     audio::sink::AudioSink,
     config::Config,
     error::AppError,
+    persona::Persona,
     pipeline::{
         asr::{AsrClient, AsrEvent, MomoWsAsr, UPLINK_SAMPLE_RATE, stream_key},
         llm::{ChatRequest, LlmClient, OpenAiCompatLlm},
@@ -126,6 +127,8 @@ pub struct SessionDeps {
     pub barge_in_min: Duration,
     /// `MOMO_SESSION_RESUME_TTL_MS`：WS 断开后 session 保活窗口。
     pub resume_ttl: Duration,
+    /// persona card 源（`MOMO_PERSONA_FILE`）；渲染 system prompt 注入 `llm_prompt`。
+    pub persona: Persona,
 }
 
 impl SessionDeps {
@@ -140,6 +143,7 @@ impl SessionDeps {
             barge_in_enabled: config.barge_in_enabled,
             barge_in_min: config.barge_in_min,
             resume_ttl: config.session_resume_ttl,
+            persona: Persona::new(config.persona_file.clone()),
         }
     }
 }
@@ -181,6 +185,8 @@ pub struct Session {
     sink: Option<Arc<AudioSink>>,
     /// 对话历史与已播文本记账（`MOMO_HISTORY_TURNS`）。
     history: History,
+    /// persona card 源；`llm_prompt` 每回合重渲染（hot reload）。
+    persona: Persona,
     llm: Option<Arc<dyn LlmClient>>,
     asr: Option<Arc<dyn AsrClient>>,
     tts: Option<Arc<dyn TtsClient>>,
@@ -264,6 +270,7 @@ impl Session {
             turn: None,
             sink: None,
             history: History::new(deps.history_turns),
+            persona: deps.persona.clone(),
             llm: deps.llm,
             asr: deps.asr,
             tts: deps.tts,
@@ -1330,10 +1337,21 @@ impl Session {
         });
     }
 
-    /// 注入历史的 LLM prompt：`history.messages()`（MOMO_HISTORY_TURNS 截断）
-    /// + 本轮 user 文本。
+    /// 注入 persona + 历史的 LLM prompt：system(card 渲染，每回合重读热加载)
+    /// + `history.messages()`（MOMO_HISTORY_TURNS 截断）+ 本轮 user 文本。
     fn llm_prompt(&self, user_text: &str) -> Vec<ChatMessage> {
+        let system = self.persona.system_prompt();
         let mut messages = self.history.messages().to_vec();
+        if !system.is_empty() {
+            messages.insert(
+                0,
+                ChatMessage {
+                    role: Role::System,
+                    content: system,
+                    partial: false,
+                },
+            );
+        }
         messages.push(ChatMessage {
             role: Role::User,
             content: user_text.to_string(),
