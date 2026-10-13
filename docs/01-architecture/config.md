@@ -13,6 +13,7 @@ flowchart LR
 内置默认 < 环境变量 < CLI flag，高优先级覆盖低优先级。CLI flag 命名 = env 名去 `MOMO_` 前缀转 kebab-case（`MOMO_LLM_ENDPOINT` → `--llm-endpoint`）。启动时各组件把**生效值**打进日志（敏感项打码，见 §4）。
 
 
+### 2.1 通用（多组件共用，读取组件见表）
 
 | 名称 | 含义 | 默认值 | 取值 | 读取组件 | 敏感 |
 |---|---|---|---|---|---|
@@ -22,6 +23,22 @@ flowchart LR
 
 ### 2.2 编排器（app 读）
 
+| 名称 | 含义 | 默认值 | 取值 | 读取组件 | 敏感 |
+|---|---|---|---|---|---|
+| `MOMO_UI_DIR` | 前端静态目录（打包内嵌时忽略） | `./web/dist` | path | app | 否 |
+| `MOMO_WEB_ORIGIN` | 浏览器来源（CORS/WS Origin 白名单） | `http://localhost:5173` | URL | app | 否 |
+| `MOMO_UI_TOKEN` | `/ws/ui` hello 的期望 `auth_token`；desktop 启动时注入，空=standalone dev 不比对（字段仍必填） | 空 | str | app | **是** |
+| `MOMO_LLM_TIMEOUT_MS` | LLM 请求总超时 | `30000` | ms | app | 否 |
+| `MOMO_BARGEIN_ENABLED` | 允许打断 | `true` | bool | app | 否 |
+| `MOMO_BARGEIN_MIN_MS` | 打断防抖：`input.vad{speech_start}` 须持续该时长才触发 barge-in | `250` | ms | app | 否 |
+| `MOMO_IDLE_TIMEOUT_S` | 空闲多少秒触发自发行为 | `20` | s，0=关闭 | app | 否 |
+| `MOMO_SENT_SOFT_CHARS` | 句切弱切阈值 | `25` | 字符数 | app | 否 |
+| `MOMO_SENT_MAX_CHARS` | 句切硬上限 | `60` | 字符数 | app | 否 |
+| `MOMO_HISTORY_TURNS` | 注入 LLM 的历史回合数 | `20` | int | app | 否 |
+| `MOMO_FILTER_ENABLED` | 未来外部 ingress/egress 过滤开关（streaming adapter 前置） | `false` | bool | app | 否 |
+| `MOMO_DATA_COLLECTION` | 会话采集开关（语料落盘供训练/微调） | `on` | `on`/`off` | app | 否 |
+| `MOMO_DATA_KEEP_AUDIO` | 原始麦音频短期保留（仅显式开启且授权时，供 ASR 排错） | `off` | `on`/`off` | app | **是** |
+| `MOMO_EMOTION_MAP` | emotion tag → Live2D 表情映射文件路径 | `config/emotion.map.yaml` | path | app | 否 |
 
 
 
@@ -42,6 +59,7 @@ MOMO_UI_DIR=./web/dist
 MOMO_WEB_ORIGIN=http://localhost:5173   # 浏览器来源白名单（vite dev）
 MOMO_UI_TOKEN=               # 敏感：/ws/ui hello auth_token；desktop 启动注入，空=dev 不校验
 MOMO_LLM_ENDPOINT=http://mac-studio.local:7820/v1
+MOMO_LLM_MODEL=qwen3-30b-a3b-4bit
 MOMO_LLM_TIMEOUT_MS=30000
 MOMO_BARGEIN_ENABLED=true
 MOMO_BARGEIN_MIN_MS=250        # speech_start 持续该时长才触发打断
