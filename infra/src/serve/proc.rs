@@ -67,8 +67,8 @@ pub fn log_stdio(component: &str) -> Result<(PathBuf, Stdio, Stdio), AppError> {
     Ok((path, Stdio::from(out), Stdio::from(err)))
 }
 
-/// 优雅停止：先发 SIGTERM（win: taskkill），`grace` 内轮询存活；
-/// 未退出再 SIGKILL（win: taskkill /F）。返回进程最终已退出。
+/// 优雅停止：先发 SIGTERM（win: taskkill 温和请求），`grace` 内轮询存活；
+/// 未退出再 SIGKILL（win: TerminateProcess）。返回进程最终已退出。
 pub fn stop_pid(pid: u32, grace: Duration) -> bool {
     if !is_alive(pid) {
         return true;
@@ -81,21 +81,15 @@ pub fn stop_pid(pid: u32, grace: Duration) -> bool {
     wait_dead(pid, Duration::from_secs(2))
 }
 
-/// 单次终止信号：unix `kill`（SIGTERM），windows `taskkill /F`，其他平台 no-op。
+/// 单次终止信号：unix SIGTERM；windows `TerminateProcess`；其他平台 no-op。
 pub fn kill_pid(pid: u32) -> bool {
     #[cfg(unix)]
     {
-        signal(pid, None)
+        send_signal(pid, libc::SIGTERM)
     }
     #[cfg(windows)]
     {
-        std::process::Command::new("taskkill")
-            .args(["/PID", &pid.to_string(), "/F"])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false)
+        terminate_process(pid)
     }
     #[cfg(not(any(unix, windows)))]
     {
@@ -105,10 +99,11 @@ pub fn kill_pid(pid: u32) -> bool {
 }
 
 /// 停止前置信号：unix SIGTERM；windows `taskkill /PID`（不带 /F 的温和请求）。
+/// windows 侧 taskkill 缺失仅失去温和请求，`stop_pid` 仍会升级 TerminateProcess。
 fn term_pid(pid: u32) -> bool {
     #[cfg(unix)]
     {
-        signal(pid, None)
+        send_signal(pid, libc::SIGTERM)
     }
     #[cfg(windows)]
     {
@@ -127,15 +122,15 @@ fn term_pid(pid: u32) -> bool {
     }
 }
 
-/// 升级强杀：unix `kill -9`；windows `taskkill /PID /F`。
+/// 升级强杀：unix SIGKILL；windows `TerminateProcess`（不依赖 taskkill）。
 fn force_pid(pid: u32) -> bool {
     #[cfg(unix)]
     {
-        signal(pid, Some("-9"))
+        send_signal(pid, libc::SIGKILL)
     }
     #[cfg(windows)]
     {
-        kill_pid(pid)
+        terminate_process(pid)
     }
     #[cfg(not(any(unix, windows)))]
     {
@@ -144,18 +139,32 @@ fn force_pid(pid: u32) -> bool {
     }
 }
 
+/// unix `kill(2)` 封装：返回信号是否送达（EPERM 即「存在但无权限」也算未送达，
+/// 由 `is_alive` 的 kill(pid,0) 分支另行判定存活）。
+/// `kill(2)` 的 pid<=0 是进程组语义（0=本组、负数=进程组），不是 pid 语义：拒绝。
 #[cfg(unix)]
-fn signal(pid: u32, sig: Option<&str>) -> bool {
-    let mut cmd = std::process::Command::new("kill");
-    if let Some(s) = sig {
-        cmd.arg(s);
+fn send_signal(pid: u32, sig: i32) -> bool {
+    if pid == 0 || pid > i32::MAX as u32 {
+        return false;
     }
-    cmd.arg(pid.to_string())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .map(|s| s.success())
-        .unwrap_or(false)
+    unsafe { libc::kill(pid as i32, sig) == 0 }
+}
+
+/// windows 强杀原语：`OpenProcess(PROCESS_TERMINATE)` + `TerminateProcess`。
+/// 打不开句柄（无此进程/无权限）→ false。
+#[cfg(windows)]
+fn terminate_process(pid: u32) -> bool {
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE};
+    unsafe {
+        let h = OpenProcess(PROCESS_TERMINATE, 0, pid);
+        if h == 0 {
+            return false;
+        }
+        let ok = TerminateProcess(h, 1);
+        CloseHandle(h);
+        ok != 0
+    }
 }
 
 fn wait_dead(pid: u32, timeout: Duration) -> bool {
@@ -169,42 +178,64 @@ fn wait_dead(pid: u32, timeout: Duration) -> bool {
     true
 }
 
-/// pid 存活探测：unix `kill -0` + `ps stat` 排僵尸（kill -0 对僵尸仍成功）；
-/// windows `tasklist`；其他平台保守返回 false。
+/// pid 存活探测，不依赖外部命令。
+///
+/// unix：
+/// 1. `waitpid(WNOHANG)` 先试收本进程 child 的尸——返回 pid 表示 child
+///    已退出（收尸完成）→ 死；返回 0 表示 child 仍在运行 → 活；
+///    -1（ECHILD 等，非本进程 child）→ 落到下一步。
+///    这一步替代旧的 `ps stat` 排僵尸（kill(pid,0) 对僵尸仍成功）。
+/// 2. `kill(pid, 0)`：送达 → 活；`EPERM`（存在但属其他用户）→ 活；
+///    `ESRCH` 及其余 errno → 死。
+///
+/// windows：`OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)` 打不开时
+/// `GetLastError()==ERROR_ACCESS_DENIED`（存在但无权限）→ 活，其余 → 死；
+/// 打开后 `GetExitCodeProcess`：`STILL_ACTIVE` → 活，拿到退出码 → 死，
+/// 查询失败保守判活（宁 down 不收敛，勿 up 重复拉起）。
+///
+/// 其他平台保守返回 false。
 pub fn is_alive(pid: u32) -> bool {
+    if pid == 0 {
+        return false;
+    }
     #[cfg(unix)]
     {
-        let signaled = std::process::Command::new("kill")
-            .args(["-0", &pid.to_string()])
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false);
-        if !signaled {
+        if pid > i32::MAX as u32 {
             return false;
         }
-        // 僵尸进程 kill -0 仍成功：ps stat 以 Z 开头判死
-        // （同进程内 kill 自己 spawn 的 child 未 wait 时常见）。
-        match std::process::Command::new("ps")
-            .args(["-o", "stat=", "-p", &pid.to_string()])
-            .output()
-        {
-            Ok(o) => {
-                let stat = String::from_utf8_lossy(&o.stdout);
-                !stat.trim_start().starts_with('Z')
+        unsafe {
+            match libc::waitpid(pid as i32, std::ptr::null_mut(), libc::WNOHANG) {
+                r if r == pid as i32 => return false,
+                0 => return true,
+                _ => {}
             }
-            Err(_) => true,
+            if libc::kill(pid as i32, 0) == 0 {
+                return true;
+            }
+            std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM)
         }
     }
     #[cfg(windows)]
     {
-        // tasklist CSV 输出含 "<pid>" 即存活。
-        std::process::Command::new("tasklist")
-            .args(["/FI", &format!("PID eq {pid}"), "/NH", "/FO", "CSV"])
-            .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).contains(&format!("\"{pid}\"")))
-            .unwrap_or(false)
+        use windows_sys::Win32::Foundation::{
+            CloseHandle, GetLastError, ERROR_ACCESS_DENIED, STILL_ACTIVE,
+        };
+        use windows_sys::Win32::System::Threading::{
+            GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+        };
+        unsafe {
+            let h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+            if h == 0 {
+                return GetLastError() == ERROR_ACCESS_DENIED;
+            }
+            let mut code: u32 = 0;
+            let ok = GetExitCodeProcess(h, &mut code);
+            CloseHandle(h);
+            if ok == 0 {
+                return true;
+            }
+            code == STILL_ACTIVE as u32
+        }
     }
     #[cfg(not(any(unix, windows)))]
     {

@@ -760,6 +760,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "dotenvy",
+ "libc",
  "owo-colors",
  "reqwest",
  "serde",
@@ -768,6 +769,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "toml",
+ "windows-sys 0.52.0",
  "wiremock",
 ]
 
