@@ -37,6 +37,10 @@ pub enum AppError {
     #[error("backpressure overflow: {0}")]
     BackpressureOverflow(String),
 
+    /// svc-tts 合成失败 → `TTS_FAILED`。
+    #[error("tts failed: {0}")]
+    TtsFailed(String),
+
     #[error("internal error: {0}")]
     Internal(String),
 }
@@ -52,6 +56,7 @@ impl AppError {
             AppError::Unauthorized(_) => ErrorCode::Unauthorized,
             AppError::ModelUnreachable(_) => ErrorCode::ModelUnreachable,
             AppError::BackpressureOverflow(_) => ErrorCode::BackpressureOverflow,
+            AppError::TtsFailed(_) => ErrorCode::TtsFailed,
         }
     }
 }
