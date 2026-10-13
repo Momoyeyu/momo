@@ -197,10 +197,10 @@ flowchart TD
 
 进程探活与终止不依赖 PATH 上的外部命令（原 `kill`/`ps`/`tasklist` 外部依赖已移除；Windows 的 `taskkill` 只做温和请求/树杀兜底，缺失不阻塞升级）：
 
-- 进程组隔离：`serve` spawn 组件时 unix 用 `process_group(0)` 让 child 自成进程组（pgid == child pid，pidfile 记录的 pid 即组 id，无需另记）；windows spawn 后把 child 挂进具名 Job Object `momo-serve-<component>`（up/down 跨进程按名 `OpenJobObject`；成员的后代自动入 Job；挂接失败只失去整树强杀，退回单 pid 阶梯）。`uv run` 这类 wrapper 的孙进程（python 服务本体）随之与 wrapper 同生共死——wrapper pid 死掉后残留孙进程仍能被收掉（#149：曾 abort/down 只杀 wrapper，孙进程持端口致下次 up 撞端口再起失败）。
+- 进程组隔离：`serve` spawn 组件时 unix 用 `process_group(0)` 让 child 自成进程组（pgid == child pid，pidfile 记录的 pid 即组 id，无需另记）；windows 不做 spawn 前置/后置挂接，改在终止/探活时按 Toolhelp32 快照沿 `th32ParentProcessID` 追溯全部后代（孤儿子进程的父 pid 字段仍指向已死 wrapper，BFS 即收；曾试过具名 Job Object 方案，嵌套 Job 下孙进程未继承成员资格，不可靠）。`uv run` 这类 wrapper 的孙进程（python 服务本体）随之与 wrapper 同生共死——wrapper pid 死掉后残留孙进程仍能被收掉（#149：曾 abort/down 只杀 wrapper，孙进程持端口致下次 up 撞端口再起失败）。
 - 存活探测 `is_alive`（单 pid，jobs runner 用）：unix 先 `waitpid(WNOHANG)` 收本进程 child 的尸（替代 `ps stat` 排僵尸），非本进程 child 落 `kill(pid, 0)`——送达或 `EPERM`（存在但属其他用户）判活，`ESRCH` 等判死；Windows `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)`——打不开且 `ERROR_ACCESS_DENIED` 判活、其余判死，打开后 `GetExitCodeProcess` 判 `STILL_ACTIVE`，查询失败保守判活（宁 down 不收敛，勿 up 重复拉起）。
-- 组件存活 `component_alive`（serve 用）：`is_alive(pid)` 之外补查组关系——unix `kill(-pid, 0)` 进程组仍有成员、windows 具名 Job `ActiveProcesses > 0` 即判活。wrapper 死后孙进程残留不再被当成 stale pidfile：`status` 报 warn（pid exited but process group still active），`down`/`up` 据此收孤儿。
-- 终止阶梯 `stop_component`（serve 用）：unix 对 `pid` 与进程组 `-pid` 同发 `SIGTERM` → grace 轮询组关系存活 → `SIGKILL`；Windows 温和段 `taskkill /T`（不带 `/F`，请求整树）→ 强杀段 `TerminateJobObject`（wrapper 死后 Job 仍在、孙进程可收）+ `taskkill /F /T`/`TerminateProcess` 兜底。pid 本体已死只剩孤儿时跳过温和段直接强杀。`serve up` 的 abort 清理走 `kill_component` 整组/整树强杀；单 pid 阶梯 `stop_pid` 保留给 jobs runner。
+- 组件存活 `component_alive`（serve 用）：`is_alive(pid)` 之外补查组关系——unix `kill(-pid, 0)` 进程组仍有成员、windows 后代表非空即判活。wrapper 死后孙进程残留不再被当成 stale pidfile：`status` 报 warn（pid exited but process group still active），`down`/`up` 据此收孤儿。
+- 终止阶梯 `stop_component`（serve 用）：unix 对 `pid` 与进程组 `-pid` 同发 `SIGTERM` → grace 轮询组关系存活 → `SIGKILL`；Windows 温和/强杀两段都走 `taskkill /T` 收活树 + Toolhelp 后代表逐个终止 + `TerminateProcess` 兜底（孤儿分支父链已断，靠 ppid 归因）。pid 本体已死只剩孤儿时跳过温和段直接强杀。`serve up` 的 abort 清理走 `kill_component` 整组/整树强杀；单 pid 阶梯 `stop_pid` 保留给 jobs runner。
 
 ## 训练 lifecycle 与恢复
 

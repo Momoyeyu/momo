@@ -216,7 +216,7 @@ fn status_inner(
                 format!("pidfile stale: pid {pid} not running"),
                 "run momoctl serve down to clean stale pidfiles",
             )),
-            // wrapper 已死但孙进程残留（组/Job 仍有成员）：不算 running，是泄漏态。
+            // wrapper 已死但孙进程残留（组/后代链 仍有成员）：不算 running，是泄漏态。
             Ok(pid) if !proc::is_alive(pid) => checks.push(Check::warn(
                 c.name.clone(),
                 format!("pid {pid} exited but process group still active"),
@@ -554,7 +554,7 @@ pub(crate) fn up_inner(
                 ));
                 continue;
             }
-            // wrapper 已死但组/Job 仍有成员（历史泄漏的孙进程持端口）→
+            // wrapper 已死但组/后代链 仍有成员（历史泄漏的孙进程持端口）→
             // 先收干净再拉起，否则新 spawn 撞端口再起不来（#149）。
             if proc::component_alive(&c.name, pid) {
                 if proc::stop_component(&c.name, pid, TERM_GRACE) {
@@ -628,7 +628,7 @@ pub(crate) fn up_inner(
     }
 
     // readiness/spawn 失败 → 停掉本次 owned children，attached providers 保留。
-    // kill_component 按进程组/Job 整树强杀：wrapper（uv run）已退出时也能
+    // kill_component 按进程组/后代链 整树强杀：wrapper（uv run）已退出时也能
     // 收掉残留的孙进程（#149），child.kill() 对这种情况是 no-op。
     if aborted {
         for (name, mut child) in owned.drain(..) {
@@ -700,23 +700,10 @@ fn spawn_component(
     }
 
     // 进程组隔离（#149）：unix 自成进程组（pgid=pid，pidfile 即组 id）；
-    // windows spawn 后挂具名 Job。uv run 的孙进程随之同生共死。
+    // windows 后代归属靠 Toolhelp ppid 快照追溯。uv run 的孙进程随之同生共死。
     proc::prepare_spawn(&mut cmd);
     match cmd.spawn() {
-        Ok(child) => {
-            // 挂接失败仅失去整树强杀——留诊断行进组件日志便于排查。
-            if let Err(err) = proc::adopt_spawned(&c.name, child.id()) {
-                if let Ok(mut f) = std::fs::OpenOptions::new().append(true).open(&log_path) {
-                    let _ = writeln!(
-                        f,
-                        "[serve] job-assign failed for pid {} (win32 {})",
-                        child.id(),
-                        err
-                    );
-                }
-            }
-            Ok((child, log_path))
-        }
+        Ok(child) => Ok((child, log_path)),
         Err(e) => Err(AppError::Io(std::io::Error::new(
             e.kind(),
             format!("{program}: {e}"),
@@ -917,10 +904,7 @@ args = ["--exact", "cmds::serve::tests::wrapper_entry"]
         if mode.is_empty() {
             return;
         }
-        // 挂孙进程前稍等：给 spawn 侧 adopt_spawned 的 windows Job 挂接留窗口
-        // ——孙进程须诞生于父已在 Job 内之后才自动入 Job
-        //（unix 进程组随 fork 天然继承，无时序要求）。
-        thread::sleep(Duration::from_millis(300));
+        // 孙进程归属靠 unix 进程组继承 / windows ppid 追溯，无生时序要求。
         let exe = std::env::current_exe().unwrap();
         let gc = Command::new(exe)
             .args(["--exact", "cmds::serve::tests::sleeper_entry"])
@@ -1145,7 +1129,7 @@ cmd = "llama-server-nonexistent-bin"
     }
 
     /// #149 回归：只杀 pidfile 记的 wrapper（uv run）孙进程成孤儿持端口，
-    /// 但仍在 spawn 时的进程组/Job 内；`serve down` 按组收口连孤儿一起停。
+    /// 但仍在 spawn 时的进程组/后代链 内；`serve down` 按组收口连孤儿一起停。
     #[test]
     fn down_reaps_orphaned_grandchild() {
         let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1158,13 +1142,13 @@ cmd = "llama-server-nonexistent-bin"
         let pid = proc::read_pidfile("stub").unwrap();
         let gc = wait_reported_pid(&marker);
 
-        // 只杀 wrapper（旧 down 行为）：孙进程泄漏，但组/Job 仍能定位它。
+        // 只杀 wrapper（旧 down 行为）：孙进程泄漏，但组/后代链 仍能定位它。
         assert!(proc::kill_pid(pid));
         wait_pid_dead(pid);
         assert!(proc::is_alive(gc), "orphaned grandchild must still run");
         assert!(
             proc::component_alive("stub", pid),
-            "process group/job still active after wrapper exit"
+            "process group/descendants still active after wrapper exit"
         );
 
         assert_eq!(down(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
@@ -1198,22 +1182,7 @@ cmd = "llama-server-nonexistent-bin"
         );
 
         let gc = wait_reported_pid(&marker);
-        // windows 下 assign/terminate 任一环节断裂都会留活口——失败时带诊断。
-        let deadline = Instant::now() + Duration::from_secs(10);
-        while proc::is_alive(gc) {
-            if Instant::now() >= deadline {
-                #[cfg(windows)]
-                panic!(
-                    "grandchild {gc} still alive; job_active={} in_job={:?} stub_log={:?}",
-                    proc::job_active("stub"),
-                    proc::pid_in_job("stub", gc),
-                    fs::read_to_string(proc::log_dir().join("stub.log")).unwrap_or_default()
-                );
-                #[cfg(not(windows))]
-                panic!("pid {gc} still alive");
-            }
-            thread::sleep(Duration::from_millis(50));
-        }
+        wait_pid_dead(gc);
         assert!(
             proc::read_pidfile("stub").is_err(),
             "pidfile removed on abort"
@@ -1224,7 +1193,7 @@ cmd = "llama-server-nonexistent-bin"
         let _ = fs::remove_dir_all(state.parent().unwrap());
     }
 
-    /// #149 回归：pidfile 指向死 wrapper 但进程组/Job 残留（历史泄漏的孤儿
+    /// #149 回归：pidfile 指向死 wrapper 但进程组/后代链 残留（历史泄漏的孤儿
     /// 持端口）→ 下次 `serve up` 先收孤儿再拉起，而不是 stale 一删了之。
     #[test]
     fn up_reaps_orphan_group_before_respawn() {
