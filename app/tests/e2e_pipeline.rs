@@ -335,7 +335,7 @@ fn e2e_config(llm: &str, asr: &url::Url, tts: &url::Url) -> Config {
 /// 真 TCP listener + `ws::server::router`（内含真 SessionDeps：
 /// OpenAiCompatLlm / MomoWsAsr / MomoWsTts）。
 async fn serve_app(config: Config) -> SocketAddr {
-    let app = server::router(Arc::new(config));
+    let app = server::router(Arc::new(config)).expect("router");
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     tokio::spawn(async move {
@@ -723,7 +723,7 @@ fn assert_stream_frames(seen: &Seen, stream_id: &str, sentence_seq: u32) {
 
 #[tokio::test]
 async fn healthz_returns_200() {
-    let app = server::router(Arc::new(Config::load(|_| None).expect("default config")));
+    let app = server::router(Arc::new(Config::load(|_| None).expect("default config"))).expect("router");
     let resp = app
         .oneshot(
             Request::builder()
@@ -739,7 +739,7 @@ async fn healthz_returns_200() {
 #[tokio::test]
 async fn readyz_returns_200() {
     // profiles/*.toml 的 momod 探活统一走 /readyz，路由缺失会让 serve up 卡死。
-    let app = server::router(Arc::new(Config::load(|_| None).expect("default config")));
+    let app = server::router(Arc::new(Config::load(|_| None).expect("default config"))).expect("router");
     let resp = app
         .oneshot(
             Request::builder()
@@ -754,7 +754,7 @@ async fn readyz_returns_200() {
 
 #[tokio::test]
 async fn ws_ui_requires_upgrade() {
-    let app = server::router(Arc::new(Config::load(|_| None).expect("default config")));
+    let app = server::router(Arc::new(Config::load(|_| None).expect("default config"))).expect("router");
     let resp = app
         .oneshot(
             Request::builder()

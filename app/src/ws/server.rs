@@ -9,13 +9,15 @@ use axum::{
     extract::{State, ws::WebSocketUpgrade},
     http::{HeaderMap, HeaderValue, Method, StatusCode, header},
     response::{IntoResponse, Response},
-    routing::get,
+    routing::{get, put},
 };
 use tower_http::{cors::CorsLayer, services::ServeDir};
 
 use crate::{
-    config::Config,
+    api, config::Config, error::AppError,
+    pipeline::{asr::MomoWsAsr, llm::OpenAiCompatLlm, tts::MomoWsTts},
     session::{SessionDeps, manager::SessionManager},
+    settings::{self, ProviderSettings},
     ws::conn,
 };
 
@@ -23,17 +25,70 @@ use crate::{
 pub struct AppState {
     pub config: Arc<Config>,
     pub sessions: SessionManager,
+    /// 生效 provider 配置（settings.json 覆盖 env；设置面 PUT 更新）。
+    pub settings: tokio::sync::RwLock<ProviderSettings>,
+    /// 具体 client 句柄：设置面热改需要直接调 set_conf/set_endpoint。
+    pub llm: Arc<OpenAiCompatLlm>,
+    pub asr: Arc<MomoWsAsr>,
+    pub tts: Arc<MomoWsTts>,
+    /// settings.json 落盘路径。
+    pub settings_path: std::path::PathBuf,
     /// 进程启动时刻，供 `/healthz` 报 uptime。
     pub started_at: Instant,
 }
 
 impl AppState {
-    pub fn new(config: Arc<Config>) -> Self {
-        Self {
-            sessions: SessionManager::new(SessionDeps::from_config(&config)),
+    pub fn new(config: Arc<Config>) -> Result<Self, AppError> {
+        let settings = ProviderSettings::load(&config)?;
+        let llm = Arc::new(OpenAiCompatLlm::new(
+            settings.llm_endpoint.clone(),
+            settings.llm_model.clone(),
+            settings.llm_api_key.clone(),
+            config.llm_timeout,
+        ));
+        let asr = Arc::new(MomoWsAsr::new(settings.asr_endpoint.clone()));
+        let tts = Arc::new(MomoWsTts::new(settings.tts_endpoint.clone()));
+        let deps = SessionDeps::with_clients(
+            &config,
+            llm.clone(),
+            asr.clone(),
+            tts.clone(),
+        );
+        Ok(Self {
+            sessions: SessionManager::new(deps),
+            settings: tokio::sync::RwLock::new(settings),
+            llm,
+            asr,
+            tts,
+            settings_path: settings::settings_path(),
             config,
             started_at: Instant::now(),
-        }
+        })
+    }
+
+    /// 测试用：注入自定义 deps（mock client）；settings 句柄独立构造，
+    /// 不读 settings.json，不参与 deps 内的 client 生命周期。
+    #[allow(clippy::missing_errors_doc)]
+    pub fn from_deps(config: Arc<Config>, deps: SessionDeps) -> Result<Self, AppError> {
+        let settings = ProviderSettings::from_config(&config);
+        let llm = Arc::new(OpenAiCompatLlm::new(
+            settings.llm_endpoint.clone(),
+            settings.llm_model.clone(),
+            settings.llm_api_key.clone(),
+            config.llm_timeout,
+        ));
+        let asr = Arc::new(MomoWsAsr::new(settings.asr_endpoint.clone()));
+        let tts = Arc::new(MomoWsTts::new(settings.tts_endpoint.clone()));
+        Ok(Self {
+            sessions: SessionManager::new(deps),
+            settings: tokio::sync::RwLock::new(settings),
+            llm,
+            asr,
+            tts,
+            settings_path: std::path::PathBuf::from("momo-test-settings.json"),
+            config,
+            started_at: Instant::now(),
+        })
     }
 
     pub fn listen_addr(&self) -> SocketAddr {
@@ -42,8 +97,8 @@ impl AppState {
 }
 
 /// 构建 momod 的 HTTP/WS 路由。
-pub fn router(config: Arc<Config>) -> Router {
-    let state = Arc::new(AppState::new(config));
+pub fn router(config: Arc<Config>) -> Result<Router, AppError> {
+    let state = Arc::new(AppState::new(config)?);
 
     let mut app = Router::new()
         .route("/healthz", get(healthz))
@@ -51,6 +106,8 @@ pub fn router(config: Arc<Config>) -> Router {
         // readiness 门控（下游 svc 懒连接），先与 /healthz 同义。
         .route("/readyz", get(healthz))
         .route("/ws/ui", get(ws_ui))
+        .route("/api/settings", get(api::get_settings))
+        .route("/api/settings", put(api::put_settings))
         // TODO(P4): /ws/action upgrade（action 链路注册/调用）
         .with_state(state.clone())
         .layer(cors_layer(&state.config));
@@ -60,7 +117,7 @@ pub fn router(config: Arc<Config>) -> Router {
         app = app.fallback_service(ServeDir::new(dir));
     }
 
-    app
+    Ok(app)
 }
 
 /// momo-infra `momoctl serve status` 探活端点。

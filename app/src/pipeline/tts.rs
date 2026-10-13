@@ -84,24 +84,33 @@ pub trait TtsClient: Send + Sync {
 /// 链路懒建立、断开后下一次 `synth_stream` 自动重连；多路复用同一条
 /// 连接，`audio.open.stream_id` 路由二进制帧到对应合成（protocol §6）。
 pub struct MomoWsTts {
+    /// 链路与目标端点同槽：endpoint 变更新链自然落到新地址。
+    slot: Mutex<TtsSlot>,
+}
+
+struct TtsSlot {
     endpoint: Url,
-    link: Mutex<Option<Arc<TtsLink>>>,
+    link: Option<Arc<TtsLink>>,
 }
 
 impl fmt::Debug for MomoWsTts {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("MomoWsTts")
-            .field("endpoint", &self.endpoint)
-            .finish_non_exhaustive()
+        f.debug_struct("MomoWsTts").finish_non_exhaustive()
     }
 }
 
 impl MomoWsTts {
     pub fn new(endpoint: Url) -> Self {
         Self {
-            endpoint,
-            link: Mutex::new(None),
+            slot: Mutex::new(TtsSlot { endpoint, link: None }),
         }
+    }
+
+    /// 设置面热更新端点：写新端点并丢旧链，下一次 `link()` 连到新版。
+    pub async fn set_endpoint(&self, endpoint: Url) {
+        let mut guard = self.slot.lock().await;
+        guard.endpoint = endpoint;
+        guard.link = None;
     }
 
     /// 提前建连 + 握手（bring-up 场景先暴露连通性/角色错误）。
@@ -111,16 +120,16 @@ impl MomoWsTts {
 
     /// 取活链路；无或已死则重连（并发调用由 mutex 串行化，后者复用新链路）。
     async fn link(&self) -> Result<Arc<TtsLink>, AppError> {
-        let mut guard = self.link.lock().await;
-        if let Some(link) = guard.as_ref() {
+        let mut guard = self.slot.lock().await;
+        if let Some(link) = guard.link.as_ref() {
             if link.alive.load(Ordering::Acquire) {
                 return Ok(link.clone());
             }
         }
-        let conn = client::connect(&self.endpoint, ServerRole::Tts).await?;
+        let conn = client::connect(&guard.endpoint, ServerRole::Tts).await?;
         let link = TtsLink::spawn(conn);
-        debug!(endpoint = %self.endpoint, session = %link.session_id, "tts link established");
-        *guard = Some(link.clone());
+        debug!(endpoint = %guard.endpoint, session = %link.session_id, "tts link established");
+        guard.link = Some(link.clone());
         Ok(link)
     }
 }
@@ -203,8 +212,8 @@ impl TtsClient for MomoWsTts {
 
     /// barge-in 扇出：活链路上发 `control.cancel{target:turn}`；尽力而为。
     async fn cancel_turn(&self, turn_id: &str) -> Result<(), AppError> {
-        let guard = self.link.lock().await;
-        let Some(link) = guard.as_ref().filter(|l| l.alive.load(Ordering::Acquire)) else {
+        let guard = self.slot.lock().await;
+        let Some(link) = guard.link.as_ref().filter(|l| l.alive.load(Ordering::Acquire)) else {
             return Ok(());
         };
         let _ = link

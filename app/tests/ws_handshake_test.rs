@@ -30,7 +30,7 @@ fn test_state(env: &[(&str, &str)]) -> Arc<server::AppState> {
             .map(|(_, v)| v.to_string())
     })
     .expect("test config");
-    Arc::new(server::AppState::new(Arc::new(config)))
+    Arc::new(server::AppState::new(Arc::new(config)).expect("app state"))
 }
 
 struct TestConn {

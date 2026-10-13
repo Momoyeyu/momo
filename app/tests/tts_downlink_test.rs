@@ -5,7 +5,7 @@
 
 use std::future::Future;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use async_trait::async_trait;
 use axum::{
@@ -31,7 +31,7 @@ use momo_app::{
             TurnState, new_id,
         },
     },
-    session::{ChatMessage, SessionDeps, manager::SessionManager},
+    session::{ChatMessage, SessionDeps},
     ws::{conn, server::AppState},
 };
 use serde_json::{Value, json};
@@ -238,11 +238,10 @@ fn test_state(llm: Arc<MockLlm>, tts_url: url::Url) -> Arc<AppState> {
         resume_ttl: Duration::from_secs(60),
         persona: Persona::new(std::path::PathBuf::from("persona/momo.yaml")),
     };
-    Arc::new(AppState {
-        config: Arc::new(Config::load(|_| None).expect("default config")),
-        sessions: SessionManager::new(deps),
-        started_at: Instant::now(),
-    })
+    Arc::new(
+        AppState::from_deps(Arc::new(Config::load(|_| None).expect("default config")), deps)
+            .expect("app state"),
+    )
 }
 
 /// 测试侧 UI 连接（inbound 注入帧，outbound 收服务端帧）。

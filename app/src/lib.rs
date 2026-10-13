@@ -4,6 +4,7 @@
 //! （仓库结构见 momo-docs `02-repos/momo-app.md`）。
 
 pub mod action;
+pub mod api;
 pub mod audio;
 pub mod config;
 pub mod error;
@@ -12,4 +13,5 @@ pub mod persona;
 pub mod pipeline;
 pub mod proto;
 pub mod session;
+pub mod settings;
 pub mod ws;

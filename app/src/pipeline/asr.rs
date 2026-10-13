@@ -78,17 +78,20 @@ pub trait AsrClient: Send + Sync {
 /// 断链后下一次 `open_uplink` 自动重连。一连接多 capture 复用，
 /// `audio.open.stream_id` 路由二进制帧。
 pub struct MomoWsAsr {
-    endpoint: Url,
-    link: Mutex<Option<Arc<AsrLink>>>,
+    /// 链路与目标端点同槽：endpoint 变更新链自然落到新地址。
+    slot: Mutex<AsrSlot>,
     /// 当前事件订阅者的发送端；`subscribe` 替换（旧订阅者随 channel 关闭退出）。
     events: Arc<Mutex<mpsc::Sender<AsrEvent>>>,
 }
 
+struct AsrSlot {
+    endpoint: Url,
+    link: Option<Arc<AsrLink>>,
+}
+
 impl fmt::Debug for MomoWsAsr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("MomoWsAsr")
-            .field("endpoint", &self.endpoint)
-            .finish_non_exhaustive()
+        f.debug_struct("MomoWsAsr").finish_non_exhaustive()
     }
 }
 
@@ -98,10 +101,16 @@ impl MomoWsAsr {
         let (tx, rx) = mpsc::channel(1);
         drop(rx);
         Self {
-            endpoint,
-            link: Mutex::new(None),
+            slot: Mutex::new(AsrSlot { endpoint, link: None }),
             events: Arc::new(Mutex::new(tx)),
         }
+    }
+
+    /// 设置面热更新端点：写新端点并丢旧链，下一次 `link()` 连到新版。
+    pub async fn set_endpoint(&self, endpoint: Url) {
+        let mut guard = self.slot.lock().await;
+        guard.endpoint = endpoint;
+        guard.link = None;
     }
 
     /// 提前建连 + 握手（bring-up 场景先暴露连通性/角色错误）。
@@ -111,23 +120,24 @@ impl MomoWsAsr {
 
     /// 取活链路；无或已死则重连（并发调用由 mutex 串行化，后者复用新链路）。
     async fn link(&self) -> Result<Arc<AsrLink>, AppError> {
-        let mut guard = self.link.lock().await;
-        if let Some(link) = guard.as_ref() {
+        let mut guard = self.slot.lock().await;
+        if let Some(link) = guard.link.as_ref() {
             if link.alive.load(Ordering::Acquire) {
                 return Ok(link.clone());
             }
         }
-        let conn = client::connect(&self.endpoint, ServerRole::Asr).await?;
+        let conn = client::connect(&guard.endpoint, ServerRole::Asr).await?;
         let link = AsrLink::spawn(conn, self.events.clone());
-        debug!(endpoint = %self.endpoint, session = %link.session_id, "asr link established");
-        *guard = Some(link.clone());
+        debug!(endpoint = %guard.endpoint, session = %link.session_id, "asr link established");
+        guard.link = Some(link.clone());
         Ok(link)
     }
 
     /// 活链路快照（不重连）：帧/cancel 只对已建链路有意义。
     async fn live_link(&self) -> Option<Arc<AsrLink>> {
-        let guard = self.link.lock().await;
+        let guard = self.slot.lock().await;
         guard
+            .link
             .as_ref()
             .filter(|l| l.alive.load(Ordering::Acquire))
             .cloned()
