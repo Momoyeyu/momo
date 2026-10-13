@@ -741,23 +741,43 @@ mod tests {
         dir.join("momo")
     }
 
-    /// 跨平台长驻进程 stub：python3 是 doctor 必需工具。
-    const SLEEPER: &str = r#"
-[profile]
-name = "t"
+    /// 组装测试 profile：`[profile]` 头 + `[[component]]` 片段序列。
+    fn profile(components: &str) -> String {
+        format!("[profile]\nname = \"t\"\n\n{components}")
+    }
 
-[[component]]
+    /// 可 spawn 的 stub 组件：re-exec 当前测试二进制跑 `sleeper_entry`。
+    /// 平台无关——不依赖 python3/py（windows runner 无 python3 别名）。
+    /// TOML basic string 里 windows 路径反斜杠需转义。
+    fn stub_component() -> String {
+        let exe = std::env::current_exe().unwrap();
+        format!(
+            r#"[[component]]
 name = "stub"
 order = 10
-cmd = "python3"
-args = ["-c", "import time; time.sleep(60)"]
-"#;
+cmd = "{}"
+args = ["--exact", "cmds::serve::tests::sleeper_entry"]
+env = {{ MOMO_TEST_SLEEPER = "1" }}
+"#,
+            exe.display().to_string().replace('\\', "\\\\")
+        )
+    }
+
+    /// sleeper 入口：被 `stub_component` re-exec 时睡到被 kill；
+    /// `cargo test` 正常跑到时无标记 env → 立即通过。
+    #[test]
+    fn sleeper_entry() {
+        if std::env::var_os("MOMO_TEST_SLEEPER").is_none() {
+            return;
+        }
+        thread::sleep(Duration::from_secs(600));
+    }
 
     #[test]
     fn up_spawns_pidfile_and_log() {
         let _g = LOCK.lock().unwrap();
         let state = state_dir("spawn");
-        let doc = ServeProfile::parse(SLEEPER).unwrap();
+        let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         let code = up(&doc, &common(), "t", &test_ctx()).unwrap();
         assert_eq!(code, 0);
 
@@ -783,15 +803,8 @@ args = ["-c", "import time; time.sleep(60)"]
         let state = state_dir("cleanup");
         // stub 先拉起，随后的 external 探活指向无监听端口 → fail → 清理 stub。
         std::env::set_var("MOMO_TEST_EP", "http://127.0.0.1:1");
-        let toml = r#"
-[profile]
-name = "t"
-
-[[component]]
-name = "stub"
-order = 10
-cmd = "python3"
-args = ["-c", "import time; time.sleep(60)"]
+        let toml = profile(&format!(
+            r#"{stub}
 
 [[component]]
 name = "brain"
@@ -799,8 +812,10 @@ order = 20
 external = true
 probe_env = "MOMO_TEST_EP"
 probe_path = "/models"
-"#;
-        let doc = ServeProfile::parse(toml).unwrap();
+"#,
+            stub = stub_component()
+        ));
+        let doc = ServeProfile::parse(&toml).unwrap();
         let code = up(&doc, &common(), "t", &test_ctx()).unwrap();
         assert_eq!(code, ExitCode::Runtime as i32);
 
@@ -814,7 +829,7 @@ probe_path = "/models"
     #[test]
     fn only_unknown_component_is_usage_error() {
         let _g = LOCK.lock().unwrap();
-        let doc = ServeProfile::parse(SLEEPER).unwrap();
+        let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         let c = ServeCommon {
             profile: None,
             only: vec!["nope".into()],
@@ -828,23 +843,17 @@ probe_path = "/models"
         let _g = LOCK.lock().unwrap();
         let state = state_dir("skip");
         std::env::set_var("MOMO_LLM_ENDPOINT", "https://api.deepseek.com/v1");
-        let toml = r#"
-[profile]
-name = "t"
-
-[[component]]
+        let toml = profile(&format!(
+            r#"[[component]]
 name = "llama-server"
 order = 5
 local_endpoint_only = true
 cmd = "llama-server-nonexistent-bin"
 
-[[component]]
-name = "stub"
-order = 10
-cmd = "python3"
-args = ["-c", "import time; time.sleep(60)"]
-"#;
-        let doc = ServeProfile::parse(toml).unwrap();
+{stub}"#,
+            stub = stub_component()
+        ));
+        let doc = ServeProfile::parse(&toml).unwrap();
         let code = up(&doc, &common(), "t", &test_ctx()).unwrap();
         assert_eq!(code, 0);
         // llama-server 跳过未拉起，stub 正常 spawn
@@ -860,7 +869,7 @@ args = ["-c", "import time; time.sleep(60)"]
     fn down_is_idempotent_noop() {
         let _g = LOCK.lock().unwrap();
         let state = state_dir("down-noop");
-        let doc = ServeProfile::parse(SLEEPER).unwrap();
+        let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         // 未运行即 down：no-op 成功，再次 down 同样成功。
         assert_eq!(down(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
         assert_eq!(down(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
@@ -872,7 +881,7 @@ args = ["-c", "import time; time.sleep(60)"]
     fn down_stops_running_component_and_cleans_state() {
         let _g = LOCK.lock().unwrap();
         let state = state_dir("down-stop");
-        let doc = ServeProfile::parse(SLEEPER).unwrap();
+        let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         assert_eq!(up(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
         let pid = proc::read_pidfile("stub").unwrap();
 
@@ -891,7 +900,7 @@ args = ["-c", "import time; time.sleep(60)"]
     fn down_removes_stale_pidfile() {
         let _g = LOCK.lock().unwrap();
         let state = state_dir("down-stale");
-        let doc = ServeProfile::parse(SLEEPER).unwrap();
+        let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         // 写一个不可能存活的 pid → down 应清掉 pidfile 且成功。
         proc::write_pidfile("stub", 4_000_000).unwrap();
         assert_eq!(down(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
@@ -904,7 +913,7 @@ args = ["-c", "import time; time.sleep(60)"]
     fn status_reports_stopped_running_and_stale() {
         let _g = LOCK.lock().unwrap();
         let state = state_dir("status");
-        let doc = ServeProfile::parse(SLEEPER).unwrap();
+        let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
 
         // 未运行：stopped → exit 0
         assert_eq!(status(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
@@ -932,7 +941,7 @@ args = ["-c", "import time; time.sleep(60)"]
     fn restart_replaces_running_component() {
         let _g = LOCK.lock().unwrap();
         let state = state_dir("restart");
-        let doc = ServeProfile::parse(SLEEPER).unwrap();
+        let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         assert_eq!(up(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
         let old_pid = proc::read_pidfile("stub").unwrap();
 
