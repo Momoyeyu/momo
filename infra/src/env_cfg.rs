@@ -90,7 +90,7 @@ impl EnvCfg {
             .unwrap_or_else(|| "127.0.0.1:7811".into())
     }
 
-    /// `MOMO_LLM_ENDPOINT`（config.md 默认 `http://mac-studio:7820/v1`）。
+    /// `MOMO_LLM_ENDPOINT`（config.md 默认 `http://mac-studio.local:7820/v1`）。
     /// 返回 None 表示未配置，doctor 端点组按 fail 处理。
     pub fn llm_endpoint(&self) -> Option<String> {
         self.get("MOMO_LLM_ENDPOINT")

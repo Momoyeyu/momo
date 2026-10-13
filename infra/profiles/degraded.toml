@@ -46,10 +46,9 @@ args = ["run", "momo-svc-tts"]
 ready = "http://127.0.0.1:7811/readyz"
 env = { MOMO_TTS_LISTEN = "127.0.0.1:7811", MOMO_TTS_PROVIDER = "kokoro", MOMO_TTS_DEVICE = "cpu", MOMO_TTS_LANG = "auto" }
 
-# 编排器
+# 编排器（监听默认回环；需外部可达时在 .env 显式配置 MOMO_ORCH_LISTEN）
 [[component]]
 name = "momod"
 order = 30
 cmd = "momod"
 ready = "http://127.0.0.1:7800/readyz"
-env = { MOMO_ORCH_LISTEN = "0.0.0.0:7800" }
