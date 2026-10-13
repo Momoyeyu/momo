@@ -728,6 +728,21 @@ async fn healthz_returns_200() {
 }
 
 #[tokio::test]
+async fn readyz_returns_200() {
+    // profiles/*.toml 的 momod 探活统一走 /readyz，路由缺失会让 serve up 卡死。
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .uri("/readyz")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+}
+
+#[tokio::test]
 async fn ws_ui_requires_upgrade() {
     let resp = app
         .oneshot(

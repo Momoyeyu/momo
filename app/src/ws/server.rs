@@ -39,6 +39,9 @@ impl AppState {
 
     let mut app = Router::new()
         .route("/healthz", get(healthz))
+        // 组件探活口径统一走 /readyz（profiles/*.toml）；momod 暂无
+        // readiness 门控（下游 svc 懒连接），先与 /healthz 同义。
+        .route("/readyz", get(healthz))
         .route("/ws/ui", get(ws_ui))
         // TODO(P4): /ws/action upgrade（action 链路注册/调用）
         .with_state(state.clone())
