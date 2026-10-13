@@ -547,6 +547,31 @@ pub struct ConfigWriteReport {
     pub restart_hint: String,
 }
 
+/// `GET /api/config/schema` 单键描述：schema 单源直出，
+/// 前端据此渲染控件（type/values/sensitive/default）与分组（component）。
+/// `type` 输出对外口径 `str|int|bool|enum|url|path`（schema 文件的 `string`
+/// 在 API 边界统一映射为 `str`）。
+#[derive(Debug, Serialize)]
+pub struct ConfigKeySchema {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub default: String,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub values: Vec<String>,
+    pub sensitive: bool,
+    pub description: String,
+    /// 分 section：common/app/models/infra（对齐 config.md §2.1–2.4）。
+    pub component: String,
+}
+
+/// `GET /api/config/schema`：全量键 schema（config.schema.toml 单源）。
+#[derive(Debug, Serialize)]
+pub struct ConfigSchemaReport {
+    pub schema: u8,
+    pub keys: Vec<ConfigKeySchema>,
+}
+
 /// 统一错误体。
 #[derive(Debug, Serialize)]
 pub struct ErrorBody {

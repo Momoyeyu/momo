@@ -70,6 +70,8 @@ pub fn router(state: Arc<WebState>) -> Router {
         // 配置页：GET 读当前值（敏感掩码）；PUT 校验→.bak→原子写回；POST rollback 恢复 .bak。
         .route("/config", any(config))
         .route("/config/rollback", any(config_rollback))
+        // 渲染 schema 单源下发（issue #81）：前端按 keys[].type/component 出控件与分组。
+        .route("/config/schema", any(config_schema))
         .route("/config/{*rest}", any(placeholder))
         .fallback(not_found)
         .with_state(state)
@@ -103,8 +105,7 @@ pub(crate) async fn index() -> Json<dto::IndexReport> {
             "GET /api/config",
             "PUT /api/config",
             "POST /api/config/rollback",
-            "/api/config/* (placeholder)",
-        ],
+            "/api/config/* (placeholder)",            "GET /api/config/schema",        ],
     })
 }
 
@@ -678,6 +679,57 @@ async fn config_rollback(State(state): State<Arc<WebState>>, req: Request) -> Re
             StatusCode::INTERNAL_SERVER_ERROR,
             "internal",
             format!("config rollback task failed: {e}"),
+        ),
+    }
+}
+
+/// `GET /api/config/schema`（issue #81）：`{schema:1, keys:[{name,type,default,
+/// values?,sensitive,description,component}]}`——config.schema.toml 单源直出，
+/// 服务端不维护第二份键表。`type` 对外输出 `str`（schema 内部仍用 `string`）。
+/// GET/HEAD only；其余方法 → 405 JSON。
+async fn config_schema(State(state): State<Arc<WebState>>, req: Request) -> Response {
+    if !matches!(*req.method(), Method::GET | Method::HEAD) {
+        return error(
+            StatusCode::METHOD_NOT_ALLOWED,
+            "method_not_allowed",
+            format!(
+                "{} is not allowed on /api/config/schema (GET only)",
+                req.method()
+            ),
+        );
+    }
+    let env_link = state.env_link.clone();
+    match tokio::task::spawn_blocking(move || env_file::load_schema(env_dir(&env_link))).await {
+        Ok(Ok(schema)) => {
+            let keys = schema
+                .key
+                .iter()
+                .map(|k| dto::ConfigKeySchema {
+                    name: k.name.clone(),
+                    // schema 文件口径 `string` → API 口径 `str`（issue #81 契约）。
+                    kind: if k.kind == "string" { "str" } else { &k.kind }.to_string(),
+                    default: k.default.clone(),
+                    values: k.values.clone(),
+                    sensitive: k.sensitive,
+                    description: k.description.clone(),
+                    component: k.component.clone(),
+                })
+                .collect();
+            Json(dto::ConfigSchemaReport {
+                schema: dto::SCHEMA_VERSION,
+                keys,
+            })
+            .into_response()
+        }
+        Ok(Err(e)) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("config schema load failed: {e}"),
+        ),
+        Err(e) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("config schema task failed: {e}"),
         ),
     }
 }

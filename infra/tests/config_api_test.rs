@@ -382,3 +382,71 @@ async fn config_rollback_restores_backup() {
     assert_eq!(status, 405);
     assert_error(&v, "method_not_allowed");
 }
+
+/// GET /api/config/schema（issue #81）：config.schema.toml 单源直出——
+/// 键集合与盘内 schema 一致；type 对外映射 `string`→`str`；component 取值域校验；
+/// 非 GET → 405。
+#[tokio::test]
+async fn config_schema_endpoint_single_source() {
+    let dir = test_dir("schema");
+    let app = web::router(env_state(&dir));
+
+    let (status, v) = call(app.clone(), req("GET", "/api/config/schema")).await;
+    assert_eq!(status, 200, "{v}");
+    assert_eq!(v["schema"], 1);
+    let keys = v["keys"].as_array().expect("keys array");
+    assert!(!keys.is_empty());
+
+    // 单源：与仓库根 schema 文件键集合一致（服务端无第二份键表）
+    let schema =
+        momo_infra::config_schema::Schema::parse(include_str!("../../config.schema.toml")).unwrap();
+    assert_eq!(keys.len(), schema.key.len(), "{v}");
+    let by_name: std::collections::BTreeMap<&str, &Value> = keys
+        .iter()
+        .map(|k| (k["name"].as_str().unwrap(), k))
+        .collect();
+    for spec in &schema.key {
+        let k = by_name
+            .get(spec.name.as_str())
+            .unwrap_or_else(|| panic!("key {} missing in {v}", spec.name));
+        // 契约字段齐：name/type/default/sensitive/description/component（values 仅 enum 下发）
+        for f in [
+            "name",
+            "type",
+            "default",
+            "sensitive",
+            "description",
+            "component",
+        ] {
+            assert!(
+                k.get(f).is_some(),
+                "key {} field {f} missing: {k}",
+                spec.name
+            );
+        }
+        assert_eq!(k["component"], spec.component, "key {}", spec.name);
+        assert_eq!(k["sensitive"], spec.sensitive, "key {}", spec.name);
+        let want_type = if spec.kind == "string" {
+            "str"
+        } else {
+            spec.kind.as_str()
+        };
+        assert_eq!(k["type"], want_type, "key {}", spec.name);
+    }
+
+    // 枚举下发 values；敏感键 sensitive=true 且无明文泄漏（schema 只含元数据）
+    let tts = by_name["MOMO_TTS_PROVIDER"];
+    assert_eq!(tts["type"], "enum");
+    assert!(tts["values"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|x| x == "kokoro"));
+    assert_eq!(by_name["MOMO_LLM_API_KEY"]["sensitive"], true);
+    assert_eq!(by_name["MOMO_LLM_API_KEY"]["type"], "str");
+
+    // PUT /api/config/schema → 405（带 CSRF 穿过守卫层）
+    let (status, v) = call(app, req_json("PUT", "/api/config/schema", json!({"x": 1}))).await;
+    assert_eq!(status, 405);
+    assert_error(&v, "method_not_allowed");
+}

@@ -12,6 +12,9 @@ use crate::output::AppError;
 pub const FILES: &[&str] = &["app", "models", "infra"];
 /// 消费模块 id（schema `readers` 取值域）。
 pub const MODULES: &[&str] = &["app", "models", "infra"];
+/// 配置页分组 id（schema `component` 取值域）：
+/// 对齐 config.md §2.1 通用 / §2.2 编排器 / §2.3 模型服务 / §2.4 infra。
+pub const COMPONENTS: &[&str] = &["common", "app", "models", "infra"];
 const KEY_TYPES: &[&str] = &["string", "bool", "int", "path", "url", "enum"];
 const SCHEMA_FILE: &str = "config.schema.toml";
 const CONFIG_MD: &str = "docs/01-architecture/config.md";
@@ -43,6 +46,9 @@ pub struct KeySpec {
     /// 某 `.env.example` 示例值偏离 `default` 时的覆盖（key = FILES 元素）。
     #[serde(default)]
     pub examples: BTreeMap<String, String>,
+    /// 配置页分 section（COMPONENTS 取值域；对齐 config.md §2 分组）。
+    #[serde(default)]
+    pub component: String,
     #[serde(default)]
     pub description: String,
 }
@@ -160,6 +166,12 @@ impl Schema {
             }
             if k.readers.is_empty() {
                 errs.push(format!("key '{}': readers must not be empty", k.name));
+            }
+            if !COMPONENTS.contains(&k.component.as_str()) {
+                errs.push(format!(
+                    "key '{}': unknown component '{}' (expected common|app|models|infra)",
+                    k.name, k.component
+                ));
             }
             check_files(&k.name, &k.files, &mut errs, false);
             for f in k.examples.keys() {
@@ -363,6 +375,8 @@ pub fn check_config_md(text: &str, schema: &Schema) -> Vec<DriftItem> {
     let mut section = ""; // 当前 `## N.` 一级小节
     let mut sub = ""; // 当前 `### 2.x` 小节
     let mut seen_keys: BTreeSet<String> = BTreeSet::new();
+    // 键 → 出现过的 §2.x 小节集合（component 对齐检查用；跨节引用键多处出现）。
+    let mut seen_subs: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut seen_pt: BTreeSet<String> = BTreeSet::new();
     let mut in_dotenv = false;
     let mut template = String::new();
@@ -444,6 +458,10 @@ pub fn check_config_md(text: &str, schema: &Schema) -> Vec<DriftItem> {
             }
         };
         seen_keys.insert(name.clone());
+        seen_subs
+            .entry(name.clone())
+            .or_default()
+            .insert(sub.to_string());
         // 默认值列（idx 2）：`x`→x、空→""
         let doc_default = doc_cell_default(&cells[2]);
         if doc_default != spec.default {
@@ -504,6 +522,23 @@ pub fn check_config_md(text: &str, schema: &Schema) -> Vec<DriftItem> {
                 Some(k.name.as_str()),
                 "config.md §2 table: schema key absent",
             ));
+            continue;
+        }
+        // component ↔ §2 小节对齐：键须在与其 component 对应的小节出现过
+        // （§2.1=common §2.2=app §2.3=models §2.4=infra；跨节引用任一命中即可）。
+        let subs = seen_subs.get(&k.name).cloned().unwrap_or_default();
+        if !subs
+            .iter()
+            .any(|s| sub_component(s) == Some(k.component.as_str()))
+        {
+            drifts.push(DriftItem::new(
+                "table",
+                Some(k.name.as_str()),
+                format!(
+                    "config.md §2 sections {subs:?} != schema component '{}'",
+                    k.component
+                ),
+            ));
         }
     }
     for p in &schema.passthrough {
@@ -540,6 +575,17 @@ fn split_row(line: &str) -> Vec<String> {
         .split('|')
         .map(|c| c.trim().to_string())
         .collect()
+}
+
+/// config.md §2.x 小节编号 → schema `component` 取值。
+fn sub_component(sub: &str) -> Option<&'static str> {
+    match sub {
+        "2.1" => Some("common"),
+        "2.2" => Some("app"),
+        "2.3" => Some("models"),
+        "2.4" => Some("infra"),
+        _ => None,
+    }
 }
 
 /// cell 内全部 `` `...` `` 段内容。
@@ -612,6 +658,7 @@ default = "x"
 sensitive = false
 readers = ["app"]
 files = ["app"]
+component = "common"
 description = "d"
 [[passthrough]]
 name = "HF_ENDPOINT"
@@ -680,6 +727,32 @@ default = "off"
 sensitive = true"#,
         );
         Schema::parse(&text).unwrap();
+    }
+
+    /// component 与 config.md §2 小节对齐：键出现在与其 component 不符的小节 → drift。
+    #[test]
+    fn component_matches_doc_subsection() {
+        let s = Schema::parse(MINI_SCHEMA).unwrap(); // component = "common"
+                                                     // 写在 §2.3（models）但 component=common → drift；且无 missing。
+        let md = "# c\n\n## 2. 变量全集\n\n### 2.3 模型服务\n\n\
+                  | 名称 | 含义 | 默认值 | 取值 | 敏感 |\n|---|---|---|---|---|\n\
+                  | `MOMO_FOO` | d | `x` | str | 否 |\n\n### 2.5 直通\n\n\
+                  | 名称 | 含义 | 默认值 | 说明 |\n|---|---|---|---|\n\
+                  | `HF_ENDPOINT` | m | `https://hf-mirror.com` | m |\n\n\
+                  ## 3. `.env.example`\n\n```dotenv\nMOMO_FOO=x\nHF_ENDPOINT=https://hf-mirror.com\n```\n";
+        let d = check_config_md(md, &s);
+        assert!(
+            d.iter()
+                .any(|x| x.key.as_deref() == Some("MOMO_FOO") && x.detail.contains("component")),
+            "{d:?}"
+        );
+        // component=common 落在 §2.1 → 无该项 drift。
+        let md2 = md.replace("### 2.3 模型服务", "### 2.1 通用");
+        let d2 = check_config_md(&md2, &s);
+        assert!(
+            !d2.iter().any(|x| x.key.as_deref() == Some("MOMO_FOO")),
+            "{d2:?}"
+        );
     }
 
     /// 敏感项 examples 不得覆写真实值（只允许等于 default）。

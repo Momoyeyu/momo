@@ -522,6 +522,7 @@ mod tests {
             readers: vec![],
             files: vec![],
             examples: BTreeMap::new(),
+            component: "common".into(),
             description: String::new(),
         };
         let e = spec("enum", &["a", "b"]);

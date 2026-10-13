@@ -219,7 +219,7 @@ flowchart TD
 
 ```toml
 schema = 1            # 文件格式版本
-key = [ { name, type, values?, default, sensitive?, readers, files, examples?, description } ]
+key = [ { name, type, values?, default, sensitive?, readers, files, examples?, component, description } ]
 passthrough = [ { name, type?, default, files, description } ]   # 非 MOMO_ 前缀，第三方库自读
 ```
 
@@ -233,6 +233,7 @@ passthrough = [ { name, type?, default, files, description } ]   # 非 MOMO_ 前
 | `readers` | 代码中消费该键的模块：`app`/`models`/`infra` |
 | `files` | 该键必须以非注释行出现在哪些 `<mod>/.env.example`；config.md §3 完整模板恒按 `app` 口径 |
 | `examples` | 可选：某文件示例值偏离 `default` 时的覆盖，如 `{ infra = "warn" }`；**敏感项不得覆写真实值**（只允许等于 `default`），真实 key/开关取值一律走本地 `.env` |
+| `component` | 配置页分 section：`common`/`app`/`models`/`infra`，对齐 §2.1–2.4 小节；跨节引用的键须在其 component 对应的小节出现过（`config check` 校验） |
 | `description` | 含义，与 §2「含义」列保持一致 |
 
 `passthrough.files = []` 表示该变量只允许以注释形式出现在 `.env.example`（如 `UV_INDEX_URL`、`PIP_INDEX_URL`、`HTTPS_PROXY`）。

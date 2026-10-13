@@ -418,10 +418,39 @@ table.list td.num {
   padding-left: 1.2rem;
 }
 
+.cfg-section h2 {
+  font-size: 0.95rem;
+  color: #8b949e;
+  border-bottom: 1px solid #21262d;
+  padding-bottom: 0.3rem;
+  margin: 1.4rem 0 0.6rem;
+}
 .cfg-table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 1rem;
+}
+.cfg-table select {
+  width: 100%;
+  box-sizing: border-box;
+}
+.cfg-switch {
+  width: auto;
+  transform: scale(1.2);
+}
+.help {
+  color: #8b949e;
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+}
+.mini {
+  font-size: 0.72rem;
+  padding: 0 0.35rem;
+  vertical-align: middle;
+}
+.tag.warn {
+  color: #d29922;
+  border-color: #d29922;
 }
 .cfg-table td {
   padding: 0.35rem 0.4rem;

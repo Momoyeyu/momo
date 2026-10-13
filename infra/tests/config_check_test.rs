@@ -29,6 +29,7 @@ default = "x"
 sensitive = false
 readers = ["app"]
 files = ["app"]
+component = "app"
 description = "d"
 [[key]]
 name = "MOMO_SECRET"
@@ -37,6 +38,7 @@ default = ""
 sensitive = true
 readers = ["infra"]
 files = ["infra"]
+component = "infra"
 description = "s"
 [[passthrough]]
 name = "HF_ENDPOINT"
