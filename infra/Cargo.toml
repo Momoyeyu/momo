@@ -41,3 +41,5 @@ windows-sys = { version = "0.52", features = ["Win32_Foundation", "Win32_System_
 
 [dev-dependencies]
 wiremock = "0.6"
+# api_contract_test 用 ServiceExt::oneshot 免端口直连 Router。
+tower = { version = "0.5", features = ["util"] }

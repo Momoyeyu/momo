@@ -5,22 +5,13 @@
 
 use std::sync::Arc;
 
-use serde::Serialize;
 use tokio::sync::broadcast;
 
+use crate::api::dto::WebReport;
 use crate::cli::WebArgs;
 use crate::env_cfg::EnvCfg;
 use crate::output::{AppError, ExitCode};
 use crate::web::{self, WebState};
-
-/// `web --json` 启动对象（momo-infra.md 子命令清单口径）。
-#[derive(Debug, Serialize)]
-struct WebReport {
-    schema: u8,
-    command: String,
-    listen: String,
-    url: String,
-}
 
 pub fn run(args: &WebArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
     let env = EnvCfg;

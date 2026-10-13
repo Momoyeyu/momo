@@ -13,11 +13,10 @@ use std::collections::BTreeMap;
 use std::io::Write;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use serde::Serialize;
-
+use crate::api::dto::{BenchReport, Check, CheckStatus, StageStats, Summary, TurnResult};
 use crate::cli::BenchArgs;
 use crate::env_cfg::EnvCfg;
-use crate::output::{AppError, Check, CheckStatus, ExitCode, Summary};
+use crate::output::{AppError, ExitCode};
 
 /// 出声延迟目标（momo-infra.md：目标 <1.5s）。
 const FIRST_AUDIO_TARGET_MS: u64 = 1500;
@@ -29,43 +28,6 @@ const HELLO_TIMEOUT: Duration = Duration::from_secs(10);
 const PROBE_TEXT: &str = "你好。这是一次 momoctl bench 延迟测量。";
 /// UI 链路 Origin：bench 以 desktop 身份接入本机 momod。
 const BENCH_ORIGIN: &str = "tauri://localhost";
-
-#[derive(Debug, Serialize)]
-struct TurnResult {
-    turn: u32,
-    /// 发→`input.accepted`。
-    accepted_ms: Option<u64>,
-    /// 发→首个 `output.sentence`。
-    first_sentence_ms: Option<u64>,
-    /// 发→首个下行 `audio.chunk`（二进制帧）。
-    first_audio_ms: Option<u64>,
-    /// 发→`turn.finished`。
-    finished_ms: Option<u64>,
-    outcome: Option<String>,
-    /// rejected/timeout/异常说明。
-    note: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-struct StageStats {
-    samples: usize,
-    p50_ms: u64,
-    p95_ms: u64,
-    max_ms: u64,
-}
-
-#[derive(Debug, Serialize)]
-struct BenchReport {
-    schema: u8,
-    command: String,
-    endpoint: String,
-    turns: u32,
-    target_first_audio_ms: u64,
-    results: Vec<TurnResult>,
-    stats: BTreeMap<String, StageStats>,
-    checks: Vec<Check>,
-    summary: Summary,
-}
 
 pub fn run(args: &BenchArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
     let listen = EnvCfg.orch_listen();
@@ -112,7 +74,7 @@ pub fn run(args: &BenchArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
         target_first_audio_ms: FIRST_AUDIO_TARGET_MS,
         results,
         stats,
-        summary: summarize(&checks),
+        summary: Summary::from_checks(&checks),
         checks,
     };
     render(&report, ctx)?;
@@ -459,22 +421,6 @@ fn make_checks(
         }
     }
     checks
-}
-
-fn summarize(checks: &[Check]) -> Summary {
-    let mut s = Summary {
-        ok: 0,
-        warn: 0,
-        fail: 0,
-    };
-    for c in checks {
-        match c.status {
-            CheckStatus::Ok => s.ok += 1,
-            CheckStatus::Warn => s.warn += 1,
-            CheckStatus::Fail => s.fail += 1,
-        }
-    }
-    s
 }
 
 fn render(report: &BenchReport, ctx: &super::Ctx) -> Result<(), AppError> {

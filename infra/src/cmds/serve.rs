@@ -8,12 +8,13 @@ use std::process::{Child, Command};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use serde::Serialize;
-
-use crate::cli::{LogsArgs, ServeAction, ServeArgs, ServeCommon};
+use crate::api::dto::{
+    Check, CheckStatus, LogBatch, LogEntry, ServeLogsReport, ServeReport, Summary,
+};
+use crate::cli::{LogsArgs, Profile, ServeAction, ServeArgs, ServeCommon};
 use crate::env_cfg::{self, EnvCfg};
 use crate::net;
-use crate::output::{not_implemented, AppError, Check, CheckStatus, ExitCode, Summary};
+use crate::output::{not_implemented, AppError, ExitCode};
 use crate::serve::proc;
 use crate::serve::profile::{Component, ServeProfile};
 
@@ -24,15 +25,6 @@ const READY_POLL: Duration = Duration::from_millis(200);
 const TERM_GRACE: Duration = Duration::from_secs(10);
 /// serve logs -f 轮询间隔。
 const FOLLOW_POLL: Duration = Duration::from_millis(300);
-
-#[derive(Debug, Serialize)]
-struct ServeReport {
-    schema: u8,
-    command: String,
-    profile: String,
-    checks: Vec<Check>,
-    summary: Summary,
-}
 
 pub fn run(args: &ServeArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
     if let ServeAction::Logs(largs) = &args.action {
@@ -84,7 +76,7 @@ fn down(
             schema: 1,
             command: "serve down".into(),
             profile: profile.into(),
-            summary: summarize(&checks),
+            summary: Summary::from_checks(&checks),
             checks,
         },
         ctx,
@@ -149,6 +141,30 @@ pub(crate) fn down_inner(
     ))
 }
 
+/// `serve status` core 报告：`GET /api/serve/status` 与 CLI 共用同一 `ServeReport`。
+/// 读 pidfile + 探活（文件 IO/网络探测），web 侧须 `spawn_blocking` 调用。
+/// 返回 `(report, 退出码口径)`——REST 恒 200 下发报告，code 仅保留语义。
+pub fn status_report(profile_arg: Option<Profile>) -> Result<(ServeReport, i32), AppError> {
+    let profile = EnvCfg.profile(profile_arg);
+    let doc = ServeProfile::load_builtin(profile.as_str())?;
+    let common = ServeCommon {
+        profile: profile_arg,
+        only: Vec::new(),
+        app_bin: None,
+    };
+    let (checks, code) = status_inner(&doc, &common, profile.as_str())?;
+    Ok((
+        ServeReport {
+            schema: 1,
+            command: "serve status".into(),
+            profile: profile.as_str().into(),
+            summary: Summary::from_checks(&checks),
+            checks,
+        },
+        code,
+    ))
+}
+
 /// `serve status`：running(pid+uptime)/stopped/stale pidfile；external 报探活。
 fn status(
     doc: &ServeProfile,
@@ -162,7 +178,7 @@ fn status(
             schema: 1,
             command: "serve status".into(),
             profile: profile.into(),
-            summary: summarize(&checks),
+            summary: Summary::from_checks(&checks),
             checks,
         },
         ctx,
@@ -238,7 +254,7 @@ fn restart(
             schema: 1,
             command: "serve restart".into(),
             profile: profile.into(),
-            summary: summarize(&checks),
+            summary: Summary::from_checks(&checks),
             checks,
         },
         ctx,
@@ -278,12 +294,12 @@ fn logs(
     }
 
     if ctx.json {
-        let report = serde_json::json!({
-            "schema": 1,
-            "command": "serve logs",
-            "profile": profile,
-            "logs": entries,
-        });
+        let report = ServeLogsReport {
+            schema: crate::api::dto::SCHEMA_VERSION,
+            command: "serve logs".into(),
+            profile: profile.into(),
+            logs: entries,
+        };
         println!("{}", serde_json::to_string_pretty(&report).unwrap());
     } else {
         let mut w = std::io::stdout().lock();
@@ -302,13 +318,6 @@ fn logs(
         follow_logs(&watched, ctx)?;
     }
     Ok(ExitCode::Ok as i32)
-}
-
-#[derive(Debug, Serialize)]
-struct LogEntry {
-    component: String,
-    path: Option<String>,
-    lines: Vec<String>,
 }
 
 /// 读文件最后 n 行：先只读末尾 1 MiB 窗口，不够再全量重读。
@@ -382,7 +391,10 @@ fn follow_logs(watched: &[(String, PathBuf)], ctx: &super::Ctx) -> Result<(), Ap
                 continue;
             }
             if ctx.json {
-                let body = serde_json::json!({ "component": name, "lines": lines });
+                let body = LogBatch {
+                    component: name,
+                    lines,
+                };
                 println!("{}", serde_json::to_string(&body).unwrap());
             } else {
                 let mut w = std::io::stdout().lock();
@@ -412,7 +424,7 @@ fn up(
             schema: 1,
             command: "serve up".into(),
             profile: profile.into(),
-            summary: summarize(&checks),
+            summary: Summary::from_checks(&checks),
             checks,
         },
         ctx,
@@ -672,22 +684,6 @@ fn render(report: &ServeReport, ctx: &super::Ctx) -> Result<(), AppError> {
         report.summary.ok, report.summary.warn, report.summary.fail
     )?;
     Ok(())
-}
-
-fn summarize(checks: &[Check]) -> Summary {
-    let mut s = Summary {
-        ok: 0,
-        warn: 0,
-        fail: 0,
-    };
-    for c in checks {
-        match c.status {
-            CheckStatus::Ok => s.ok += 1,
-            CheckStatus::Warn => s.warn += 1,
-            CheckStatus::Fail => s.fail += 1,
-        }
-    }
-    s
 }
 
 /// uptime 紧凑格式：`90s` → `1m30s`，`3700s` → `1h1m`。

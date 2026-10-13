@@ -10,33 +10,20 @@ use std::time::Duration;
 
 use reqwest::blocking::Client;
 use reqwest::header::RANGE;
-use serde::Serialize;
 
+use crate::api::dto::{Check, CheckStatus, PullReport, Summary};
 use crate::cli::PullArgs;
 use crate::env_cfg::EnvCfg;
 use crate::manifest::{
     is_placeholder_sha, sha256_file, FileEntry, LockEntry, LockFile, Manifest, ModelEntry,
     ModelsLock,
 };
-use crate::output::{AppError, Check, CheckStatus, ExitCode, Summary};
+use crate::output::{AppError, ExitCode};
 
 /// 下载连接超时；总时长不设限（权重文件 GB 级）。
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
 /// HF 镜像默认（config.md §2.5：laptop huggingface.co 不通）。
 const DEFAULT_HF_ENDPOINT: &str = "https://hf-mirror.com";
-
-/// `momoctl pull` 报告：JSON 顶层恒带 `schema`。
-#[derive(Debug, Serialize)]
-struct PullReport {
-    schema: u8,
-    command: String,
-    manifest: String,
-    models_dir: String,
-    /// 下载源（--check 模式为 null）。
-    endpoint: Option<String>,
-    checks: Vec<Check>,
-    summary: Summary,
-}
 
 pub fn run(args: &PullArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
     if args.check {
@@ -118,7 +105,7 @@ fn pull(args: &PullArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
         manifest: manifest_path.display().to_string(),
         models_dir: models_dir.display().to_string(),
         endpoint: Some(endpoint),
-        summary: summarize(&checks),
+        summary: Summary::from_checks(&checks),
         checks,
     };
     render(&report, ctx)?;
@@ -430,7 +417,7 @@ fn check(args: &PullArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
         manifest: manifest_path.display().to_string(),
         models_dir: models_dir.display().to_string(),
         endpoint: None,
-        summary: summarize(&checks),
+        summary: Summary::from_checks(&checks),
         checks,
     };
     render(&report, ctx)?;
@@ -518,22 +505,6 @@ fn locate_manifest(args: &PullArgs) -> Result<PathBuf, AppError> {
             crate::manifest::manifest_candidates().join(", ")
         ))
     })
-}
-
-fn summarize(checks: &[Check]) -> Summary {
-    let mut s = Summary {
-        ok: 0,
-        warn: 0,
-        fail: 0,
-    };
-    for c in checks {
-        match c.status {
-            CheckStatus::Ok => s.ok += 1,
-            CheckStatus::Warn => s.warn += 1,
-            CheckStatus::Fail => s.fail += 1,
-        }
-    }
-    s
 }
 
 fn render(report: &PullReport, ctx: &super::Ctx) -> Result<(), AppError> {

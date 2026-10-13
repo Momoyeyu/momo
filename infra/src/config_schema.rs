@@ -85,7 +85,7 @@ impl DriftItem {
 }
 
 /// 单个被检查来源（一个文件）的结果。
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SourceReport {
     pub file: String,
     pub drifts: Vec<DriftItem>,
