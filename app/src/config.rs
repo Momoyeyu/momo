@@ -36,6 +36,8 @@ pub struct Config {
     pub barge_in_enabled: bool,
     /// `MOMO_BARGEIN_MIN_MS`，speech_start 防抖时长。
     pub barge_in_min: Duration,
+    /// `MOMO_SESSION_RESUME_TTL_MS`，WS 断开后可 resume 的 session 保活窗口。
+    pub session_resume_ttl: Duration,
     /// `MOMO_IDLE_TIMEOUT_S`，空闲自发行为触发秒数（0=关闭）。
     pub idle_timeout: Duration,
     /// `MOMO_SENT_SOFT_CHARS`，句切弱切阈值。
@@ -119,6 +121,12 @@ impl Config {
         let log_format = typed(&mut parse, "MOMO_LOG_FORMAT", "pretty", &mut errors);
         let barge_in_enabled = typed(&mut parse, "MOMO_BARGEIN_ENABLED", "true", &mut errors);
         let barge_in_min_ms = typed::<u64>(&mut parse, "MOMO_BARGEIN_MIN_MS", "250", &mut errors);
+        let session_resume_ttl_ms = typed::<u64>(
+            &mut parse,
+            "MOMO_SESSION_RESUME_TTL_MS",
+            "60000",
+            &mut errors,
+        );
         let idle_timeout_s = typed::<u64>(&mut parse, "MOMO_IDLE_TIMEOUT_S", "20", &mut errors);
         let sent_soft_chars = typed(&mut parse, "MOMO_SENT_SOFT_CHARS", "25", &mut errors);
         let sent_max_chars = typed(&mut parse, "MOMO_SENT_MAX_CHARS", "60", &mut errors);
@@ -147,6 +155,7 @@ impl Config {
             log_format: log_format.unwrap(),
             barge_in_enabled: barge_in_enabled.unwrap(),
             barge_in_min: Duration::from_millis(barge_in_min_ms.unwrap()),
+            session_resume_ttl: Duration::from_millis(session_resume_ttl_ms.unwrap()),
             idle_timeout: Duration::from_secs(idle_timeout_s.unwrap()),
             sent_soft_chars: sent_soft_chars.unwrap(),
             sent_max_chars: sent_max_chars.unwrap(),

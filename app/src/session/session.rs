@@ -55,6 +55,17 @@ pub enum SessionCmd {
     Asr(AsrEvent),
     /// 回合管线回传事件（runtime.md：任务只能回传事件，不得改 actor 状态）。
     Pipeline(PipelineEvent),
+    /// WS 断开：取消活动回合、保留会话历史，进入 `MOMO_SESSION_RESUME_TTL_MS`
+    /// 保活窗口等 resume（protocol §5）。`conn_id` 校验防 stale conn 误清。
+    ConnClosed { conn_id: String },
+    /// `hello.resume_session_id` 命中：session 换绑新 conn 的出站队列并下发
+    Reattach {
+        conn_id: String,
+        out_tx: mpsc::Sender<OutboundFrame>,
+    },
+    /// 保活窗口到点；`seq` 与当前 detached 代次匹配才退出（防 stale 计时器）。
+    ResumeExpired { seq: u64 },
+    /// 被新 session 顶掉 / 进程关停。
     Shutdown,
 }
 
@@ -104,6 +115,8 @@ pub struct SessionDeps {
     pub barge_in_enabled: bool,
     /// `MOMO_BARGEIN_MIN_MS`：speech_start 防抖时长。
     pub barge_in_min: Duration,
+    /// `MOMO_SESSION_RESUME_TTL_MS`：WS 断开后 session 保活窗口。
+    pub resume_ttl: Duration,
 }
 
 impl SessionDeps {
@@ -115,6 +128,7 @@ impl SessionDeps {
             llm: Some(Arc::new(OpenAiCompatLlm::from_config(config))),
             barge_in_enabled: config.barge_in_enabled,
             barge_in_min: config.barge_in_min,
+            resume_ttl: config.session_resume_ttl,
         }
     }
 }
@@ -129,6 +143,9 @@ pub struct SessionHandle {
     /// conn_tx 出站队列（有界 mpsc 背压）；Session/管线经它向连接推帧。
     pub out_tx: mpsc::Sender<OutboundFrame>,
     pub state_rx: watch::Receiver<TurnState>,
+    /// 当前归属 conn_id：resume 换主时变更，actor 退出时 sender 掉落；
+    /// conn 据此实现单活跃顶掉（protocol §认证）。
+    pub conn_rx: watch::Receiver<String>,
 }
 
 /// Session actor 本体；由 [`Session::spawn`] 在 tokio task 中运行。
@@ -143,6 +160,8 @@ pub struct Session {
     out_tx: mpsc::Sender<OutboundFrame>,
     /// 自投递句柄（管线 task、settlement timer 回传 `SessionCmd::Pipeline`）。
     cmd_tx: mpsc::Sender<SessionCmd>,
+    /// conn 归属广播：resume 换主时写入新 conn_id，actor 退出随 self 掉落。
+    conn_watch: watch::Sender<String>,
     /// 当前回合（含 listening capture 回合）；`None` = idle。
     /// barge-in 时新回合用新 CancellationToken。
     turn: Option<Turn>,
@@ -156,6 +175,9 @@ pub struct Session {
     tts: Option<Arc<dyn TtsClient>>,
     sent_soft_chars: usize,
     sent_max_chars: usize,
+    /// `(input.id → turn_id,status)` 幂等回执缓存（protocol §7：重复输入
+    /// ACK 已有 turn；§5：snapshot receipts 收敛凭据）。
+    seen_inputs: VecDeque<InputReceipt>,
     /// 活动 uplink stream 绑定（`stream_id` 原始 ULID → 转发通道）；
     /// 独立于 turn 生命周期，capture 不随旧 turn cancel 删除。
     uplinks: HashMap<Ulid, Uplink>,
@@ -166,6 +188,11 @@ pub struct Session {
     /// VAD speech_start 防抖：计时中的 pending（seq 代次防 stale 确认）。
     vad_pending: Option<VadPending>,
     vad_seq: u64,
+    /// 断线保活窗口（`MOMO_SESSION_RESUME_TTL_MS`）：超时 actor 退出回收。
+    resume_ttl: Duration,
+    /// `Some(seq)` = detached 等 resume；`seq` 防前一轮计时器误杀新窗口。
+    detached: Option<u64>,
+    detach_seq: u64,
 }
 
 /// 一条活动 uplink stream（`audio.open{uplink}` 建立，`audio.end`/abort 收尾）。
@@ -213,12 +240,14 @@ impl Session {
         // 会话命令队列；容量无协议硬约束，取与 conn_tx 同量级。
         let (cmd_tx, cmd_rx) = mpsc::channel(64);
         let (state_tx, state_rx) = watch::channel(TurnState::Idle);
+        let (conn_watch, conn_rx) = watch::channel(conn_id.clone());
         let session = Session {
             env: ServerEnv::new(id.clone()),
             id: id.clone(),
             conn_id,
             client,
             state_tx,
+            conn_watch,
             out_tx: out_tx.clone(),
             cmd_tx: cmd_tx.clone(),
             turn: None,
@@ -236,6 +265,9 @@ impl Session {
             barge_in_min: deps.barge_in_min,
             vad_pending: None,
             vad_seq: 0,
+            resume_ttl: deps.resume_ttl,
+            detached: None,
+            detach_seq: 0,
         };
         // svc-asr 回流事件 → SessionCmd（单活跃 session：新订阅取代旧）。
         if let Some(asr) = session.asr.clone() {
@@ -256,6 +288,7 @@ impl Session {
             cmd_tx,
             out_tx,
             state_rx,
+            conn_rx,
         }
     }
 
@@ -268,7 +301,25 @@ impl Session {
                 SessionCmd::Audio(header, payload) => self.on_uplink_frame(header, payload).await,
                 SessionCmd::Asr(ev) => self.on_asr(ev).await,
                 SessionCmd::Pipeline(ev) => self.on_pipeline(ev).await,
+                SessionCmd::ConnClosed { conn_id } => {
+                    if conn_id == self.conn_id {
+                        self.detach().await;
+                    } else {
+                        // resume 换主后旧 conn 的迟到通知：忽略。
+                        debug!(session = %self.id, %conn_id, "stale ConnClosed ignored");
                     }
+                }
+                SessionCmd::Reattach { conn_id, out_tx } => {
+                    self.on_reattach(conn_id, out_tx).await;
+                }
+                SessionCmd::ResumeExpired { seq } => {
+                    if self.detached == Some(seq) {
+                        debug!(session = %self.id, "resume window expired, session actor exit");
+                        break;
+                    }
+                }
+                SessionCmd::Shutdown => {
+                    self.teardown().await;
                     debug!(session = %self.id, conn = %self.conn_id, "session actor exit");
                     break;
                 }
@@ -297,6 +348,88 @@ impl Session {
             Msg::PlaybackStarted(p) => self.on_playback_started(p).await,
             Msg::PlaybackProgress(p) => self.on_playback_progress(p).await,
             other => warn!(session = %self.id, ?other, "unsupported client msg"),
+        }
+    }
+
+    // ---------- 连接归属与保活 ----------
+
+    /// 断连/关停公共清理：取消活动回合（上游 token 扇出）、已播部分记账、
+    /// receipt 标 interrupted；uplink sender 全部掉落 → task 向 svc-asr 发
+    /// `control.cancel{capture}`。
+    async fn teardown(&mut self) {
+        if let Some(turn) = self.turn.take() {
+            turn.cancel.cancel();
+            self.history
+                .commit_partial(&turn.user_text, &turn.committed);
+            self.mark_receipts(&turn.id, ReceiptStatus::Interrupted);
+        }
+        self.uplinks.clear();
+        self.captures.clear();
+        self.sink = None;
+    }
+
+    /// WS 断开进保活窗口：清理活动对象后 detached，TTL 内等
+    /// `hello.resume_session_id` 命中；超时 `ResumeExpired` 退出回收。
+    async fn detach(&mut self) {
+        self.teardown().await;
+        self.detach_seq += 1;
+        let seq = self.detach_seq;
+        self.detached = Some(seq);
+        let tx = self.cmd_tx.clone();
+        let ttl = self.resume_ttl;
+        tokio::spawn(async move {
+            tokio::time::sleep(ttl).await;
+            let _ = tx.send(SessionCmd::ResumeExpired { seq }).await;
+        });
+        debug!(
+            session = %self.id,
+            conn = %self.conn_id,
+            ttl_ms = ttl.as_millis() as u64,
+            "connection closed, session detached"
+        );
+    }
+
+    /// resume 命中：换绑新 conn 出站队列与 conn 归属广播，在途回合的
+    /// downlink sink 一并换绑，随后下发 `session.snapshot`。
+    async fn on_reattach(&mut self, conn_id: String, out_tx: mpsc::Sender<OutboundFrame>) {
+        self.detached = None;
+        self.conn_id = conn_id.clone();
+        self.out_tx = out_tx;
+        // conn 换主：旧 conn 监听发现 id 不符即按 close 1000 退出（单活跃）。
+        let _ = self.conn_watch.send(conn_id);
+        if let Some(turn_id) = self.turn.as_ref().map(|t| t.id.clone()) {
+            self.sink = Some(Arc::new(AudioSink::spawn(
+                self.out_tx.clone(),
+                turn_id,
+                self.env.clone(),
+            )));
+        }
+        self.send_snapshot().await;
+        debug!(session = %self.id, conn = %self.conn_id, "session resumed");
+    }
+
+    /// `session.snapshot`：无音频重放的状态收敛（protocol §4-5）。
+    /// `last_event_seq` 报已分配水位，不携带自身 `event_seq`。
+    async fn send_snapshot(&mut self) {
+        let snapshot = Msg::SessionSnapshot(SessionSnapshotMsg {
+            session_id: self.id.clone(),
+            turn: self.turn.as_ref().map(|t| SnapshotTurn {
+                id: t.id.clone(),
+                state: t.state(),
+            }),
+            receipts: self.seen_inputs.iter().cloned().collect(),
+            capabilities: vec!["barge_in".into(), "emotion_tags".into()],
+            last_event_seq: self.env.last_seq(),
+        });
+        self.send(snapshot).await;
+    }
+
+    /// turn 终态回写 receipt status（snapshot receipts 收敛凭据）。
+    fn mark_receipts(&mut self, turn_id: &str, status: ReceiptStatus) {
+        for receipt in &mut self.seen_inputs {
+            if receipt.turn_id == turn_id {
+                receipt.status = status;
+            }
         }
     }
 
@@ -1020,6 +1153,14 @@ impl Session {
                 .history
                 .commit_partial(&turn.user_text, &turn.committed),
         }
+        self.mark_receipts(
+            &turn.id,
+            match outcome {
+                TurnOutcome::Completed => ReceiptStatus::Completed,
+                TurnOutcome::Interrupted => ReceiptStatus::Interrupted,
+                TurnOutcome::Failed => ReceiptStatus::Failed,
+            },
+        );
         if let Some(o) = turn.finish(outcome) {
             self.send(Msg::TurnFinished(TurnFinishedMsg {
                 env: self.env.next(),
@@ -1192,9 +1333,16 @@ impl Session {
     fn seen_turn(&self, input_id: &str) -> Option<TurnId> {
         self.seen_inputs
             .iter()
+            .find(|r| r.id == input_id)
+            .map(|r| r.turn_id.clone())
     }
 
     fn remember_input(&mut self, input_id: String, turn_id: TurnId) {
+        self.seen_inputs.push_back(InputReceipt {
+            id: input_id,
+            turn_id,
+            status: ReceiptStatus::Accepted,
+        });
         if self.seen_inputs.len() > RECEIPT_CACHE {
             self.seen_inputs.pop_front();
         }

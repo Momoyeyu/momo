@@ -55,5 +55,6 @@ flowchart LR
 - JSON 控制帧永不丢弃；对端消费不动时 `conn_tx` 每帧发送有 stall deadline，超时直接关连（protocol「控制消息不得静默丢弃」）。
 - 解码异常（JSON 非法、未知 `type`、非法音频帧头）一律回 `error` 帧（non-fatal `BAD_MESSAGE`），连接保持；握手期/不可恢复异常回 `error` + 按 close code 表断连。
 - 握手（protocol §认证）：upgrade 前 Origin ∈ {`tauri://localhost`、`http://tauri.localhost`、`https://tauri.localhost`、`MOMO_WEB_ORIGIN`}，missing/未批准 → 403；upgrade 后 5s 内首帧必须是 `client='ui'` 且版本匹配的 hello，`auth_token` 与 `MOMO_UI_TOKEN` 恒时比对（未配置=standalone dev 不比对）；违规按 4400/4401/4001 断连。
+- 单活跃 UI 连接：`SessionManager::attach` 让新连接顶掉旧 session，旧连接收 close 1000 关连；session restore 走 `resume_session_id` + snapshot（protocol §认证）。WS 断开后 session actor 进入 `MOMO_SESSION_RESUME_TTL_MS`（默认 60s）保活窗口：回合/uplink 即时清理、history 与 receipt cache 保留；TTL 内 resume 命中则换绑复用并下发 `session.snapshot`，超时 actor 退出回收。
 
 

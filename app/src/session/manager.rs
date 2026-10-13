@@ -1,3 +1,5 @@
+//! `SessionManager`：连接归属、单活跃 session 策略（P0-P2 后连顶掉前连）、
+//! `hello.resume_session_id` 命中时换绑复用（protocol §认证）。
 
 use std::sync::Mutex;
 
@@ -29,6 +31,19 @@ impl SessionManager {
         conn_id: &str,
         client: ClientKind,
         out_tx: mpsc::Sender<OutboundFrame>,
+        resume_session_id: Option<&str>,
+        let mut guard = self.active.lock().expect("session mutex poisoned");
+        if let Some(old) = guard.as_ref() {
+            if resumed {
+                let handle = SessionHandle {
+                    out_tx,
+                    ..old.clone()
+                };
+                *guard = Some(handle.clone());
+            }
+            // fallback：未知/过期 resume id 或无 resume 的新连接顶掉旧 session。
+            let _ = old.cmd_tx.try_send(SessionCmd::Shutdown);
+        }
         let handle = Session::spawn(
             new_id("sess"),
             conn_id.to_owned(),
@@ -36,6 +51,7 @@ impl SessionManager {
             out_tx,
             self.deps.clone(),
         );
+        *guard = Some(handle.clone());
     }
 
     /// 当前活跃 session（若有）。

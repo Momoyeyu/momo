@@ -225,6 +225,7 @@ fn test_state(
         }),
         barge_in_enabled: true,
         barge_in_min,
+        resume_ttl: Duration::from_secs(60),
     };
 }
 

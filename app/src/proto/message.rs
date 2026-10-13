@@ -127,6 +127,11 @@ impl ServerEnv {
         )
     }
 
+    /// 已分配的最大 `event_seq`（`session.snapshot.last_event_seq` 水位）。
+    pub fn last_seq(&self) -> u64 {
+        self.event_seq.load(Ordering::Relaxed)
+    }
+
     /// 服务端业务消息 envelope（`event_seq` 单调递增）。
     pub fn next(&self) -> ServerEnvelope {
         let (event_id, at_ms, event_seq) = self.stamp();

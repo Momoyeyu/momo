@@ -228,6 +228,7 @@ fn test_state(llm: Arc<MockLlm>, tts_url: url::Url) -> Arc<AppState> {
         tts: Some(Arc::new(MomoWsTts::new(tts_url))),
         barge_in_enabled: true,
         barge_in_min: Duration::from_millis(120),
+        resume_ttl: Duration::from_secs(60),
     };
 }
 
