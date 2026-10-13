@@ -53,6 +53,16 @@ body,
   color: #fff;
 }
 
+.bubble.user.draft {
+  font-style: italic;
+}
+
+}
+
+}
+
+}
+
 
 #composer {
   display: flex;

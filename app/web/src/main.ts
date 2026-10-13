@@ -9,13 +9,17 @@ import { MicCapture } from "./audio/capture";
 import type { MicCaptureSink } from "./audio/capture";
 import { Live2DStage } from "./live2d/stage";
 import { initChat } from "./ui/chat";
+import { initSubtitle } from "./ui/subtitle";
 import { StatusIndicator } from "./ui/status";
 
 const stageEl = document.querySelector<HTMLCanvasElement>("#stage");
 const chatEl = document.querySelector<HTMLElement>("#chat");
+const subtitleEl = document.querySelector<HTMLElement>("#subtitle");
 const statusEl = document.querySelector<HTMLElement>("#status");
 const micBtn = document.querySelector<HTMLButtonElement>("#mic");
 const fallbackEl = document.querySelector<HTMLElement>("#avatar-fallback");
+if (!stageEl || !chatEl || !subtitleEl || !statusEl) {
+  throw new Error("index.html is missing the #stage/#chat/#subtitle/#status mount points");
 }
 
 const stage = new Live2DStage();
@@ -36,6 +40,8 @@ player.onMouthOpen = (v) => stage.setMouthOpen(v);
 
 const status = new StatusIndicator(statusEl);
 const chat = initChat(chatEl);
+// 字幕条：audio.open/end 驱动「正在说的这句」，text-only 句短显（#147）。
+const subtitle = initSubtitle(subtitleEl);
 
 const client = new WsClient(wsUrl(), uiToken());
 client.onState = (state) => status.setConn(state);
@@ -53,13 +59,47 @@ client.onServerMsg = (msg) => {
     case "state.turn":
       status.setTurn(msg.state);
       break;
+    case "input.audio.segment":
+      // ASR 转写：partial → 草稿气泡原地更新；final → 定稿为 user 气泡（#147）。
+      if (msg.final) {
+        chat.commitDraft(msg.capture_id, msg.text);
+      } else {
+        chat.setDraft(msg.capture_id, msg.text);
+      }
+      break;
+    case "input.rejected":
+      // 语音输入被拒（ref_id=capture_id）：丢弃对应 ASR 草稿。
+      chat.clearDraft(msg.ref_id);
+      break;
     case "output.sentence":
+      // 聊天气泡按句流式追加，emotion 渲染到气泡情感位（#94）；
+      // 同时登记 seq→text 映射供字幕条按 audio.open 取用（#147）。
       chat.addBubble("assistant", msg.text, normalizeEmotion(msg.emotion));
+      subtitle.onSentence(msg);
+      break;
+    case "audio.open":
+      // 仅 downlink 驱动字幕；uplink open 是 UI 自己发出的回声（不会被服务端转发）。
+      subtitle.onAudioOpen(msg);
+      break;
+    case "audio.end":
+      subtitle.onAudioEnd(msg);
+      break;
+    case "turn.finished":
+      // turn 终态：仍未绑定 downlink stream 的句即 text-only，字幕短显（#147）。
+      subtitle.onTurnFinished(msg.turn_id);
       break;
     case "control.cancel":
       // orchestrator 取消 turn/stream：同步停播、清空播放缓冲（protocol §8）。
       if (msg.target === "turn" || msg.target === "stream") {
         player.stop();
+        subtitle.onCancel(msg.target, msg.id);
+      } else if (msg.target === "capture") {
+        // 服务端取消 capture：丢弃 ASR 草稿、释放本地 mic。
+        chat.clearDraft(msg.id);
+        if (mic.capturing) {
+          mic.cancel();
+          micBtn?.classList.remove("recording");
+        }
       }
       break;
     case "error":
@@ -107,6 +147,8 @@ function cancelPtt(): void {
   if (!mic.capturing && !mic.currentCaptureId) return;
   mic.cancel();
   micBtn?.classList.remove("recording");
+  // 取消后不会再有 partial/final：本地丢弃 ASR 草稿。
+  chat.clearDraft();
 }
 
 if (micBtn) {

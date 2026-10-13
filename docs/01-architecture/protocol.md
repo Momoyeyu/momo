@@ -179,6 +179,7 @@ sequenceDiagram
 
 provider 只在下一 turn 前执行 warmup → probe → 原子 activate；成功前保留旧 provider，失败 rollback。活动 turn 存在时先由用户明确取消。凭据只在服务端保存。
 
+
 ## 10. close code
 
 `1000` 正常；`4001` 版本不匹配；`4400` hello timeout / malformed / 协议违反；`4401` unauthorized；`1011` 服务端错误。未知 message type 可回 non-fatal `error`；无法恢复的状态分叉关闭连接。控制消息不得静默丢弃。500ms 仅是 interruption settlement；LLM/synthesis stall 使用 `MOMO_LLM_TIMEOUT_MS` 或 turn provider timeout。
