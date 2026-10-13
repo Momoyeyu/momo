@@ -1327,6 +1327,7 @@ mod tests {
         (store, dir, remote, models)
     }
 
+    #[cfg(unix)]
     fn cfg(models: &Path) -> SshCfg {
         SshCfg {
             poll: Duration::from_millis(15),
@@ -1346,6 +1347,7 @@ mod tests {
     }
 
     /// 等条件满足或超时（monitor 线程驱动状态用）。
+    #[cfg(unix)]
     fn wait_for(timeout: Duration, mut f: impl FnMut() -> bool) -> bool {
         let deadline = Instant::now() + timeout;
         while Instant::now() < deadline {
@@ -1357,6 +1359,7 @@ mod tests {
         false
     }
 
+    #[cfg(unix)]
     fn status_of(store: &JobStore, id: &str) -> JobStatus {
         store.load(id).unwrap().unwrap().status
     }
