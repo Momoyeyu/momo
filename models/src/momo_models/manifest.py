@@ -1,9 +1,10 @@
 """models/MANIFEST.toml 解析与 sha256 校验。
 
-口径见 momo-docs/02-repos/momo-models.md「模型目录布局与下载清单」：
-每条目 `name / repo_id / revision / files[] / dest / notes`，
-`files[]` 元素为 `{path, sha256, size?}`。下载由 momo-infra `momoctl pull`
-执行；运行时 provider 只读本地路径，启动校验失败 → readyz 拒绝就绪。
+口径见 momo-docs/05-ops/model-fetch.md「操作检查」：
+每条目 `name / repo_id / revision / files[] / dest / notes`，以及结构化
+`license`（`{spdx, source, name?}`）；`files[]` 元素为 `{path, sha256, size?}`。
+下载由 momo-infra `momoctl pull` 执行；运行时 provider 只读本地路径，
+启动校验失败 → readyz 拒绝就绪。
 """
 
 import hashlib
@@ -24,6 +25,19 @@ class ManifestFile:
 
 
 @dataclass(frozen=True)
+class ManifestLicense:
+    """条目许可信息（机读）。
+
+    `spdx` 为 SPDX 标识（小写，如 `apache-2.0`、`mit`），或 `other` 表示
+    非 SPDX 的自定义许可——此时 `name` 必填。`source` 为核对许可的出处 URL。
+    """
+
+    spdx: str
+    source: str
+    name: str = ""
+
+
+@dataclass(frozen=True)
 class ManifestEntry:
     name: str
     repo_id: str
@@ -31,6 +45,7 @@ class ManifestEntry:
     dest: str
     files: tuple[ManifestFile, ...] = field(default_factory=tuple)
     notes: str = ""
+    license: ManifestLicense | None = None
 
 
 @dataclass(frozen=True)
@@ -56,6 +71,26 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def _parse_license(where: str, raw: object) -> ManifestLicense | None:
+    """解析可选的 `license` 表；结构非法抛 ManifestError（面向用户，英文）。"""
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ManifestError(f"{where}: license must be a table")
+    lic = ManifestLicense(
+        spdx=str(raw.get("spdx", "")).strip(),
+        source=str(raw.get("source", "")).strip(),
+        name=str(raw.get("name", "")).strip(),
+    )
+    if not lic.spdx:
+        raise ManifestError(f"{where}: license.spdx is required")
+    if not lic.source:
+        raise ManifestError(f"{where}: license.source is required")
+    if lic.spdx == "other" and not lic.name:
+        raise ManifestError(f'{where}: license.name is required when license.spdx = "other"')
+    return lic
+
+
 def load_manifest(path: Path = DEFAULT_MANIFEST) -> list[ManifestEntry]:
     """解析 MANIFEST.toml；结构非法抛 ManifestError。"""
     raw = tomllib.loads(path.read_text(encoding="utf-8"))
@@ -79,6 +114,7 @@ def load_manifest(path: Path = DEFAULT_MANIFEST) -> list[ManifestEntry]:
                     dest=str(item["dest"]),
                     files=files,
                     notes=str(item.get("notes", "")),
+                    license=_parse_license(where, item.get("license")),
                 )
             )
         except KeyError as e:

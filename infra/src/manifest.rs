@@ -1,5 +1,6 @@
 //! 解析 momo-models 仓的 `models/MANIFEST.toml`。
 //! 条目口径与其 `manifest.py` 一致：`name / repo_id / revision / files[] / sha256 / dest / notes`
+//! 以及结构化 `license`（`spdx / source / name?`）
 //! （momo-docs `02-repos/momo-models.md`、`05-ops/model-fetch.md`）。
 
 use std::fs;
@@ -31,9 +32,24 @@ pub struct ModelEntry {
     pub dest: Option<String>,
     #[serde(default)]
     pub notes: Option<String>,
+    /// 结构化许可信息（可选；`spdx` 为 SPDX 标识或 `other`）。
+    #[serde(default)]
+    pub license: Option<LicenseEntry>,
     /// `[[model.files]]`：逐项校验对象。
     #[serde(default)]
     pub files: Vec<FileEntry>,
+}
+
+/// 条目许可信息（机读）。口径与 `manifest.py` 的 `ManifestLicense` 一致。
+#[derive(Debug, Clone, Deserialize)]
+pub struct LicenseEntry {
+    /// SPDX 标识（小写，如 `apache-2.0`、`mit`），或 `other`（非 SPDX 自定义许可）。
+    pub spdx: String,
+    /// 核对许可的出处 URL。
+    pub source: String,
+    /// 自定义许可名称；`spdx = "other"` 时必填。
+    #[serde(default)]
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -84,6 +100,27 @@ impl Manifest {
                     "model '{}': dest escapes models dir",
                     m.name
                 )));
+            }
+            if let Some(lic) = &m.license {
+                if lic.spdx.trim().is_empty() {
+                    return Err(AppError::Manifest(format!(
+                        "model '{}': license.spdx is required",
+                        m.name
+                    )));
+                }
+                if lic.source.trim().is_empty() {
+                    return Err(AppError::Manifest(format!(
+                        "model '{}': license.source is required",
+                        m.name
+                    )));
+                }
+                let named = lic.name.as_deref().is_some_and(|n| !n.trim().is_empty());
+                if lic.spdx.trim() == "other" && !named {
+                    return Err(AppError::Manifest(format!(
+                        "model '{}': license.name is required when license.spdx = \"other\"",
+                        m.name
+                    )));
+                }
             }
             for f in &m.files {
                 if f.path.trim().is_empty() {
