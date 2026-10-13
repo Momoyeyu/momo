@@ -54,10 +54,8 @@ KNOWN_TYPES = frozenset(
 log = get_logger(__name__)
 
 
-def _error_frame(
-    code: str, message: str, *, ref_id: str | None = None, fatal: bool = False
-) -> dict:
-    frame: dict[str, Any] = {"type": "error", "code": code, "message": message, "fatal": fatal}
+def _error_frame(code: str, message: str, *, ref_id: str | None = None) -> dict:
+    frame: dict[str, Any] = {"type": "error", "code": code, "message": message}
     if ref_id is not None:
         frame["ref_id"] = ref_id
     return frame
@@ -95,7 +93,7 @@ class WsContext:
         async with self._send_lock:
             await self.ws.send_json({"type": msg_type, **self.envelope(), **payload})
 
-    async def send_error(self, code: str, message: str, *, fatal: bool = False) -> None:
+    async def send_error(self, code: str, message: str) -> None:
         async with self._send_lock:
             await self.ws.send_json(
                 {
@@ -103,7 +101,6 @@ class WsContext:
                     **self.envelope(),
                     "code": code,
                     "message": message,
-                    "fatal": fatal,
                 }
             )
 
@@ -212,9 +209,7 @@ def make_app(
             return
 
         if not isinstance(hello, dict) or hello.get("type") != "hello":
-            await ws.send_json(
-                _error_frame("BAD_MESSAGE", "first message must be hello", fatal=True)
-            )
+            await ws.send_json(_error_frame("BAD_MESSAGE", "first message must be hello"))
             await ws.close(code=4400)
             return
 
@@ -223,7 +218,6 @@ def make_app(
                 _error_frame(
                     "VERSION_MISMATCH",
                     f"server speaks momo-ws {PROTOCOL_VERSION}",
-                    fatal=True,
                 )
             )
             await ws.close(code=4001)
@@ -231,7 +225,7 @@ def make_app(
 
         if hello.get("client") != "orchestrator":
             await ws.send_json(
-                _error_frame("BAD_MESSAGE", "model link expects client=orchestrator", fatal=True)
+                _error_frame("BAD_MESSAGE", "model link expects client=orchestrator")
             )
             await ws.close(code=4400)
             return
@@ -242,7 +236,6 @@ def make_app(
                 "type": "hello.ok",
                 "version": PROTOCOL_VERSION,
                 "session_id": session_id,
-                "server": f"momo-svc-{role}",
                 "role": role,
                 "capabilities": [],
             }
