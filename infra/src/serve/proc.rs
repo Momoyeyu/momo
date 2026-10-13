@@ -345,6 +345,32 @@ pub(crate) fn job_active(component: &str) -> bool {
     }
 }
 
+/// 测试诊断：直接查询 pid 是否仍在具名 Job 内（区分「从未挂进」与「杀不动」）。
+#[cfg(windows)]
+pub(crate) fn pid_in_job(component: &str, pid: u32) -> Option<bool> {
+    use windows_sys::Win32::Foundation::{CloseHandle, BOOL};
+    use windows_sys::Win32::System::JobObjects::{IsProcessInJob, OpenJobObjectW};
+    use windows_sys::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
+    unsafe {
+        let name = job_name(component);
+        let job = OpenJobObjectW(JOB_OBJECT_QUERY_ACCESS, 0, name.as_ptr());
+        if job == 0 {
+            return None;
+        }
+        let ph = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+        let r = if ph == 0 {
+            None
+        } else {
+            let mut res: BOOL = 0;
+            let ok = IsProcessInJob(ph, job, &mut res);
+            CloseHandle(ph);
+            (ok != 0).then_some(res != 0)
+        };
+        CloseHandle(job);
+        r
+    }
+}
+
 /// 收掉具名 Job 全部成员（TerminateJobObject 是强杀语义）。
 #[cfg(windows)]
 fn terminate_job(component: &str) -> bool {

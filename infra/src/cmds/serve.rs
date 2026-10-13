@@ -1204,8 +1204,9 @@ cmd = "llama-server-nonexistent-bin"
             if Instant::now() >= deadline {
                 #[cfg(windows)]
                 panic!(
-                    "grandchild {gc} still alive; job_active={} stub_log={:?}",
+                    "grandchild {gc} still alive; job_active={} in_job={:?} stub_log={:?}",
                     proc::job_active("stub"),
+                    proc::pid_in_job("stub", gc),
                     fs::read_to_string(proc::log_dir().join("stub.log")).unwrap_or_default()
                 );
                 #[cfg(not(windows))]
