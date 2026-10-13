@@ -1412,6 +1412,7 @@ mod tests {
     /// 日志进 `logs/<id>.log`（验收「ssh job 日志可达」）、
     /// artifacts 拉到 models_dir 且 models.lock 有登记。
     #[test]
+    #[cfg(unix)] // exec_with 需 ssh/rsync，Windows 平台门拒绝
     fn exec_success_pulls_logs_and_registers_artifacts() {
         let (store, dir, _remote, models) = store_and_dirs("ok");
         let payload = vec![
@@ -1479,6 +1480,7 @@ mod tests {
 
     /// payload 非零退出 → failed + exit code。
     #[test]
+    #[cfg(unix)] // exec_with 需 ssh/rsync，Windows 平台门拒绝
     fn exec_failed_exit_code() {
         let (store, dir, _remote, models) = store_and_dirs("fail");
         let rec = make_ssh_job(&store, vec!["sh".into(), "-c".into(), "exit 3".into()]);
@@ -1517,6 +1519,7 @@ mod tests {
     /// 断线 → recovering；重连确认同一进程 → running 续传 → succeeded。
     /// 全程 launch 只调一次（NEVER re-launch）。
     #[test]
+    #[cfg(unix)] // exec_with 需 ssh/rsync，Windows 平台门拒绝
     fn exec_recovers_after_link_down() {
         let (store, dir, _remote, models) = store_and_dirs("recv");
         let rec = make_ssh_job(
@@ -1569,6 +1572,7 @@ mod tests {
 
     /// 确认进程消亡（无 exit.code）→ failed「exited without status」，不重复 launch。
     #[test]
+    #[cfg(unix)] // exec_with 需 ssh/rsync，Windows 平台门拒绝
     fn exec_gone_without_status_fails() {
         let (store, dir, _remote, models) = store_and_dirs("gone");
         let rec = make_ssh_job(&store, vec!["sh".into(), "-c".into(), "sleep 30".into()]);
@@ -1617,6 +1621,7 @@ mod tests {
     /// recovering job 被 `jobs exec` 接管（runner 死后 recover）：认领 →
     /// 确认同一进程 → running → 收口，不重新 launch。
     #[test]
+    #[cfg(unix)] // exec_with 需 ssh/rsync，Windows 平台门拒绝
     fn exec_reattach_on_recovering() {
         let (store, dir, _remote, models) = store_and_dirs("attach");
         let rec = make_ssh_job(
@@ -1710,6 +1715,7 @@ mod tests {
 
     /// 4090D 纪律：release_ms 已进入预拉窗口 → artifacts 快照落到 bundle。
     #[test]
+    #[cfg(unix)] // exec_with 需 ssh/rsync，Windows 平台门拒绝
     fn deadline_prefetches_artifacts() {
         let (store, dir, _remote, models) = store_and_dirs("deadline");
         let rec = make_ssh_job(
@@ -1737,6 +1743,7 @@ mod tests {
 
     /// launch 结果未确认（push 后链路断）→ recovering → find 找回 pid 续传。
     #[test]
+    #[cfg(unix)] // exec_with 需 ssh/rsync，Windows 平台门拒绝
     fn launch_unconfirmed_goes_recovering_then_finds_pid() {
         let (store, dir, _remote, models) = store_and_dirs("unconf");
         // 进程需活过 monitor 首轮 find()（recover_poll 粒度 + CI 负载）：
