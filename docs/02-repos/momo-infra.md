@@ -143,8 +143,8 @@ flowchart LR
   - **token**：`MOMO_WEB_TOKEN` 已设 → `/api` 全请求（含 loopback）须 `Authorization: Bearer <token>`，缺失/不匹配 → 401；未设 → 仅 loopback peer 且 Host 回环放行（Host 检查防 DNS rebinding），否则 403。token 比对常量时间；token 值不落日志不回显（config.md §4）。
   - **CSRF**：state-changing 方法（非 GET/HEAD/OPTIONS；SSE 走 GET 属只读）须以 `X-CSRF-Token` 头回带 `GET /api/csrf` 签发的进程级 token（每启动重签发），且 `Origin`（若携带）authority 须等于 `Host`；缺失/不匹配 → 403。`/api/csrf` 响应不加 CORS 允许头，跨源页面读不到 token（SOP）。
   - 认证失败与路由错误统一 `{schema:1, error:{code,message}}`（`code` ∈ `unauthorized`/`forbidden`/`csrf`/`not_found`/`not_implemented` 等）。
-- **`/api` 路由树**：集中注册。`GET /api/` 路由索引；`GET /api/healthz` / `readyz`（server 自身探针）；`GET /api/events` SSE 通道（broadcast 基座，jobs/serve 日志复用）；`GET /api/csrf` CSRF token 签发；`GET /api/doctor`（`doctor` 检查矩阵）、`GET /api/serve/status`（组件快照）、`GET /api/serve/components`（内置 profile 组件表，order 升序 + external/local_endpoint_only 标记）——复用 cmds 同名 core 函数，`?profile=normal|degraded` 可选（缺省读 `MOMO_PROFILE`），检查有 fail 仍 200（fail 是数据非 HTTP 错误，对应 CLI exit 3 语义），其余方法 → 405；`POST /api/serve/{up|down|restart}`（body `{only:[..]?}`，与 `momoctl serve` 同 inner core，`only` 未命中组件 → 400）为 state-changing 端点，须 CSRF；`GET /api/serve/logs/{name}/stream` 为 SSE 日志 tail（`id:` 帧号 = 字节 offset，断线以 `?cursor=` 或 `Last-Event-ID` 续传，无 cursor 时只发有界 backlog）；`/api/jobs` 已挂真实 handler（见「jobs runner 与 store」）；`models`/`config` 其余路由为 501 占位，由各功能 issue 挂 handler。`/api` 子树内未命中 → JSON 404。
-- **`/api` 路由树**：集中注册。`GET /api/` 路由索引；`GET /api/healthz` / `readyz`（server 自身探针）；`GET /api/events` SSE 通道（broadcast 基座，jobs/serve 日志复用）；`GET /api/csrf` CSRF token 签发；`GET /api/doctor`（`doctor` 检查矩阵）、`GET /api/serve/status`（组件快照）——两者复用 cmds 同名 core 函数，`?profile=normal|degraded` 可选（缺省读 `MOMO_PROFILE`），检查有 fail 仍 200（fail 是数据非 HTTP 错误，对应 CLI exit 3 语义），其余方法 → 405；`serve`/`models`/`jobs` 其余路由为 501 占位，由各功能 issue 挂 handler。`/api` 子树内未命中 → JSON 404。
+- **`/api` 路由树**：集中注册。`GET /api/` 路由索引；`GET /api/healthz` / `readyz`（server 自身探针）；`GET /api/events` SSE 通道（broadcast 基座，jobs/serve 日志复用）；`GET /api/csrf` CSRF token 签发；`GET /api/doctor`（`doctor` 检查矩阵）、`GET /api/serve/status`（组件快照）、`GET /api/serve/components`（内置 profile 组件表，order 升序 + external/local_endpoint_only 标记）——复用 cmds 同名 core 函数，`?profile=normal|degraded` 可选（缺省读 `MOMO_PROFILE`），检查有 fail 仍 200（fail 是数据非 HTTP 错误，对应 CLI exit 3 语义），其余方法 → 405；`POST /api/serve/{up|down|restart}`（body `{only:[..]?}`，与 `momoctl serve` 同 inner core，`only` 未命中组件 → 400）为 state-changing 端点，须 CSRF；`GET /api/serve/logs/{name}/stream` 为 SSE 日志 tail（`id:` 帧号 = 字节 offset，断线以 `?cursor=` 或 `Last-Event-ID` 续传，无 cursor 时只发有界 backlog）；`/api/jobs` 已挂真实 handler（见「jobs runner 与 store」）；`GET /api/pipelines` 下发 `infra/pipelines/*.toml` 定义清单（含 `[vars]` 与 `activate_env`，训练页 wizard 表单数据源，与 `pipeline list --json` 同 DTO；目录未找到 → 200 空清单）；`models`/`config`/`pipelines` 其余路由为 501 占位，由各功能 issue 挂 handler。`/api` 子树内未命中 → JSON 404。
+- **训练页（SPA 路由 `/train`，issue #42）**：四块联动——pipeline wizard（`GET /api/pipelines` → 选定义/执行器/填 vars → 预览展开的 `pipeline run` 命令 → `POST /api/jobs {kind:"train", pipeline, set, dry_run?, executor?}` 快捷提交，服务端把 pipeline 展开为 `<momoctl> pipeline run --name <p> --set k=v ...` argv；`executor` 缺省 `local`，`ssh:*` 等远端执行器属 #51，当前 422 字段级拒绝）、job 列表（`GET /api/jobs` 轮询）、job 详情（`GET /api/jobs/{id}/logs` SSE tail + `GET /api/jobs/{id}/metrics` 的 train-manifest.json → loss 曲线 sparkline）、promote（`POST /api/jobs/{id}/promote`，语义见「jobs runner 与 store」REST 表）。
 - **配置页（`/api/config`，对应 SPA 路由 `/config`）**：编辑对象为 `.env` 同目录的 `.env.<profile>`（与 `switch` 生成口径一致；`.env` 定位 = `--env-file` > dotenvy > `./.env`，profile 白名单 `normal|degraded`，无路径穿越面）。
   - `GET /api/config[?profile=]` → `{profile, active_profile, env_file, file_exists, entries:[{key, value, sensitive, set}]}`；`?profile=` 缺省按 `active_profile` 状态文件 > `MOMO_PROFILE` > `normal` 解析。**敏感键（schema `sensitive` ∪ `*_API_KEY/*_TOKEN/*_SECRET`）只回打码值（前 4 位 + `…`，短值全遮）或 `set/unset`，GET/日志/diff 绝不回显明文**（config.md §4）；schema 键序在前，文件内 schema 外键（passthrough/游离键）列尾只读展示。
   - `PUT /api/config {profile?, changes:{key:value}}`：先校验——非 `MOMO_` 前缀、schema 未知键、值域越界（enum/bool/int/url）→ **422 `error.fields` 字段级归因，不写盘**；通过 → copy `.env.<profile>` 为 `.env.<profile>.bak` → 同目录 tmp + `rename` 原子替换（保行尾注释/键序，未命中键追加尾部）→ 返回掩码 diff + `restart_hint`（env 变更经 `serve restart` 生效）；任何一步失败 active 不变。目标文件缺失 → 404（先 `momoctl switch --to <profile>` 生成）。敏感键留空不进 `changes` 即不变更。
@@ -212,7 +212,7 @@ stateDiagram-v2
 
 ## jobs runner 与 store
 
-通用 job runner（`infra/src/jobs/`）：`queued → preparing → running → succeeded/failed`，`canceling → canceled` 独立终态，`recovering` 归 exec_ssh 断线重查；`promoted` 与 `failed → preparing` retry 留给后续 issue（枚举保留取值，store/API 可反序列化）。执行器由 `JobRecord.executor`（`local`/`ssh`）区分，`jobs exec` helper 按它分发。
+通用 job runner（`infra/src/jobs/`）：`queued → preparing → running → succeeded/failed`，`canceling → canceled` 独立终态，`recovering` 归 exec_ssh 断线重查；`succeeded → promoted` 由 `POST /api/jobs/{id}/promote` 实装（#42）：gate 证据（关联 run succeeded / `train-manifest.json` 在盘）+ 显式请求 → `activate_env` 写回 `.env.<active>`（`.bak` + 原子写，rollback 保留）→ 状态迁移；`failed → preparing` retry 留给后续 issue（枚举保留取值，store/API 可反序列化）。执行器由 `JobRecord.executor`（`local`/`ssh`）区分，`jobs exec` helper 按它分发。
 
 **store 布局**：复用状态目录 `${XDG_STATE_HOME:-~/.local/state}/momo/jobs/`（不提供 `MOMO_*` 覆盖键，口径同 pidfile）：
 
@@ -244,11 +244,13 @@ stateDiagram-v2
 | 端点 | 说明 |
 |---|---|
 | `GET /api/jobs` | 全量列表（created_at 升序） |
-| `POST /api/jobs` | 提交：`{kind?, executor?, ssh?, desc?, args:[argv...]}`，同 `jobs submit`；`executor:"ssh"` 时 `ssh:{host,user?,key?,remote_dir?,env?,data?,artifact_name?,lease_hours?}` 必填（env 的 null value = 取 server 进程 env） |
+| `POST /api/jobs` | 提交：`{kind?, executor?, ssh?, desc?, args:[argv...]}`，同 `jobs submit`；`executor:"ssh"` 时 `ssh:{host,user?,key?,remote_dir?,env?,data?,artifact_name?,lease_hours?}` 必填（env 的 null value = 取 server 进程 env）。或 `{kind?, pipeline, set?, dry_run?}` 快捷提交——服务端展开为 `<momoctl> pipeline run --name <p> [--dry-run] --set k=v ...` argv（与 `args` 互斥；required var 缺项 → 422 `error.fields` 逐字段归因；pipeline 形态只走 local 执行器——pipeline step 自行管理 ssh 目标） |
 | `GET /api/jobs/{id}` | 单条 record；未知 id → JSON 404 |
 | `POST /api/jobs/{id}/cancel` | 同 `jobs cancel`；终态幂等；recovering ssh job 只记 `cancel_requested` |
 | `POST /api/jobs/{id}/recover` | 同 `jobs recover`；非 ssh job → 400 |
-| `GET /api/jobs/{id}/logs?cursor=N` | SSE tail：`event: log` 携 `{cursor, chunk}`；终态排空后 `event: end` 关流；cursor 越界（截断）从 0 重读 |
+| `POST /api/jobs/{id}/promote {env_key?, artifact_dir?}` | `succeeded` → `promoted`（终态幂等）。产物解析：显式 `artifact_dir` > 关联 pipeline run 的 `artifact_dir`（run_id ULID ≥ job id 的最小 run）；run 存在但非 succeeded → 409；产物目录缺 `train-manifest.json`（frozen gate 证据）→ 409。激活：`env_key` > pipeline `activate_env` 键写回 `.env.<active>`（schema 值域校验 + `.bak` 备份 + tmp/rename 原子替换——rollback 目标即 `.bak`/config 页 rollback）；pipeline 未声明激活键时只迁移状态并在 note 说明。env 文件缺失 → 409 |
+| `GET /api/jobs/{id}/metrics` | loss 曲线数据源：`{run_id, artifact_dir, manifest, steps[{name,status,metrics}]}`——关联 pipeline run 的 step metrics + `<artifact_dir>/train-manifest.json` 原文；非 pipeline job 兜底查 `logs/` 旁 manifest；无关联 → 字段为 null（200，「无曲线」是数据不是错误） |
+| `GET /api/jobs/{id}/logs?cursor=N` | SSE tail：`event: log` 携 `{cursor, chunk}`，`id:` 帧 = 消费后字节 offset（同 `serve logs/{name}/stream` 约定，断线 `?cursor=`/`Last-Event-ID` 续传）；终态排空后 `event: end` 关流；cursor 越界（截断）从 0 重读 |
 ## 训练 pipeline 编排（`momoctl pipeline`）
 
 `infra/pipelines/*.toml` 声明 pipeline，infra 只做编排不实现训练/推理（ADR-025）：step 只编排名称、执行方式、命令、产物路径与重试策略，训练实体仍调 momo-models `training/`、`eval/` 脚本。内置两条定义：`voice-sft`（prepare → upload → `sft_cosyvoice3`（ssh）→ rsync 回传 → frozen gate 盲听 → register）与 `persona-qlora`（build → regression-20 基线 → upload → `lora_qwen`（ssh）→ 回传 → frozen gate 回归 ≥34 且无 0 分 → register）。
@@ -259,6 +261,7 @@ stateDiagram-v2
 name = "voice-sft"
 description = "..."
 artifact_dir = "tts/ft-cosyvoice3-{date}"   # 相对 ${MOMO_MODELS_DIR}，register step 落点
+activate_env = "MOMO_TTS_MODEL_DIR"         # 可选；promote 时写回 `.env.<profile>` 的激活键（.bak 即回滚目标）
 
 [vars.input]
 description = "raw voice material directory (10-60min clean speech)"
