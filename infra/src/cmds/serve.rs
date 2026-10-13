@@ -722,10 +722,7 @@ mod tests {
     static LOCK: Mutex<()> = Mutex::new(());
 
     fn test_ctx() -> super::super::Ctx {
-        super::super::Ctx {
-            json: false,
-            verbose: 0,
-        }
+        super::super::Ctx { json: false }
     }
 
     fn common() -> ServeCommon {

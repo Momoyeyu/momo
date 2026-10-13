@@ -1,4 +1,4 @@
-//! clap 命令定义：全局 `--json` / `--env-file` / `-v` + 六个子命令。
+//! clap 命令定义：全局 `--json` / `--env-file` + 七个子命令。
 //! 签名对齐 momo-docs `02-repos/momo-infra.md`「子命令清单」。
 
 use std::path::PathBuf;
@@ -19,10 +19,6 @@ pub struct Cli {
     /// .env 文件路径（默认自动发现 ./.env）
     #[arg(long, global = true, value_name = "PATH")]
     pub env_file: Option<PathBuf>,
-
-    /// 提高日志详细度：-v=info，-vv=debug（默认 warn）
-    #[arg(short, long, global = true, action = clap::ArgAction::Count)]
-    pub verbose: u8,
 
     #[command(subcommand)]
     pub command: Command,

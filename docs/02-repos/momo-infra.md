@@ -10,6 +10,87 @@
 - 训练 job 本地/SSH 执行、日志、cancel、checkpoint 恢复、promotion；
 - CLI 与 Web 共用核心和 schema，控制台默认仅监听 localhost。
 
+## 子命令清单
+
+> `momoctl` 是 infra CLI 的唯一命令名（ADR-023）。本节是命令行契约的 single source of truth：`infra/src/cli.rs` 的 clap 定义与本节一一对应，退出码、全局 flag 与 `--json` schema 也以本节为准；`infra/README.md` 只保留摘要并指回本节。
+
+子命令集（ADR-023 锁定命名，实现状态见下）：
+
+| 子命令 | 说明 | 状态 |
+|---|---|---|
+| `doctor` | 环境检查矩阵（system/toolchain/python/network/env/models/endpoints） | 已实现 |
+| `pull` | 按 momo-models `MANIFEST.toml` 下载 + sha256 校验 | 已实现 |
+| `serve up\|down\|status\|logs\|restart` | profile 组件表启停、存活/就绪探测、日志 tail | 已实现 |
+| `switch --to` | normal ↔ degraded 档位切换（`.env` 符号链接重指） | 未实现（stub，exit 1） |
+| `bench` | 端到端延迟测量（p50/p95，目标 <1.5s 出声） | 未实现（stub，exit 1） |
+| `gc` | 模型 GC：N-1 代清理、`models.lock` 联动 | 未实现（stub，exit 1） |
+| `config check` | env schema 漂移检查（`config.schema.toml` ↔ 三侧 `.env.example` / `config.md`） | 已实现 |
+
+### 子命令参数
+
+`serve` 五个动作共用 `ServeCommon`，`serve logs` 在此基础上追加行数/跟随参数：
+
+| 子命令 | 参数 | 默认 | 说明 |
+|---|---|---|---|
+| `doctor` | `--profile normal\|degraded` | 读 `MOMO_PROFILE`，缺省 `normal` | 按档位校验必需 env 与端点 |
+| `pull` | `--manifest PATH` | 自动探测 momo-models `models/MANIFEST.toml` | MANIFEST.toml 路径 |
+| `pull` | `--only NAME`（可重复） | 全部条目 | 只处理指定清单条目 |
+| `pull` | `--check` | off | 只校验不下载（按 `models.lock` / MANIFEST 复算 sha256） |
+| `serve` | `--profile normal\|degraded` | 读 `MOMO_PROFILE`，缺省 `normal` | 组件清单档位 |
+| `serve` | `--only COMPONENT`（别名 `--component`，可重复） | 全部组件 | 只作用于指定组件 |
+| `serve` | `--app-bin PATH` | PATH 查找 | `momod` 二进制路径 |
+| `serve logs` | `-n, --lines N` | `50` | 每个组件输出最后 N 行 |
+| `serve logs` | `-f, --follow` | off | 持续跟随新增日志（Ctrl-C 退出） |
+| `switch` | `--to normal\|degraded` | — | 目标档位 |
+| `switch` | `--restart` | off | 切换后自动 `serve down && serve up` |
+| `bench` | `--turns N` | `5` | 测量回合数（取 p50/p95） |
+| `bench` | `--strict` | off | 超标（≥1.5s 出声）时以退出码 3 结束 |
+| `gc` | `--dry-run` | 默认行为 | 只报告不删除 |
+| `gc` | `--keep N` | `2` | 微调产物保留代数（N-1 中保留最新两代） |
+| `gc` | `--yes` | off | 确认执行删除（不带 `--yes` 时等价 `--dry-run`） |
+| `config check` | `--root PATH` | 从 CWD 向上定位 `config.schema.toml` | 仓库根目录 |
+
+### 全局 flag
+
+| flag | 说明 |
+|---|---|
+| `--json` | 以 JSON 输出单一对象（顶层恒带 `"schema": 1`，供 CI/脚本消费） |
+| `--env-file PATH` | `.env` 文件路径（默认自动发现 `./.env`；显式指定但不存在 → exit 2） |
+
+CLI 不提供 `-v/-vv`：日志级别由 `MOMO_LOG_LEVEL`（内置默认 `info`，见 [config.md §2.1](../01-architecture/config.md)）控制，`infra/.env.example` 里的 `warn` 是 schema `examples.infra` 的**模板示例值**，不是内置默认值。infra 当前不输出分级日志（详见 [config.md §6](../01-architecture/config.md) `examples` 字段口径）。
+
+### 退出码
+
+`infra/src/output.rs` 的 `ExitCode` 与之对应：
+
+| code | 含义 |
+|---|---|
+| 0 | 成功（doctor 全 ok / bench 达标） |
+| 1 | 运行时错误（IO、进程管理失败、未实现 stub） |
+| 2 | 用法/配置错误（clap 解析之外：缺 env、env-file 不存在等） |
+| 3 | 检查未通过（doctor 有 fail / bench --strict 超标） |
+| 4 | 网络不可达（下载、端点连接失败） |
+| 5 | 校验失败（sha256 不匹配、manifest 损坏） |
+
+### doctor JSON schema
+
+`tests/doctor_json_test.rs` 锁定 `momoctl doctor --json` 的结构：
+
+```json
+{
+  "schema": 1,
+  "profile": "normal",
+  "groups": [
+    { "name": "system", "checks": [
+      { "id": "os", "status": "ok", "detail": "<os> <version> (<arch>)", "hint": null }
+    ] }
+  ],
+  "summary": { "ok": 1, "warn": 0, "fail": 0 }
+}
+```
+
+`status` ∈ `ok|warn|fail`；`hint` 恒出现（可为 `null`）；`groups` 固定含 system/toolchain/python/network/env/models/endpoints 七组。
+
 ## 控制面
 
 ```mermaid
