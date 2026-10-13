@@ -195,7 +195,7 @@ pub struct JobsArgs {
 #[derive(Debug, Subcommand)]
 pub enum JobsAction {
     /// Submit a job (local runner by default; `--executor ssh` for a remote host)
-    Submit(JobsSubmitArgs),
+    Submit(Box<JobsSubmitArgs>),
     /// List all jobs (oldest first)
     List,
     /// Show one job record

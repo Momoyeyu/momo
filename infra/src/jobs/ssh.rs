@@ -446,12 +446,14 @@ pub fn submit(
 fn ensure_supported() -> Result<(), AppError> {
     #[cfg(windows)]
     {
-        return Err(AppError::Config(
+        Err(AppError::Config(
             "exec_ssh requires ssh/rsync; not supported on Windows".into(),
-        ));
+        ))
     }
     #[cfg(not(windows))]
-    Ok(())
+    {
+        Ok(())
+    }
 }
 
 /// host/user 字符集：alias/hostname/login 常规字符。
@@ -1589,7 +1591,7 @@ mod tests {
                 status_of(&store, &rec.id) == JobStatus::Running
             }));
             // 直接 SIGKILL run.sh（无 exit.code 的消亡）
-            let pid: u32 = store
+            let _pid: u32 = store
                 .load(&rec.id)
                 .unwrap()
                 .unwrap()
@@ -1599,7 +1601,7 @@ mod tests {
                 .unwrap();
             #[cfg(unix)]
             unsafe {
-                libc::kill(pid as i32, libc::SIGKILL);
+                libc::kill(_pid as i32, libc::SIGKILL);
             }
             assert!(wait_for(Duration::from_secs(10), || {
                 status_of(&store, &rec.id) == JobStatus::Failed
