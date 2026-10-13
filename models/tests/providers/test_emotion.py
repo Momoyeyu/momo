@@ -28,9 +28,7 @@ def test_normalize_emotion() -> None:
 
 def test_map_emotion_kokoro_speed() -> None:
     """kokoro：tag → speed，8 tag 全覆盖且互有区分。"""
-    speeds = {
-        tag: map_emotion(tag, "kokoro", _CAPS_EMOTION)["speed"] for tag in EMOTION_TAGS
-    }
+    speeds = {tag: map_emotion(tag, "kokoro", _CAPS_EMOTION)["speed"] for tag in EMOTION_TAGS}
     assert speeds["neutral"] == 1.0
     assert speeds["happy"] > 1.0
     assert speeds["sad"] < 1.0

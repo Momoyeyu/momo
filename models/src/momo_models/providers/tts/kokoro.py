@@ -46,8 +46,7 @@ _LANG_TO_CODE = {"zh": "z", "en": "a", "ja": "j"}
 _FALLBACK_CODE = "z"
 
 _DEPS_HINT = (
-    "kokoro provider 依赖未安装：`uv sync --extra torch-mac --extra tts`"
-    "（CUDA 机用 torch-cu124）"
+    "kokoro provider 依赖未安装：`uv sync --extra torch-mac --extra tts`（CUDA 机用 torch-cu124）"
 )
 
 
@@ -169,9 +168,7 @@ class KokoroTTSProvider(TTSProvider):
         dev = self._settings.tts_device
         if dev == "cuda":
             if not torch.cuda.is_available():
-                raise KokoroError(
-                    "MOMO_TTS_DEVICE=cuda 但本机无 CUDA；改 MOMO_TTS_DEVICE=cpu|mps"
-                )
+                raise KokoroError("MOMO_TTS_DEVICE=cuda 但本机无 CUDA；改 MOMO_TTS_DEVICE=cpu|mps")
             return "cuda"
         if dev == "mps":
             if not torch.backends.mps.is_available():
@@ -215,7 +212,7 @@ class KokoroTTSProvider(TTSProvider):
         path = self._model_dir / "voices" / filename
         if not path.is_file():
             raise KokoroError(
-                f"kokoro 音色文件缺失 {path}；请在 MANIFEST { _ENTRY_NAME!r} "
+                f"kokoro 音色文件缺失 {path}；请在 MANIFEST {_ENTRY_NAME!r} "
                 f"条目补登 voices/{filename} 后 `momoctl pull --only {_ENTRY_NAME}`"
             )
         return path

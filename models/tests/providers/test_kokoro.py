@@ -36,9 +36,7 @@ _MODEL_FILES = (
 def _fake_torch(*, cuda: bool = False, mps: bool = False) -> types.ModuleType:
     mod = types.ModuleType("torch")
     mod.cuda = types.SimpleNamespace(is_available=lambda: cuda)
-    mod.backends = types.SimpleNamespace(
-        mps=types.SimpleNamespace(is_available=lambda: mps)
-    )
+    mod.backends = types.SimpleNamespace(mps=types.SimpleNamespace(is_available=lambda: mps))
     return mod
 
 
@@ -51,9 +49,7 @@ def _fake_kokoro(chunks: list) -> types.ModuleType:
 
     class KModel:
         def __init__(self, repo_id=None, config=None, model=None, **_kw):
-            mod.kmodel_calls.append(
-                {"repo_id": repo_id, "config": config, "model": model}
-            )
+            mod.kmodel_calls.append({"repo_id": repo_id, "config": config, "model": model})
 
         def to(self, device):
             mod.device = device
@@ -64,9 +60,7 @@ def _fake_kokoro(chunks: list) -> types.ModuleType:
 
     class KPipeline:
         def __init__(self, lang_code, repo_id=None, model=None, **_kw):
-            mod.pipeline_calls.append(
-                {"lang_code": lang_code, "repo_id": repo_id, "model": model}
-            )
+            mod.pipeline_calls.append({"lang_code": lang_code, "repo_id": repo_id, "model": model})
 
         def __call__(self, text, voice=None, speed=1, **_kw):
             mod.synth_calls.append({"text": text, "voice": voice, "speed": speed})
@@ -425,6 +419,8 @@ def test_real_kokoro_synthesis() -> None:
 
     chunks, first_ms = asyncio.run(run())
     total = sum(map(len, chunks))
-    print(f"\nfirst_audio={first_ms:.0f}ms chunks={len(chunks)} pcm={total}B "
-          f"({total / 48000:.2f}s @24k s16le)")
+    print(
+        f"\nfirst_audio={first_ms:.0f}ms chunks={len(chunks)} pcm={total}B "
+        f"({total / 48000:.2f}s @24k s16le)"
+    )
     assert chunks and total > 4800  # >100ms 的 24k s16le
