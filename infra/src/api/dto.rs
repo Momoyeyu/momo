@@ -511,10 +511,6 @@ pub struct JobSubmitRequest {
     /// pipeline 提交追加 `--dry-run`（只展开计划不执行/登记）。
     #[serde(default)]
     pub dry_run: bool,
-    /// 执行器：`local`（缺省，exec_local runner）；
-    /// `ssh:<host>` 等远端执行器属 #51，当前一律 422 字段级拒绝。
-    #[serde(default)]
-    pub executor: Option<String>,
 }
 
 /// `GET /api/jobs` 列表响应。

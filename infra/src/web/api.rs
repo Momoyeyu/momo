@@ -2,12 +2,13 @@
 //! 已实装：`healthz`/`readyz`/`events`/`csrf`/`doctor`/`serve status`/
 //! `serve components`/`models`/`config`（只读）、`serve {up|down|restart}`/
 //! `models/pull`/`config`(PUT)/`config/rollback`（POST，config 写回走
-//! env_file 校验→.bak→原子写）、`serve logs/{name}/stream`（SSE）与 `jobs`
-//! （REST + SSE 日志）；其余子路由为 501 占位——真实 handler 由后续 issue
-//! 挂接。handler 只做 HTTP↔core 适配，业务复用 `cmds`/`serve`/`models`/
-//! `manifest`/`env_cfg`/`env_file` 现有 core 函数；出入参一律 `api::dto`
-//! 结构化类型（不手写 `json!`），与 CLI `--json` 同 schema；错误统一
-//! `{schema:1, error:{code,message}}`。
+//! env_file 校验→.bak→原子写）、`serve logs/{name}/stream`（SSE）、
+//! `pipelines`（训练页 wizard 定义清单）与 `jobs`
+//! （REST + SSE 日志 + promote/metrics）；其余子路由为 501 占位——真实
+//! handler 由后续 issue 挂接。handler 只做 HTTP↔core 适配，业务复用
+//! `cmds`/`serve`/`models`/`manifest`/`env_cfg`/`env_file`/`pipeline` 现有
+//! core 函数；出入参一律 `api::dto` 结构化类型（不手写 `json!`），
+//! 与 CLI `--json` 同 schema；错误统一 `{schema:1, error:{code,message}}`。
 
 use std::collections::BTreeMap;
 use std::convert::Infallible;
@@ -65,8 +66,11 @@ pub fn router(state: Arc<WebState>) -> Router {
         // 与 /models/{*rest} 不冲突——静态段优先于通配。
         .route("/models/pull", any(models_pull))
         .route("/models/{*rest}", any(placeholder))
-        // jobs 已挂真实 handler（web/jobs.rs）；其余命名空间仍是 501 占位。
+        // jobs 已挂真实 handler（web/jobs.rs：REST + SSE 日志 + promote/metrics）。
         .nest("/jobs", super::jobs::router())
+        // 训练页 wizard 数据源：pipeline 定义清单（复用 pipeline::discover core）。
+        .route("/pipelines", any(pipelines))
+        .route("/pipelines/{*rest}", any(placeholder))
         // 配置页：GET 读当前值（敏感掩码）；PUT 校验→.bak→原子写回；POST rollback 恢复 .bak。
         .route("/config", any(config))
         .route("/config/rollback", any(config_rollback))
@@ -101,8 +105,10 @@ pub(crate) async fn index() -> Json<dto::IndexReport> {
             "POST /api/jobs",
             "GET /api/jobs/{id}",
             "POST /api/jobs/{id}/cancel",
-            "POST /api/jobs/{id}/recover",
-            "GET /api/jobs/{id}/logs?cursor= (SSE)",
+            "POST /api/jobs/{id}/recover",            "POST /api/jobs/{id}/promote",
+            "GET /api/jobs/{id}/metrics",            "GET /api/jobs/{id}/logs?cursor= (SSE)",
+            "GET /api/pipelines",
+            "/api/pipelines/* (placeholder)",
             "GET /api/config",
             "PUT /api/config",
             "POST /api/config/rollback",
@@ -452,6 +458,72 @@ async fn models(method: Method) -> Response {
             StatusCode::INTERNAL_SERVER_ERROR,
             "internal",
             format!("models report task failed: {e}"),
+        ),
+    }
+}
+
+/// `GET /api/pipelines`：pipeline 定义清单（训练页 wizard 数据源）。
+/// core 与 `momoctl pipeline list` 同为 `pipeline::discover` +
+/// `default_pipelines_dir`；定义目录未找到 → 200 + 空清单 + `dir:""`
+/// （「未部署定义」是数据不是故障，同 `GET /api/models` 的 manifest:null 口径）。
+async fn pipelines(method: Method) -> Response {
+    if !matches!(method, Method::GET | Method::HEAD) {
+        return error(
+            StatusCode::METHOD_NOT_ALLOWED,
+            "method_not_allowed",
+            format!("{method} is not allowed on this read-only endpoint"),
+        );
+    }
+    match tokio::task::spawn_blocking(|| -> Result<dto::PipelineListReport, AppError> {
+        let Some(dir) = crate::pipeline::default_pipelines_dir() else {
+            return Ok(dto::PipelineListReport {
+                schema: dto::SCHEMA_VERSION,
+                command: "pipeline list".into(),
+                dir: String::new(),
+                pipelines: Vec::new(),
+            });
+        };
+        let defs = crate::pipeline::discover(&dir)?;
+        let pipelines = defs
+            .iter()
+            .map(|(path, d)| dto::PipelineInfo {
+                name: d.name.clone(),
+                description: d.description.clone(),
+                artifact_dir: d.artifact_dir.clone(),
+                activate_env: d.activate_env.clone(),
+                steps: d.steps.iter().map(|s| s.name.clone()).collect(),
+                vars: d
+                    .vars
+                    .iter()
+                    .map(|(name, v)| dto::PipelineVarInfo {
+                        name: name.clone(),
+                        description: v.description.clone(),
+                        required: v.required,
+                        default: v.default.clone(),
+                    })
+                    .collect(),
+                path: path.display().to_string(),
+            })
+            .collect();
+        Ok(dto::PipelineListReport {
+            schema: dto::SCHEMA_VERSION,
+            command: "pipeline list".into(),
+            dir: dir.display().to_string(),
+            pipelines,
+        })
+    })
+    .await
+    {
+        Ok(Ok(report)) => Json(report).into_response(),
+        Ok(Err(e)) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("pipelines discover failed: {e}"),
+        ),
+        Err(e) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("pipelines task failed: {e}"),
         ),
     }
 }
