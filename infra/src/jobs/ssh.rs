@@ -1739,9 +1739,11 @@ mod tests {
     #[test]
     fn launch_unconfirmed_goes_recovering_then_finds_pid() {
         let (store, dir, _remote, models) = store_and_dirs("unconf");
+        // 进程需活过 monitor 首轮 find()（recover_poll 粒度 + CI 负载）：
+        // 瞬时退出的命令可能在重查前消亡，导致 remote_id 永远找不回。
         let rec = make_ssh_job(
             &store,
-            vec!["sh".into(), "-c".into(), "echo came-back".into()],
+            vec!["sh".into(), "-c".into(), "echo came-back; sleep 1".into()],
         );
         let bundle = store.bundle_dir(&rec.id).unwrap();
         stage_bundle(&bundle, &rec.args, &BTreeMap::new(), &[]).unwrap();
