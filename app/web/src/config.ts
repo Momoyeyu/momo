@@ -46,11 +46,15 @@ export function uiToken(): string {
 
 /** Live2D 模型入口（.model3.json）URL。
  *
- * 默认读 public/ 下 vendored 的 Cubism sample（Hiyori，许可见资源内 LICENSE.md）；
- * 构建期可用 `VITE_MOMO_AVATAR_URL` 指向任意可达的模型目录（含 $MOMO_MODELS_DIR
- * 下经 infra pull 落盘、由宿主暴露 HTTP 通路的目录）。
+ * 优先级：设置面保存的 `localStorage.momo.avatar_url` > 构建期
+ * `VITE_MOMO_AVATAR_URL` > public/ 下 vendored 的 Cubism sample（Hiyori）。
  */
 export function avatarModelUrl(): string {
+  const saved =
+    typeof window !== "undefined"
+      ? window.localStorage.getItem("momo.avatar_url")
+      : null;
+  if (saved && saved.trim() !== "") return saved;
   const override = import.meta.env.VITE_MOMO_AVATAR_URL;
   if (typeof override === "string" && override.trim() !== "") {
     return override;

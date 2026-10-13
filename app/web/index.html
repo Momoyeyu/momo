@@ -9,7 +9,7 @@
     />
     <title>momo</title>
   </head>
-  <body>
+  <body class="view-menu">
     <div id="app">
       <!-- 舞台层：房间背景 + 氛围（vignette/聚光/接触影/漂浮粒子），Live2D canvas 透明叠加 -->
       <div id="stage-bg" aria-hidden="true"></div>
@@ -21,6 +21,48 @@
       </div>
       <canvas id="stage"></canvas>
 
+      <!-- 主页：标题 + 菜单项；「开始」进入场景并建立会话 -->
+      <div id="menu">
+        <div id="menu-inner">
+          <h1 id="menu-title">momo</h1>
+          <p id="menu-tagline">让桌面多一个，懂得回应的存在</p>
+          <nav id="menu-items">
+            <button id="menu-start" type="button">开始</button>
+            <button id="menu-settings" type="button">设置</button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- 设置：provider 单槽位 + 形象；保存即热应用（docs/01-architecture/settings.md） -->
+      <div id="settings">
+        <form id="settings-form">
+          <h2>设置</h2>
+          <section class="settings-group">
+            <h3>语言模型</h3>
+            <label>Endpoint<input id="set-llm-endpoint" type="text" spellcheck="false" placeholder="https://api.deepseek.com/v1" /></label>
+            <label>Model<input id="set-llm-model" type="text" spellcheck="false" /></label>
+            <label>API Key<input id="set-llm-key" type="password" autocomplete="off" /></label>
+          </section>
+          <section class="settings-group">
+            <h3>语音识别</h3>
+            <label>Endpoint<input id="set-asr-endpoint" type="text" spellcheck="false" placeholder="ws://127.0.0.1:7810/ws" /></label>
+          </section>
+          <section class="settings-group">
+            <h3>语音合成</h3>
+            <label>Endpoint<input id="set-tts-endpoint" type="text" spellcheck="false" placeholder="ws://127.0.0.1:7811/ws" /></label>
+          </section>
+          <section class="settings-group">
+            <h3>形象</h3>
+            <label>模型 URL<input id="set-avatar" type="text" spellcheck="false" placeholder="默认（Hiyori）" /></label>
+          </section>
+          <p id="settings-msg" role="status"></p>
+          <div class="settings-actions">
+            <button type="submit" id="settings-save">保存</button>
+            <button type="button" id="settings-back">返回</button>
+          </div>
+        </form>
+      </div>
+
       <!-- 对话框：字幕控制器驱动（#147），名牌 + 逐字文本 + 续行提示 -->
       <div id="subtitle" hidden>
         <div id="subtitle-name">momo</div>
@@ -28,6 +70,12 @@
         <span id="subtitle-next" aria-hidden="true"></span>
       </div>
 
+      <button id="menu-btn" type="button" aria-label="回到主页">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 10.5 12 3l9 7.5" />
+          <path d="M5 9.5V21h14V9.5" />
+        </svg>
+      </button>
       <div id="status">Connecting…</div>
       <div id="avatar-fallback" hidden role="alert"></div>
 
@@ -46,6 +94,12 @@
             <h1>momo 聊天室</h1>
             <p>live chat</p>
           </div>
+          <button id="chat-settings" type="button" aria-label="设置">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
         </header>
         <div id="chat"></div>
         <form id="composer">
