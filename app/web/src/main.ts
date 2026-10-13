@@ -1,4 +1,4 @@
-// 启动装配：canvas + ws-client + ui + PTT mic capture（momo-app.md §前端）。
+// 启动装配：canvas + ws-client + ui + PTT mic capture（momo-app.md §模块结构）。
 
 import "./style.css";
 import { avatarModelUrl, uiToken, wsUrl } from "./config";

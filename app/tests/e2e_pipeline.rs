@@ -1,4 +1,4 @@
-//! 协议 e2e：mock 模型服务 + 真 ws client 全链路（momo-app.md §测试策略）。
+//! 协议 e2e：mock 模型服务 + 真 ws client 全链路（momo-app.md §P0 验收指针）。
 //!
 //! 骨架阶段：只验证 `/healthz` 与路由装配；
 //! mock LLM SSE / TTS-WS / ASR 与 barge-in 三动作断言随管线实装补齐。

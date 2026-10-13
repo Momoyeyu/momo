@@ -1,4 +1,4 @@
-// 回合状态指示、连接状态（momo-app.md §前端）。
+// 回合状态指示、连接状态（momo-app.md §模块结构）。
 // 状态指示跟随 state.turn；不得用它推断音频时序（protocol §2）。
 
 import type { TurnState } from "../net/protocol";

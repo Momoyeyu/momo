@@ -6,7 +6,7 @@ const MOMOD = "127.0.0.1:7800";
 export default defineConfig({
   server: {
     proxy: {
-      // dev server 代理 /ws → momod（momo-app.md §前端）。
+      // dev server 代理 /ws → momod（momo-app.md §模块结构）。
       "/ws": { target: `ws://${MOMOD}`, ws: true },
       "/healthz": { target: `http://${MOMOD}` },
     },

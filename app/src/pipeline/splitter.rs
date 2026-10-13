@@ -1,4 +1,4 @@
-//! 增量句切：标点 + 上限 + 情感 tag 提取（momo-app.md §splitter）。
+//! 增量句切：标点 + 上限 + 情感 tag 提取（runtime.md §增量句切）。
 //!
 //! 规则：CJK 句末标点 `。！？；;` 与换行立即切；ASCII `.!?` 仅在后接空白时切
 //! （小数 `3.14`、URL `a.b`、缩写 `Mr.`/`e.g.` 靠 lookahead 豁免；buffer 末尾
