@@ -37,8 +37,4 @@ momo 是本地优先的 AI 桌宠：有形象，能听你说话，也能安静�
 
 ## License
 
-代码以 **PolyForm Noncommercial 1.0.0** 发布（[LICENSE](./LICENSE.md)）：
-
-- 个人与非商业用途可自由使用、修改、分发。
-- 商用或专利主张需另行取得授权（在 Issue 中联系）。
-- `site/docs/public/live2d/` 下的 Live2D sample 素材与 Cubism Core 等第三方资源按各自许可，不受本许可覆盖。
+代码以 **MIT License** 发布（[LICENSE](./LICENSE.md)）。`site/docs/public/live2d/` 下的 Live2D sample 素材、Cubism Core 与模型权重等第三方资源按各自许可，不受本许可覆盖。
