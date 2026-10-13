@@ -1,4 +1,4 @@
-// lipsync 纯函数单测（momo-app.md §P0 验收指针）。
+// lipsync 纯函数单测（momo-app.md §验收指针）。
 
 import { describe, expect, it } from "vitest";
 import { emotionToExpression, mouthOpenY, rmsOf } from "./lipsync";

@@ -1,4 +1,4 @@
-// 麦克风采集 + 上行 audio.chunk（P2，protocol §6 / workflows PTT）。
+// 麦克风采集 + 上行 audio.chunk（protocol §6 / workflows PTT）。
 //
 // 链路：getUserMedia({audio}) → AudioWorklet 回传 Float32 chunk →
 // 重采样 16kHz mono → s16le → 50ms/帧切片 → v2 32B 二进制帧上行

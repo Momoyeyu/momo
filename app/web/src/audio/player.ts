@@ -22,7 +22,7 @@ export interface PlayedChunk {
   sentence_seq: number;
   samples: Float32Array;
   eos: boolean;
-  /** 已推入 worklet 的标记（playback ledger 骨架，P0 ACK 复用）。 */
+  /** 已推入 worklet 的标记（playback ledger 骨架，playback ACK 复用）。 */
   sent: boolean;
 }
 
