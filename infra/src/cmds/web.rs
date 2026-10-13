@@ -39,6 +39,18 @@ async fn serve(args: &WebArgs, token: Option<String>, ctx: &super::Ctx) -> Resul
     });
     let app = web::router(state);
 
+    // #54 rescan：对外接 API 前先回放索引 + 按 process identity 收口
+    // 非终态 job（runner 死亡 → failed/canceled/recovering）。store 打不开
+    // 不拒启——读侧 handler 自己会按 500 报具体 IO 错误。
+    match crate::jobs::store::JobStore::open_default().reconcile() {
+        Ok(notes) => {
+            for n in notes {
+                eprintln!("warn: jobs rescan: {n}");
+            }
+        }
+        Err(e) => eprintln!("warn: jobs rescan failed: {e}"),
+    }
+
     if ctx.json {
         let report = WebReport {
             schema: 1,

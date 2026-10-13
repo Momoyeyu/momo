@@ -40,6 +40,7 @@ pub fn run(args: &JobsArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
         }
         JobsAction::Exec(a) => runner::exec(&store, &a.id),
         JobsAction::List => {
+            reconcile(&store)?;
             let (jobs, warnings) = store.list()?;
             warn_stderr(&warnings);
             if ctx.json {
@@ -57,11 +58,13 @@ pub fn run(args: &JobsArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
             Ok(ExitCode::Ok as i32)
         }
         JobsAction::Status(a) => {
+            reconcile(&store)?;
             let rec = must_load(&store, &a.id)?;
             emit_job("jobs status", &rec, None, ctx)?;
             Ok(ExitCode::Ok as i32)
         }
         JobsAction::Cancel(a) => {
+            reconcile(&store)?;
             let (rec, note) = runner::cancel(&store, &a.id)?;
             emit_job("jobs cancel", &rec, Some(note), ctx)?;
             Ok(ExitCode::Ok as i32)
@@ -104,6 +107,7 @@ fn emit_job(
 /// `jobs log`：tail `logs/<id>.log` 最后 N 行；
 /// `-f` 跟随新增直到 job 进终态且日志排空。
 fn log(store: &JobStore, args: &JobsLogArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
+    reconcile(store)?;
     let rec = must_load(store, &args.id)?;
     let path = store.log_path(&args.id)?;
 
@@ -242,6 +246,14 @@ fn fmt_age(created_ms: u64) -> String {
     } else {
         format!("{s}s")
     }
+}
+
+/// rescan（#54）：读侧 reconcile——回放索引对齐 meta，按 process identity
+/// 收口非终态 job；修正/警告打到 stderr（stdout 保持干净 JSON/table）。
+fn reconcile(store: &JobStore) -> Result<(), AppError> {
+    let notes = store.reconcile()?;
+    warn_stderr(&notes);
+    Ok(())
 }
 
 fn warn_stderr(warnings: &[String]) {

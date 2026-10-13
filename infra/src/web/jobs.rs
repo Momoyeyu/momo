@@ -30,9 +30,23 @@ where
         .route("/{id}/logs", get(job_logs))
 }
 
+/// rescan（#54）：读侧 reconcile，把非终态 job 按 process identity 收口；
+/// 失败只 warn 不挡请求（读侧降级，list/load 自己再报 IO 错误）。
+fn reconcile(store: &JobStore) {
+    match store.reconcile() {
+        Ok(notes) => {
+            for n in notes {
+                eprintln!("warn: jobs rescan: {n}");
+            }
+        }
+        Err(e) => eprintln!("warn: jobs rescan failed: {e}"),
+    }
+}
+
 /// `GET /api/jobs`：全量列表（created_at 升序）。
 async fn list_jobs() -> Response {
     let store = JobStore::open_default();
+    reconcile(&store);
     match store.list() {
         Ok((jobs, _warnings)) => Json(json!({
             "schema": 1,
@@ -47,6 +61,7 @@ async fn list_jobs() -> Response {
 /// `GET /api/jobs/{id}`：单条 record；未知 id → JSON 404。
 async fn get_job(Path(id): Path<String>) -> Response {
     let store = JobStore::open_default();
+    reconcile(&store);
     match store.load(&id) {
         Ok(Some(rec)) => Json(json!({
             "schema": 1,
@@ -94,6 +109,7 @@ async fn submit_job(Json(body): Json<SubmitBody>) -> Response {
 /// `POST /api/jobs/{id}/cancel`：canceling + kill；终态幂等。
 async fn cancel_job(Path(id): Path<String>) -> Response {
     let store = JobStore::open_default();
+    reconcile(&store);
     match runner::cancel(&store, &id) {
         Ok((rec, note)) => Json(json!({
             "schema": 1,
@@ -113,6 +129,7 @@ async fn cancel_job(Path(id): Path<String>) -> Response {
 /// cursor 越过文件长度（截断）时从 0 重读。未知 id → JSON 404（非 SSE）。
 async fn job_logs(Path(id): Path<String>, Query(q): Query<LogQuery>) -> Response {
     let store = JobStore::open_default();
+    reconcile(&store);
     let rec = match store.load(&id) {
         Ok(Some(r)) => r,
         Ok(None) => return not_found(&id),

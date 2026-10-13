@@ -22,6 +22,10 @@ use crate::serve::proc;
 
 const JOBS_JSONL: &str = "jobs.jsonl";
 
+/// queued/preparing 未被 runner 认领的宽限：submit 建档→spawn helper 的正常
+/// 时延内不得按「runner 死亡」收口（毫秒）。
+const UNCLAIMED_GRACE_MS: u64 = 60_000;
+
 /// jobs 落盘根：`<state_dir>/jobs/`。
 pub fn jobs_dir() -> PathBuf {
     proc::state_dir().join("jobs")
@@ -117,14 +121,21 @@ impl JobStore {
         Ok(rec)
     }
 
-    /// meta 原子写：先写 `<id>.tmp` 再 rename（Windows 不允许 rename 覆盖，先删目标）。
+    /// meta 原子写：`<id>.<ulid>.tmp` 写满后 rename。tmp 名带 ULID——runner、
+    /// cancel、rescan 多写者并发时互不踩 tmp；最终文件靠 rename 原子替换。
+    /// （固定 `<id>.tmp` 会让并发写者写出交错/截断 JSON。）
     pub fn save(&self, rec: &JobRecord) -> Result<(), AppError> {
         self.ensure_dirs()?;
         let path = self.meta_path(&rec.id)?;
-        let tmp = path.with_extension("tmp");
+        let tmp = self
+            .meta_dir()
+            .join(format!("{}.{}.tmp", rec.id, ulid::Ulid::new()));
         let text = serde_json::to_string_pretty(rec)
             .map_err(|e| AppError::Config(format!("serialize job {}: {e}", rec.id)))?;
         fs::write(&tmp, text)?;
+        // unix rename 原子覆盖目标，无空洞；Windows rename 不允许覆盖，
+        // 先删后换（保留毫秒级窗口，平台所限）。
+        #[cfg(windows)]
         if path.exists() {
             fs::remove_file(&path)?;
         }
@@ -245,6 +256,140 @@ impl JobStore {
             }
         }
         (last, warnings)
+    }
+
+    /// rescan：重启/每次读侧调用，把非终态 job 按 process identity 收口。
+    ///
+    /// 步骤：① 回放索引对齐 meta（索引权威：meta 落后于 index 时补写；
+    ///   meta 已终态不反转）。② 对非终态 job 按 `runner_pid`/`pid` 探活：
+    ///   - runner 活着 → 迁移由 runner 负责，不动（recovering 回到 running）；
+    ///   - runner 死亡 → 探 payload：确认存活 → running（adopt，绝不重复 launch）；
+    ///     确认消亡 → failed（canceling 中 → canceled）；
+    ///     无法确认（remote_id / 无 pid）→ recovering；
+    ///   - queued/preparing 未被认领超过 `UNCLAIMED_GRACE_MS` → failed。
+    ///
+    /// 返回 notes：每条修正/警告一句话（CLI stderr、server 日志用）。
+    pub fn reconcile(&self) -> Result<Vec<String>, AppError> {
+        let (index, mut notes) = self.replay_index();
+        let (mut records, meta_warns) = self.list()?;
+        notes.extend(meta_warns);
+        // 索引有迁移行但 meta 丢失：无法重建完整 record，warn 即可。
+        for id in index.keys() {
+            if !records.iter().any(|r| &r.id == id) {
+                notes.push(format!("job {id}: index entry without meta file"));
+            }
+        }
+
+        let now = now_ms();
+        for rec in &mut records {
+            // runner 活着：迁移与 meta 由 runner 独占，reconcile 完全只读——
+            // 此刻任何写（含索引对齐补丁）都会与 runner 并发改同一 record，
+            // last-writer-wins 丢失对方字段。
+            let runner_alive = rec.runner_pid.is_some_and(proc::is_alive);
+            if runner_alive {
+                continue;
+            }
+            if rec.status.is_terminal() {
+                continue;
+            }
+
+            // ① 索引权威：meta 落后时补写（runner 已死，reconcile 是唯一写者）；
+            //   meta 已终态则不反转（终态不可回退）。
+            if let Some(&(idx_status, _)) = index.get(&rec.id) {
+                if idx_status != rec.status && !rec.status.is_terminal() {
+                    notes.push(format!(
+                        "job {}: meta {} behind index {}; aligned to index",
+                        rec.id,
+                        rec.status.as_str(),
+                        idx_status.as_str()
+                    ));
+                    rec.status = idx_status;
+                    rec.updated_at = now;
+                    self.save(rec)?;
+                } else if idx_status != rec.status {
+                    notes.push(format!(
+                        "job {}: meta terminal {} overrides index {}",
+                        rec.id,
+                        rec.status.as_str(),
+                        idx_status.as_str()
+                    ));
+                }
+            }
+            if rec.status.is_terminal() {
+                continue;
+            }
+
+            // ② 按 payload process identity 收口。
+            match rec.status {
+                JobStatus::Queued | JobStatus::Preparing => {
+                    if runner_alive {
+                        continue; // launch 进行中
+                    }
+                    if rec.runner_pid.is_some() {
+                        let detail = "interrupted: runner died before launch";
+                        self.transition(rec, JobStatus::Failed, Some(detail.into()))?;
+                        notes.push(format!("job {}: {}", rec.id, detail));
+                    } else if now.saturating_sub(rec.updated_at) >= UNCLAIMED_GRACE_MS {
+                        // submit 建档→spawn helper 的正常窗口外 → 从未被认领
+                        let detail = "interrupted: runner never claimed the job";
+                        self.transition(rec, JobStatus::Failed, Some(detail.into()))?;
+                        notes.push(format!("job {}: {}", rec.id, detail));
+                    }
+                }
+                _ => match liveness(rec) {
+                    Liveness::Alive => {
+                        if rec.status != JobStatus::Running {
+                            let detail = "process alive; tracking resumed";
+                            self.transition(rec, JobStatus::Running, Some(detail.into()))?;
+                            notes.push(format!("job {}: -> running ({detail})", rec.id));
+                        }
+                    }
+                    Liveness::Dead => match rec.status {
+                        JobStatus::Canceling => {
+                            let detail = "process confirmed stopped";
+                            self.transition(rec, JobStatus::Canceled, Some(detail.into()))?;
+                            notes.push(format!("job {}: canceling -> canceled", rec.id));
+                        }
+                        _ => {
+                            let detail = "interrupted: runner restart";
+                            self.transition(rec, JobStatus::Failed, Some(detail.into()))?;
+                            notes.push(format!("job {}: -> failed ({detail})", rec.id));
+                        }
+                    },
+                    Liveness::Unknown => {
+                        if rec.status != JobStatus::Recovering {
+                            let detail = "process identity unconfirmable";
+                            self.transition(rec, JobStatus::Recovering, Some(detail.into()))?;
+                            notes.push(format!("job {}: -> recovering", rec.id));
+                        }
+                    }
+                },
+            }
+        }
+        Ok(notes)
+    }
+}
+
+/// payload 存活探测结果。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Liveness {
+    Alive,
+    Dead,
+    /// 无法确认：SSH job（remote_id）或 process identity 缺失——
+    /// 判死判活都不诚实，走 recovering（#51 SSH runner 接管）。
+    Unknown,
+}
+
+/// 按 process identity 探活：`remote_id` 是远端 job，本地探不了 → Unknown；
+/// 本地 job 按 `pid` 存活判定；无 pid → Unknown。
+fn liveness(rec: &JobRecord) -> Liveness {
+    if rec.remote_id.is_some() {
+        return Liveness::Unknown;
+    }
+    match rec.pid {
+        Some(pid) if proc::is_alive(pid) => Liveness::Alive,
+        Some(_) => Liveness::Dead,
+        None => Liveness::Unknown,
     }
 }
 
@@ -397,6 +542,114 @@ mod tests {
         assert!(check_id("../evil").is_err());
         assert!(check_id("a/b").is_err());
         assert!(check_id("").is_err());
+    }
+
+    /// 造一个 running job：pid/runner_pid 可指定（测试探活路径）。
+    fn make_running(s: &JobStore, pid: u32, runner_pid: u32) -> JobRecord {
+        let mut rec = s
+            .create(JobKind::Train, vec!["x".into()], String::new())
+            .unwrap();
+        rec.runner_pid = Some(runner_pid);
+        s.transition(&mut rec, JobStatus::Preparing, None).unwrap();
+        rec.pid = Some(pid);
+        s.transition(&mut rec, JobStatus::Running, None).unwrap();
+        rec
+    }
+
+    /// rescan：runner+payload 双亡 → failed(interrupted)。
+    #[test]
+    fn reconcile_dead_runner_and_payload_fails() {
+        let (s, dir) = store("rescan-dead");
+        let rec = make_running(&s, 4_000_000, 4_000_001);
+        let notes = s.reconcile().unwrap();
+        let done = s.load(&rec.id).unwrap().unwrap();
+        assert_eq!(done.status, JobStatus::Failed);
+        assert!(done.error.unwrap().contains("interrupted"));
+        assert!(notes.iter().any(|n| n.contains("interrupted")), "{notes:?}");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// rescan：runner 死、payload 活 → 保持 running（adopt，不重复 launch）。
+    #[test]
+    fn reconcile_adopts_live_payload() {
+        let (s, dir) = store("rescan-adopt");
+        let rec = make_running(&s, std::process::id(), 4_000_001);
+        s.reconcile().unwrap();
+        assert_eq!(s.load(&rec.id).unwrap().unwrap().status, JobStatus::Running);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// rescan：canceling + payload 确认停止 → canceled（不写成 failed）。
+    #[test]
+    fn reconcile_canceling_dead_goes_canceled() {
+        let (s, dir) = store("rescan-cancel");
+        let mut rec = make_running(&s, 4_000_000, 4_000_001);
+        s.transition(&mut rec, JobStatus::Canceling, None).unwrap();
+        s.reconcile().unwrap();
+        assert_eq!(
+            s.load(&rec.id).unwrap().unwrap().status,
+            JobStatus::Canceled
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// rescan：无法确认存活（remote_id，SSH 语义）→ recovering。
+    #[test]
+    fn reconcile_unconfirmable_goes_recovering() {
+        let (s, dir) = store("rescan-recv");
+        let mut rec = make_running(&s, 4_000_000, 4_000_001);
+        rec.remote_id = Some("ssh-42".into());
+        s.save(&rec).unwrap();
+        s.reconcile().unwrap();
+        assert_eq!(
+            s.load(&rec.id).unwrap().unwrap().status,
+            JobStatus::Recovering
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// rescan：索引是权威——meta 落后于 index 时按 index 补齐。
+    #[test]
+    fn reconcile_index_beats_lagging_meta() {
+        let (s, dir) = store("rescan-index");
+        let rec = s
+            .create(JobKind::Train, vec!["x".into()], String::new())
+            .unwrap();
+        let mut f = OpenOptions::new()
+            .append(true)
+            .open(dir.join("jobs.jsonl"))
+            .unwrap();
+        writeln!(
+            f,
+            "{}",
+            serde_json::json!({"id": rec.id, "kind": "train", "status": "succeeded", "ts": 9})
+        )
+        .unwrap();
+        drop(f);
+        s.reconcile().unwrap();
+        assert_eq!(
+            s.load(&rec.id).unwrap().unwrap().status,
+            JobStatus::Succeeded
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// rescan：queued 超宽限未被认领 → failed；新鲜 queued 保持。
+    #[test]
+    fn reconcile_stale_unclaimed_queued_fails() {
+        let (s, dir) = store("rescan-queue");
+        let mut rec = s
+            .create(JobKind::Train, vec!["x".into()], String::new())
+            .unwrap();
+        // 新鲜 queued：reconcile 不动
+        s.reconcile().unwrap();
+        assert_eq!(s.load(&rec.id).unwrap().unwrap().status, JobStatus::Queued);
+        // 手动老化 updated_at → 超宽限 → failed
+        rec.updated_at = now_ms() - UNCLAIMED_GRACE_MS - 1_000;
+        s.save(&rec).unwrap();
+        s.reconcile().unwrap();
+        assert_eq!(s.load(&rec.id).unwrap().unwrap().status, JobStatus::Failed);
+        let _ = fs::remove_dir_all(&dir);
     }
 
     /// read_tail / read_chunk：尾部窗口与 cursor 增量。

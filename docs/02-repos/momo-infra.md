@@ -199,6 +199,8 @@ stateDiagram-v2
 
 **exec_local**：`jobs submit`（或 `POST /api/jobs`）建档后 spawn detached helper `momoctl jobs exec <ID>`（内部命令，CLI 不可见）。helper 是状态机的唯一写入方：写 `runner_pid` 认领 → `preparing` → spawn payload 记 `pid`（process identity）→ `running` → stdout/stderr 增量并入 `logs/<id>.log` → 按 exit code 落 `succeeded`/`failed`；cancel 请求（`canceling`）由 helper 的 wait 返回或 cancel 命令自身收尾到 `canceled`。主进程退出后 helper 继续跑，CLI 与 Web 读写同一 store 无内存共享；非 queued 状态下 exec 是 no-op，绝不重复 launch。
 
+**rescan（重启恢复）**：`momoctl web` 对外接 API 前、以及 CLI/Web 每次读侧入口（list/status/log/cancel）先跑 `store.reconcile()`：回放 `jobs.jsonl`（坏行跳过 warn）对齐落后 meta（终态不反转），再按 process identity 收口非终态 job——`runner_pid` 活着说明迁移仍由 runner 负责（`recovering` 回 `running`）；runner 死亡则探 payload `pid`：确认存活 → `running`（adopt，不重复 launch）；确认消亡 → `failed("interrupted: runner restart")`（`canceling` 中 → `canceled`）；无法确认（`remote_id` 的 SSH job 或 pid 缺失）→ `recovering` 等 #51 接管；`queued/preparing` 未被认领超 60s 宽限 → `failed("interrupted: runner never claimed the job")`。每条修正 append 索引 + fsync，与 runner 写路径同构。
+
 **REST**（`/api/jobs`，JSON 顶层恒 `schema:1`）：
 
 | 端点 | 说明 |

@@ -201,6 +201,63 @@ fn cancel_running_job() {
     let _ = fs::remove_dir_all(&dir);
 }
 
+/// #54 rescan：杀掉 detached runner 后，下一次读侧调用（jobs list）触发
+/// reconcile——payload 还活着 → 保持 running（adopt，不重复 launch）；
+/// 再杀 payload → failed(interrupted: runner restart)。
+#[test]
+fn rescan_recovers_running_job_after_runner_death() {
+    use momo_infra::serve::proc;
+
+    let (dir, state, env_file) = env_setup("rescan");
+    let sleeper = sleeper_args(&state);
+    let refs: Vec<&str> = sleeper.iter().map(String::as_str).collect();
+    let mut argv = vec!["jobs", "submit", "--desc", "sleeper", "--"];
+    argv.extend(refs);
+    let v = jobs_json(&state, &env_file, &argv);
+    let id = v["job"]["id"].as_str().unwrap().to_string();
+
+    let running = wait_running_pid(&state, &env_file, &id);
+    let pid = running["pid"].as_u64().unwrap() as u32;
+    let runner_pid = running["runner_pid"].as_u64().unwrap() as u32;
+
+    // 杀 runner 不动 payload：list 触发 rescan → payload 探活 → 仍 running
+    proc::stop_pid(runner_pid, Duration::from_secs(2));
+    let deadline = Instant::now() + DEADLINE;
+    while proc::is_alive(runner_pid) && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    let v = jobs_json(&state, &env_file, &["jobs", "list"]);
+    let job = v["jobs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|j| j["id"].as_str() == Some(&id))
+        .expect("job in list");
+    assert_eq!(job["status"], "running", "payload alive → adopted: {job}");
+    assert!(proc::is_alive(pid), "payload must still run");
+
+    // 再杀 payload：rescan 确认双亡 → failed(interrupted)
+    proc::stop_pid(pid, Duration::from_secs(2));
+    let deadline = Instant::now() + DEADLINE;
+    loop {
+        let v = jobs_json(&state, &env_file, &["jobs", "status", &id]);
+        let job = &v["job"];
+        if job["status"] == "failed" {
+            assert!(
+                job["error"].as_str().unwrap_or("").contains("interrupted"),
+                "{job}"
+            );
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "job {id} not marked failed: {job}"
+        );
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    let _ = fs::remove_dir_all(&dir);
+}
+
 #[test]
 fn unknown_job_id_is_usage_error() {
     let (dir, state, env_file) = env_setup("noid");
