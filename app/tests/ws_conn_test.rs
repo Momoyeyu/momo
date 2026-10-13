@@ -106,6 +106,8 @@ async fn malformed_json_yields_error_frame() {
         panic!("expected error frame");
     };
     assert_eq!(err.code, ErrorCode::BadMessage);
+    // 握手后 conn 校验失败带 session_id 定位会话（#132）。
+    assert!(err.session_id.is_some());
 }
 
 #[tokio::test]

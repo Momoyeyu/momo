@@ -119,6 +119,11 @@ impl AudioSink {
             event_seq: Some(env.event_seq),
             code: ErrorCode::BackpressureOverflow,
             message: format!("downlink buffer exceeded {DOWNLINK_BUFFER_FRAMES} frames"),
+            ref_id: None,
+            turn_id: Some(self.turn_id.clone()),
+            capture_id: None,
+            stream_id: None,
+            sentence_seq: None,
         }));
         self.emit(Msg::ControlCancel(ControlCancelMsg {
             env: self.env.next(),

@@ -171,7 +171,8 @@ async fn respond_audio(sock: &mut WebSocket, turn_id: &str, sentence_seq: u32, f
     .await;
 }
 
-fn tts_error() -> Value {
+/// svc-tts 归因 error 帧（#132：turn_id+sentence_seq 精确路由到失败句）。
+fn tts_error(sent: &Value) -> Value {
     json!({
         "type": "error",
         "session_id": "sess_mock",
@@ -180,6 +181,8 @@ fn tts_error() -> Value {
         "event_seq": 3,
         "code": "TTS_FAILED",
         "message": "provider produced no audio",
+        "turn_id": sent["turn_id"],
+        "sentence_seq": sent["seq"],
     })
 }
 
@@ -595,10 +598,10 @@ async fn reply_streams_tts_audio_downlink() {
 async fn tts_failure_degrades_to_text_only() {
     let (url, _reports) = spawn_mock(|mut sock, report| async move {
         mock_handshake(&mut sock).await;
-        // 每句 output.sentence 回 TTS_FAILED，不开 stream。
+        // 每句 output.sentence 回带归因的 TTS_FAILED，不开 stream。
         for _ in 0..2 {
-            let _sent = recv_sentence(&mut sock, &report).await;
-            send_json(&mut sock, tts_error()).await;
+            let sent = recv_sentence(&mut sock, &report).await;
+            send_json(&mut sock, tts_error(&sent)).await;
         }
         tokio::time::sleep(Duration::from_millis(300)).await;
     })
@@ -607,7 +610,7 @@ async fn tts_failure_degrades_to_text_only() {
     let llm = Arc::new(MockLlm::default());
     let mut conn = connect(test_state(llm.clone(), url));
     handshake(&mut conn).await;
-    let _t1 = open_text_turn(&mut conn, "in_1", "问").await;
+    let t1 = open_text_turn(&mut conn, "in_1", "问").await;
 
     let feed = take_feed(&llm).await;
     feed.send(Ok("第一句。第二句。".into()))
@@ -625,11 +628,22 @@ async fn tts_failure_degrades_to_text_only() {
     );
     assert!(seen.opens.is_empty(), "no downlink stream on failure");
     assert!(seen.frames.is_empty(), "no audio frames on failure");
-    let errors = msgs
+    let errors: Vec<_> = msgs
         .iter()
-        .filter(|o| matches!(o, Out::Json(Msg::Error(e)) if e.code == ErrorCode::TtsFailed))
-        .count();
-    assert_eq!(errors, 2, "error frame per failed sentence");
+        .filter_map(|o| match o {
+            Out::Json(Msg::Error(e)) if e.code == ErrorCode::TtsFailed => Some(e),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(errors.len(), 2, "error frame per failed sentence");
+    // 归因：每个 error 指回所属 turn 与失败句序（#132）。
+    assert!(
+        errors
+            .iter()
+            .all(|e| e.turn_id.as_deref() == Some(t1.as_str()))
+    );
+    let seqs: Vec<u32> = errors.iter().filter_map(|e| e.sentence_seq).collect();
+    assert_eq!(seqs, [1, 2], "sentence_seq attribution per failed sentence");
     assert!(
         msgs.iter()
             .any(|o| matches!(o, Out::Json(Msg::OutputComplete(_))))

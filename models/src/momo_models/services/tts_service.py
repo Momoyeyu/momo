@@ -22,7 +22,13 @@ from momo_models.proto import (
 )
 from momo_models.providers.base import EMOTION_TAGS, TTSProvider, VoiceRef
 from momo_models.providers.registry import create_tts_provider
-from momo_models.services.common import WsContext, attach_warmup, make_app, serve
+from momo_models.services.common import (
+    WsContext,
+    attach_warmup,
+    make_app,
+    msg_attribution,
+    serve,
+)
 
 log = get_logger(__name__)
 
@@ -73,22 +79,31 @@ class _TtsLink:
         turn_id = msg.get("turn_id")
         seq = msg.get("seq")
         text = msg.get("text")
+        attr = msg_attribution(msg)
         if not isinstance(turn_id, str) or not turn_id:
-            await self._ctx.send_error("BAD_MESSAGE", "output.sentence requires turn_id")
+            await self._ctx.send_error(
+                "BAD_MESSAGE", "output.sentence requires turn_id", **attr
+            )
             return
         if not isinstance(seq, int) or isinstance(seq, bool) or not (0 <= seq <= 0xFFFFFFFF):
-            await self._ctx.send_error("BAD_MESSAGE", "output.sentence requires u32 seq")
+            await self._ctx.send_error(
+                "BAD_MESSAGE", "output.sentence requires u32 seq", **attr
+            )
             return
         if not isinstance(text, str) or not text.strip():
-            await self._ctx.send_error("BAD_MESSAGE", "output.sentence requires non-empty text")
+            await self._ctx.send_error(
+                "BAD_MESSAGE", "output.sentence requires non-empty text", **attr
+            )
             return
         provider = self._provider()
         if provider is None:
-            await self._ctx.send_error("TTS_FAILED", "tts provider not ready")
+            await self._ctx.send_error("TTS_FAILED", "tts provider not ready", **attr)
             return
         key = (turn_id, seq)
         if key in self._seen:
-            await self._ctx.send_error("BAD_MESSAGE", f"duplicate sentence {turn_id}#{seq}")
+            await self._ctx.send_error(
+                "BAD_MESSAGE", f"duplicate sentence {turn_id}#{seq}", **attr
+            )
             return
         emotion = msg.get("emotion")
         if emotion not in EMOTION_TAGS:
@@ -138,15 +153,18 @@ class _TtsLink:
             lang=lang,
         )
         stream = provider.synth_stream(text, voice=voice, emotion=emotion)
+        attr = {"turn_id": turn_id, "stream_id": stream_id, "sentence_seq": seq}
         try:
             first = await anext(stream, None)
         except Exception as e:
-            await ctx.send_error("TTS_FAILED", f"synth failed: {e}")
+            await ctx.send_error("TTS_FAILED", f"synth failed: {e}", **attr)
             await stream.aclose()
             return
         if first is None:
             # 空产出不开空 stream（下行可播放句不允许零长度音频）。
-            await ctx.send_error("TTS_FAILED", f"provider produced no audio for seq {seq}")
+            await ctx.send_error(
+                "TTS_FAILED", f"provider produced no audio for seq {seq}", **attr
+            )
             await stream.aclose()
             return
 
@@ -188,7 +206,7 @@ class _TtsLink:
             # control.cancel/断连：orchestrator 已丢弃该 stream，不再补帧。
             raise
         except Exception as e:
-            await ctx.send_error("TTS_FAILED", f"synth failed mid-stream: {e}")
+            await ctx.send_error("TTS_FAILED", f"synth failed mid-stream: {e}", **attr)
         finally:
             await stream.aclose()
         # EOS：独立空载荷收尾帧；audio.end.last_chunk_seq 与最后一帧一致。
@@ -247,7 +265,9 @@ class _TtsLink:
         elif target == "capture":
             log.info("tts.cancel_ignored", target=target, id=obj_id)  # 非 TTS 职责
         else:
-            await self._ctx.send_error("BAD_MESSAGE", f"unknown cancel target {target!r}")
+            await self._ctx.send_error(
+                "BAD_MESSAGE", f"unknown cancel target {target!r}", ref_id=obj_id
+            )
 
 
 def create_app() -> FastAPI:

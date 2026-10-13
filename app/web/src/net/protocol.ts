@@ -399,7 +399,7 @@ export interface StateTurnMsg extends ServerEnvelope {
   state: TurnState;
 }
 
-// ---------- error（双向；握手期可无 envelope） ----------
+// ---------- error（双向；握手期可无 envelope；归因字段可选，#132） ----------
 
 export interface ErrorMsg {
   type: "error";
@@ -409,6 +409,16 @@ export interface ErrorMsg {
   event_seq?: number;
   code: ErrorCode;
   message: string;
+  /** 指回触发错误的输入/对象 id（归因域已知时优先专用字段）。 */
+  ref_id?: string;
+  /** 归属回合（LLM/管线失败、合成降级、barge_in 目标）。 */
+  turn_id?: string;
+  /** 归属 capture（uplink 中止、ASR 失败）。 */
+  capture_id?: string;
+  /** 归属音频流（audio.open/audio.end/帧校验失败）。 */
+  stream_id?: string;
+  /** 归属回合内句序（单句合成失败降级）。 */
+  sentence_seq?: number;
 }
 
 // ---------- type 多态联合（文本帧 JSON） ----------

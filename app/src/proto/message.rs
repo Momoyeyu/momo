@@ -539,10 +539,11 @@ pub enum TurnState {
 
 // ---------- error ----------
 
-/// `error`（双向）：`code,message` 必需。
+/// `error`（双向）：`code,message` 必需，归因字段可选（#132）。
 ///
 /// 握手期错误发生在 session 建立前，envelope 字段可不出现；
-/// 服务端发出时可附 `event_seq`。
+/// 服务端发出时可附 `event_seq`。发送方知道哪个归因带哪个，
+/// 不知道的不带（握手期与无法定位的错误全不带）。
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ErrorMsg {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -555,6 +556,57 @@ pub struct ErrorMsg {
     pub event_seq: Option<u64>,
     pub code: ErrorCode,
     pub message: String,
+    /// 指回触发错误的输入/对象 id（归因域已知时优先专用字段）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ref_id: Option<String>,
+    /// 归属回合（LLM/管线失败、合成降级、barge_in 目标）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub turn_id: Option<String>,
+    /// 归属 capture（uplink 中止、ASR 失败）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capture_id: Option<String>,
+    /// 归属音频流（`audio.open`/`audio.end`/帧校验失败）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream_id: Option<String>,
+    /// 归属回合内句序（单句合成失败降级）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sentence_seq: Option<u32>,
+}
+
+/// `error` 帧归因引用（protocol §2：全部可选，知道哪个带哪个）。
+///
+/// 各发出点按已知上下文填充；[`ErrorMsg::attribution`] 收拢读侧。
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct ErrorAttribution {
+    pub ref_id: Option<String>,
+    pub turn_id: Option<String>,
+    pub capture_id: Option<String>,
+    pub stream_id: Option<String>,
+    pub sentence_seq: Option<u32>,
+}
+
+impl ErrorMsg {
+    /// 收拢五个可选归因字段（写入方按位填，读方按位取）。
+    pub fn attribution(&self) -> ErrorAttribution {
+        ErrorAttribution {
+            ref_id: self.ref_id.clone(),
+            turn_id: self.turn_id.clone(),
+            capture_id: self.capture_id.clone(),
+            stream_id: self.stream_id.clone(),
+            sentence_seq: self.sentence_seq,
+        }
+    }
+}
+
+impl ErrorAttribution {
+    /// 归因落到 error 帧上（保持 envelope/code/message 不变）。
+    pub fn apply_to(self, msg: &mut ErrorMsg) {
+        msg.ref_id = self.ref_id;
+        msg.turn_id = self.turn_id;
+        msg.capture_id = self.capture_id;
+        msg.stream_id = self.stream_id;
+        msg.sentence_seq = self.sentence_seq;
+    }
 }
 
 /// `error.code`；表外取值解码为 [`ErrorCode::Unknown`]。

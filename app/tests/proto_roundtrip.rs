@@ -275,8 +275,13 @@ fn all_message_types_match_golden_json() {
                 event_id: Some(EVENT.into()),
                 at_ms: Some(AT_MS),
                 event_seq: Some(EVENT_SEQ),
-                code: ErrorCode::BadMessage,
-                message: "unknown message type".into(),
+                code: ErrorCode::TtsFailed,
+                message: "synthesis failed".into(),
+                ref_id: Some(RECEIPT.into()),
+                turn_id: Some(TURN.into()),
+                capture_id: Some(CAPTURE.into()),
+                stream_id: Some(STREAM.into()),
+                sentence_seq: Some(2),
             }),
         ),
     ];
@@ -347,6 +352,12 @@ fn error_frame_without_envelope_decodes() {
     };
     assert_eq!(err.code, ErrorCode::Unauthorized);
     assert!(err.session_id.is_none());
+    // 归因字段向后兼容：旧帧不带 → 全 None（#132）。
+    assert!(err.ref_id.is_none());
+    assert!(err.turn_id.is_none());
+    assert!(err.capture_id.is_none());
+    assert!(err.stream_id.is_none());
+    assert!(err.sentence_seq.is_none());
     // 表外 code 解码为 Unknown，不产生解析失败。
     let msg = codec::decode_msg(r#"{"type":"error","code":"FUTURE_CODE","message":"x"}"#).unwrap();
     assert!(matches!(msg, Msg::Error(e) if e.code == ErrorCode::Unknown));
