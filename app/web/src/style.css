@@ -121,6 +121,40 @@ body,
   color: #fff;
 }
 
+/* ASR partial 草稿气泡：灰字斜体预览，final 定稿后替换为正式气泡（#147）。 */
+.bubble.user.draft {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* 字幕条：Live2D 画面下方「正在说的这句」（#147）；与 #chat 全量历史并存。 */
+#subtitle {
+  position: fixed;
+  left: 50%;
+  bottom: 72px;
+  transform: translateX(-50%);
+  max-width: min(720px, 80vw);
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: rgba(9, 9, 11, 0.78);
+  color: #fafafa;
+  font-size: 18px;
+  line-height: 1.5;
+  text-align: center;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+
+#subtitle[hidden] {
+  display: none;
+}
+
+/* TTS 降级句短显：斜体区分「没有配音的文字」。 */
+#subtitle.text-only {
+  font-style: italic;
+  color: #d4d4d8;
+}
+
 .bubble.assistant {
   align-self: flex-start;
   background: #27272a;
