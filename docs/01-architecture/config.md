@@ -102,6 +102,7 @@ passthrough = [ { name, type?, default, files, description } ]   # 非 MOMO_ 前
 | `name` | env 键名，`MOMO_` 前缀；非前缀变量进 `passthrough` |
 | `type` | `string`/`bool`/`int`/`path`/`url`/`enum`；供配置页渲染与校验用 |
 | `values` | `type=enum` 时的合法取值集合 |
+| `default` | 内置默认值；空字符串 = 无默认/留空占位。**密钥型敏感项（`string`/`url`/`path`）一律为空**；开关型敏感项（`bool`/`enum`/`int`，如 `MOMO_DATA_KEEP_AUDIO`）保留安全常量默认——"敏感"指产物隐私而非值即密钥 |
 | `readers` | 代码中消费该键的模块：`app`/`models`/`infra` |
 | `description` | 含义，与 §2「含义」列保持一致 |
 
