@@ -1,15 +1,17 @@
-//! clap 命令定义：全局 `--json` / `--env-file` + 八个子命令。
+//! clap 命令定义：全局 `--json` / `--env-file` + 九个子命令。
 //! 签名对齐 momo-docs `02-repos/momo-infra.md`「子命令清单」。
 
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
+use crate::jobs::JobKind;
+
 #[derive(Debug, Parser)]
 #[command(
     name = "momoctl",
     version,
-    about = "momo ops CLI: doctor / pull / serve / switch / bench / gc / config / web"
+    about = "momo ops CLI: doctor / pull / serve / switch / bench / gc / config / web / jobs"
 )]
 pub struct Cli {
     /// Emit a single JSON object (versioned schema, for CI/scripts)
@@ -42,6 +44,8 @@ pub enum Command {
     Config(ConfigArgs),
     /// Web console: axum server, embedded SPA + /api route base
     Web(WebArgs),
+    /// Job runner: submit/list/status/log/cancel via local exec (state-dir store)
+    Jobs(JobsArgs),
 }
 
 /// 部署档位（与 MOMO_PROFILE 取值一致）。
@@ -178,6 +182,70 @@ pub struct WebArgs {
     /// non-loopback requires MOMO_WEB_TOKEN, else refuse to start (exit 2)
     #[arg(long, value_name = "ADDR", default_value = "127.0.0.1:7900")]
     pub listen: String,
+}
+
+#[derive(Debug, Args)]
+pub struct JobsArgs {
+    #[command(subcommand)]
+    pub action: JobsAction,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum JobsAction {
+    /// Submit a job to the local runner (detached exec; `--` separates payload argv)
+    Submit(JobsSubmitArgs),
+    /// List all jobs (oldest first)
+    List,
+    /// Show one job record
+    Status(JobIdArgs),
+    /// Tail a job's captured stdout/stderr log
+    Log(JobsLogArgs),
+    /// Cancel a queued/running job (SIGTERM→SIGKILL on the payload pid)
+    Cancel(JobIdArgs),
+    /// Internal runner spawned by `jobs submit`; not a user action
+    #[command(hide = true)]
+    Exec(JobIdArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct JobsSubmitArgs {
+    /// Job kind domain (execution is always exec_local)
+    #[arg(long, value_enum, default_value_t = JobKind::Train)]
+    pub kind: JobKind,
+
+    /// Human-readable description (default: joined argv)
+    #[arg(long, value_name = "TEXT")]
+    pub desc: Option<String>,
+
+    /// Payload command and args (place after `--`)
+    #[arg(
+        required = true,
+        num_args = 1..,
+        trailing_var_arg = true,
+        allow_hyphen_values = true,
+        value_name = "CMD..."
+    )]
+    pub cmd: Vec<String>,
+}
+
+#[derive(Debug, Args)]
+pub struct JobIdArgs {
+    /// Job id (ULID)
+    pub id: String,
+}
+
+#[derive(Debug, Args)]
+pub struct JobsLogArgs {
+    /// Job id (ULID)
+    pub id: String,
+
+    /// Print the last N lines
+    #[arg(short = 'n', long = "lines", default_value_t = 50, value_name = "N")]
+    pub lines: usize,
+
+    /// Follow appended output until the job reaches a terminal state
+    #[arg(short = 'f', long)]
+    pub follow: bool,
 }
 
 #[derive(Debug, Args)]

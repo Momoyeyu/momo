@@ -4,6 +4,7 @@
 
 pub mod api;
 pub mod guard;
+pub mod jobs;
 pub mod spa;
 
 use std::net::SocketAddr;

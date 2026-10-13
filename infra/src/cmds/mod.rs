@@ -4,6 +4,7 @@ pub mod bench;
 pub mod config;
 pub mod doctor;
 pub mod gc;
+pub mod jobs;
 pub mod pull;
 pub mod serve;
 pub mod switch;

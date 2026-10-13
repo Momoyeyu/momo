@@ -8,6 +8,7 @@ pub mod cli;
 pub mod cmds;
 pub mod config_schema;
 pub mod env_cfg;
+pub mod jobs;
 pub mod manifest;
 pub mod net;
 pub mod output;
@@ -36,6 +37,7 @@ pub fn run(cli: Cli) -> i32 {
         Command::Gc(args) => cmds::gc::run(args, &ctx),
         Command::Config(args) => cmds::config::run(args, &ctx),
         Command::Web(args) => cmds::web::run(args, &ctx),
+        Command::Jobs(args) => cmds::jobs::run(args, &ctx),
     };
     finish(result)
 }

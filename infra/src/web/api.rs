@@ -1,9 +1,10 @@
 //! `/api/*` 路由树基座：本文件是唯一注册点。
-//! 已实装：`healthz`/`readyz`/`events`/`csrf`/`doctor`/`serve status`（只读）；
-//! `serve`/`models`/`jobs`/`config` 其余为 501 占位——真实 handler 由后续
-//! issue 挂接。handler 只做 HTTP↔core 适配，业务复用 `cmds`/`serve` 现有
-//! core 函数；出入参一律 `api::dto` 结构化类型（不手写 `json!`），
-//! 与 CLI `--json` 同 schema；错误统一 `{schema:1, error:{code,message}}`。
+//! 已实装：`healthz`/`readyz`/`events`/`csrf`/`doctor`/`serve status`（只读）
+//! 与 `jobs`（REST + SSE 日志）；`serve`/`models`/`config` 其余为 501 占位——
+//! 真实 handler 由后续 issue 挂接。handler 只做 HTTP↔core 适配，业务复用
+//! `cmds`/`serve`/`manifest`/`env_cfg` 现有 core 函数；出入参一律 `api::dto`
+//! 结构化类型（不手写 `json!`），与 CLI `--json` 同 schema；错误统一
+//! `{schema:1, error:{code,message}}`。
 
 use std::convert::Infallible;
 use std::sync::Arc;
@@ -40,8 +41,8 @@ pub fn router(state: Arc<WebState>) -> Router {
         .route("/serve/{*rest}", any(placeholder))
         .route("/models", any(placeholder))
         .route("/models/{*rest}", any(placeholder))
-        .route("/jobs", any(placeholder))
-        .route("/jobs/{*rest}", any(placeholder))
+        // jobs 已挂真实 handler（web/jobs.rs）；其余命名空间仍是 501 占位。
+        .nest("/jobs", super::jobs::router())
         .route("/config", any(placeholder))
         .route("/config/{*rest}", any(placeholder))
         .fallback(not_found)
@@ -64,7 +65,11 @@ pub(crate) async fn index() -> Json<dto::IndexReport> {
             "GET /api/serve/status",
             "/api/serve/* (placeholder)",
             "/api/models/* (placeholder)",
-            "/api/jobs/* (placeholder)",
+            "GET /api/jobs",
+            "POST /api/jobs",
+            "GET /api/jobs/{id}",
+            "POST /api/jobs/{id}/cancel",
+            "GET /api/jobs/{id}/logs?cursor= (SSE)",
             "/api/config/* (placeholder)",
         ],
     })
