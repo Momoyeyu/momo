@@ -11,11 +11,12 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
-use serde_json::json;
 use tokio_stream::wrappers::ReceiverStream;
 
+use super::api::error;
+use crate::api::dto;
+use crate::jobs::runner;
 use crate::jobs::store::{self, JobStore};
-use crate::jobs::{runner, JobKind};
 
 /// `/api/jobs` 子路由：挂到 api.rs 的 `nest("/jobs", ..)`。
 /// 与 WebState 无关（jobs 只读写 store），泛型以便 nest 到任意 state 下。
@@ -48,13 +49,13 @@ async fn list_jobs() -> Response {
     let store = JobStore::open_default();
     reconcile(&store);
     match store.list() {
-        Ok((jobs, _warnings)) => Json(json!({
-            "schema": 1,
-            "status": "ok",
-            "jobs": jobs,
-        }))
+        Ok((jobs, _warnings)) => Json(dto::JobListReport {
+            schema: dto::SCHEMA_VERSION,
+            status: "ok",
+            jobs,
+        })
         .into_response(),
-        Err(e) => error_response(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()),
+        Err(e) => error(StatusCode::INTERNAL_SERVER_ERROR, "internal", e.to_string()),
     }
 }
 
@@ -63,46 +64,43 @@ async fn get_job(Path(id): Path<String>) -> Response {
     let store = JobStore::open_default();
     reconcile(&store);
     match store.load(&id) {
-        Ok(Some(rec)) => Json(json!({
-            "schema": 1,
-            "status": "ok",
-            "job": rec,
-        }))
+        Ok(Some(rec)) => Json(dto::JobReport {
+            schema: dto::SCHEMA_VERSION,
+            status: "ok",
+            job: rec,
+            note: None,
+        })
         .into_response(),
         Ok(None) => not_found(&id),
-        Err(e) => error_response(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()),
+        Err(e) => error(StatusCode::INTERNAL_SERVER_ERROR, "internal", e.to_string()),
     }
 }
 
-/// `POST /api/jobs` body：`{kind?, args, desc?}`。
-#[derive(Debug, Deserialize)]
-struct SubmitBody {
-    #[serde(default)]
-    kind: Option<JobKind>,
-    #[serde(default)]
-    args: Vec<String>,
-    #[serde(default)]
-    desc: Option<String>,
-}
-
 /// `POST /api/jobs`：建档 + spawn detached runner（同 `jobs submit`）。
-async fn submit_job(Json(body): Json<SubmitBody>) -> Response {
+async fn submit_job(Json(body): Json<dto::JobSubmitRequest>) -> Response {
     if body.args.is_empty() || body.args[0].trim().is_empty() {
-        return error_response(
+        return error(
             StatusCode::BAD_REQUEST,
+            "bad_request",
             "body.args must be a non-empty argv array",
         );
     }
     let store = JobStore::open_default();
     let desc = body.desc.unwrap_or_else(|| body.args.join(" "));
-    match runner::submit(&store, body.kind.unwrap_or(JobKind::Train), body.args, desc) {
-        Ok(rec) => Json(json!({
-            "schema": 1,
-            "status": "ok",
-            "job": rec,
-        }))
+    match runner::submit(
+        &store,
+        body.kind.unwrap_or(crate::jobs::JobKind::Train),
+        body.args,
+        desc,
+    ) {
+        Ok(rec) => Json(dto::JobReport {
+            schema: dto::SCHEMA_VERSION,
+            status: "ok",
+            job: rec,
+            note: None,
+        })
         .into_response(),
-        Err(e) => error_response(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()),
+        Err(e) => error(StatusCode::INTERNAL_SERVER_ERROR, "internal", e.to_string()),
     }
 }
 
@@ -111,15 +109,15 @@ async fn cancel_job(Path(id): Path<String>) -> Response {
     let store = JobStore::open_default();
     reconcile(&store);
     match runner::cancel(&store, &id) {
-        Ok((rec, note)) => Json(json!({
-            "schema": 1,
-            "status": "ok",
-            "job": rec,
-            "note": note,
-        }))
+        Ok((rec, note)) => Json(dto::JobReport {
+            schema: dto::SCHEMA_VERSION,
+            status: "ok",
+            job: rec,
+            note: Some(note.to_string()),
+        })
         .into_response(),
         Err(crate::output::AppError::Config(m)) if m.contains("not found") => not_found(&id),
-        Err(e) => error_response(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()),
+        Err(e) => error(StatusCode::INTERNAL_SERVER_ERROR, "internal", e.to_string()),
     }
 }
 
@@ -133,7 +131,7 @@ async fn job_logs(Path(id): Path<String>, Query(q): Query<LogQuery>) -> Response
     let rec = match store.load(&id) {
         Ok(Some(r)) => r,
         Ok(None) => return not_found(&id),
-        Err(e) => return error_response(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()),
+        Err(e) => return error(StatusCode::INTERNAL_SERVER_ERROR, "internal", e.to_string()),
     };
     let path = std::path::PathBuf::from(&rec.log_path);
     let mut cursor = q.cursor.unwrap_or(0);
@@ -145,7 +143,8 @@ async fn job_logs(Path(id): Path<String>, Query(q): Query<LogQuery>) -> Response
                 Ok((cur, chunk)) => {
                     cursor = cur;
                     if !chunk.is_empty() {
-                        let data = json!({ "cursor": cur, "chunk": chunk }).to_string();
+                        let data = serde_json::to_string(&dto::JobLogChunk { cursor: cur, chunk })
+                            .expect("job log chunk serialize");
                         if tx
                             .send(Ok(Event::default().event("log").data(data)))
                             .await
@@ -156,7 +155,9 @@ async fn job_logs(Path(id): Path<String>, Query(q): Query<LogQuery>) -> Response
                     }
                 }
                 Err(e) => {
-                    let data = json!({ "error": e.to_string() }).to_string();
+                    let data =
+                        serde_json::to_string(&dto::ApiError::new("internal", e.to_string()))
+                            .expect("api error serialize");
                     let _ = tx
                         .send(Ok(Event::default().event("error").data(data)))
                         .await;
@@ -177,9 +178,10 @@ async fn job_logs(Path(id): Path<String>, Query(q): Query<LogQuery>) -> Response
                     .map(|r| r.status.as_str().to_string())
                     .unwrap_or_else(|| "unknown".into());
                 let _ = tx
-                    .send(Ok(Event::default()
-                        .event("end")
-                        .data(json!({ "status": status }).to_string())))
+                    .send(Ok(Event::default().event("end").data(
+                        serde_json::to_string(&dto::JobLogEnd { status })
+                            .expect("job log end serialize"),
+                    )))
                     .await;
                 return;
             }
@@ -196,25 +198,9 @@ struct LogQuery {
 }
 
 fn not_found(id: &str) -> Response {
-    (
+    error(
         StatusCode::NOT_FOUND,
-        Json(json!({
-            "schema": 1,
-            "status": "not_found",
-            "job": id,
-        })),
+        "not_found",
+        format!("job {id} not found"),
     )
-        .into_response()
-}
-
-fn error_response(code: StatusCode, msg: &str) -> Response {
-    (
-        code,
-        Json(json!({
-            "schema": 1,
-            "status": "error",
-            "error": msg,
-        })),
-    )
-        .into_response()
 }

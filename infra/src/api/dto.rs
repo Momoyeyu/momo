@@ -8,6 +8,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 use crate::config_schema::SourceReport;
+use crate::jobs::{JobKind, JobRecord};
 
 /// 全部报告/错误顶层的 schema 版本号。
 pub const SCHEMA_VERSION: u8 = 1;
@@ -332,6 +333,54 @@ pub struct CsrfToken {
 #[derive(Debug, Deserialize)]
 pub struct ProfileQuery {
     pub profile: Option<String>,
+}
+
+// ---------- jobs ----------
+
+/// `POST /api/jobs` 请求体：`{kind?, args, desc?}`。
+#[derive(Debug, Deserialize)]
+pub struct JobSubmitRequest {
+    /// job 类别；缺省 `train`。
+    #[serde(default)]
+    pub kind: Option<JobKind>,
+    /// exec_local 载荷 argv（args[0] 为可执行程序）。
+    #[serde(default)]
+    pub args: Vec<String>,
+    #[serde(default)]
+    pub desc: Option<String>,
+}
+
+/// `GET /api/jobs` 列表响应。
+#[derive(Debug, Serialize)]
+pub struct JobListReport {
+    pub schema: u8,
+    pub status: &'static str,
+    pub jobs: Vec<JobRecord>,
+}
+
+/// `GET /api/jobs/{id}` / `POST /api/jobs` / `POST /api/jobs/{id}/cancel` 响应。
+#[derive(Debug, Serialize)]
+pub struct JobReport {
+    pub schema: u8,
+    pub status: &'static str,
+    pub job: JobRecord,
+    /// cancel 等操作的附加说明（幂等/降级提示）。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+}
+
+/// `GET /api/jobs/{id}/logs` SSE `event: log` 的 data。
+#[derive(Debug, Serialize)]
+pub struct JobLogChunk {
+    /// 字节偏移（重连续传用）。
+    pub cursor: u64,
+    pub chunk: String,
+}
+
+/// `GET /api/jobs/{id}/logs` SSE `event: end` 的 data（终态排空后关流）。
+#[derive(Debug, Serialize)]
+pub struct JobLogEnd {
+    pub status: String,
 }
 
 /// 统一错误体。

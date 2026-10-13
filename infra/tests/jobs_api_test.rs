@@ -62,21 +62,37 @@ fn get_json(client: &reqwest::blocking::Client, url: &str) -> (u16, serde_json::
     (code, v)
 }
 
-/// POST json body → (status, json body)。
+/// POST json body → (status, json body)。mutation 须回带 CSRF（web guard）。
 fn post_json(
     client: &reqwest::blocking::Client,
     url: &str,
     body: &serde_json::Value,
+    csrf: &str,
 ) -> (u16, serde_json::Value) {
     let r = client
         .post(url)
         .header("content-type", "application/json")
+        .header("x-csrf-token", csrf)
         .body(body.to_string())
         .send()
         .unwrap();
     let code = r.status().as_u16();
     let v: serde_json::Value = serde_json::from_str(&r.text().unwrap()).unwrap();
     (code, v)
+}
+
+/// 经 `GET /api/csrf` 取当前进程的 CSRF token。
+fn fetch_csrf(client: &reqwest::blocking::Client, base: &str) -> String {
+    let v: serde_json::Value = serde_json::from_str(
+        &client
+            .get(format!("{base}/api/csrf"))
+            .send()
+            .unwrap()
+            .text()
+            .unwrap(),
+    )
+    .unwrap();
+    v["csrf_token"].as_str().unwrap().to_string()
 }
 
 fn wait_terminal(client: &reqwest::blocking::Client, base: &str, id: &str) -> serde_json::Value {
@@ -115,6 +131,7 @@ fn api_submit_list_detail_log_and_cancel() {
     let (mut child, base) = spawn_web(&env_file, &state, &format!("127.0.0.1:{port}"));
     let client = reqwest::blocking::Client::new();
     let exe = env!("CARGO_BIN_EXE_momoctl");
+    let csrf = fetch_csrf(&client, &base);
 
     // 提交：runner detached 执行 `momoctl --version`
     let (code, v) = post_json(
@@ -125,6 +142,7 @@ fn api_submit_list_detail_log_and_cancel() {
             "desc": "api job",
             "args": [exe, "--version"],
         }),
+        &csrf,
     );
     assert_eq!(code, 200);
     assert_eq!(v["schema"], 1);
@@ -164,6 +182,7 @@ fn api_submit_list_detail_log_and_cancel() {
         &client,
         &format!("{base}/api/jobs/{id}/cancel"),
         &serde_json::json!({}),
+        &csrf,
     );
     assert_eq!(code, 200);
     assert_eq!(v["job"]["status"], "succeeded");
@@ -173,13 +192,14 @@ fn api_submit_list_detail_log_and_cancel() {
         &client,
         &format!("{base}/api/jobs"),
         &serde_json::json!({"args": []}),
+        &csrf,
     );
     assert_eq!(code, 400);
-    assert_eq!(v["status"], "error");
+    assert_eq!(v["error"]["code"], "bad_request");
     // 404：未知 job
     let (code, v) = get_json(&client, &format!("{base}/api/jobs/01JNOPE"));
     assert_eq!(code, 404);
-    assert_eq!(v["status"], "not_found");
+    assert_eq!(v["error"]["code"], "not_found");
 
     child.kill().unwrap();
     let _ = child.wait();
@@ -193,6 +213,7 @@ fn api_cancel_running_job() {
     let (mut child, base) = spawn_web(&env_file, &state, &format!("127.0.0.1:{port}"));
     let client = reqwest::blocking::Client::new();
     let exe = env!("CARGO_BIN_EXE_momoctl");
+    let csrf = fetch_csrf(&client, &base);
 
     // sleeper payload：`momoctl serve logs -f` 无限跟随
     let (_, v) = post_json(
@@ -202,6 +223,7 @@ fn api_cancel_running_job() {
             "desc": "api sleeper",
             "args": [exe, "serve", "logs", "-f"],
         }),
+        &csrf,
     );
     let id = v["job"]["id"].as_str().unwrap().to_string();
 
@@ -211,6 +233,7 @@ fn api_cancel_running_job() {
         &client,
         &format!("{base}/api/jobs/{id}/cancel"),
         &serde_json::json!({}),
+        &csrf,
     );
     assert_eq!(v["job"]["status"], "canceled", "{v}");
 
