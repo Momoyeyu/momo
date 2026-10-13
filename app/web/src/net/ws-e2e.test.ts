@@ -133,13 +133,21 @@ describe.skipIf(!URL_ENV)("ws e2e（需运行 momod）", () => {
     bad[3] = 0x02;
     c.send(bad);
     // input.audio.start 已先回 input.accepted（ref_id=capture_id）排在 error 之前，
+    // 逐条消费直到取到 BAD_MESSAGE；顺带校验 accepted 回执确实到达。
+    let sawBadMessage = false;
     let sawAccepted = false;
+    // audio.open 会懒连 svc-asr：无该服务时 MODEL_UNREACHABLE 属预期先发 error，
+    // 不能断言「第一条 error」；BAD_MESSAGE 走 conn_rx decode 直发，
+    // 与 accepted/session 侧帧序不保证——drain 到两者都见（或上限）再断言。
+    for (let i = 0; i < 8 && !(sawBadMessage && sawAccepted); i++) {
       const m = await c.take();
       if (m.type !== "text") continue;
       const j = JSON.parse(m.text!);
       if (j.type === "input.accepted" && j.ref_id === captureId) sawAccepted = true;
+      if (j.type === "error" && j.code === "BAD_MESSAGE") sawBadMessage = true;
     }
     expect(sawAccepted).toBe(true);
+    expect(sawBadMessage).toBe(true);
     c.close();
   });
 

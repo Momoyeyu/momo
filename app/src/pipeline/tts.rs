@@ -70,6 +70,12 @@ pub trait TtsClient: Send + Sync {
         req: SynthRequest,
         cancel: CancellationToken,
     ) -> Result<AudioStream, AppError>;
+
+    /// barge-in 扇出：`control.cancel{target:turn,id}`（不等 ACK）；
+    /// 无活链路时无可取消对象，默认无操作。
+    async fn cancel_turn(&self, _turn_id: &str) -> Result<(), AppError> {
+        Ok(())
+    }
 }
 
 /// momo-ws v2 流式 TTS 客户端（`MOMO_TTS_ENDPOINT`）。
@@ -181,6 +187,20 @@ impl TtsClient for MomoWsTts {
         Ok(Box::pin(stream::unfold(rx, |mut rx| async move {
             rx.recv().await.map(|item| (item, rx))
         })))
+    }
+
+    /// barge-in 扇出：活链路上发 `control.cancel{target:turn}`；尽力而为。
+    async fn cancel_turn(&self, turn_id: &str) -> Result<(), AppError> {
+            return Ok(());
+        };
+        let _ = link
+            .tx
+            .send(OutboundFrame::JsonText(wire_cancel(
+                &link.session_id,
+                turn_id,
+            )))
+            .await;
+        Ok(())
     }
 }
 

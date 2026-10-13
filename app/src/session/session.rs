@@ -3,9 +3,16 @@
 //! 唯一可变状态持有者：所有事件汇进它的 `mpsc`，内部不共享锁
 //! （momo-app.md §ws 子系统）；迁移对齐 runtime.md「turn 状态机」。
 
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+    time::Duration,
+};
 
+use bytes::Bytes;
 use futures_util::StreamExt;
 use tracing::{debug, warn};
+use ulid::Ulid;
 
 use crate::{
     audio::sink::AudioSink,
@@ -14,6 +21,11 @@ use crate::{
     pipeline::{
         llm::{ChatRequest, LlmClient, OpenAiCompatLlm},
     },
+    proto::{
+        codec::{AudioHeader, Direction},
+        message::{
+            AudioCodec, AudioEndMsg, AudioOpenMsg, BargeInMsg, CancelTarget, ClientKind,
+        },
     },
     session::{
         history::{ChatMessage, History, Role},
@@ -26,12 +38,18 @@ use crate::{
 const SETTLEMENT_DEADLINE: Duration = Duration::from_millis(500);
 /// input 幂等回执缓存上限（protocol §5：256）。
 const RECEIPT_CACHE: usize = 256;
+/// 上行缓冲帧数：50ms/帧 × 40 = 2s（runtime.md「mic uplink buffer 最多 2s」）。
+const UPLINK_BUFFER_FRAMES: usize = 40;
 
 /// 汇入 Session actor 的命令。
 #[derive(Debug)]
 pub enum SessionCmd {
     /// conn_rx 解码出的客户端消息。
     Msg(Msg),
+    /// conn_rx 解码的上行二进制音频帧（按 `audio.open` 绑定路由）。
+    Audio(AudioHeader, Bytes),
+    /// svc-asr 链路回流事件（input.vad / input.audio.segment / 链路终态）。
+    Asr(AsrEvent),
     /// 回合管线回传事件（runtime.md：任务只能回传事件，不得改 actor 状态）。
     Pipeline(PipelineEvent),
     Shutdown,
@@ -57,6 +75,8 @@ pub enum PipelineEvent {
     },
     /// settlement deadline 到：interrupted 无新输入则回 idle。
     Settled { turn_id: TurnId },
+    /// VAD speech_start 防抖计时到点；`seq` 与当前 pending 匹配才生效。
+    VadDebounce { seq: u64, capture_id: String },
 }
 
 /// Session 构造依赖（AppState 从 config 注入；测试可换 mock）。
@@ -70,6 +90,14 @@ pub struct SessionDeps {
     pub sent_max_chars: usize,
     /// LLM client；`None` 时回合直接判 failed（readiness：LLM 缺失不生成 reply）。
     pub llm: Option<Arc<dyn LlmClient>>,
+    /// ASR client；`None` 时 `audio.open{uplink}` 拒绝绑定（MODEL_UNREACHABLE）。
+    pub asr: Option<Arc<dyn AsrClient>>,
+    /// TTS client；barge-in 时扇出 `control.cancel{target:turn}`。
+    pub tts: Option<Arc<dyn TtsClient>>,
+    /// `MOMO_BARGEIN_ENABLED`：VAD speech_start 是否允许打断。
+    pub barge_in_enabled: bool,
+    /// `MOMO_BARGEIN_MIN_MS`：speech_start 防抖时长。
+    pub barge_in_min: Duration,
 }
 
 impl SessionDeps {
@@ -79,6 +107,8 @@ impl SessionDeps {
             sent_soft_chars: config.sent_soft_chars,
             sent_max_chars: config.sent_max_chars,
             llm: Some(Arc::new(OpenAiCompatLlm::from_config(config))),
+            barge_in_enabled: config.barge_in_enabled,
+            barge_in_min: config.barge_in_min,
         }
     }
 }
@@ -113,8 +143,53 @@ pub struct Session {
     /// 对话历史与已播文本记账（`MOMO_HISTORY_TURNS`）。
     history: History,
     llm: Option<Arc<dyn LlmClient>>,
+    asr: Option<Arc<dyn AsrClient>>,
+    tts: Option<Arc<dyn TtsClient>>,
     sent_soft_chars: usize,
     sent_max_chars: usize,
+    /// 活动 uplink stream 绑定（`stream_id` 原始 ULID → 转发通道）；
+    /// 独立于 turn 生命周期，capture 不随旧 turn cancel 删除。
+    uplinks: HashMap<Ulid, Uplink>,
+    /// capture 注册表（`capture_id` → 绑定信息）；独立于 reply turn。
+    captures: HashMap<String, CaptureInfo>,
+    barge_in_enabled: bool,
+    barge_in_min: Duration,
+    /// VAD speech_start 防抖：计时中的 pending（seq 代次防 stale 确认）。
+    vad_pending: Option<VadPending>,
+    vad_seq: u64,
+}
+
+/// 一条活动 uplink stream（`audio.open{uplink}` 建立，`audio.end`/abort 收尾）。
+#[derive(Debug)]
+struct Uplink {
+    capture_id: String,
+    /// per-capture 有界缓冲（≤2s）；溢出/seq gap 由 actor 中止 capture。
+    tx: mpsc::Sender<UplinkCmd>,
+    /// 期望的下一帧 `chunk_seq`/`sample_offset`（重复丢、gap 中止）。
+    next_seq: u32,
+    next_offset: u32,
+    eos_seen: bool,
+}
+
+/// uplink task 的消费单元：数据帧与 stream 收尾按序经同一队列（保 wire 序）。
+#[derive(Debug)]
+enum UplinkCmd {
+    Data(AudioHeader, Bytes),
+    End { last_chunk_seq: u32 },
+}
+
+/// capture 登记信息：独立于 reply turn，打断后保持活动。
+#[derive(Debug, Default)]
+struct CaptureInfo {
+    /// 已绑定 uplink stream（`audio.open{uplink}`）。
+    stream: Option<Ulid>,
+}
+
+/// 防抖中的 speech_start：到点经 `VadDebounce` 回传，`seq` 匹配才生效。
+#[derive(Debug)]
+struct VadPending {
+    seq: u64,
+    capture_id: String,
 }
 
 impl Session {
@@ -141,10 +216,30 @@ impl Session {
             sink: None,
             history: History::new(deps.history_turns),
             llm: deps.llm,
+            asr: deps.asr,
+            tts: deps.tts,
             sent_soft_chars: deps.sent_soft_chars,
             sent_max_chars: deps.sent_max_chars,
             seen_inputs: VecDeque::new(),
+            uplinks: HashMap::new(),
+            captures: HashMap::new(),
+            barge_in_enabled: deps.barge_in_enabled,
+            barge_in_min: deps.barge_in_min,
+            vad_pending: None,
+            vad_seq: 0,
         };
+        // svc-asr 回流事件 → SessionCmd（单活跃 session：新订阅取代旧）。
+        if let Some(asr) = session.asr.clone() {
+            let cmd_tx = cmd_tx.clone();
+            tokio::spawn(async move {
+                let mut events = asr.subscribe().await;
+                while let Some(ev) = events.recv().await {
+                    if cmd_tx.send(SessionCmd::Asr(ev)).await.is_err() {
+                        return;
+                    }
+                }
+            });
+        }
         tokio::spawn(session.run(cmd_rx));
         SessionHandle {
             id,
@@ -161,6 +256,8 @@ impl Session {
         while let Some(cmd) = cmd_rx.recv().await {
             match cmd {
                 SessionCmd::Msg(msg) => self.on_client_msg(msg).await,
+                SessionCmd::Audio(header, payload) => self.on_uplink_frame(header, payload).await,
+                SessionCmd::Asr(ev) => self.on_asr(ev).await,
                 SessionCmd::Pipeline(ev) => self.on_pipeline(ev).await,
                     }
                     debug!(session = %self.id, conn = %self.conn_id, "session actor exit");
@@ -184,6 +281,9 @@ impl Session {
             Msg::InputAudioCancel(m) => self.on_audio_cancel(m).await,
             Msg::InputAudioSegment(seg) => self.on_audio_segment(seg).await,
             Msg::InputVad(vad) => self.on_vad(vad).await,
+            Msg::AudioOpen(open) => self.on_audio_open(open).await,
+            Msg::AudioEnd(end) => self.on_audio_end(end).await,
+            Msg::ControlCancel(c) => self.on_control_cancel(c).await,
             Msg::ControlBargeIn(b) => self.on_barge_in(b).await,
             Msg::PlaybackStarted(p) => self.on_playback_started(p).await,
             Msg::PlaybackProgress(p) => self.on_playback_progress(p).await,
@@ -218,8 +318,16 @@ impl Session {
     /// `input.audio.start`：idle/interrupted 开 capture 回合；thinking/speaking
     /// 中开麦意图（PTT/VAD opt-in）先打断当前回复，新 capture 独立保留。
     async fn on_audio_start(&mut self, m: InputAudioStartMsg) {
+        self.captures.entry(m.capture_id.clone()).or_default();
+        if let Some(turn_id) = self.seen_turn(&m.capture_id) {
+            // (session_id,capture_id) 幂等：重投的 audio.start ACK 已有 turn，不新开 capture。
+            self.accept_input(m.capture_id, turn_id).await;
+            return;
+        }
         match self.state() {
             TurnState::Listening => {
+                // 异 capture 并发开麦：拒绝（单活跃 capture）。
+                self.reject_input(m.capture_id, "busy_capture").await;
             }
             TurnState::Thinking | TurnState::Speaking => {
                 self.retire_active(Some(TurnEvent::Interrupt)).await;
@@ -233,7 +341,11 @@ impl Session {
         }
     }
 
+    /// `input.audio.cancel`：capture 取消（listening → idle）+ uplink 收尾。
     async fn on_audio_cancel(&mut self, m: InputAudioMsg) {
+        let had_capture = self.captures.contains_key(&m.capture_id);
+        if self.state() == TurnState::Listening || had_capture {
+            self.close_capture(&m.capture_id, None).await;
         } else {
             warn!(session = %self.id, capture = %m.capture_id, "audio cancel without active capture");
         }
@@ -257,19 +369,36 @@ impl Session {
                 Ok(next) => {
                     turn.user_text = seg.text.clone();
                     let turn_id = turn.id.clone();
+                    // 语音回执：ref_id = capture_id（protocol §7）。
+                    self.accept_input(seg.capture_id, turn_id.clone()).await;
                     self.emit_state(&turn_id, next).await;
                     self.spawn_reply();
                 }
                 Err(err) => warn!(session = %self.id, %err, "segment final rejected"),
             }
+        } else if let Some(turn_id) = self.seen_turn(&seg.capture_id) {
+            // (session_id,capture_id) 幂等：重投的 final 回执已有 turn，绝不新建。
+            self.accept_input(seg.capture_id, turn_id).await;
         } else {
+            let turn_id = self
+                .accept_reply(seg.capture_id.clone(), seg.text, "auto".into())
                 .await;
+            self.remember_input(seg.capture_id, turn_id);
         }
     }
 
+    /// `input.vad`：speech_start 依状态走 capture 开启或防抖打断；
+    /// speech_end 取消防抖并标记 capture finalizing（capture 状态机不在 turn FSM 内）。
     async fn on_vad(&mut self, vad: InputVadMsg) {
         match vad.event {
             VadEvent::SpeechStart => match self.state() {
+                // barge-in：speech_start 须持续 MOMO_BARGEIN_MIN_MS 才打断。
+                TurnState::Thinking | TurnState::Speaking if self.barge_in_enabled => {
+                    self.arm_vad_debounce(vad.capture_id);
+                }
+                TurnState::Thinking | TurnState::Speaking => {
+                    debug!(session = %self.id, capture = %vad.capture_id, "barge-in disabled, speech_start ignored");
+                }
                 // 打断用的新 capture 保持活动：旧回合结算，进入 listening。
                 TurnState::Interrupted => {
                     self.retire_active(None).await;
@@ -281,6 +410,14 @@ impl Session {
                 }
             },
             VadEvent::SpeechEnd => {
+                // 未到防抖时长的 speech 是 false positive：撤销 pending 不打断。
+                if self
+                    .vad_pending
+                    .as_ref()
+                    .is_some_and(|p| p.capture_id == vad.capture_id)
+                {
+                    self.vad_pending = None;
+                }
                 debug!(session = %self.id, capture = %vad.capture_id, "speech_end (finalizing)");
             }
         }
@@ -288,9 +425,12 @@ impl Session {
 
     // ---------- 打断与播放账本 ----------
 
+    /// `control.barge_in`：打断指定 turn；stale turn_id 显式拒绝（控制消息不静默丢弃）。
     async fn on_barge_in(&mut self, b: BargeInMsg) {
         let matched = self.turn.as_ref().is_some_and(|t| t.id == b.turn_id);
         if !matched {
+            warn!(session = %self.id, turn = %b.turn_id, reason = ?b.reason, "barge_in for unknown/stale turn");
+            .await;
             return;
         }
         self.interrupt_active().await;
@@ -298,6 +438,7 @@ impl Session {
 
     /// Stop/PTT/VAD：立即停播 + 扇出取消 → interrupted，arm settlement 定时器。
     async fn interrupt_active(&mut self) {
+        self.vad_pending = None;
         let Some(turn) = self.turn.as_mut() else {
             return;
         };
@@ -308,9 +449,31 @@ impl Session {
                 if let Some(sink) = &self.sink {
                     sink.stop();
                 }
+                // 向 svc-tts/svc-asr 扇出 control.cancel{target:turn}（不等 ACK）。
+                self.cancel_upstreams(&turn_id);
                 self.emit_state(&turn_id, next).await;
                 self.arm_settlement(turn_id);
             }
+            Err(err) => {
+                warn!(session = %self.id, %err, "interrupt rejected");
+            }
+        }
+    }
+
+    /// 尽力取消扇出：svc-tts + svc-asr 收 `control.cancel{target:turn}`；
+    /// spawn 异步执行不阻塞 actor 循环，不等 ACK。
+    fn cancel_upstreams(&self, turn_id: &str) {
+        if let Some(tts) = &self.tts {
+            let (tts, id) = (tts.clone(), turn_id.to_string());
+            tokio::spawn(async move {
+                let _ = tts.cancel_turn(&id).await;
+            });
+        }
+        if let Some(asr) = &self.asr {
+            let (asr, id) = (asr.clone(), turn_id.to_string());
+            tokio::spawn(async move {
+                let _ = asr.cancel(CancelTarget::Turn, &id).await;
+            });
         }
     }
 
@@ -351,6 +514,236 @@ impl Session {
         self.maybe_finish().await;
     }
 
+    // ---------- 上行音频：stream ↔ capture ----------
+
+    /// `audio.open`（UI 侧）：仅接受 uplink；校验后建立 stream↔capture 绑定。
+    async fn on_audio_open(&mut self, open: AudioOpenMsg) {
+        if let Err(err) = open.validate() {
+            return;
+        }
+        match open.direction {
+            Direction::Uplink => self.bind_uplink(open).await,
+            Direction::Downlink => {
+                .await;
+            }
+        }
+    }
+
+    /// uplink 绑定：格式校验 → spawn per-capture uplink task → 登记路由表。
+    /// v2 上行固定 pcm_s16le/16kHz/mono（protocol §6）。
+    async fn bind_uplink(&mut self, open: AudioOpenMsg) {
+        let Some(key) = stream_key(&open.stream_id) else {
+            .await;
+            return;
+        };
+        if self.uplinks.contains_key(&key) {
+            .await;
+            return;
+        }
+        if open.codec != AudioCodec::PcmS16le
+            || open.sample_rate != UPLINK_SAMPLE_RATE
+            || open.channels != 1
+        {
+            .await;
+            return;
+        }
+        let Some(asr) = self.asr.clone() else {
+            .await;
+            return;
+        };
+        let capture_id = open.capture_id.clone().expect("validate() checked");
+        let (tx, rx) = mpsc::channel(UPLINK_BUFFER_FRAMES);
+        tokio::spawn(run_uplink(
+            asr,
+            open,
+            rx,
+            self.cmd_tx.clone(),
+            capture_id.clone(),
+        ));
+        self.uplinks.insert(
+            key,
+            Uplink {
+                capture_id: capture_id.clone(),
+                tx,
+                next_seq: 0,
+                next_offset: 0,
+                eos_seen: false,
+            },
+        );
+        // UI 未发 input.audio.start 的 capture 也登记（连续麦 opt-in）。
+        self.captures.entry(capture_id).or_default().stream = Some(key);
+    }
+
+    /// conn_rx 上行帧 → per-capture 缓冲：归属/seq/offset 校验，重复幂等丢、
+    /// gap 或缓冲溢出中止 capture（不静默丢帧，protocol §6/runtime.md）。
+    async fn on_uplink_frame(&mut self, header: AudioHeader, payload: Bytes) {
+        if header.direction != Direction::Uplink {
+            .await;
+            return;
+        }
+        let Some(up) = self.uplinks.get_mut(&header.stream_id) else {
+            // unknown/stale stream：abort 时已回报，后续帧静默防 error 风暴。
+            debug!(stream = %header.stream_id, "dropping frame for unknown/stale uplink");
+            return;
+        };
+        if up.eos_seen {
+            debug!(stream = %header.stream_id, "dropping post-EOS uplink frame");
+            return;
+        }
+        if header.chunk_seq < up.next_seq {
+            debug!(stream = %header.stream_id, seq = header.chunk_seq, "dropping duplicate uplink frame");
+            return;
+        }
+        if header.chunk_seq > up.next_seq || header.sample_offset != up.next_offset {
+            let err = AppError::BadMessage(format!(
+                "uplink seq gap: want seq {} offset {}, got seq {} offset {}",
+                up.next_seq, up.next_offset, header.chunk_seq, header.sample_offset
+            ));
+            let capture_id = up.capture_id.clone();
+            self.abort_capture(&capture_id, err).await;
+            return;
+        }
+        up.next_seq += 1;
+        up.next_offset += (payload.len() / 2) as u32;
+        if header.eos() {
+            up.eos_seen = true;
+        }
+        match up.tx.try_send(UplinkCmd::Data(header, payload)) {
+            Ok(()) => {}
+            Err(mpsc::error::TrySendError::Full(_) | mpsc::error::TrySendError::Closed(_)) => {
+                let err = AppError::BackpressureOverflow(format!(
+                    "uplink buffer exceeded {UPLINK_BUFFER_FRAMES} frames"
+                ));
+                let capture_id = up.capture_id.clone();
+                self.abort_capture(&capture_id, err).await;
+            }
+        }
+    }
+
+    /// `audio.end`：校验 `last_chunk_seq` 与最后接收帧一致后按序收尾 stream。
+    async fn on_audio_end(&mut self, end: AudioEndMsg) {
+        let Some(key) = stream_key(&end.stream_id) else {
+            .await;
+            return;
+        };
+        let Some(up) = self.uplinks.get(&key) else {
+            debug!(stream = %end.stream_id, "dropping audio.end for unknown/stale uplink");
+            return;
+        };
+        // EOS 帧是最后接收帧：last_chunk_seq 必须等于它（protocol §6）。
+        let ok = up.next_seq > 0 && end.last_chunk_seq == up.next_seq - 1;
+        let capture_id = up.capture_id.clone();
+        if !ok {
+            let err = AppError::BadMessage(format!(
+                "audio.end last_chunk_seq {} != last received {}",
+                end.last_chunk_seq,
+                up.next_seq.saturating_sub(1)
+            ));
+            self.abort_capture(&capture_id, err).await;
+            return;
+        }
+        let Some(up) = self.uplinks.remove(&key) else {
+            return;
+        };
+        if up
+            .tx
+            .try_send(UplinkCmd::End {
+                last_chunk_seq: end.last_chunk_seq,
+            })
+            .is_err()
+        {
+            // 通道满/闭 = 数据积压未排空：按溢出语义中止 capture。
+            self.abort_capture(
+                &capture_id,
+                AppError::BackpressureOverflow("uplink end could not drain".into()),
+            )
+            .await;
+            return;
+        }
+        if let Some(cap) = self.captures.get_mut(&capture_id) {
+            cap.stream = None;
+        }
+    }
+
+    /// `control.cancel`（UI 侧）：`target:capture` 等价 input.audio.cancel。
+    async fn on_control_cancel(&mut self, c: ControlCancelMsg) {
+        match c.target {
+            CancelTarget::Capture => self.close_capture(&c.id, None).await,
+            other => {
+                debug!(session = %self.id, ?other, id = %c.id, "unsupported control.cancel from ui")
+            }
+        }
+    }
+
+    /// capture 中止（seq gap/溢出/链路失败）：摘 uplink → 通知 UI + svc-asr，
+    /// listening 中对应 turn 按 CaptureCancel 收尾。
+    async fn abort_capture(&mut self, capture_id: &str, err: AppError) {
+        self.close_capture(capture_id, Some(err)).await;
+    }
+
+    /// capture 收尾公共路径：`err` 为 Some 时附带 error 帧（异常中止）。
+    /// 摘 uplink sender 掉落 → uplink task 向 svc-asr 发 control.cancel{capture}。
+    async fn close_capture(&mut self, capture_id: &str, err: Option<AppError>) {
+        self.uplinks.retain(|_, up| up.capture_id != capture_id);
+        self.captures.remove(capture_id);
+        if let Some(err) = err {
+        }
+        // 通知 UI 释放 mic（control.cancel 向各方向取消同一对象，protocol §2）。
+        self.send(Msg::ControlCancel(ControlCancelMsg {
+            env: self.env.next(),
+            target: CancelTarget::Capture,
+            id: capture_id.to_string(),
+        }))
+        .await;
+        if self.state() == TurnState::Listening
+            && self
+                .turn
+                .as_ref()
+                .is_some_and(|t| t.capture_id.as_deref() == Some(capture_id))
+        {
+            self.retire_active(Some(TurnEvent::CaptureCancel)).await;
+        }
+    }
+
+    /// svc-asr 回流事件：vad/segment 先镜像 UI（restamp 本 session envelope），
+    /// 再走与 UI 注入相同的处理；链路终态中止全部活动 capture。
+    async fn on_asr(&mut self, ev: AsrEvent) {
+        match ev {
+            AsrEvent::Vad(vad) => {
+                self.send(Msg::InputVad(InputVadMsg {
+                    env: self.env.next(),
+                    capture_id: vad.capture_id.clone(),
+                    event: vad.event,
+                }))
+                .await;
+                self.on_vad(vad).await;
+            }
+            AsrEvent::Segment(seg) => {
+                self.send(Msg::InputAudioSegment(InputAudioSegmentMsg {
+                    env: self.env.next(),
+                    capture_id: seg.capture_id.clone(),
+                    text: seg.text.clone(),
+                    is_final: seg.is_final,
+                }))
+                .await;
+                self.on_audio_segment(seg).await;
+            }
+                warn!(session = %self.id, code = ?err.code, msg = %err.message, "svc-asr error");
+                let env = self.env.next();
+            }
+            AsrEvent::LinkDown(err) => {
+                warn!(session = %self.id, %err, "asr link down, aborting captures");
+                let captures: Vec<String> = self.captures.keys().cloned().collect();
+                for capture_id in captures {
+                    self.close_capture(
+                        &capture_id,
+                        Some(AppError::ModelUnreachable("asr link down".into())),
+                    )
+                    .await;
+                }
+            }
+        }
+    }
 
     async fn on_pipeline(&mut self, ev: PipelineEvent) {
         match ev {
@@ -399,6 +792,7 @@ impl Session {
                 if let Some(t) = self.turn.as_mut() {
                     if let Ok(next) = t.on_event(TurnEvent::LlmFailed) {
                         let id = t.id.clone();
+                        self.cancel_upstreams(&id);
                         self.emit_state(&id, next).await;
                         if let Some(turn) = self.turn.take() {
                             self.finalize(turn, TurnOutcome::Failed).await;
@@ -425,6 +819,26 @@ impl Session {
                     _ => {}
                 }
                 self.maybe_finish().await;
+            }
+            PipelineEvent::VadDebounce { seq, capture_id } => {
+                // seq 不符 = 已被新 speech_start/打断取代的 stale 确认。
+                if self.vad_pending.as_ref().map(|p| p.seq) != Some(seq) {
+                    return;
+                }
+                self.vad_pending = None;
+                match self.state() {
+                    // speech 持续满防抖时长：打断旧回合，新 capture 独立保留。
+                    TurnState::Thinking | TurnState::Speaking => {
+                        self.retire_active(Some(TurnEvent::Interrupt)).await;
+                        self.adopt_capture(capture_id).await;
+                    }
+                    TurnState::Interrupted => {
+                        self.retire_active(None).await;
+                        self.adopt_capture(capture_id).await;
+                    }
+                    TurnState::Idle => self.adopt_capture(capture_id).await,
+                    TurnState::Listening => {}
+                }
             }
             PipelineEvent::Settled { turn_id } => {
                 let Some(turn) = self
@@ -503,6 +917,18 @@ impl Session {
                 self.retire_active(Some(TurnEvent::NewInput)).await;
             }
             TurnState::Interrupted => self.retire_active(None).await,
+            TurnState::Listening => {
+                // 异 capture 的 voice final：旧 capture 按取消收尾（uplink 一并摘除）。
+                let old_capture = self
+                    .turn
+                    .as_ref()
+                    .and_then(|t| t.capture_id.clone())
+                    .filter(|c| c != &ref_id);
+                self.retire_active(Some(TurnEvent::CaptureCancel)).await;
+                if let Some(capture_id) = old_capture {
+                    self.close_capture(&capture_id, None).await;
+                }
+            }
             TurnState::Idle => {}
         }
         let turn = Turn::for_reply(user_text, lang);
@@ -516,9 +942,12 @@ impl Session {
 
     /// 新 capture 回合（listening）。
     async fn adopt_capture(&mut self, capture_id: String) {
+        self.captures.entry(capture_id.clone()).or_default();
         let turn = Turn::for_capture(capture_id.clone());
         let turn_id = turn.id.clone();
         self.adopt(turn);
+        self.accept_input(capture_id.clone(), turn_id.clone()).await;
+        self.remember_input(capture_id, turn_id.clone());
         self.emit_state(&turn_id, TurnState::Listening).await;
     }
 
@@ -531,6 +960,13 @@ impl Session {
         if let Some(ev) = ev {
             let prev = old.state();
             if let Ok(next) = old.on_event(ev) {
+                // 打断类迁移：cancel token 已扇出（turn::on_event），同步尽力取消上游服务。
+                if matches!(
+                    ev,
+                    TurnEvent::Interrupt | TurnEvent::NewInput | TurnEvent::LlmFailed
+                ) {
+                    self.cancel_upstreams(&old.id);
+                }
                 if next != prev {
                     self.emit_state(&old.id, next).await;
                 }
@@ -571,6 +1007,28 @@ impl Session {
             }))
             .await;
         }
+    }
+
+    /// VAD 防抖定时器：speech_start 持续 `MOMO_BARGEIN_MIN_MS` 后回传确认；
+    /// 期间 speech_end/新 speech_start/打断会撤销或取代 pending（seq 防 stale）。
+    fn arm_vad_debounce(&mut self, capture_id: String) {
+        self.vad_seq += 1;
+        let seq = self.vad_seq;
+        self.vad_pending = Some(VadPending {
+            seq,
+            capture_id: capture_id.clone(),
+        });
+        let tx = self.cmd_tx.clone();
+        let delay = self.barge_in_min;
+        tokio::spawn(async move {
+            tokio::time::sleep(delay).await;
+            let _ = tx
+                .send(SessionCmd::Pipeline(PipelineEvent::VadDebounce {
+                    seq,
+                    capture_id,
+                }))
+                .await;
+        });
     }
 
     /// settlement 定时器：500ms 无新输入 → interrupted 回 idle。
@@ -663,6 +1121,15 @@ impl Session {
         }
     }
 
+        let env = self.env.next();
+            session_id: Some(env.session_id),
+            event_id: Some(env.event_id),
+            at_ms: Some(env.at_ms),
+            event_seq: Some(env.event_seq),
+            code: err.code(),
+            message: err.to_string(),
+    }
+
     async fn accept_input(&mut self, ref_id: String, turn_id: TurnId) {
         self.send(Msg::InputAccepted(InputAcceptedMsg {
             env: self.env.next(),
@@ -691,4 +1158,39 @@ impl Session {
             self.seen_inputs.pop_front();
         }
     }
+}
+
+/// per-capture uplink task：`audio.open` 先行（restamp 链路 envelope）→
+/// 二进制帧原样转发 → `audio.end` 收尾。发送端全部掉落（capture 中止/
+/// session 退出）时尽力发 `control.cancel{target:capture}`；写失败上报
+/// `LinkDown` 由 actor 收尾 capture。
+async fn run_uplink(
+    asr: Arc<dyn AsrClient>,
+    open: AudioOpenMsg,
+    mut rx: mpsc::Receiver<UplinkCmd>,
+    cmd_tx: mpsc::Sender<SessionCmd>,
+    capture_id: String,
+) {
+    async fn report(cmd_tx: &mpsc::Sender<SessionCmd>, err: AppError) {
+        let _ = cmd_tx.send(SessionCmd::Asr(AsrEvent::LinkDown(err))).await;
+    }
+    if let Err(err) = asr.open_uplink(&open).await {
+        report(&cmd_tx, err).await;
+        return;
+    }
+    while let Some(cmd) = rx.recv().await {
+        match cmd {
+            UplinkCmd::Data(header, payload) => {
+                if let Err(err) = asr.send_frame(header, payload).await {
+                    report(&cmd_tx, err).await;
+                    return;
+                }
+            }
+            UplinkCmd::End { last_chunk_seq } => {
+                let _ = asr.end_uplink(&open.stream_id, last_chunk_seq).await;
+                return;
+            }
+        }
+    }
+    let _ = asr.cancel(CancelTarget::Capture, &capture_id).await;
 }
