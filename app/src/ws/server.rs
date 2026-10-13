@@ -12,6 +12,10 @@ use axum::{
 };
 use tower_http::{cors::CorsLayer, services::ServeDir};
 
+use crate::{
+    session::{SessionDeps, manager::SessionManager},
+    ws::conn,
+};
 
 /// 连接级共享状态。
 pub struct AppState {

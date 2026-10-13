@@ -1,5 +1,10 @@
 //! `Msg`：serde `tag = "type"` 多态，对齐 protocol.md 核心类型与必需字段表。
 
+use std::sync::{
+    Arc,
+    atomic::{AtomicU64, Ordering},
+};
+
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{error::AppError, proto::codec::Direction};
@@ -88,6 +93,64 @@ pub struct ServerEnvelope {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reply_to: Option<String>,
     pub event_seq: u64,
+}
+
+/// 服务端 envelope 工厂：每 stamp 分配新 ULID `event_id`、unix `at_ms`
+/// 与单调 `event_seq`；`Clone` 句柄共享同一 seq 计数器（session 与
+/// audio sink 出站消息共用一条 seq 序列）。
+#[derive(Debug, Clone)]
+pub struct ServerEnv {
+    session_id: String,
+    event_seq: Arc<AtomicU64>,
+}
+
+impl ServerEnv {
+    pub fn new(session_id: impl Into<String>) -> Self {
+        Self {
+            session_id: session_id.into(),
+            event_seq: Arc::new(AtomicU64::new(0)),
+        }
+    }
+
+    /// 分配一帧 envelope 元数据：`(event_id, at_ms, event_seq)`。
+    fn stamp(&self) -> (String, u64, u64) {
+        let at_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis() as u64)
+            .unwrap_or(0);
+        (
+            ulid::Ulid::new().to_string(),
+            at_ms,
+            self.event_seq.fetch_add(1, Ordering::Relaxed) + 1,
+        )
+    }
+
+    /// 服务端业务消息 envelope（`event_seq` 单调递增）。
+    pub fn next(&self) -> ServerEnvelope {
+        let (event_id, at_ms, event_seq) = self.stamp();
+        ServerEnvelope {
+            session_id: self.session_id.clone(),
+            event_id,
+            at_ms,
+            reply_to: None,
+            event_seq,
+        }
+    }
+
+    /// `audio.open`/`audio.end` 形态的 envelope + 本次 seq
+    /// （其 `event_seq` 为可选字段，由调用方落位）。
+    pub fn envelope(&self) -> (Envelope, u64) {
+        let (event_id, at_ms, event_seq) = self.stamp();
+        (
+            Envelope {
+                session_id: self.session_id.clone(),
+                event_id,
+                at_ms,
+                reply_to: None,
+            },
+            event_seq,
+        )
+    }
 }
 
 // ---------- 握手（session 建立前，不带 envelope） ----------
