@@ -19,6 +19,7 @@ const BACKOFF_MIN_MS = 500;
 const BACKOFF_MAX_MS = 8000;
 const BACKOFF_JITTER = 0.2;
 
+/** 指数退避：0.5s→8s，±20% 抖动（protocol §5）。纯函数便于测试。 */
 export function backoffDelay(attempt: number, rand: () => number = Math.random): number {
   const base = Math.min(BACKOFF_MAX_MS, BACKOFF_MIN_MS * 2 ** attempt);
   const jitter = base * BACKOFF_JITTER * (rand() * 2 - 1);

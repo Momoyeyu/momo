@@ -8,6 +8,7 @@ use crate::{
     ws::conn::OutboundFrame,
 };
 
+/// 会话注册表。v1 按单编排器+单活跃 UI session 假设（protocol §4）。
 pub struct SessionManager {
     active: Mutex<Option<SessionHandle>>,
 }

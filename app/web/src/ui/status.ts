@@ -1,3 +1,4 @@
+// 状态指示跟随 state.turn；不得用它推断音频时序（protocol §2）。
 
 import type { TurnState } from "../net/protocol";
 import type { WsConnState } from "../net/ws-client";

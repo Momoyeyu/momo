@@ -4,6 +4,7 @@
 
 LLM 不使用本协议：`TurnCoordinator` 直接调用 OpenAI-compatible HTTP SSE。
 
+## 1. 核心类型
 
 ```ts
 type TurnState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'interrupted'
@@ -18,6 +19,7 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 
 `event_id`、`turn_id`、`stream_id`、`capture_id` 使用 ULID。握手发生在 session 建立前，不带 envelope。服务端业务消息带单调递增的 `event_seq`；客户端保存 `last_event_seq`，忽略 `event_seq <= last_event_seq` 的 duplicate/stale event。序列缺口无法通过 snapshot 收敛时关闭连接并重新握手。
 
+## 2. 必需字段、方向与用途
 
 | type | sender → receiver | 必需字段 | 用途 |
 |---|---|---|---|
@@ -45,6 +47,7 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 
 固定 emotion：`neutral` `happy` `sad` `angry` `surprised` `thinking` `shy` `sleepy`。tool action 使用独立的工具扩展消息组。
 
+## 3. Golden 向量
 
 `app/tests/golden/` 入库 23 个 golden JSON fixture，逐 `type` 覆盖上表必需字段，是 wire 格式的对拍基准：
 
@@ -71,6 +74,7 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 ```json
 ```
 
+## 4. 认证、Origin 与 session restore
 
 Tauri 每次启动生成 ephemeral token，经 desktop IPC 只交给内嵌 UI。UI 把 token 放在 WebSocket 的第一条 `hello.auth_token` 中，**不**放 query URL、日志或 Authorization header。browser dev 由本地 setup 手动取得同类 per-process token；静态网站不持有 token、不连接 localhost，也不请求 API key 或麦克风。
 
@@ -101,6 +105,7 @@ flowchart TD
     COMPARE --> READY
 ```
 
+## 5. receipt cache 与重连
 
 服务端每 session 持久化最近 256 个 accepted receipts；超出后按最旧项淘汰，淘汰结果是 `unknown`，不是自动重放保证。客户端把 accepted receipt 与本地 session 一起保存。
 
@@ -109,6 +114,7 @@ flowchart TD
 - 新 session 或服务端 cache 已淘汰且无法证明原 session：展示 draft，用户显式发送时生成**新 id**。
 - 重连不会自动提交输入。failed state resync 关闭连接，不带着分叉状态继续。
 
+## 6. 32-byte 二进制帧
 
 | 字节 | 字段 | 规范 |
 |---|---|---|
@@ -121,20 +127,25 @@ flowchart TD
 | 28..31 | sample_offset | u32 little-endian；从 `0` 开始，按每声道 PCM sample 累计 |
 | 32.. | payload | PCM s16le |
 
+上行 16 kHz mono / 下行 24 kHz mono，PCM s16le；两端统一 **50 ms/帧**（16 kHz → 800 samples/帧，24 kHz → 1200 samples/帧），帧时长不随链路变化。
+
 正常数据帧 payload 必须非空且 byte length 为偶数。`EOS` 可用空 payload 表示零长度 capture 结束，但下行可播放 sentence 不允许零长度音频。`audio.end.stream_id` 必须与已打开 stream 匹配，`last_chunk_seq` 必须与最后接收帧一致。
 
 每个 stream 先由 `audio.open` 绑定；不能从最近的 `state.turn` 推断归属。接收方拒绝 unknown stream、错误 direction/format、已取消 turn、重复 seq、seq gap、错误 sample_offset、非法 payload/size 与 reserved flag。gap 中止 stream 并提供重试；旧音频不得进入新 turn。
 
 `EOS` 表示 sentence/capture stream 数据结束；`audio.end` 显式结束生命周期；`output.complete` 独立表示 generation 结束，不依赖末尾标点。
 
+## 7. 输入与回合语义
 
 - `input.text` 以 `(session_id,id)` 去重；文字回执使用 `input.accepted.ref_id = input.text.id`。重复输入 ACK 已有 turn，绝不新建 turn。
 - 新输入到达活动 turn 时，actor 先原子 invalidate 旧 turn，再接受新 turn。UI 在 IME composing 时忽略 Enter；空输入忽略；上限 4000 字符。
 - voice partial 仅预览，只有 `input.audio.segment{final:true}` 启动 reply；语音回执使用 `input.accepted.ref_id = capture_id`。
+- VAD 段上限 **30 s**：达上限强制 `speech_end` 并把长段切给 ASR，避免单段无限增长。
 - capture 与 reply turn 生命周期分离：用于打断的用户语音不能随旧 reply 取消而被删除。
 - 静音/纯文字 turn 保持 `thinking` 到 `output.complete` 后回 idle；有声 turn 同时收到 `output.complete` 和全部 required completed ACK 后回 idle。
 - `Speaking` 由首个 `playback.started` 触发，不由 token、sentence 或 audio.open 触发。
 
+## 8. 打断与 settlement
 
 ```mermaid
 sequenceDiagram
@@ -154,7 +165,9 @@ sequenceDiagram
     O-->>UI: turn.finished(interrupted)，恰好一次
 ```
 
+500ms 是 settlement deadline，不是取消等待。`control.cancel` 对上游是**尽力取消**：模型服务在收到后 **200 ms** 内在下一 chunk 边界停止继续产出，已产出帧由接收侧按 stale 规则丢弃。`played_samples` 必须单调、不得超过 stream total samples；`completed=true` 只有在 total samples 与 EOS/audio.end 一致时有效。deadline 后未知部分保持 unconfirmed，actor 幂等 finalize，不让 turn 无限悬挂。迟到 ACK 可补充 audit annotation，但不能改写已经用于后续模型上下文的 spoken context。`turn.finished` 每 turn 只发一次。
 
+## 9. 失败与 provider 切换
 
 | 失败 | 行为 |
 |---|---|
@@ -166,5 +179,6 @@ sequenceDiagram
 
 provider 只在下一 turn 前执行 warmup → probe → 原子 activate；成功前保留旧 provider，失败 rollback。活动 turn 存在时先由用户明确取消。凭据只在服务端保存。
 
+## 10. close code
 
 `1000` 正常；`4001` 版本不匹配；`4400` hello timeout / malformed / 协议违反；`4401` unauthorized；`1011` 服务端错误。未知 message type 可回 non-fatal `error`；无法恢复的状态分叉关闭连接。控制消息不得静默丢弃。500ms 仅是 interruption settlement；LLM/synthesis stall 使用 `MOMO_LLM_TIMEOUT_MS` 或 turn provider timeout。

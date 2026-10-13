@@ -32,6 +32,7 @@ flowchart LR
 | `AudioPlayer` | AudioWorklet 播放与 ACK | 浏览器/Tauri webview |
 | `TurnCoordinator` | turn 真相、取消与历史 ledger | Rust session actor |
 | `ConversationRepository` | transcript、correction、persona、memory 正文/index | Rust 本地 repository |
+| `EmbeddingProvider` | 文本到向量 | Python provider adapter |
 
 ## 新功能归属速查
 

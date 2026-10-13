@@ -59,6 +59,7 @@ where
     let (tx, rx) = mpsc::channel::<OutboundFrame>(CONN_TX_CAP);
     let tx_task = tokio::spawn(tx_loop(sink, rx));
 
+    // 首帧必须是 hello（protocol §4）；握手失败也要把 error/close 帧排空再退出。
     let Some(session) = handshake(&conn_id, &mut stream, &tx, &state).await else {
         drop(tx);
         let _ = tx_task.await;
