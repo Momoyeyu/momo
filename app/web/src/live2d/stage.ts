@@ -54,8 +54,8 @@ export function ensureCubismCore(): Promise<void> {
   return corePromise;
 }
 
-/** 读取 :root 上的像素值 CSS 变量（舞台安全区；解析失败按 fallback）。 */
-function readCssPx(name: string, fallback: number): number {
+/** 读取 :root 上的数值 CSS 变量（px 或无量纲值；解析失败按 fallback）。 */
+function readCssNum(name: string, fallback: number): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(name);
   const v = Number.parseFloat(raw);
   return Number.isFinite(v) ? v : fallback;
@@ -103,11 +103,11 @@ export class Live2DStage {
   private fitModel(): void {
     if (!this.app || !this.model || !this.bounds) return;
     const { screen } = this.app.renderer;
-    const safeRight = readCssPx("--stage-safe-right", 0);
-    const safeBottom = readCssPx("--dialog-zone-h", 0);
+    const safeRight = readCssNum("--stage-safe-right", 0);
+    const safeBottom = readCssNum("--dialog-zone-h", 0);
     const availW = Math.max(0, screen.width - safeRight);
     const availH = Math.max(0, screen.height - safeBottom);
-    const widthFrac = readCssPx("--stage-model-wfrac", 0.46);
+    const widthFrac = readCssNum("--stage-model-wfrac", 0.46);
     const b = this.bounds;
     const scale = Math.min((availW * widthFrac) / b.width, (availH * 0.92) / b.height);
     this.model.scale.set(scale);
