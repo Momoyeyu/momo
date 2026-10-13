@@ -68,7 +68,7 @@ impl EnvCfg {
     pub fn models_dir(&self) -> PathBuf {
         match self.get("MOMO_MODELS_DIR") {
             Some(v) => expand_tilde(&v),
-            None => home_dir().join(".cache/momo/models"),
+            None => default_models_dir(),
         }
     }
 
@@ -115,8 +115,123 @@ pub fn expand_tilde(path: &str) -> PathBuf {
     PathBuf::from(path)
 }
 
+/// `MOMO_MODELS_DIR` 内置默认：`~/.cache/momo/models`。
+/// 逐段 join，不把 `/` 分隔写死在字符串里（Windows 用 `\`）。
+fn default_models_dir() -> PathBuf {
+    home_dir().join(".cache").join("momo").join("models")
+}
+
+/// home 解析的候选环境变量键（按优先级）：
+/// Windows 无 `HOME`，主键是 `USERPROFILE`（MSYS/Git-Bash 会额外设 `HOME`）；unix 用 `HOME`。
+#[cfg(windows)]
+const HOME_ENV_KEYS: &[&str] = &["USERPROFILE", "HOME"];
+#[cfg(not(windows))]
+const HOME_ENV_KEYS: &[&str] = &["HOME"];
+
+/// 候选键全空时的兜底根：unix `/`；Windows `.`（相对当前工作目录，避免落到文件系统根 `/`）。
+#[cfg(windows)]
+const HOME_FALLBACK: &str = ".";
+#[cfg(not(windows))]
+const HOME_FALLBACK: &str = "/";
+
+/// home 目录：按平台候选键取第一个非空值，全空用平台兜底根。
 fn home_dir() -> PathBuf {
-    std::env::var("HOME")
+    resolve_home(HOME_ENV_KEYS, Path::new(HOME_FALLBACK), |k| {
+        std::env::var(k).ok()
+    })
+}
+
+/// `resolve_home` 的取值逻辑与平台无关，抽成纯函数便于单测：
+/// 依次取 `keys` 中第一个非空值转 `PathBuf`；全空则返回 `fallback`。
+fn resolve_home(keys: &[&str], fallback: &Path, get: impl Fn(&str) -> Option<String>) -> PathBuf {
+    keys.iter()
+        .find_map(|k| get(k).filter(|v| !v.is_empty()))
         .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("/"))
+        .unwrap_or_else(|| fallback.to_path_buf())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 候选键取值：忽略空串，命中即返回。
+    #[test]
+    fn resolve_home_takes_first_nonempty_key() {
+        let get = |k: &str| match k {
+            "USERPROFILE" => Some(String::new()),
+            "HOME" => Some("C:\\Users\\momo".to_string()),
+            _ => None,
+        };
+        assert_eq!(
+            resolve_home(&["USERPROFILE", "HOME"], Path::new("."), get),
+            PathBuf::from("C:\\Users\\momo")
+        );
+    }
+
+    /// Windows 键序下 `USERPROFILE` 优先于 `HOME`。
+    #[test]
+    fn resolve_home_prefers_userprofile_on_windows_keys() {
+        let get = |k: &str| match k {
+            "USERPROFILE" => Some("C:\\Users\\momo".to_string()),
+            "HOME" => Some("/msys/home".to_string()),
+            _ => None,
+        };
+        assert_eq!(
+            resolve_home(&["USERPROFILE", "HOME"], Path::new("."), get),
+            PathBuf::from("C:\\Users\\momo")
+        );
+    }
+
+    /// 全空时用兜底根：Windows 不落到 `/`。
+    #[test]
+    fn resolve_home_falls_back_without_unix_root_on_windows() {
+        let none = |_: &str| None;
+        assert_eq!(
+            resolve_home(&["USERPROFILE", "HOME"], Path::new("."), none),
+            PathBuf::from(".")
+        );
+    }
+
+    /// 当前平台的键表与兜底根。
+    #[cfg(unix)]
+    #[test]
+    fn home_keys_are_home_on_unix() {
+        assert_eq!(HOME_ENV_KEYS, &["HOME"]);
+        assert_eq!(HOME_FALLBACK, "/");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn home_keys_are_userprofile_on_windows() {
+        assert_eq!(HOME_ENV_KEYS, &["USERPROFILE", "HOME"]);
+        assert_eq!(HOME_FALLBACK, ".");
+    }
+
+    /// `~` / `~/...` 展开到 home，其余原样。
+    #[test]
+    fn expand_tilde_only_rewrites_leading_tilde() {
+        assert_eq!(expand_tilde("~"), home_dir());
+        assert_eq!(expand_tilde("~/models"), home_dir().join("models"));
+        assert_eq!(expand_tilde("/abs/models"), PathBuf::from("/abs/models"));
+        assert_eq!(expand_tilde("rel/models"), PathBuf::from("rel/models"));
+    }
+
+    /// 内置默认值 `~/.cache/momo/models` 落在 home 下，且不含写死的 unix 根。
+    #[test]
+    fn default_models_dir_is_under_home() {
+        let dir = default_models_dir();
+        assert_eq!(dir, home_dir().join(".cache").join("momo").join("models"));
+        assert!(dir.ends_with(".cache/momo/models"), "{}", dir.display());
+    }
+
+    /// macOS/Linux 默认值不回归：仍是 `$HOME/.cache/momo/models`。
+    #[cfg(unix)]
+    #[test]
+    fn default_models_dir_unchanged_on_unix() {
+        let home = std::env::var("HOME").expect("HOME must be set on unix");
+        assert_eq!(
+            default_models_dir(),
+            PathBuf::from(home).join(".cache/momo/models")
+        );
+    }
 }
