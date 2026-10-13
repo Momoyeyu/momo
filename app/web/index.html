@@ -3,14 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f472a8' d='M12 21s-7.5-4.9-9.7-9.2C.7 8.6 2.4 5 5.7 5c1.9 0 3.3 1 4.1 2.3l2.2 3.2 2.2-3.2C15 6 16.4 5 18.3 5c3.3 0 5 3.6 3.4 6.8C19.5 16.1 12 21 12 21z'/%3E%3C/svg%3E"
+    />
     <title>momo</title>
   </head>
   <body>
     <div id="app">
-      <!-- 舞台层：房间背景 + 氛围（vignette/聚光/漂浮粒子），Live2D canvas 透明叠加 -->
+      <!-- 舞台层：房间背景 + 氛围（vignette/聚光/接触影/漂浮粒子），Live2D canvas 透明叠加 -->
       <div id="stage-bg" aria-hidden="true"></div>
       <div id="stage-vignette" aria-hidden="true"></div>
       <div id="stage-spotlight" aria-hidden="true"></div>
+      <div id="stage-shadow" aria-hidden="true"></div>
       <div id="stage-particles" aria-hidden="true">
         <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
       </div>

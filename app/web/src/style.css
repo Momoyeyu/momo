@@ -2,6 +2,10 @@
    布局：全屏舞台（房间背景 + Live2D）/ 右侧直播间聊天面板 / 底部 ADV 对话框。 */
 :root {
   --chat-w: 372px;
+  /* 舞台安全区：人物落位避开右侧聊天面板与底部对话框（stage.ts 读取） */
+  --stage-safe-right: calc(var(--chat-w) + 32px);
+  --dialog-zone-h: 190px;
+  --stage-model-wfrac: 0.46;
   --pink: #f472a8;
   --pink-deep: #e2558f;
   --pink-soft: #ffd7e6;
@@ -44,12 +48,31 @@ body {
     linear-gradient(to top, rgba(255, 214, 229, 0.35), transparent 30%);
 }
 
-/* 角色身后的柔光，把她从背景里托出来。 */
+/* 角色身后的柔光，把她从背景里托出来；位置跟随安全区中心（stage.ts 同一口径）。 */
 #stage-spotlight {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(38% 48% at 50% 62%, rgba(255, 255, 255, 0.55), transparent 70%);
+  background: radial-gradient(
+    40% 50% at calc((100% - var(--stage-safe-right)) / 2)
+      calc((100% - var(--dialog-zone-h)) * 0.54),
+    rgba(255, 255, 255, 0.55),
+    transparent 70%
+  );
+}
+
+/* 脚下接触影：站在对话框上沿而不被遮住。 */
+#stage-shadow {
+  position: fixed;
+  bottom: calc(var(--dialog-zone-h) - 24px);
+  left: calc((100% - var(--stage-safe-right)) / 2);
+  transform: translateX(-50%);
+  width: min(300px, 30vw);
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(122, 74, 92, 0.4), transparent 72%);
+  filter: blur(5px);
+  pointer-events: none;
 }
 
 #stage-particles i {
@@ -508,6 +531,11 @@ body.chat-closed #chat-panel {
 @media (max-width: 760px) {
   :root {
     --chat-w: min(88vw, 340px);
+    /* 窄屏面板为浮层不占布局：安全区右留白归零，人物居中 */
+    --stage-safe-right: 0px;
+    --dialog-zone-h: 176px;
+    /* 窄屏人物放大一档 */
+    --stage-model-wfrac: 0.62;
   }
 
   #subtitle {
