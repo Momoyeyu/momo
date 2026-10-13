@@ -150,10 +150,9 @@ class _TtsLink:
             await stream.aclose()
             return
 
-        await ctx.ws.send_json(
+        await ctx.send(
             {
                 "type": "audio.open",
-                **ctx.envelope(),
                 "stream_id": stream_id,
                 "direction": "downlink",
                 "turn_id": turn_id,
@@ -169,7 +168,7 @@ class _TtsLink:
             chunk: bytes | None = first
             while chunk is not None:
                 if chunk:
-                    await ctx.ws.send_bytes(
+                    await ctx.send_binary(
                         encode_audio_frame(
                             AudioHeader(
                                 direction=DIR_DOWNLINK,
@@ -193,7 +192,7 @@ class _TtsLink:
         finally:
             await stream.aclose()
         # EOS：独立空载荷收尾帧；audio.end.last_chunk_seq 与最后一帧一致。
-        await ctx.ws.send_bytes(
+        await ctx.send_binary(
             encode_audio_frame(
                 AudioHeader(
                     direction=DIR_DOWNLINK,
@@ -206,10 +205,9 @@ class _TtsLink:
                 b"",
             )
         )
-        await ctx.ws.send_json(
+        await ctx.send(
             {
                 "type": "audio.end",
-                **ctx.envelope(),
                 "stream_id": stream_id,
                 "last_chunk_seq": chunk_seq,
             }
