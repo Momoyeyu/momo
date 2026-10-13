@@ -346,6 +346,8 @@ export interface OutputSentenceMsg extends ServerEnvelope {
   text: string;
   emotion: EmotionTag;
   lang: string;
+  /** 该句是否有 TTS 下行；false = text-only（字幕立即短显）。 */
+  audio: boolean;
 }
 
 export interface OutputCompleteMsg extends ServerEnvelope {
