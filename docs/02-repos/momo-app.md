@@ -64,7 +64,7 @@ flowchart LR
 - 解码异常（JSON 非法、未知 `type`、非法音频帧头）一律回 `error` 帧（non-fatal `BAD_MESSAGE`），连接保持；握手期/不可恢复异常回 `error` + 按 close code 表断连。
 - `conn_rx` 只 decode 与转发，业务判断全在 Session actor；上行音频帧解码出头后经 stream 归属检查交给 ASR uplink task（P2）。
 - 握手（protocol §认证）：upgrade 前 Origin ∈ {`tauri://localhost`、`http://tauri.localhost`、`https://tauri.localhost`、`MOMO_WEB_ORIGIN`}，missing/未批准 → 403；upgrade 后 5s 内首帧必须是 `client='ui'` 且版本匹配的 hello，`auth_token` 与 `MOMO_UI_TOKEN` 恒时比对（未配置=standalone dev 不比对）；违规按 4400/4401/4001 断连。
-- 单活跃 UI 连接：`SessionManager::attach` 让新连接顶掉旧 session，旧连接收 close 1000 关连；session restore 走 `resume_session_id` + snapshot（protocol §认证）。
+- 单活跃 UI 连接：`SessionManager::attach` 让新连接顶掉旧 session，旧连接收 close 1000 关连；session restore 走 `resume_session_id` + snapshot（protocol §认证）。WS 断开后 session actor 进入 `MOMO_SESSION_RESUME_TTL_MS`（默认 60s）保活窗口：回合/uplink 即时清理、history 与 receipt cache 保留；TTL 内 resume 命中则换绑复用并下发 `session.snapshot`，超时 actor 退出回收。
 
 ## P0 验收指针
 

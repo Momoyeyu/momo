@@ -226,6 +226,7 @@ fn test_state(
         }),
         barge_in_enabled: true,
         barge_in_min,
+        resume_ttl: Duration::from_secs(60),
     };
     Arc::new(AppState {
         config: Arc::new(Config::load(|_| None).expect("default config")),
