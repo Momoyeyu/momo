@@ -111,7 +111,10 @@ impl Schema {
         Ok(s)
     }
 
-    /// schema 自身合法性：命名、枚举取值、readers/files 取值域、敏感项空默认等。
+    /// schema 自身合法性：命名、枚举取值、readers/files 取值域、敏感项默认纪律等。
+    /// 敏感项（config.md §6）：密钥型（string/url/path）`default` 必须为空；
+    /// 开关型（enum/bool/int）`default` 是固定安全常量、豁免空默认；
+    /// 两类 `examples` 都不得覆写真实值（只允许等于 `default`）。
     pub fn validate(&self) -> Result<(), AppError> {
         let mut errs: Vec<String> = vec![];
         if self.schema != 1 {
@@ -162,6 +165,22 @@ impl Schema {
             for f in k.examples.keys() {
                 if !k.files.contains(f) {
                     errs.push(format!("key '{}': examples key '{f}' not in files", k.name));
+                }
+            }
+            if k.sensitive {
+                if !matches!(k.kind.as_str(), "enum" | "bool" | "int") && !k.default.is_empty() {
+                    errs.push(format!(
+                        "key '{}': sensitive key default must be empty",
+                        k.name
+                    ));
+                }
+                for (f, v) in &k.examples {
+                    if v != &k.default {
+                        errs.push(format!(
+                            "key '{}': sensitive examples['{f}'] must equal default",
+                            k.name
+                        ));
+                    }
                 }
             }
             if k.description.trim().is_empty() {
@@ -631,5 +650,49 @@ description = "mirror"
             &s,
         );
         assert!(d.is_empty(), "{d:?}");
+    }
+
+    /// 密钥型敏感项 default 必须为空（密钥默认值不入库）。
+    #[test]
+    fn sensitive_secret_requires_empty_default() {
+        let text = MINI_SCHEMA.replace(
+            "default = \"x\"\nsensitive = false",
+            "default = \"x\"\nsensitive = true",
+        );
+        let err = Schema::parse(&text).unwrap_err().to_string();
+        assert!(err.contains("sensitive key default must be empty"), "{err}");
+        let ok = text.replace("default = \"x\"", "default = \"\"");
+        Schema::parse(&ok).unwrap();
+    }
+
+    /// 开关型敏感项（enum/bool/int）保留安全常量默认，豁免空默认规则。
+    #[test]
+    fn sensitive_switch_keeps_constant_default() {
+        let text = MINI_SCHEMA.replace(
+            r#"name = "MOMO_FOO"
+type = "string"
+default = "x"
+sensitive = false"#,
+            r#"name = "MOMO_FOO"
+type = "enum"
+values = ["on", "off"]
+default = "off"
+sensitive = true"#,
+        );
+        Schema::parse(&text).unwrap();
+    }
+
+    /// 敏感项 examples 不得覆写真实值（只允许等于 default）。
+    #[test]
+    fn sensitive_examples_must_equal_default() {
+        let text = MINI_SCHEMA.replace(
+            "sensitive = false",
+            "sensitive = true\nexamples = { app = \"real-value\" }",
+        );
+        let err = Schema::parse(&text).unwrap_err().to_string();
+        assert!(
+            err.contains("sensitive examples['app'] must equal default"),
+            "{err}"
+        );
     }
 }
