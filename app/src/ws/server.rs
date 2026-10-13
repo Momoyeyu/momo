@@ -13,7 +13,11 @@ use axum::{
 };
 use tower_http::{cors::CorsLayer, services::ServeDir};
 
-use crate::{config::Config, session::manager::SessionManager, ws::conn};
+use crate::{
+    config::Config,
+    session::{SessionDeps, manager::SessionManager},
+    ws::conn,
+};
 
 /// 连接级共享状态。
 pub struct AppState {
@@ -26,8 +30,8 @@ pub struct AppState {
 impl AppState {
     pub fn new(config: Arc<Config>) -> Self {
         Self {
+            sessions: SessionManager::new(SessionDeps::from_config(&config)),
             config,
-            sessions: SessionManager::new(),
             started_at: Instant::now(),
         }
     }

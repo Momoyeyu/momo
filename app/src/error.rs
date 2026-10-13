@@ -33,6 +33,10 @@ pub enum AppError {
     #[error("model service unreachable: {0}")]
     ModelUnreachable(String),
 
+    /// 下行音频缓冲积压超上限 → `BACKPRESSURE_OVERFLOW`。
+    #[error("backpressure overflow: {0}")]
+    BackpressureOverflow(String),
+
     #[error("internal error: {0}")]
     Internal(String),
 }
@@ -47,6 +51,7 @@ impl AppError {
             AppError::VersionMismatch(_) => ErrorCode::VersionMismatch,
             AppError::Unauthorized(_) => ErrorCode::Unauthorized,
             AppError::ModelUnreachable(_) => ErrorCode::ModelUnreachable,
+            AppError::BackpressureOverflow(_) => ErrorCode::BackpressureOverflow,
         }
     }
 }

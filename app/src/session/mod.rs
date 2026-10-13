@@ -12,5 +12,5 @@ pub mod turn;
 
 pub use history::{ChatMessage, History, Role};
 pub use manager::SessionManager;
-pub use session::{Session, SessionCmd, SessionHandle};
-pub use turn::{Turn, TurnId};
+pub use session::{PipelineEvent, Session, SessionCmd, SessionDeps, SessionHandle};
+pub use turn::{IllegalTransition, Turn, TurnEvent, TurnId, transition};

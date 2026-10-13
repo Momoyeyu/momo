@@ -6,19 +6,23 @@ use tokio::sync::mpsc;
 
 use crate::{
     proto::message::{ClientKind, new_id},
-    session::session::{Session, SessionCmd, SessionHandle},
+    session::session::{Session, SessionCmd, SessionDeps, SessionHandle},
     ws::conn::OutboundFrame,
 };
 
 /// 会话注册表。v1 按单编排器+单活跃 UI session 假设（protocol §4）。
-#[derive(Debug, Default)]
 pub struct SessionManager {
     active: Mutex<Option<SessionHandle>>,
+    /// 注入每个新 session 的回合依赖（history 上限、句切参数、LLM client）。
+    deps: SessionDeps,
 }
 
 impl SessionManager {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(deps: SessionDeps) -> Self {
+        Self {
+            active: Mutex::new(None),
+            deps,
+        }
     }
 
     /// 新连接归属新 session；若已有活跃 session，发 `Shutdown` 顶掉前连。
@@ -28,7 +32,13 @@ impl SessionManager {
         client: ClientKind,
         out_tx: mpsc::Sender<OutboundFrame>,
     ) -> SessionHandle {
-        let handle = Session::spawn(new_id("sess"), conn_id.to_owned(), client, out_tx);
+        let handle = Session::spawn(
+            new_id("sess"),
+            conn_id.to_owned(),
+            client,
+            out_tx,
+            self.deps.clone(),
+        );
         let mut guard = self.active.lock().expect("session mutex poisoned");
         if let Some(old) = guard.replace(handle.clone()) {
             let _ = old.cmd_tx.try_send(SessionCmd::Shutdown);
