@@ -30,6 +30,31 @@ fn momoctl(state: &std::path::Path, env_file: &std::path::Path, args: &[&str]) -
     cmd
 }
 
+/// `momoctl` 调用限时：`output()` 无超时，CLI 内部挂起会拖死整个测试
+/// 二进制。超限杀进程并带 argv 点名挂起的调用方。
+fn momoctl_output(
+    state: &std::path::Path,
+    env_file: &std::path::Path,
+    args: &[&str],
+) -> std::process::Output {
+    let mut child = momoctl(state, env_file, args)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn momoctl");
+    let deadline = Instant::now() + Duration::from_secs(60);
+    loop {
+        if let Some(_status) = child.try_wait().expect("try_wait momoctl") {
+            return child.wait_with_output().expect("read momoctl output");
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            panic!("momoctl {args:?} did not exit within 60s");
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+}
+
 fn jobs_json(
     state: &std::path::Path,
     env_file: &std::path::Path,
@@ -37,9 +62,7 @@ fn jobs_json(
 ) -> serde_json::Value {
     let mut argv: Vec<&str> = vec!["--json"];
     argv.extend_from_slice(args);
-    let out = momoctl(state, env_file, &argv)
-        .output()
-        .expect("spawn momoctl");
+    let out = momoctl_output(state, env_file, &argv);
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
         out.status.success(),
@@ -54,13 +77,11 @@ fn jobs_json(
 #[test]
 fn ssh_submit_requires_host() {
     let (dir, state, env_file) = env_setup("nohost");
-    let out = momoctl(
+    let out = momoctl_output(
         &state,
         &env_file,
         &["jobs", "submit", "--executor", "ssh", "--", "echo", "hi"],
-    )
-    .output()
-    .expect("spawn momoctl");
+    );
     assert_eq!(out.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&out.stderr).contains("--host"));
     let _ = fs::remove_dir_all(&dir);
@@ -70,13 +91,11 @@ fn ssh_submit_requires_host() {
 #[test]
 fn ssh_flags_rejected_for_local_executor() {
     let (dir, state, env_file) = env_setup("localflag");
-    let out = momoctl(
+    let out = momoctl_output(
         &state,
         &env_file,
         &["jobs", "submit", "--host", "4090D", "--", "echo", "hi"],
-    )
-    .output()
-    .expect("spawn momoctl");
+    );
     assert_eq!(out.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&out.stderr).contains("--executor ssh"));
     let _ = fs::remove_dir_all(&dir);
@@ -93,9 +112,7 @@ fn recover_rejects_local_job() {
         &["jobs", "submit", "--", exe, "--version"],
     );
     let id = v["job"]["id"].as_str().unwrap().to_string();
-    let out = momoctl(&state, &env_file, &["jobs", "recover", &id])
-        .output()
-        .expect("spawn momoctl");
+    let out = momoctl_output(&state, &env_file, &["jobs", "recover", &id]);
     assert_eq!(out.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&out.stderr).contains("not an ssh job"));
     let _ = fs::remove_dir_all(&dir);

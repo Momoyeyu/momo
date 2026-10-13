@@ -34,6 +34,31 @@ fn momoctl_exe() -> String {
     env!("CARGO_BIN_EXE_momoctl").to_string()
 }
 
+/// `momoctl` 调用限时：`output()` 无超时，CLI 内部挂起会拖死整个测试
+/// 二进制（windows CI 实证）。超限杀进程并带 argv 点名挂起的调用方。
+fn momoctl_output(
+    state: &std::path::Path,
+    env_file: &std::path::Path,
+    args: &[&str],
+) -> std::process::Output {
+    let mut child = momoctl(state, env_file, args)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn momoctl");
+    let deadline = Instant::now() + Duration::from_secs(60);
+    loop {
+        if let Some(_status) = child.try_wait().expect("try_wait momoctl") {
+            return child.wait_with_output().expect("read momoctl output");
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            panic!("momoctl {args:?} did not exit within 60s");
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+}
+
 /// `momoctl --json jobs <action>` → 解析后的 JSON 值。
 /// `--json` 必须放最前：submit 的 `--` 之后的参数都算 payload argv。
 fn jobs_json(
@@ -43,9 +68,7 @@ fn jobs_json(
 ) -> serde_json::Value {
     let mut argv: Vec<&str> = vec!["--json"];
     argv.extend_from_slice(args);
-    let out = momoctl(state, env_file, &argv)
-        .output()
-        .expect("spawn momoctl");
+    let out = momoctl_output(state, env_file, &argv);
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
         out.status.success(),
@@ -271,13 +294,11 @@ fn rescan_recovers_running_job_after_runner_death() {
 #[test]
 fn unknown_job_id_is_usage_error() {
     let (dir, state, env_file) = env_setup("noid");
-    let out = momoctl(
+    let out = momoctl_output(
         &state,
         &env_file,
         &["jobs", "status", "01JAAAAAAAAAAAAAAAAAAAAAAA"],
-    )
-    .output()
-    .expect("spawn momoctl");
+    );
     assert_eq!(out.status.code(), Some(2));
     let _ = fs::remove_dir_all(&dir);
 }
