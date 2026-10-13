@@ -11,7 +11,7 @@ flowchart TB
     ASR["听懂 · models/Python<br/>ASR + VAD"]
     LLM["回答 · 本地或远端 LLM<br/>OpenAI-compatible SSE"]
     TTS["说出 · models/Python<br/>TTS adapter"]
-    DATA[("本地记录<br/>transcript / persona<br/>P1 memory + index")]
+    DATA[("本地记录<br/>transcript / persona<br/>memory + index")]
     DESK <-->|"momo-ws：输入 / 状态 / 音频"| TURN
     TURN <-->|"语音 / 转写"| ASR
     TURN <-->|"流式文本"| LLM

@@ -9,7 +9,7 @@ flowchart LR
     CHAT --> VOICE["有授权的个人声线"]
 ```
 
-- [P1 熟悉的 companion](./p1-stage.md)
+- [熟悉的 companion](./stage.md)
 - [人格与可纠正上下文](../04-tracks/persona.md)
 - [声线个性化](../04-tracks/voice-clone.md)
 - [操作路径图谱](../01-architecture/workflows.md)

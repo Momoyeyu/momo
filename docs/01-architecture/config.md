@@ -41,7 +41,7 @@ flowchart LR
 | `MOMO_LLM_TIMEOUT_MS` | LLM 请求总超时 | `30000` | ms | app | 否 |
 | `MOMO_ASR_ENDPOINT` | ASR 服务 WS 地址 | `ws://127.0.0.1:7810/ws` | ws:// | app, infra | 否 |
 | `MOMO_TTS_ENDPOINT` | TTS 服务 WS 地址 | `ws://127.0.0.1:7811/ws` | ws:// | app, infra | 否 |
-| `MOMO_EMBED_ENDPOINT`（P1） | embed 服务 WS 连接地址（编排器→momo-svc-embed） | `ws://127.0.0.1:7812/ws` | ws:// | app | 否 |
+| `MOMO_EMBED_ENDPOINT`（记忆） | embed 服务 WS 连接地址（编排器→momo-svc-embed） | `ws://127.0.0.1:7812/ws` | ws:// | app | 否 |
 | `MOMO_BARGEIN_ENABLED` | 允许打断 | `true` | bool | app | 否 |
 | `MOMO_BARGEIN_MIN_MS` | 打断防抖：`input.vad{speech_start}` 须持续该时长才触发 barge-in | `250` | ms | app | 否 |
 | `MOMO_SESSION_RESUME_TTL_MS` | WS 断开后 session 保活窗口；TTL 内 `hello.resume_session_id` 命中则复用并下发 `session.snapshot`，超时回收 | `60000` | ms | app | 否 |
@@ -73,12 +73,12 @@ flowchart LR
 | `MOMO_TTS_VOICE_REF` | 克隆用参考音频路径 | 空 | path | models | 否 |
 | `MOMO_TTS_MODEL_DIR` | SFT 克隆产物目录（灰度切换/回滚指向） | 空 | path | models | 否 |
 | `MOMO_TTS_LANG` | 合成默认语言 | `auto` | `zh`/`en`/`ja`/`auto` | models | 否 |
-| `MOMO_MEMORY_ENABLED`（P1） | 记忆检索开关 | `false` | bool | models | 否 |
-| `MOMO_MEMORY_DB`（P1） | sqlite-vec 库路径 | `data/momo.vec.db` | path | models | 否 |
-| `MOMO_VISION_ENDPOINT`（P2） | 视觉 API | `https://api.deepseek.com/v1` | URL | models | 否 |
-| `MOMO_VISION_MODEL`（P2） | 视觉模型 | `deepseek-v4-flash-vision-exp` | str | models | 否 |
-| `MOMO_VISION_API_KEY`（P2） | 视觉上游的鉴权 key | 空 | str | models | **是** |
-| `MOMO_EMBED_LISTEN`（P1） | embed 服务 WS 监听（记忆检索） | `127.0.0.1:7812` | host:port | models | 否 |
+| `MOMO_MEMORY_ENABLED`（记忆） | 记忆检索开关 | `false` | bool | models | 否 |
+| `MOMO_MEMORY_DB`（记忆） | sqlite-vec 库路径 | `data/momo.vec.db` | path | models | 否 |
+| `MOMO_VISION_ENDPOINT`（视觉） | 视觉 API | `https://api.deepseek.com/v1` | URL | models | 否 |
+| `MOMO_VISION_MODEL`（视觉） | 视觉模型 | `deepseek-v4-flash-vision-exp` | str | models | 否 |
+| `MOMO_VISION_API_KEY`（视觉） | 视觉上游的鉴权 key | 空 | str | models | **是** |
+| `MOMO_EMBED_LISTEN`（记忆） | embed 服务 WS 监听（记忆检索） | `127.0.0.1:7812` | host:port | models | 否 |
 
 ### 2.4 infra 读（大脑服务启停、`momoctl web` 鉴权；mac-studio 侧大脑由 infra 远程/本地拉起）
 
@@ -124,7 +124,7 @@ MOMO_LLM_API_KEY=              # 敏感：本地 mlx_lm 可空；DeepSeek 时填
 MOMO_LLM_TIMEOUT_MS=30000
 MOMO_ASR_ENDPOINT=ws://127.0.0.1:7810/ws
 MOMO_TTS_ENDPOINT=ws://127.0.0.1:7811/ws
-MOMO_EMBED_ENDPOINT=ws://127.0.0.1:7812/ws   # P1 编排器→momo-svc-embed
+MOMO_EMBED_ENDPOINT=ws://127.0.0.1:7812/ws   # 记忆：编排器→momo-svc-embed
 MOMO_BARGEIN_ENABLED=true
 MOMO_BARGEIN_MIN_MS=250        # speech_start 持续该时长才触发打断
 MOMO_SESSION_RESUME_TTL_MS=60000   # 断线 session 保活窗口；TTL 内 resume_session_id 可恢复
@@ -156,7 +156,7 @@ MOMO_MEMORY_DB=data/momo.vec.db
 MOMO_VISION_ENDPOINT=https://api.deepseek.com/v1
 MOMO_VISION_MODEL=deepseek-v4-flash-vision-exp
 MOMO_VISION_API_KEY=         # 敏感：视觉 provider key
-MOMO_EMBED_LISTEN=127.0.0.1:7812   # P1 记忆检索服务
+MOMO_EMBED_LISTEN=127.0.0.1:7812   # 记忆检索服务
 
 # momo-infra（大脑启停 / web 控制台）
 MOMO_BRAIN_BACKEND=mlx
@@ -186,11 +186,11 @@ HF_ENDPOINT=https://hf-mirror.com   # laptop 必须
 - **敏感数据（非 key）**：`MOMO_DATA_KEEP_AUDIO=on` 时落盘的原始麦音频属隐私数据——key 本身只是开关，但其产物按敏感数据同等纪律处理（短期保留、仅 ASR 排错用途、到期清理、不外传）。
 - `.env` 已在各仓 `.gitignore`；`.env.example` 中敏感项**只留空值占位**，禁止提交真实 key。
 - 日志/诊断输出对敏感值打码（显示前 4 位 + `…`）；`momoctl doctor` 只做"是否设置"检查，不回显。
-- 组件间不转发敏感变量：LLM 凭据（`MOMO_LLM_API_KEY`）由 app 持有并注入请求；infra 只在 `momoctl doctor` 里检查其 set/unset（不回显、不取值，见 §2.4），models 不读。P2 视觉凭据（`MOMO_VISION_API_KEY`）随视觉 provider 下沉到 models 时一并下移，届时在 decisions.md 补记。
+- 组件间不转发敏感变量：LLM 凭据（`MOMO_LLM_API_KEY`）由 app 持有并注入请求；infra 只在 `momoctl doctor` 里检查其 set/unset（不回显、不取值，见 §2.4），models 不读。视觉凭据（`MOMO_VISION_API_KEY`）随视觉 provider 下沉到 models 时一并下移，届时在 decisions.md 补记。
 
 ## 5. 与配置发布平台的兼容
 
-P2 控制台只编辑配置草稿；UI 偏好（窗口位置、scale、置顶、穿透、输入模式、设备、companion mode）保存在本地 settings，不新增或覆盖本页 env 默认值。
+Web 控制台只编辑配置草稿；UI 偏好（窗口位置、scale、置顶、穿透、输入模式、设备、companion mode）保存在本地 settings，不新增或覆盖本页 env 默认值。
 
 ```mermaid
 flowchart TD

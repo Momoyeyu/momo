@@ -1,6 +1,6 @@
-# P1：熟悉的 companion
+# 熟悉的 companion
 
-> P1 在 P0 的历史与 correction 基础上增加用户可控的熟悉感；记忆、模式、主动行为与声线都可解释、可编辑、可关闭。
+> 在历史与 correction 基础上增加用户可控的熟悉感；记忆、模式、主动行为与声线都可解释、可编辑、可关闭。
 
 ## 范围
 
@@ -15,8 +15,8 @@
 
 ```mermaid
 flowchart TD
-    CORRECTION["P0 correction"] --> INVALIDATE["失效相关 derived memory"]
-    CHAT["P0 日常对话"] --> PROPOSAL["memory proposal"]
+    CORRECTION["correction"] --> INVALIDATE["失效相关 derived memory"]
+    CHAT["日常对话"] --> PROPOSAL["memory proposal"]
     INVALIDATE --> PROPOSAL
     PROPOSAL --> USER{"用户确认 / 编辑？"}
     USER -->|"拒绝"| NONE["不保存"]

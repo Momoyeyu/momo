@@ -85,7 +85,7 @@ flowchart TD
 
 | 项 | 环境 | 实测 |
 |---|---|---|
-| edge-tts 首包 | laptop→微软云 | **1937ms**（8.4s 音频总 3.2s）——P0 能用但偏慢 |
+| edge-tts 首包 | laptop→微软云 | **1937ms**（8.4s 音频总 3.2s）——能用但偏慢 |
 | SenseVoice-Small ASR | laptop CPU×4 | **RTF 0.040**（8.4s→337ms）——CPU 完全够，不占显卡 |
 | Kokoro-82M TTS | laptop 3070 CUDA | **首包 209ms，RTF 0.023，VRAM 0.76GB**——本地 TTS 无瓶颈 |
 | F5-TTS v1 零样本克隆 | laptop 3070 CUDA | **RTF 0.535，VRAM 0.8GB**——克隆路线可行，快于实时 |
@@ -133,35 +133,35 @@ flowchart LR
 |---|---|---|
 | 服务框架 | **Rust（momod）编排器 + Python 模型服务**（原全 Python 异步框架选型已作废） | 状态机/打断要可预测延迟与单二进制分发；推理与训练生态全在 Python |
 | 大脑 LLM | **mac-studio MLX**：Qwen3-30B-A3B(MoE快) / 32B；副脑借 bigstrong 常驻 `qwen3.8-27B`；兜底 `deepseek-v4-flash` | 统一 OpenAI 兼容接口，三家热切换 |
-| TTS | **laptop 3070**：首选 Fun-CosyVoice3-0.5B 声线克隆（显存待实测）；GPT-SoVITS 备选；Kokoro 已实测兜底 (209ms/0.76GB)；P0 先 edge-tts | 音频路径全本地；克隆见下 |
+| TTS | **laptop 3070**：首选 Fun-CosyVoice3-0.5B 声线克隆（显存待实测）；GPT-SoVITS 备选；Kokoro 已实测兜底 (209ms/0.76GB)；先用 edge-tts 验证管线 | 音频路径全本地；克隆见下 |
 | 声线克隆 | **零样本**：CosyVoice3/IndexTTS-2 只要 ~10-30s 干净参考音，无需训练；**SFT**：10-60min 素材 + 4090D 单卡 24h 内（GPT-SoVITS 更轻） | 用户已有目标声线，先攒参考音频 |
 | ASR | **laptop 3070 上 SenseVoice-Small** + silero-vad（~1GB，CPU 也行） | 中日韩粤 + 低延迟 |
 | Live2D | pixi-live2d-display + 官方免费 sample 模 | 浏览器直渲，WebSocket 推参数；口型先音量 RMS |
-| 人格 | character card + system prompt；后期 4090D 上 QLoRA | 先 prompt 逼近，Neuro 式权重人格是 P3+ 课题 |
-| 记忆 | sqlite-vec + BGE-M3 | P3 再做，先纯 context |
-| 动作总线 | 照抄 neuro-game-sdk：WS 注册 action + JSON Schema | P4 |
+| 人格 | character card + system prompt；后期 4090D 上 QLoRA | 先 prompt 逼近，Neuro 式权重人格是后期课题 |
+| 记忆 | sqlite-vec + BGE-M3 | 后期再做，先纯 context |
+| 动作总线 | 照抄 neuro-game-sdk：WS 注册 action + JSON Schema | 后期扩展 |
 | 训练流 | 4090D burst 训练 → 产物回传 mac-studio；bigstrong 夜间中断当备胎 | 24h 限制正好约束实验周期 |
 
 延迟预估（文字回合）：LLM 首 token <300ms + TTS 首 chunk ~300ms → **~1s 内出声**，达标。
 
-## 分阶段
+## 演进顺序
 
 ```mermaid
 flowchart LR
-    P0["P0 文字→LLM→TTS→扬声器<br/>edge-tts + 借vLLM/DeepSeek 最快闭环"] --> P1["P1 Live2D+口型+WebUI"] --> P2["P2 ASR语音+打断+表情<br/>本地模型全替换"] --> P3["P3 记忆+自发行为<br/>人设LoRA(4090D)"] --> P4["P4 action总线/游戏/视觉"] --> P5["P5 直播 ⏸️"]
-    style P5 stroke-dasharray: 5 5
+    LOOP["文字→LLM→TTS→扬声器<br/>edge-tts + 借vLLM/DeepSeek 最快闭环"] --> STAGE["Live2D+口型+WebUI"] --> VOICE["ASR语音+打断+表情<br/>本地模型全替换"] --> SOUL["记忆+自发行为<br/>人设LoRA(4090D)"] --> ACTION["action总线/游戏/视觉"] --> LIVE["直播 ⏸️"]
+    style LIVE stroke-dasharray: 5 5
 ```
 
-P0 全部走现成 API/云端，验证编排器和管线；P2 起逐步换成本地自托管模型。
+起步全部走现成 API/云端，验证编排器和管线；语音闭环成立后逐步换成本地自托管模型。
 
 ## 开放问题
 
 - ~~3070 余量~~ / ~~MLX 延迟~~：已实测化解——TTS 1GB 级 + ASR 纯 CPU，8GB 显卡余量大；8B 与 30B-A3B 均实测 121t/s
 - **声线基座待试听**：F5-TTS 克隆已跑通（RTF 0.54），但要和 CosyVoice3/IndexTTS-2 盲听对比选基座，质量优先
 - **借 vLLM**：27B FP8 TP2 理论每人 30-45t/s 够用，但 `max-num-seqs=3` 与主人共享只当副脑；⚠️ 实测时服务 502 不通
-- **DS key 未部署**，P0 前配上
-- **人格浓度**：prompt 聊久了会变回助手腔，P3 的 LoRA 是解药，需要攒对话数据
-- **版权**：Live2D 免费模型和克隆音色的直播/商用 license，P5 前必须确认
+- **DS key 未部署**，跑通闭环前配上
+- **人格浓度**：prompt 聊久了会变回助手腔，LoRA 微调是解药，需要攒对话数据
+- **版权**：Live2D 免费模型和克隆音色的直播/商用 license，直播前必须确认
 - **code-switching**：一句混中日英时 TTS 表现要实测，可能按句切语言路由
 - **歌声**：独立子系统（so-vits/RVC 方向），远期再说
 
