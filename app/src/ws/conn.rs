@@ -103,6 +103,10 @@ where
             Ok(Message::Text(text)) => match codec::decode_msg(text.as_str()) {
                 Ok(Msg::Unknown) => {
                     let _ = tx
+                        .send(OutboundFrame::Json(error_frame(
+                            &AppError::BadMessage("unknown message type".into()),
+                            Some(session.id.as_str()),
+                        )))
                         .await;
                 }
                 Ok(client_msg) => {
@@ -111,6 +115,12 @@ where
                     }
                 }
                 Err(err) => {
+                    let _ = tx
+                        .send(OutboundFrame::Json(error_frame(
+                            &err,
+                            Some(session.id.as_str()),
+                        )))
+                        .await;
                 }
             },
             Ok(Message::Binary(bytes)) => {
@@ -124,6 +134,12 @@ where
                         }
                     }
                     Err(err) => {
+                        let _ = tx
+                            .send(OutboundFrame::Json(error_frame(
+                                &err,
+                                Some(session.id.as_str()),
+                            )))
+                            .await;
                     }
                 }
             }
@@ -317,6 +333,7 @@ where
 
 /// 回 `error` 帧后按协议 close code 断连。
 async fn send_fatal(tx: &mpsc::Sender<OutboundFrame>, err: &AppError, code: u16) {
+    let _ = tx.send(OutboundFrame::Json(error_frame(err, None))).await;
     let reason: &'static str = match code {
         CLOSE_VERSION_MISMATCH => "version mismatch",
         CLOSE_PROTOCOL_VIOLATION => "protocol violation",
@@ -338,9 +355,34 @@ fn token_eq(got: &str, expected: &str) -> bool {
 
 /// `AppError` → 协议 `error` 帧。
 ///
+/// 握手期错误尚无 session envelope（`code`+`message` 即可表达）；握手后
+/// conn 校验失败带 `session_id` + 新 `event_id`/`at_ms`（`event_seq` 归
+/// Session 的 `ServerEnv` 单调分配，conn 侧不独立取号）。
+fn error_frame(err: &AppError, session_id: Option<&str>) -> Msg {
+    let (event_id, at_ms) = if session_id.is_some() {
+        (
+            Some(ulid::Ulid::new().to_string()),
+            Some(
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_millis() as u64)
+                    .unwrap_or(0),
+            ),
+        )
+    } else {
+        (None, None)
+    };
     Msg::Error(ErrorMsg {
+        session_id: session_id.map(str::to_string),
+        event_id,
+        at_ms,
         event_seq: None,
         code: err.code(),
         message: err.to_string(),
+        ref_id: None,
+        turn_id: None,
+        capture_id: None,
+        stream_id: None,
+        sentence_seq: None,
     })
 }

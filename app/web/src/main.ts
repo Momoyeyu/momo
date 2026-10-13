@@ -103,6 +103,14 @@ client.onServerMsg = (msg) => {
       }
       break;
     case "error":
+      // 归因字段把异步失败定位到具体 stream/capture/turn（#132）。
+      console.warn("server error", msg.code, msg.message, {
+        ref_id: msg.ref_id,
+        turn_id: msg.turn_id,
+        capture_id: msg.capture_id,
+        stream_id: msg.stream_id,
+        sentence_seq: msg.sentence_seq,
+      });
       break;
     default:
       break;

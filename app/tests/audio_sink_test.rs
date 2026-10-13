@@ -228,6 +228,8 @@ async fn overflow_emits_backpressure_error_and_cancel() {
         match tokio::time::timeout(Duration::from_secs(3), rx.recv()).await {
             Ok(Some(OutboundFrame::Json(Msg::Error(e)))) => {
                 assert_eq!(e.code, ErrorCode::BackpressureOverflow);
+                // 溢出 error 归因到所属 turn（#132）。
+                assert_eq!(e.turn_id.as_deref(), Some("t_1"));
                 saw_error = true;
             }
             Ok(Some(OutboundFrame::Json(Msg::ControlCancel(c)))) => {

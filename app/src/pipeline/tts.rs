@@ -259,6 +259,7 @@ impl TtsLink {
             Inbound::Msg(Msg::AudioEnd(end)) => self.router.lock().await.end(&end),
             Inbound::Msg(Msg::Error(err)) => {
                 warn!(code = ?err.code, msg = %err.message, "svc-tts error frame");
+                self.router.lock().await.fail_attributed(&err);
             }
             Inbound::Msg(other) => {
                 debug!(?other, "unhandled msg on tts link (dropped)");
@@ -457,6 +458,30 @@ impl Router {
         if let Some(key) = key {
             self.streams.remove(&key);
         }
+    }
+
+    /// 服务端 `error` 帧归因路由（#132）：`stream_id` 命中活动流、
+    /// `turn_id`+`sentence_seq` 命中 pending 时精确定位；无归因回落
+    /// 顺序启发式（[`Router::fail_pending`]）。
+    fn fail_attributed(&mut self, err: &crate::proto::message::ErrorMsg) {
+        let app_err = server_err(err);
+        if let Some(key) = err.stream_id.as_deref().and_then(stream_key) {
+            if let Some(st) = self.streams.remove(&key) {
+                st.fail(app_err);
+                return;
+            }
+        }
+        if let (Some(turn_id), Some(seq)) = (err.turn_id.as_deref(), err.sentence_seq) {
+            if let Some(pos) = self
+                .pending
+                .iter()
+                .position(|p| p.turn_id == turn_id && p.seq == seq)
+            {
+                self.pending.remove(pos).fail(app_err);
+                return;
+            }
+        }
+        self.fail_pending(app_err);
     }
 
     /// 服务端 `error` 帧归因 pending：BAD_MESSAGE 按序对应最新发送；

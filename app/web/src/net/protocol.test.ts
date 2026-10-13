@@ -151,11 +151,18 @@ describe("server msg 解析（golden 对拍）", () => {
     }
   });
 
+  it("error golden（ServerEnvelope + code/message + 归因）", () => {
     const msg = parseServerMsg(
+      '{"type":"error","session_id":"sess_01J5M0N8T1RZ8K2W4V7H6X9P3A","event_id":"01J5M0N8T1RZ8K2W4V7H6X9P3B","at_ms":1730000000000,"event_seq":42,"code":"TTS_FAILED","message":"synthesis failed","ref_id":"r_01J5M0N8T1RZ8K2W4V7H6X9P3F","turn_id":"t_01J5M0N8T1RZ8K2W4V7H6X9P3C","capture_id":"cap_01J5M0N8T1RZ8K2W4V7H6X9P3D","stream_id":"st_01J5M0N8T1RZ8K2W4V7H6X9P3E","sentence_seq":2}',
     );
     expect(msg?.type).toBe("error");
     if (msg?.type === "error") {
+      expect(msg.code).toBe("TTS_FAILED");
       expect(msg.event_seq).toBe(42);
+      expect(msg.turn_id).toBe("t_01J5M0N8T1RZ8K2W4V7H6X9P3C");
+      expect(msg.capture_id).toBe("cap_01J5M0N8T1RZ8K2W4V7H6X9P3D");
+      expect(msg.stream_id).toBe("st_01J5M0N8T1RZ8K2W4V7H6X9P3E");
+      expect(msg.sentence_seq).toBe(2);
     }
   });
 

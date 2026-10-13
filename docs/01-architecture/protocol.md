@@ -43,10 +43,13 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 | `control.cancel` | orchestrator→UI/models | `target,id`；turn stop 时 `id=turn_id` | 向各方向取消同一个指定 turn/object |
 | `turn.finished` | orchestrator→UI | `turn_id,outcome` | 每 turn 恰好一次终态 |
 | `state.turn` | orchestrator→UI | `turn_id,state` | turn domain event |
+| `error` | 双向 | `code,message`；可选归因 `ref_id,turn_id,capture_id,stream_id,sentence_seq` | 可恢复/致命错误 |
 
 `hello.client='orchestrator'` 用于 app 连接模型服务；ASR/TTS 的 `hello.ok.role` 分别为 `asr` / `tts`。UI 连接 runtime 时 `client='ui'`，协议不把所有连接强制成 UI 角色。`/ws/ui` route 只接受 `client='ui'` 的 hello，其余取值按 malformed 处理 close `4400`。
 
 固定 emotion：`neutral` `happy` `sad` `angry` `surprised` `thinking` `shy` `sleepy`。tool action 使用独立的工具扩展消息组。
+
+`error` 归因字段均可选，发送方知道哪个带哪个，不知道的不带：`ref_id` 指回触发错误的输入/对象 id（`input.text.id`、cancel `id`、域不明对象；归因域已知时优先用专用字段）；`turn_id` 归属回合（LLM/管线失败、合成降级、barge_in 目标）；`capture_id` 归属 capture（uplink 中止、ASR 失败）；`stream_id` 归属音频流（`audio.open`/`audio.end`/帧校验失败）；`sentence_seq` 归属回合内句序（单句合成失败降级）。握手期与无法定位的错误不带归因。接收方按归因把异步失败定位到具体 stream/capture/turn，无归因时按 `code`/`message` 兜底处理。
 
 ## 3. Golden 向量
 
@@ -73,6 +76,7 @@ type PlaybackProgress = Envelope & { type: 'playback.progress'; stream_id: strin
 ```
 
 ```json
+{"type":"error","session_id":"sess_01J5M0N8T1RZ8K2W4V7H6X9P3A","event_id":"01J5M0N8T1RZ8K2W4V7H6X9P3B","at_ms":1730000000000,"event_seq":42,"code":"TTS_FAILED","message":"synthesis failed","ref_id":"r_01J5M0N8T1RZ8K2W4V7H6X9P3F","turn_id":"t_01J5M0N8T1RZ8K2W4V7H6X9P3C","capture_id":"cap_01J5M0N8T1RZ8K2W4V7H6X9P3D","stream_id":"st_01J5M0N8T1RZ8K2W4V7H6X9P3E","sentence_seq":2}
 ```
 
 ## 4. 认证、Origin 与 session restore

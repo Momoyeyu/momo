@@ -805,10 +805,14 @@ async fn uplink_seq_gap_aborts_capture() {
     // 跳过 seq 1：gap 必须中止 capture（stale 规则）。
     send_audio(&mut conn, 2, 1600, &[0x44; 1600], false).await;
 
+    // UI 侧：error{BAD_MESSAGE} 带 capture_id/stream_id 归因（#132）
+    // + control.cancel{capture} + capture turn 收尾。
     let msgs = recv_until(&mut conn, |m| matches!(m, Msg::TurnFinished(_))).await;
     assert!(msgs.iter().any(|m| matches!(
         m,
         Msg::Error(e) if e.code == ErrorCode::BadMessage
+            && e.capture_id.as_deref() == Some("cap_g")
+            && e.stream_id.as_deref() == Some(stream_id().as_str())
     )));
     assert!(msgs.iter().any(|m| matches!(
         m,

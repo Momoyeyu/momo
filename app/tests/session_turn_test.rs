@@ -257,6 +257,8 @@ async fn no_llm_fails_turn_with_finished() {
     send(&handle, input_text("in_1", "你好")).await;
     let msgs = recv_until(&mut rx, |m| matches!(m, Msg::TurnFinished(_))).await;
 
+    // error{MODEL_UNREACHABLE} 先行且归因到失败回合（#132），
+    // turn.finished(failed) 恰好一次。
     let finished: Vec<_> = msgs
         .iter()
         .filter(|m| matches!(m, Msg::TurnFinished(_)))
@@ -266,6 +268,11 @@ async fn no_llm_fails_turn_with_finished() {
         panic!("expected turn.finished");
     };
     assert_eq!(f.outcome, TurnOutcome::Failed);
+    assert!(msgs.iter().any(|m| matches!(
+        m,
+        Msg::Error(e) if e.code == ErrorCode::ModelUnreachable
+            && e.turn_id.as_deref() == Some(f.turn_id.as_str())
+    )));
 }
 
 #[tokio::test]
