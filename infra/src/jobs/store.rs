@@ -144,12 +144,11 @@ impl JobStore {
         let text = serde_json::to_string_pretty(rec)
             .map_err(|e| AppError::Config(format!("serialize job {}: {e}", rec.id)))?;
         fs::write(&tmp, text)?;
-        // unix rename 原子覆盖目标，无空洞；Windows rename 不允许覆盖，
-        // 先删后换（保留毫秒级窗口，平台所限）。
-        #[cfg(windows)]
-        if path.exists() {
-            fs::remove_file(&path)?;
-        }
+        // std::fs::rename 在 Windows 上走 MoveFileExW(MOVEFILE_REPLACE_EXISTING)，
+        // 覆盖已存在目标天然成立（读者用 FILE_SHARE_DELETE 共享打开）。
+        // 先删后换反而引入 delete-pending 窗口：remove 后旧名仍挂着，期间
+        // load/rename 撞上来一律 ERROR_ACCESS_DENIED——runner 的 transition
+        // 撞上即退出，job 永卡 preparing（windows CI 实证）。
         fs::rename(&tmp, &path)?;
         Ok(())
     }
