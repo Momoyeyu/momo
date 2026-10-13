@@ -3,7 +3,7 @@
 import "./style.css";
 import { uiToken, wsUrl } from "./config";
 import { WsClient } from "./net/ws-client";
-import { newId } from "./net/protocol";
+import { newId, normalizeEmotion } from "./net/protocol";
 import { AudioPlayer } from "./audio/player";
 import { MicCapture } from "./audio/capture";
 import type { MicCaptureSink } from "./audio/capture";
@@ -42,8 +42,8 @@ client.onServerMsg = (msg) => {
       status.setTurn(msg.state);
       break;
     case "output.sentence":
-      // 字幕气泡按句流式追加（P0：聚合到 assistant 气泡）。
-      chat.addBubble("assistant", msg.text);
+      // 字幕气泡按句流式追加，emotion 渲染到气泡情感位（#94）。
+      chat.addBubble("assistant", msg.text, normalizeEmotion(msg.emotion));
       break;
     case "control.cancel":
       // orchestrator 取消 turn/stream：同步停播、清空播放缓冲（protocol §8）。
