@@ -46,9 +46,10 @@ license = { spdx = "apache-2.0", source = "https://huggingface.co/hexgrad/Kokoro
 files = [
   { path = "kokoro-v1_0.pth", sha256 = "496dba118d1a58f5f3db2efc88dbdc216e0483fc89fe6e47ee1f2c53f18ad1e4", size = 327212226 },
   { path = "config.json", sha256 = "5abb01e2403b072bf03d04fde160443e209d7a0dad49a423be15196b9b43c17f", size = 2351 },
-  # 默认音色：af_heart（en）+ zf_xiaoxiao（zh）；其余 voices/*.pt 按声线选用补齐
+  # 默认音色：af_heart（en）+ zf_xiaoxiao（zh）+ jf_alpha（ja）；其余 voices/*.pt 按声线选用补齐
   { path = "voices/af_heart.pt", sha256 = "0ab5709b8ffab19bfd849cd11d98f75b60af7733253ad0d67b12382a102cb4ff", size = 523425 },
   { path = "voices/zf_xiaoxiao.pt", sha256 = "cfaf6f2ded1ee56f1ff94fcd2b0e6cdf32e5b794bdc05b44e7439d44aef5887c", size = 523440 },
+  { path = "voices/jf_alpha.pt", sha256 = "1bf4c9dc69e45ee46183b071f4db766349aac5592acbcfeaf051018048a5d787", size = 523425 },
 ]
 
 [[model]]
