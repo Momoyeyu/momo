@@ -8,8 +8,8 @@
 flowchart TD
     PRODUCT["00-context<br/>产品 / 路线 / ADR / 研究"] --> ARCH["01-architecture<br/>系统 / 桌面 / 运行时 / 协议 / 流程 / 配置"]
     ARCH --> REPOS["02-repos<br/>模块实现边界"]
-    ARCH --> PHASES["03-phases<br/>P0 / P1 / P2 与主题入口"]
-    PHASES --> TRACKS["04-tracks<br/>persona / voice"]
+    ARCH --> FEATURES["03-features<br/>体验主题与扩展方向入口"]
+    FEATURES --> TRACKS["04-tracks<br/>persona / voice"]
     REPOS --> OPS["05-ops<br/>部署 / 降级 / 模型 / 借用"]
     PRODUCT --> MGMT["06-management<br/>工程状态与项目协作"]
     ARCH -.-> SITE["site/docs/guide<br/>VitePress include wrappers"]

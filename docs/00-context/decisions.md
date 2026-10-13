@@ -92,9 +92,9 @@ flowchart TD
 
 ### ADR-019 为外部 ingress/egress 预留过滤边界
 
-- **决策**：P0 本地单用户 turn core 不绑定平台过滤业务；未来 streaming adapter 若接外部输入，必须在 adapter 边界实装输入/输出过滤与一键熔断。
+- **决策**：本地单用户 turn core 不绑定平台过滤业务；未来 streaming adapter 若接外部输入，必须在 adapter 边界实装输入/输出过滤与一键熔断。
 - **理由**：外部内容的风险模型与本地 companion 不同，过滤必须在公开接入前完成，同时不能污染 turn core。
-- **被否**：把平台过滤写进 P0 runtime；公开接入后再补。
+- **被否**：把平台过滤写进 turn core runtime；公开接入后再补。
 
 ### ADR-021 无 LLM 网关，编排器直连大脑 OpenAI 端点
 
@@ -122,17 +122,17 @@ flowchart TD
 - **理由**：CPU 就够不占显卡，语言覆盖满足中/英/日要求。
 - **被否**：Whisper turbo（~6GB VRAM 或 CPU 慢档；语言广度不够时再评估）；云端 ASR（违背本地优先）。MeloTTS 的否决见 ADR-010。
 
-### ADR-010 TTS 梯队：CosyVoice3 首选 / GPT-SoVITS 备选 / Kokoro+F5 兜底 / edge-tts 仅 P0
+### ADR-010 TTS 梯队：CosyVoice3 首选 / GPT-SoVITS 备选 / Kokoro+F5 兜底 / edge-tts 仅过渡
 
-- **决策**：目标是声线克隆型 TTS。首选 **Fun-CosyVoice3-0.5B**（9 语言含中日英、双向流式官方标称 150ms、instruct 情感控制、有训练脚本；实际部署需求**待实测**）；备选 **GPT-SoVITS**（MIT，zh/en/ja/ko/yue，官方标 4060Ti RTF 0.028，零样本 5s/少样本 1min，生态最成熟）；已实测兜底 **Kokoro-82M**（实测 2026-10-10：首包 209ms、RTF 0.023、VRAM 0.76GB）与 **F5-TTS v1**（实测：零样本 RTF 0.535、VRAM 0.8GB）；edge-tts（实测：首包 1937ms）仅 P0 过渡。
+- **决策**：目标是声线克隆型 TTS。首选 **Fun-CosyVoice3-0.5B**（9 语言含中日英、双向流式官方标称 150ms、instruct 情感控制、有训练脚本；实际部署需求**待实测**）；备选 **GPT-SoVITS**（MIT，zh/en/ja/ko/yue，官方标 4060Ti RTF 0.028，零样本 5s/少样本 1min，生态最成熟）；已实测兜底 **Kokoro-82M**（实测 2026-10-10：首包 209ms、RTF 0.023、VRAM 0.76GB）与 **F5-TTS v1**（实测：零样本 RTF 0.535、VRAM 0.8GB）；edge-tts（实测：首包 1937ms）仅作管线过渡。
 - **理由**：克隆声线是产品目标；梯队保证每一档都有已验证退路。
 - **被否**：**MeloTTS**（laptop 无 sudo，fugashi 依赖系统 MeCab 装不了——已否决）；edge-tts 长期用（1937ms 首包远超 1.5s 指标，且依赖外网）。
 
-### ADR-011 P0 使用 Tauri 2 桌面宿主，浏览器作为预览 host
+### ADR-011 Tauri 2 桌面宿主，浏览器作为预览 host
 
 - **决策**：Tauri 2 桌面宿主管理透明窗口、system menu、拖拽/缩放、置顶和有可靠恢复入口时的可选点击穿透；浏览器用于网站与开发预览。平台能力不支持时使用普通可见窗口，menu 不可用时禁用点击穿透。
 - **理由**：桌面在场感、权限、tray escape 与生命周期是产品闭环，不是后续包装。
-- **被否**：把 Tauri 延后（会把 P0 退化为浏览器 chatbot）；分别开发原生客户端；Electron。
+- **被否**：把 Tauri 延后（会把产品退化为浏览器 chatbot）；分别开发原生客户端；Electron。
 
 ### ADR-012 Live2D = Pixi 7 adapter + 官方许可 sample；口型来自实际播放
 
@@ -140,19 +140,19 @@ flowchart TD
 - **理由**：先复用官方资源验证真实 Live2D，同时保持角色与 renderer 可替换。Runtime Core、sample 与应用代码许可证分别核验。
 - **被否**：自研 Runtime；用假 CSS 角色替代实际 Live2D；让 emotion motion 覆盖 lipsync。
 
-### ADR-014 P1 用户可控记忆 = 本地正文 + 可删除索引
+### ADR-014 用户可控记忆 = 本地正文 + 可删除索引
 
-- **决策**：P0 只保存本地 transcript/persona；P1 的 memory 先 proposal、用户确认再保存，并支持编辑、检索、删除，删除须同时清理正文和 vector/index。embedding 可复用 sqlite-vec + BGE-M3 adapter。
+- **决策**：基础闭环只保存本地 transcript/persona；用户可控 memory 先 proposal、用户确认再保存，并支持编辑、检索、删除，删除须同时清理正文和 vector/index。embedding 可复用 sqlite-vec + BGE-M3 adapter。
 - **理由**：熟悉感必须可解释、可纠正、可撤销。
 - **被否**：静默自动记忆；只删 UI 记录但保留向量索引；外部常驻向量库。
 
-### ADR-015 P2 工具与截图逐次授权
+### ADR-015 工具与截图逐次授权
 
 - **决策**：工具/action 使用独立扩展消息组；每次请求向用户展示动作、范围和数据去向，只有 allow 后执行，deny/cancel/late-result 都有显式路径。
 - **理由**：LLM 不直接执行；用户授权与结构化 schema 共同形成安全边界。
 - **被否**：LLM 直接执行代码；本地可信即默认永久授权；把工具业务写进 turn core。
 
-### ADR-016 P2 截图 = 用户逐次授权的 provider adapter
+### ADR-016 截图 = 用户逐次授权的 provider adapter
 
 - **决策**：截图先展示采集范围与数据去向；allow once 后交给可配置 vision provider，不自建 VLM。
 - **理由**：屏幕内容敏感，授权边界比具体 provider 更稳定。

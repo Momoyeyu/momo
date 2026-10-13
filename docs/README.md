@@ -29,7 +29,7 @@ flowchart LR
 ## 阅读顺序
 
 1. [产品定义](./00-context/product.md)
-2. [P0/P1/P2 路线图](./00-context/roadmap.md)
+2. [路线图](./00-context/roadmap.md)
 3. [总体架构](./01-architecture/system.md)
 4. [桌面宿主](./01-architecture/desktop.md)
 5. [运行时](./01-architecture/runtime.md)
@@ -45,7 +45,7 @@ flowchart LR
 | `00-context/` | 产品、路线、研究、ADR |
 | `01-architecture/` | 系统、桌面、运行时、协议、操作路径、边界、配置 |
 | `02-repos/` | monorepo 各模块设计 |
-| `03-phases/` | P0/P1/P2 优先级与记忆、工具、直播主题入口 |
+| `03-features/` | 桌面闭环、熟悉感、扩展能力与记忆、工具、直播主题入口 |
 | `04-tracks/` | persona 与授权声线轨道 |
 | `05-ops/` | 部署、降级、模型获取、借用机器纪律 |
 | `06-management/` | 工程状态与 GitHub Project 协作 |
