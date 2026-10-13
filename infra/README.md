@@ -43,7 +43,7 @@ momoctl config check [--root PATH]   # env schema 漂移检查
 
 - `profiles/normal.toml` / `degraded.toml`：serve 组件表（组件、启动顺序、env 覆盖）
 - `src/cmds/`：子命令；`src/serve/`：进程管理与 profile 解析
-- 状态目录固定 `${XDG_STATE_HOME:-~/.local/state}/momo/`（pid/、logs/、active_profile）
+- 状态目录固定 `${XDG_STATE_HOME:-~/.local/state}/momo/`（pid/、logs/、active_profile；口径与各平台落点见 [momo-infra.md「状态目录与进程管理」](../docs/02-repos/momo-infra.md#状态目录与进程管理)）；探活/终止走系统调用，不依赖外部 kill/ps/tasklist
 
 ## 开发
 

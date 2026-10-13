@@ -1,6 +1,8 @@
 //! spawn/kill/pidfile/日志落盘。
-//! 状态目录固定 XDG 默认：`${XDG_STATE_HOME:-~/.local/state}/momo/`
-//! （pid/、logs/、active_profile），不提供 env 覆盖（momo-infra.md）。
+//! 状态目录：`${XDG_STATE_HOME:-~/.local/state}/momo/`（pid/、logs/、active_profile），
+//! 不提供 `MOMO_*` 覆盖键（口径见 momo-infra.md「状态目录与进程管理」）。
+//! 探活/终止走系统调用（unix `waitpid`+`kill(2)`；windows `OpenProcess`/`TerminateProcess`），
+//! 不依赖 PATH 上的外部命令（kill/ps/tasklist 均已移除）。
 
 use std::fs;
 use std::path::PathBuf;
