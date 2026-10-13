@@ -22,10 +22,19 @@ const CSRF: &str = "test-csrf-token";
 const TOKEN: &str = "test-web-token";
 
 fn state(token: Option<&str>) -> Arc<WebState> {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static N: AtomicUsize = AtomicUsize::new(0);
+    let dir = std::env::temp_dir().join(format!(
+        "momoctl-contract-state-{}-{}",
+        std::process::id(),
+        N.fetch_add(1, Ordering::SeqCst)
+    ));
+    std::fs::create_dir_all(&dir).unwrap();
     Arc::new(WebState {
         events_tx: broadcast::channel(web::EVENT_CHANNEL_CAP).0,
         token: token.map(Into::into),
         csrf_token: CSRF.into(),
+        env_link: dir.join(".env"),
     })
 }
 

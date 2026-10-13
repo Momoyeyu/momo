@@ -487,17 +487,81 @@ pub struct LogStreamQuery {
     pub cursor: Option<u64>,
 }
 
+// ---------- 配置页（/api/config，issue #56/#81） ----------
+
+/// `GET /api/config` 单条 env 项：value 已过掩码，敏感键绝不回显明文
+/// （config.md §4：前 4 位 + `…`，短值全遮）；未设置（缺失或空值）为 null。
+#[derive(Debug, Serialize)]
+pub struct ConfigEntry {
+    pub key: String,
+    pub value: Option<String>,
+    pub sensitive: bool,
+    /// 文件中存在且值非空（与 EnvCfg::get 的 set/unset 口径一致）。
+    pub set: bool,
+}
+
+/// `GET /api/config[?profile=]`：`.env.<profile>` 当前值视图。
+/// `?profile=` 缺省按 `active_profile` 状态文件定位。
+#[derive(Debug, Serialize)]
+pub struct ConfigReport {
+    pub schema: u8,
+    /// 本次读取的档位。
+    pub profile: String,
+    /// `active_profile` 状态文件解析结果（serve/switch 写）。
+    pub active_profile: String,
+    /// 读取/写回的 `.env.<profile>` 路径。
+    pub env_file: String,
+    /// 目标文件是否存在（不存在时 entries 全 unset，PUT 会 404）。
+    pub file_exists: bool,
+    pub entries: Vec<ConfigEntry>,
+}
+
+/// `PUT /api/config` 请求体：`changes` 只放要写入的键；
+/// 敏感键不回显——未变更的敏感键不要放进 changes（缺省即保持原值）。
+#[derive(Debug, Deserialize)]
+pub struct ConfigPutRequest {
+    #[serde(default)]
+    pub profile: Option<String>,
+    #[serde(default)]
+    pub changes: BTreeMap<String, String>,
+}
+
+/// `POST /api/config/rollback` 请求体（可整 body 为空）。
+#[derive(Debug, Deserialize)]
+pub struct ConfigRollbackRequest {
+    #[serde(default)]
+    pub profile: Option<String>,
+}
+
+/// `PUT /api/config` / `POST /api/config/rollback` 响应：掩码 diff + 生效提示。
+#[derive(Debug, Serialize)]
+pub struct ConfigWriteReport {
+    pub schema: u8,
+    pub profile: String,
+    pub env_file: String,
+    /// PUT：写前新建的 `.bak`；rollback：恢复来源的 `.bak`。
+    pub backup: String,
+    /// 掩码后的 env 差异（from→to；敏感键同 GET 口径打码）。
+    pub diff: Vec<DiffEntry>,
+    /// 「env 变更经重启生效」提示（config.md §5：配置变更 = 改 env + 重启）。
+    pub restart_hint: String,
+}
+
 /// 统一错误体。
 #[derive(Debug, Serialize)]
 pub struct ErrorBody {
     /// 机器可读短标识：unauthorized / forbidden / csrf / not_found /
-    /// not_implemented / method_not_allowed / bad_request / internal。
+    /// not_implemented / method_not_allowed / bad_request /
+    /// validation_failed / internal。
     pub code: String,
     /// 面向用户的一句话说明（英文）。
     pub message: String,
+    /// 字段级错误归因（validation_failed 时下发）：字段名 → 错误说明。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fields: Option<BTreeMap<String, String>>,
 }
 
-/// 统一错误响应：`{schema:1, error:{code,message}}`。
+/// 统一错误响应：`{schema:1, error:{code,message[,fields]}}`。
 #[derive(Debug, Serialize)]
 pub struct ApiError {
     pub schema: u8,
@@ -511,6 +575,23 @@ impl ApiError {
             error: ErrorBody {
                 code: code.into(),
                 message: message.into(),
+                fields: None,
+            },
+        }
+    }
+
+    /// 字段级错误（422）：`error.fields` 按键名归因，前端逐字段回显。
+    pub fn with_fields(
+        code: impl Into<String>,
+        message: impl Into<String>,
+        fields: BTreeMap<String, String>,
+    ) -> Self {
+        Self {
+            schema: SCHEMA_VERSION,
+            error: ErrorBody {
+                code: code.into(),
+                message: message.into(),
+                fields: Some(fields),
             },
         }
     }

@@ -36,6 +36,8 @@ async fn serve(args: &WebArgs, token: Option<String>, ctx: &super::Ctx) -> Resul
         token: token.clone(),
         // 进程级 CSRF token：每次启动重签发；GET /api/csrf 下发给已过认证的客户端。
         csrf_token: ulid::Ulid::new().to_string(),
+        // .env 定位与 `momoctl switch` 同口径；`.env.<profile>` 在其同目录。
+        env_link: crate::env_file::resolve_env_path(ctx.env_file.as_deref()),
     });
     let app = web::router(state);
 

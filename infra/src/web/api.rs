@@ -1,19 +1,22 @@
 //! `/api/*` 路由树基座：本文件是唯一注册点。
 //! 已实装：`healthz`/`readyz`/`events`/`csrf`/`doctor`/`serve status`/
-//! `serve components`/`models`（只读）、`serve {up|down|restart}`/
-//! `models/pull`（POST）、`serve logs/{name}/stream`（SSE）与 `jobs`
-//! （REST + SSE 日志）；`config` 与其余子路由为 501 占位——真实 handler
-//! 由后续 issue 挂接。handler 只做 HTTP↔core 适配，业务复用 `cmds`/`serve`/
-//! `models`/`manifest`/`env_cfg` 现有 core 函数；出入参一律 `api::dto`
+//! `serve components`/`models`/`config`（只读）、`serve {up|down|restart}`/
+//! `models/pull`/`config`(PUT)/`config/rollback`（POST，config 写回走
+//! env_file 校验→.bak→原子写）、`serve logs/{name}/stream`（SSE）与 `jobs`
+//! （REST + SSE 日志）；其余子路由为 501 占位——真实 handler 由后续 issue
+//! 挂接。handler 只做 HTTP↔core 适配，业务复用 `cmds`/`serve`/`models`/
+//! `manifest`/`env_cfg`/`env_file` 现有 core 函数；出入参一律 `api::dto`
 //! 结构化类型（不手写 `json!`），与 CLI `--json` 同 schema；错误统一
 //! `{schema:1, error:{code,message}}`。
 
+use std::collections::BTreeMap;
 use std::convert::Infallible;
 use std::io::{Read, Seek, SeekFrom};
+use std::path::Path;
 use std::sync::Arc;
 
 use axum::body::Bytes;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path as AxumPath, Query, Request, State};
 use axum::http::{HeaderMap, Method, StatusCode, Uri};
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
@@ -25,7 +28,14 @@ use tokio_stream::{Stream, StreamExt};
 use super::WebState;
 use crate::api::dto;
 use crate::cli::Profile;
+use crate::env_file;
 use crate::output::AppError;
+
+/// PUT/POST body 上限（env 写回 diff 很小，256 KiB 足够防御滥用）。
+const BODY_LIMIT: usize = 256 * 1024;
+
+/// env 写回/回滚响应的生效提示（config.md §5：配置变更 = 改 env + 重启）。
+const RESTART_HINT: &str = "env changes take effect after `momoctl serve restart`";
 
 /// `/api` 子树。挂到外层 `nest("/api", ..)`；子树内未命中走 JSON 404，
 /// 与 SPA fallback（index.html）分流，互不误判。
@@ -57,7 +67,9 @@ pub fn router(state: Arc<WebState>) -> Router {
         .route("/models/{*rest}", any(placeholder))
         // jobs 已挂真实 handler（web/jobs.rs）；其余命名空间仍是 501 占位。
         .nest("/jobs", super::jobs::router())
-        .route("/config", any(placeholder))
+        // 配置页：GET 读当前值（敏感掩码）；PUT 校验→.bak→原子写回；POST rollback 恢复 .bak。
+        .route("/config", any(config))
+        .route("/config/rollback", any(config_rollback))
         .route("/config/{*rest}", any(placeholder))
         .fallback(not_found)
         .with_state(state)
@@ -88,6 +100,9 @@ pub(crate) async fn index() -> Json<dto::IndexReport> {
             "GET /api/jobs/{id}",
             "POST /api/jobs/{id}/cancel",
             "GET /api/jobs/{id}/logs?cursor= (SSE)",
+            "GET /api/config",
+            "PUT /api/config",
+            "POST /api/config/rollback",
             "/api/config/* (placeholder)",
         ],
     })
@@ -196,7 +211,7 @@ async fn serve_components(method: Method, Query(q): Query<dto::ProfileQuery>) ->
 /// fail 是数据非 HTTP 错误，恒 200；`only` 未命中组件等用法错误 → 400。
 async fn serve_action(
     method: Method,
-    Path(action): Path<String>,
+    AxumPath(action): AxumPath<String>,
     Query(q): Query<dto::ProfileQuery>,
     body: Bytes,
 ) -> Response {
@@ -267,7 +282,7 @@ async fn serve_action(
 async fn serve_log_stream(
     method: Method,
     State(_state): State<Arc<WebState>>,
-    Path(name): Path<String>,
+    AxumPath(name): AxumPath<String>,
     Query(q): Query<dto::LogStreamQuery>,
     headers: HeaderMap,
 ) -> Response {
@@ -484,6 +499,354 @@ async fn models_pull(method: Method, body: Bytes) -> Response {
         ),
     }
 }
+// ---------- 配置页：/api/config（issue #56） ----------
+//
+// 读写对象恒为 `.env` 同目录的 `.env.<profile>`（profile 白名单，
+// env_file::profile_env_path 构造，无路径穿越面）。GET/日志/diff
+// 对敏感键只回掩码（前 4 位 + `…`），绝不回显明文（config.md §4）。
+
+/// `GET|PUT /api/config` 方法门控；其余方法 → 405 JSON。
+/// 注意：`&Request` 不得跨 `.await` 持有（Body 是 UnsyncBoxBody，!Sync），
+/// 入口先把 method/query 提成 owned 值再分派。
+async fn config(State(state): State<Arc<WebState>>, req: Request) -> Response {
+    let q_profile = query_profile(req.uri());
+    match *req.method() {
+        Method::GET | Method::HEAD => config_get(&state, q_profile).await,
+        Method::PUT => config_put(&state, req, q_profile).await,
+        ref m => error(
+            StatusCode::METHOD_NOT_ALLOWED,
+            "method_not_allowed",
+            format!("{m} is not allowed on /api/config (GET|PUT only)"),
+        ),
+    }
+}
+
+/// `GET /api/config[?profile=]`：返回 `{profile, active_profile, env_file,
+/// file_exists, entries:[{key, value, sensitive, set}]}`，value 已过掩码。
+async fn config_get(state: &Arc<WebState>, q_profile: Option<String>) -> Response {
+    let profile = match resolve_profile(q_profile.as_deref()) {
+        Ok(p) => p,
+        Err(msg) => return error(StatusCode::BAD_REQUEST, "bad_request", msg),
+    };
+    let env_link = state.env_link.clone();
+    match tokio::task::spawn_blocking(move || build_config_report(&env_link, &profile)).await {
+        Ok(Ok(report)) => Json(report).into_response(),
+        Ok(Err(resp)) => *resp,
+        Err(e) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("config read task failed: {e}"),
+        ),
+    }
+}
+
+/// `PUT /api/config {profile?, changes:{key:value}}`：
+/// 先校验（键须 `MOMO_` 前缀且存在于 config.schema.toml；值按 schema 值域复核），
+/// 非法 → 422 字段级归因、不写盘；通过 → `.bak` 备份 → tmp+rename 原子写 → 掩码 diff。
+async fn config_put(state: &Arc<WebState>, req: Request, q_profile: Option<String>) -> Response {
+    let body = match axum::body::to_bytes(req.into_body(), BODY_LIMIT).await {
+        Ok(b) => b,
+        Err(e) => {
+            return error(
+                StatusCode::BAD_REQUEST,
+                "bad_request",
+                format!("cannot read request body: {e}"),
+            )
+        }
+    };
+    let put: dto::ConfigPutRequest = match serde_json::from_slice(&body) {
+        Ok(v) => v,
+        Err(e) => {
+            return error(
+                StatusCode::BAD_REQUEST,
+                "bad_request",
+                format!("invalid JSON body: {e}"),
+            )
+        }
+    };
+    if put.changes.is_empty() {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "bad_request",
+            "changes must not be empty",
+        );
+    }
+    let profile = match resolve_profile(put.profile.as_deref().or(q_profile.as_deref())) {
+        Ok(p) => p,
+        Err(msg) => {
+            let mut fields = BTreeMap::new();
+            fields.insert("profile".to_string(), msg);
+            return fields_error(fields);
+        }
+    };
+    // 键存在性 + schema 值域复核（与前端即时校验同一份 schema 单源）。
+    let env_dir = env_dir(&state.env_link);
+    let schema = match env_file::load_schema(env_dir) {
+        Ok(s) => s,
+        Err(e) => return *internal(e),
+    };
+    let mut fields = BTreeMap::new();
+    for (k, v) in &put.changes {
+        if !k.starts_with("MOMO_") {
+            fields.insert(k.clone(), "key must start with MOMO_".to_string());
+            continue;
+        }
+        match schema.get(k) {
+            None => {
+                fields.insert(k.clone(), "unknown key (not in config.schema.toml)".into());
+            }
+            Some(spec) => {
+                if let Err(msg) = env_file::validate_value(spec, v) {
+                    fields.insert(k.clone(), msg);
+                }
+            }
+        }
+    }
+    if !fields.is_empty() {
+        return fields_error(fields);
+    }
+
+    let sensitive = env_file::sensitive_keys(Some(&schema));
+    let env_link = state.env_link.clone();
+    let changes = put.changes;
+    match tokio::task::spawn_blocking(move || {
+        apply_config_changes(&env_link, &profile, &changes, &sensitive)
+    })
+    .await
+    {
+        Ok(Ok(report)) => Json(report).into_response(),
+        Ok(Err(resp)) => *resp,
+        Err(e) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("config write task failed: {e}"),
+        ),
+    }
+}
+
+/// `POST /api/config/rollback {profile?}`：从 `.env.<profile>.bak` 原子恢复，
+/// 返回掩码 diff；无备份 → 404。GET 等非 POST → 405。
+async fn config_rollback(State(state): State<Arc<WebState>>, req: Request) -> Response {
+    if *req.method() != Method::POST {
+        return error(
+            StatusCode::METHOD_NOT_ALLOWED,
+            "method_not_allowed",
+            format!(
+                "{} is not allowed on /api/config/rollback (POST only)",
+                req.method()
+            ),
+        );
+    }
+    let q_profile = query_profile(req.uri());
+    let body = match axum::body::to_bytes(req.into_body(), BODY_LIMIT).await {
+        Ok(b) => b,
+        Err(e) => {
+            return error(
+                StatusCode::BAD_REQUEST,
+                "bad_request",
+                format!("cannot read request body: {e}"),
+            )
+        }
+    };
+    let rb: dto::ConfigRollbackRequest = if body.is_empty() {
+        dto::ConfigRollbackRequest { profile: None }
+    } else {
+        match serde_json::from_slice(&body) {
+            Ok(v) => v,
+            Err(e) => {
+                return error(
+                    StatusCode::BAD_REQUEST,
+                    "bad_request",
+                    format!("invalid JSON body: {e}"),
+                )
+            }
+        }
+    };
+    let profile = match resolve_profile(rb.profile.as_deref().or(q_profile.as_deref())) {
+        Ok(p) => p,
+        Err(msg) => {
+            let mut fields = BTreeMap::new();
+            fields.insert("profile".to_string(), msg);
+            return fields_error(fields);
+        }
+    };
+    let env_link = state.env_link.clone();
+    match tokio::task::spawn_blocking(move || apply_config_rollback(&env_link, &profile)).await {
+        Ok(Ok(report)) => Json(report).into_response(),
+        Ok(Err(resp)) => *resp,
+        Err(e) => error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "internal",
+            format!("config rollback task failed: {e}"),
+        ),
+    }
+}
+
+// ---------- 配置页 core（blocking 池执行的文件 IO） ----------
+
+/// `.env` 所在目录（`.env.<profile>` 与 schema 查找都以它为锚）。
+fn env_dir(env_link: &Path) -> &Path {
+    env_link.parent().unwrap_or(Path::new("."))
+}
+
+/// `?profile=` 提取（解析失败按缺省处理）。
+fn query_profile(uri: &axum::http::Uri) -> Option<String> {
+    Query::<dto::ProfileQuery>::try_from_uri(uri)
+        .ok()
+        .and_then(|q| q.0.profile)
+}
+
+/// profile 解析：显式值限 `normal|degraded`（大小写归一）；
+/// 缺省按 `active_profile` 状态文件 > MOMO_PROFILE > normal。
+fn resolve_profile(param: Option<&str>) -> Result<String, String> {
+    match param.map(|p| p.to_ascii_lowercase()) {
+        Some(p) if env_file::PROFILES.contains(&p.as_str()) => Ok(p),
+        Some(p) => Err(format!("invalid profile '{p}'; expected normal|degraded")),
+        None => Ok(env_file::active_profile()),
+    }
+}
+
+/// GET core：`.env.<profile>` → masked entries。文件缺失时 entries 全 unset
+/// （`file_exists:false` 供前端提示；PUT 对缺失文件 404）。
+/// 错误侧 Box<Response>（result_large_err：Response >128B）。
+fn build_config_report(env_link: &Path, profile: &str) -> Result<dto::ConfigReport, Box<Response>> {
+    let path = env_file::profile_env_path(env_link, profile).map_err(internal)?;
+    let file_exists = path.is_file();
+    let map = if file_exists {
+        env_file::parse_env_file(&path).map_err(internal)?
+    } else {
+        BTreeMap::new()
+    };
+    let schema = env_file::load_schema(env_dir(env_link)).map_err(internal)?;
+    let sensitive = env_file::sensitive_keys(Some(&schema));
+    let mut entries = Vec::with_capacity(schema.key.len() + map.len());
+    // schema 键序在前（页面按 schema 渲染），文件内 schema 外键
+    // （passthrough/游离键）按字典序列尾——只读可见，PUT 拒收非 MOMO_ 键。
+    for k in &schema.key {
+        entries.push(config_entry(&k.name, &map, &sensitive));
+    }
+    for k in map.keys().filter(|k| schema.get(k).is_none()) {
+        entries.push(config_entry(k, &map, &sensitive));
+    }
+    Ok(dto::ConfigReport {
+        schema: dto::SCHEMA_VERSION,
+        profile: profile.to_string(),
+        active_profile: env_file::active_profile(),
+        env_file: path.display().to_string(),
+        file_exists,
+        entries,
+    })
+}
+
+/// 单条 entry：非空取值掩码（敏感）或原值；缺失/空 → set=false、value=null。
+fn config_entry(
+    key: &str,
+    map: &BTreeMap<String, String>,
+    sensitive: &std::collections::BTreeSet<String>,
+) -> dto::ConfigEntry {
+    let raw = map.get(key).filter(|v| !v.is_empty());
+    let hide = sensitive.contains(key) || env_file::is_sensitive_name(key);
+    dto::ConfigEntry {
+        key: key.to_string(),
+        value: raw.map(|v| if hide { env_file::mask(v) } else { v.clone() }),
+        sensitive: hide,
+        set: raw.is_some(),
+    }
+}
+
+/// PUT core：备份 → 保序重写 → 原子替换 → 掩码 diff。
+/// 校验已在 handler 完成；此处只做文件 IO，任何一步失败 active 不变。
+fn apply_config_changes(
+    env_link: &Path,
+    profile: &str,
+    changes: &BTreeMap<String, String>,
+    sensitive: &std::collections::BTreeSet<String>,
+) -> Result<dto::ConfigWriteReport, Box<Response>> {
+    let path = env_file::profile_env_path(env_link, profile).map_err(internal)?;
+    if !path.is_file() {
+        return Err(Box::new(error(
+            StatusCode::NOT_FOUND,
+            "not_found",
+            format!(
+                "{} not found; run `momoctl switch --to {profile}` to create it",
+                path.display()
+            ),
+        )));
+    }
+    let old = env_file::parse_env_file(&path).map_err(internal)?;
+    let text = std::fs::read_to_string(&path)
+        .map_err(AppError::from)
+        .map_err(internal)?;
+    let bak = env_file::backup_file(&path).map_err(internal)?;
+    let new_text = env_file::apply_changes(&text, changes);
+    env_file::atomic_write(&path, &new_text).map_err(internal)?;
+    let new = env_file::parse_env_file(&path).map_err(internal)?;
+    Ok(dto::ConfigWriteReport {
+        schema: dto::SCHEMA_VERSION,
+        profile: profile.to_string(),
+        env_file: path.display().to_string(),
+        backup: bak.display().to_string(),
+        diff: env_file::env_diff(&old, &new, sensitive),
+        restart_hint: RESTART_HINT.to_string(),
+    })
+}
+
+/// rollback core：`.bak` → 原子恢复 active（bak 保留），返回掩码 diff。
+fn apply_config_rollback(
+    env_link: &Path,
+    profile: &str,
+) -> Result<dto::ConfigWriteReport, Box<Response>> {
+    let path = env_file::profile_env_path(env_link, profile).map_err(internal)?;
+    let bak = env_file::backup_path(&path);
+    if !bak.is_file() {
+        return Err(Box::new(error(
+            StatusCode::NOT_FOUND,
+            "not_found",
+            format!("no backup {}; nothing to roll back", bak.display()),
+        )));
+    }
+    let old = if path.is_file() {
+        env_file::parse_env_file(&path).map_err(internal)?
+    } else {
+        BTreeMap::new()
+    };
+    let from = env_file::restore_backup(&path).map_err(internal)?;
+    let new = env_file::parse_env_file(&path).map_err(internal)?;
+    let schema = env_file::load_schema(env_dir(env_link)).map_err(internal)?;
+    let sensitive = env_file::sensitive_keys(Some(&schema));
+    Ok(dto::ConfigWriteReport {
+        schema: dto::SCHEMA_VERSION,
+        profile: profile.to_string(),
+        env_file: path.display().to_string(),
+        backup: from.display().to_string(),
+        diff: env_file::env_diff(&old, &new, &sensitive),
+        restart_hint: RESTART_HINT.to_string(),
+    })
+}
+
+/// 字段级校验错误：422 + `error.fields`（键 → 归因），前端逐字段回显。
+fn fields_error(fields: BTreeMap<String, String>) -> Response {
+    (
+        StatusCode::UNPROCESSABLE_ENTITY,
+        Json(dto::ApiError::with_fields(
+            "validation_failed",
+            "config changes failed validation; no file was modified",
+            fields,
+        )),
+    )
+        .into_response()
+}
+
+/// core IO/AppError → 500（校验错误在 handler 已拦，走到这里均为运行时失败）。
+/// 返回 Box：收窄大 Err 变体（result_large_err：Response >128B）。
+fn internal(e: AppError) -> Box<Response> {
+    Box::new(error(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "internal",
+        e.to_string(),
+    ))
+}
+
 
 /// GET/HEAD → Some(profile 解析结果)；其余方法或非法 profile → None
 /// （由 `bad_method_or_profile` 产出对应错误响应）。

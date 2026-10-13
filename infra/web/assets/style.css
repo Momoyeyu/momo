@@ -340,8 +340,7 @@ table.list td.num {
 }
 
 .modal.hidden {
-  display: none;
-}
+  display: none;}
 
 .modal-box {
   background: var(--panel);
@@ -369,4 +368,110 @@ table.list td.num {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+.hidden {
+  display: none;
+}
+.muted {
+  color: #8b949e;
+}
+.err {
+  color: #ff7b72;
+}
+
+/* 配置页 */
+.authbar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.6rem;
+  margin-bottom: 1rem;
+  border: 1px solid #d29922;
+  border-radius: 6px;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+.banner {
+  padding: 0.7rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+}
+.banner.ok {
+  border-color: #238636;
+  background: #12261e;
+}
+.banner.err {
+  border-color: #f85149;
+  background: #2d1517;
+}
+.banner.info {
+  border-color: #1f6feb;
+  background: #111d2e;
+}
+.banner ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.cfg-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.cfg-table td {
+  padding: 0.35rem 0.4rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #21262d;
+}
+.cfg-table td:first-child {
+  width: 34%;
+}
+.cfg-table input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.cfg-table input:disabled {
+  opacity: 0.55;
+}
+.tag {
+  font-size: 0.72rem;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 0 0.3rem;
+  vertical-align: middle;
+}
+.field-err {
+  color: #ff7b72;
+  font-size: 0.8rem;
+}
+
+input,
+select,
+button {
+  font: inherit;
+  color: inherit;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+}
+button {
+  cursor: pointer;
+  background: #21262d;
+}
+button:hover {
+  background: #30363d;
+}
+button.primary {
+  background: #1f6feb;
+  border-color: #1f6feb;
+}
+button.primary:hover {
+  background: #388bfd;
 }

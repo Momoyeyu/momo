@@ -8,6 +8,7 @@ pub mod cli;
 pub mod cmds;
 pub mod config_schema;
 pub mod env_cfg;
+pub mod env_file;
 pub mod jobs;
 pub mod manifest;
 pub mod models;

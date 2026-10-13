@@ -8,6 +8,7 @@ pub mod jobs;
 pub mod spa;
 
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use axum::middleware;
@@ -32,6 +33,9 @@ pub struct WebState {
     /// 进程级随机 CSRF token：`GET /api/csrf` 签发，
     /// state-changing 请求须 `X-CSRF-Token` 回带（guard::require_auth）。
     pub csrf_token: String,
+    /// `.env` 链接路径（启动时按 `--env-file` > dotenvy > `./.env` 解析）；
+    /// 配置页读写的 `.env.<profile>` 在其同目录（env_file::profile_env_path）。
+    pub env_link: PathBuf,
 }
 
 /// 组装完整 Router：`/api` 子树集中注册并统一叠认证层，其余路径走 SPA fallback。

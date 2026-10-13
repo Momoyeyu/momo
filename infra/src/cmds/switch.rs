@@ -16,10 +16,11 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use crate::api::dto::{Check, CheckStatus, DiffEntry, Summary, SwitchReport};
+use crate::api::dto::{Check, CheckStatus, Summary, SwitchReport};
 use crate::cli::{ServeCommon, SwitchArgs};
 use crate::config_schema::{self, Schema};
 use crate::env_cfg;
+use crate::env_file;
 use crate::output::{AppError, ExitCode};
 use crate::serve::proc;
 use crate::serve::profile::ServeProfile;
@@ -29,7 +30,7 @@ const ENV_EXAMPLE: &str = include_str!("../../.env.example");
 
 pub fn run(args: &SwitchArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
     let to = args.to.as_str();
-    let env_link = resolve_env_path(ctx.env_file.as_deref());
+    let env_link = env_file::resolve_env_path(ctx.env_file.as_deref());
     let env_dir = env_link
         .parent()
         .map(Path::to_path_buf)
@@ -66,11 +67,12 @@ pub fn run(args: &SwitchArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
     }
 
     // ---- ② 切换前校验（文件自身口径，不混当前进程 env）----
-    let new_map = parse_env_file(&target_path)?;
+    let new_map = env_file::parse_env_file(&target_path)?;
     checks.extend(validate_target(&new_map, to, schema.as_ref()));
 
     // 旧 env 快照（diff 用）：跟随现有 symlink / 普通文件。
-    let old_map = read_link_target(&env_link).and_then(|p| parse_env_file(&p).ok());
+    let old_map =
+        env_file::read_link_target(&env_link).and_then(|p| env_file::parse_env_file(&p).ok());
     let old_profile = old_map
         .as_ref()
         .and_then(|m| m.get("MOMO_PROFILE").cloned())
@@ -136,9 +138,9 @@ pub fn run(args: &SwitchArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
             }
         }
 
-        let sensitive = sensitive_keys(schema.as_ref());
+        let sensitive = env_file::sensitive_keys(schema.as_ref());
         let old = old_map.unwrap_or_default();
-        diff = env_diff(&old, &new_map, &sensitive);
+        diff = env_file::env_diff(&old, &new_map, &sensitive);
 
         // ---- ④ --restart：新 env 生效后 serve down → up ----
         if args.restart && code == 0 {
@@ -171,17 +173,6 @@ pub fn run(args: &SwitchArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
     };
     render(&report, ctx)?;
     Ok(code)
-}
-
-/// .env 定位：`--env-file` > dotenvy 自动发现 > `./.env`。
-fn resolve_env_path(explicit: Option<&Path>) -> PathBuf {
-    if let Some(p) = explicit {
-        return p.to_path_buf();
-    }
-    if let Ok(p) = dotenvy::dotenv() {
-        return p;
-    }
-    PathBuf::from(".env")
 }
 
 /// 目标档生成：模板逐行复制，`KEY=` 行命中覆盖表则替换值并保留行尾注释；
@@ -238,35 +229,6 @@ fn profile_overrides(to: &str) -> Vec<(&'static str, &'static str)> {
             ("MOMO_TTS_PROVIDER", "kokoro"),
         ],
         _ => vec![("MOMO_PROFILE", "normal")],
-    }
-}
-
-/// 解析 env 文件为 key→value（dotenvy 口径；解析失败上抛 config 错误）。
-fn parse_env_file(path: &Path) -> Result<BTreeMap<String, String>, AppError> {
-    let iter = dotenvy::from_path_iter(path)
-        .map_err(|e| AppError::Config(format!("read {}: {e}", path.display())))?;
-    let mut out = BTreeMap::new();
-    for pair in iter {
-        let (k, v) =
-            pair.map_err(|e| AppError::Config(format!("parse {}: {e}", path.display())))?;
-        out.insert(k, v);
-    }
-    Ok(out)
-}
-
-/// `.env` 若是符号链接返回其目标路径（相对则拼同目录）；普通文件/缺失返回自身。
-fn read_link_target(link: &Path) -> Option<PathBuf> {
-    match fs::symlink_metadata(link) {
-        Ok(md) if md.file_type().is_symlink() => {
-            let t = fs::read_link(link).ok()?;
-            Some(if t.is_absolute() {
-                t
-            } else {
-                link.parent().unwrap_or(Path::new(".")).join(t)
-            })
-        }
-        Ok(_) => Some(link.to_path_buf()),
-        Err(_) => None,
     }
 }
 
@@ -466,64 +428,11 @@ fn domain_checks(map: &BTreeMap<String, String>, schema: &Schema) -> Vec<Check> 
     checks
 }
 
-/// 敏感键集合：schema sensitive 标记 ∪ env_cfg::SENSITIVE_KEYS。
-/// schema 缺失时（monorepo 外运行）仍按 `*_API_KEY/*_TOKEN/*_SECRET` 保守打码。
-fn is_sensitive_name(key: &str) -> bool {
-    ["_API_KEY", "_TOKEN", "_SECRET"]
-        .iter()
-        .any(|suf| key.ends_with(suf))
-}
-
-fn sensitive_keys(schema: Option<&Schema>) -> BTreeSet<String> {
-    let mut out: BTreeSet<String> = env_cfg::SENSITIVE_KEYS
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
-    if let Some(s) = schema {
-        out.extend(s.key.iter().filter(|k| k.sensitive).map(|k| k.name.clone()));
-    }
-    out
-}
-
-/// 打码（config.md §4：显示前 4 位 + `…`）。
-fn mask(v: &str) -> String {
-    if v.is_empty() {
-        return "(empty)".into();
-    }
-    if v.len() <= 4 {
-        return "…".into();
-    }
-    format!("{}…", &v[..4])
-}
-
-/// 新旧 env 差异：并集键序，逐键 from→to；敏感键打码。
-fn env_diff(
-    old: &BTreeMap<String, String>,
-    new: &BTreeMap<String, String>,
-    sensitive: &BTreeSet<String>,
-) -> Vec<DiffEntry> {
-    let keys: BTreeSet<&String> = old.keys().chain(new.keys()).collect();
-    let mut out = Vec::new();
-    for k in keys {
-        let (a, b) = (old.get(k), new.get(k));
-        if a == b {
-            continue;
-        }
-        let hide = sensitive.contains(k) || is_sensitive_name(k);
-        out.push(DiffEntry {
-            key: k.clone(),
-            from: a.map(|v| if hide { mask(v) } else { v.clone() }),
-            to: b.map(|v| if hide { mask(v) } else { v.clone() }),
-        });
-    }
-    out
-}
-
 /// `--restart` 前让进程 env 与新 .env 一致：新文件键覆盖写入；
 /// 旧文件有而新文件没有的键移除（不残留旧档配置）。
 fn reload_process_env(link: &Path, old: BTreeMap<String, String>) {
-    let target = read_link_target(link).unwrap_or_else(|| link.to_path_buf());
-    let Ok(map) = parse_env_file(&target) else {
+    let target = env_file::read_link_target(link).unwrap_or_else(|| link.to_path_buf());
+    let Ok(map) = env_file::parse_env_file(&target) else {
         return;
     };
     for k in old.keys().filter(|k| !map.contains_key(*k)) {
@@ -646,38 +555,6 @@ mod tests {
         assert!(checks
             .iter()
             .any(|c| c.id == "env.MOMO_PROFILE" && c.status == CheckStatus::Fail));
-    }
-
-    /// diff：变更/新增/删除键都出现；敏感键打码。
-    #[test]
-    fn env_diff_masks_sensitive() {
-        let old = map(&[
-            ("MOMO_LLM_ENDPOINT", "http://a"),
-            ("MOMO_LLM_API_KEY", "sk-supersecret"),
-            ("MOMO_OLD", "1"),
-        ]);
-        let new = map(&[
-            ("MOMO_LLM_ENDPOINT", "http://b"),
-            ("MOMO_LLM_API_KEY", "sk-othersecret"),
-            ("MOMO_NEW", "2"),
-        ]);
-        let mut sensitive = BTreeSet::new();
-        sensitive.insert("MOMO_LLM_API_KEY".to_string());
-        let diff = env_diff(&old, &new, &sensitive);
-        let get = |k: &str| diff.iter().find(|d| d.key == k).unwrap();
-        assert_eq!(get("MOMO_LLM_ENDPOINT").from.as_deref(), Some("http://a"));
-        assert_eq!(get("MOMO_LLM_API_KEY").from.as_deref(), Some("sk-s…"));
-        assert!(get("MOMO_OLD").to.is_none());
-        assert!(get("MOMO_NEW").from.is_none());
-        assert!(!diff.iter().any(|d| d.key == "MOMO_PROFILE"));
-    }
-
-    /// mask：短值全遮，长值前 4 位 + …。
-    #[test]
-    fn mask_rules() {
-        assert_eq!(mask(""), "(empty)");
-        assert_eq!(mask("abc"), "…");
-        assert_eq!(mask("sk-1234567"), "sk-1…");
     }
 
     /// unix：symlink 重指 + 普通文件备份；重复执行幂等。

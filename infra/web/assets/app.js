@@ -33,10 +33,11 @@ const TOKEN_KEY = "momo.web.token";
 let csrfToken = null;
 
 export class ApiError extends Error {
-  constructor(status, code, message) {
+  constructor(status, code, message, fields) {
     super(message || `HTTP ${status}`);
     this.status = status;
     this.code = code;
+    this.fields = fields ?? null;
   }
 }
 
@@ -80,7 +81,8 @@ export async function api(path, { method = "GET", body } = {}) {
     throw new ApiError(
       res.status,
       data?.error?.code ?? "error",
-      data?.error?.message ?? `HTTP ${res.status}`
+      data?.error?.message ?? `HTTP ${res.status}`,
+      data?.error?.fields
     );
   }
   return data;
@@ -248,6 +250,7 @@ const ROUTES = new Map([
   ["/", "overview"],
   ["/components", "components"],
   ["/models", "models"],
+  ["/config", "config"],
 ]);
 
 const app = document.getElementById("app");
