@@ -239,7 +239,7 @@ where
     // 单活跃 session 策略 + session restore：`resume_session_id` 命中
     // 活跃/保活 session 则复用并随后下发 session.snapshot，否则新 session
     // 顶掉旧 session（SessionManager::attach，protocol §认证）。
-    let session = state.sessions.attach(
+    let (session, resumed) = state.sessions.attach(
         conn_id,
         hello.client,
         tx.clone(),
@@ -253,6 +253,18 @@ where
     });
     if tx.send(OutboundFrame::Json(hello_ok)).await.is_err() {
         return None;
+    }
+    if resumed {
+        // Reattach 必须在 hello.ok 上线之后再派发：snapshot 经同一 conn_tx，
+        // 由本任务保证 wire 序 hello.ok → session.snapshot。发送失败 =
+        // actor 在命中与派发间隙退出（conn_owner 广播随即终止本 conn）。
+        let _ = session
+            .cmd_tx
+            .send(SessionCmd::Reattach {
+                conn_id: conn_id.to_owned(),
+                out_tx: tx.clone(),
+            })
+            .await;
     }
     debug!(%conn_id, client = ?hello.client, session = %session.id, "hello.ok sent");
     Some(session)

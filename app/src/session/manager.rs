@@ -26,34 +26,30 @@ impl SessionManager {
         }
     }
 
-    /// 连接归属：`resume_session_id` 命中活跃/保活 session → `Reattach`
-    /// 换绑本 conn 出站并下发 `session.snapshot`（旧 conn 按 close 1000 退出）；
-    /// 不命中或 actor 已回收 → spawn 新 session 并 Shutdown 旧 handle。
+    /// 连接归属：返回 `(handle, resumed)`。`resume_session_id` 命中活跃/保活
+    /// session → 句柄换绑本 conn 出站且 `resumed=true`——`Reattach` 由 conn
+    /// 在 hello.ok 发出后派发给 actor（wire 序必须是 hello.ok →
+    /// session.snapshot，不能在本函数内先投递）。不命中或 actor 已回收 →
+    /// spawn 新 session 并 Shutdown 旧 handle。
     pub fn attach(
         &self,
         conn_id: &str,
         client: ClientKind,
         out_tx: mpsc::Sender<OutboundFrame>,
         resume_session_id: Option<&str>,
-    ) -> SessionHandle {
+    ) -> (SessionHandle, bool) {
         let mut guard = self.active.lock().expect("session mutex poisoned");
         if let Some(old) = guard.as_ref() {
-            let resumed = resume_session_id == Some(old.id.as_str())
-                && old
-                    .cmd_tx
-                    .try_send(SessionCmd::Reattach {
-                        conn_id: conn_id.to_owned(),
-                        out_tx: out_tx.clone(),
-                    })
-                    .is_ok();
+            let resumed = resume_session_id == Some(old.id.as_str()) && !old.cmd_tx.is_closed();
             if resumed {
-                // 句柄 out_tx 指向本 conn 的 conn_tx，供外部（测试）探针一致。
+                // 句柄 out_tx 指向本 conn 的 conn_tx，供外部（测试）探针一致；
+                // actor 侧 out_tx 换绑待 `Reattach` 落定。
                 let handle = SessionHandle {
                     out_tx,
                     ..old.clone()
                 };
                 *guard = Some(handle.clone());
-                return handle;
+                return (handle, true);
             }
             // fallback：未知/过期 resume id 或无 resume 的新连接顶掉旧 session。
             let _ = old.cmd_tx.try_send(SessionCmd::Shutdown);
@@ -66,7 +62,7 @@ impl SessionManager {
             self.deps.clone(),
         );
         *guard = Some(handle.clone());
-        handle
+        (handle, false)
     }
 
     /// 当前活跃 session（若有）。

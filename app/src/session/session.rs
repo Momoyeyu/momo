@@ -66,7 +66,8 @@ pub enum SessionCmd {
     /// 保活窗口等 resume（protocol §5）。`conn_id` 校验防 stale conn 误清。
     ConnClosed { conn_id: String },
     /// `hello.resume_session_id` 命中：session 换绑新 conn 的出站队列并下发
-    /// `session.snapshot`；旧 conn 经 conn 换主通知按 close 1000 退出。
+    /// `session.snapshot`（由 conn 在 hello.ok 上线后派发，保证 snapshot
+    /// 不先于握手完成）；旧 conn 经 conn 换主通知按 close 1000 退出。
     Reattach {
         conn_id: String,
         out_tx: mpsc::Sender<OutboundFrame>,
