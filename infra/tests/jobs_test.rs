@@ -34,28 +34,30 @@ fn momoctl_exe() -> String {
     env!("CARGO_BIN_EXE_momoctl").to_string()
 }
 
-/// `momoctl` 调用限时：`output()` 无超时，CLI 内部挂起会拖死整个测试
-/// 二进制（windows CI 实证）。超限杀进程并带 argv 点名挂起的调用方。
+/// `momoctl` 调用限时：`output()` 无超时，且进程退出后等 pipe EOF 也可能
+/// 无限阻塞（detached runner 继承 pipe 写端，windows CI 实证）——必须把
+/// wait+read 整体放进 worker 线程限时。超限按 pid 杀树并点名 argv。
 fn momoctl_output(
     state: &std::path::Path,
     env_file: &std::path::Path,
     args: &[&str],
 ) -> std::process::Output {
-    let mut child = momoctl(state, env_file, args)
+    let child = momoctl(state, env_file, args)
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()
         .expect("spawn momoctl");
-    let deadline = Instant::now() + Duration::from_secs(60);
-    loop {
-        if let Some(_status) = child.try_wait().expect("try_wait momoctl") {
-            return child.wait_with_output().expect("read momoctl output");
-        }
-        if Instant::now() >= deadline {
-            let _ = child.kill();
+    let pid = child.id();
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = tx.send(child.wait_with_output());
+    });
+    match rx.recv_timeout(Duration::from_secs(60)) {
+        Ok(out) => out.expect("read momoctl output"),
+        Err(_) => {
+            momo_infra::serve::proc::stop_pid(pid, Duration::from_secs(2));
             panic!("momoctl {args:?} did not exit within 60s");
         }
-        std::thread::sleep(Duration::from_millis(50));
     }
 }
 

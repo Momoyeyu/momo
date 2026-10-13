@@ -57,6 +57,8 @@ pub fn submit(
 /// spawn `momoctl jobs exec --id <id>`：stdin 置空 detach；
 /// stdout/stderr 并入 job 日志（runner 诊断与 panic 不落终端）。
 pub(crate) fn spawn_helper(store: &JobStore, id: &str) -> io::Result<Child> {
+    #[cfg(windows)]
+    uninherit_stdio();
     let exe = std::env::current_exe()?;
     let log = store.log_path(id).map_err(io::Error::other)?;
     if let Some(parent) = log.parent() {
@@ -70,6 +72,29 @@ pub(crate) fn spawn_helper(store: &JobStore, id: &str) -> io::Result<Child> {
         .stdout(Stdio::from(out))
         .stderr(Stdio::from(err))
         .spawn()
+}
+
+/// Windows：spawn detached helper 前清掉本进程三个标准句柄的继承标志。
+/// CreateProcess 会把所有可继承句柄灌给子进程——调用方若是管道
+/// （CI step、cmd 管道、测试 `.output()`），常驻 runner 持有 pipe 写端
+/// 会让对端 read 永远等不到 EOF。清 flag 只影响本进程后续 spawn，
+/// runner 自身的 stdin/stdout/stderr 由显式重定向提供，不受影响。
+#[cfg(windows)]
+fn uninherit_stdio() {
+    use windows_sys::Win32::Foundation::{
+        SetHandleInformation, HANDLE_FLAG_INHERIT, INVALID_HANDLE_VALUE,
+    };
+    use windows_sys::Win32::System::Console::{
+        GetStdHandle, STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
+    };
+    unsafe {
+        for which in [STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE] {
+            let h = GetStdHandle(which);
+            if h != 0 && h != INVALID_HANDLE_VALUE {
+                SetHandleInformation(h, HANDLE_FLAG_INHERIT, 0);
+            }
+        }
+    }
 }
 
 /// helper 认领：写 `runner_pid` 并（仅 queued → preparing）迁移；

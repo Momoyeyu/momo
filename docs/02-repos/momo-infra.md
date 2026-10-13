@@ -238,7 +238,7 @@ stateDiagram-v2
 
 迁移写入顺序固定「先索引后 meta」：crash 只丢 meta 新版本，rescan 以索引最后态回补；反过来会把已生效迁移回滚成旧态。
 
-**exec_local**：`jobs submit`（或 `POST /api/jobs`）建档后 spawn detached helper `momoctl jobs exec <ID>`（内部命令，CLI 不可见）。helper 是状态机的唯一写入方：写 `runner_pid` 认领 → `preparing` → spawn payload 记 `pid`（process identity）→ `running` → stdout/stderr 增量并入 `logs/<id>.log` → 按 exit code 落 `succeeded`/`failed`；cancel 请求（`canceling`）由 helper 的 wait 返回或 cancel 命令自身收尾到 `canceled`。主进程退出后 helper 继续跑，CLI 与 Web 读写同一 store 无内存共享；非 queued 状态下 exec 是 no-op，绝不重复 launch。
+**exec_local**：`jobs submit`（或 `POST /api/jobs`）建档后 spawn detached helper `momoctl jobs exec <ID>`（内部命令，CLI 不可见）。helper 是状态机的唯一写入方：写 `runner_pid` 认领 → `preparing` → spawn payload 记 `pid`（process identity）→ `running` → stdout/stderr 增量并入 `logs/<id>.log` → 按 exit code 落 `succeeded`/`failed`；cancel 请求（`canceling`）由 helper 的 wait 返回或 cancel 命令自身收尾到 `canceled`。主进程退出后 helper 继续跑，CLI 与 Web 读写同一 store 无内存共享；非 queued 状态下 exec 是 no-op，绝不重复 launch。Windows 上 spawn helper 前先清本进程三个标准句柄的 `HANDLE_FLAG_INHERIT`——否则常驻 helper 会继承调用方的 pipe 写端（CI step、shell 管道、`Command::output()`），调用方 read 永远等不到 EOF；helper 自身 stdin/stdout/stderr 由显式重定向提供，不受影响。
 
 **exec_ssh**（`jobs/ssh.rs`，issue #51）：`jobs submit --executor ssh --host <alias>` 走远端执行，helper 仍是状态机唯一写入方，远端不跑任何 momo 组件：
 
