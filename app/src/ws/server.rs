@@ -101,9 +101,22 @@ pub fn origin_allowed(headers: &HeaderMap, config: &Config) -> bool {
     let Some(origin) = headers.get(header::ORIGIN).and_then(|v| v.to_str().ok()) else {
         return false;
     };
+    if origin == config.web_origin || DESKTOP_ORIGINS.contains(&origin) {
+        return true;
+    }
     // UI 由 momod 自身托管（MOMO_UI_DIR）时，浏览器源即 http://{orch_listen}。
-    let self_served = format!("http://{}", config.orch_listen);
-    origin == config.web_origin || origin == self_served || DESKTOP_ORIGINS.contains(&origin)
+    // loopback 监听下 localhost / 127.0.0.1 / [::1] 字面量视为同源——
+    // 用户打开 localhost:7800 时 Origin 不会和 127.0.0.1 字符串相等。
+    let port = config.orch_listen.port();
+    let mut self_served = vec![format!("http://{}", config.orch_listen)];
+    if config.orch_listen.ip().is_loopback() {
+        self_served.extend([
+            format!("http://localhost:{port}"),
+            format!("http://127.0.0.1:{port}"),
+            format!("http://[::1]:{port}"),
+        ]);
+    }
+    self_served.iter().any(|o| o == origin)
 }
 
 /// CORS：`MOMO_WEB_ORIGIN` 白名单；解析失败退化为放开（dev 兜底）。

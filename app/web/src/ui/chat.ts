@@ -6,6 +6,9 @@
 
 import type { EmotionTag } from "../net/protocol";
 
+/** 气泡数上限：超出即裁掉最旧（含草稿占位），防长会话无界堆积。 */
+const MAX_BUBBLES = 50;
+
 /** 初始化聊天 UI；返回后的 onSubmit 回调由 main.ts 接到 ws-client。 */
 export function initChat(root: HTMLElement): {
   onSubmit: ((text: string) => void) | null;
@@ -27,6 +30,13 @@ export function initChat(root: HTMLElement): {
     draftCaptureId = null;
   }
 
+  /** 追加后裁剪：从头部移除最旧气泡；草稿永远是尾节点，不会被误裁。 */
+  function trimHistory(): void {
+    while (root.childElementCount > MAX_BUBBLES) {
+      root.firstElementChild?.remove();
+    }
+  }
+
   const chat = {
     onSubmit: null as ((text: string) => void) | null,
     addBubble(role: "user" | "assistant", text: string, emotion?: EmotionTag): void {
@@ -44,6 +54,7 @@ export function initChat(root: HTMLElement): {
       body.textContent = text;
       div.appendChild(body);
       root.appendChild(div);
+      trimHistory();
       root.scrollTop = root.scrollHeight;
     },
     setDraft(captureId: string, text: string): void {
@@ -57,6 +68,7 @@ export function initChat(root: HTMLElement): {
         body.className = "bubble-text";
         draftEl.appendChild(body);
         root.appendChild(draftEl);
+        trimHistory();
       }
       draftCaptureId = captureId;
       const body = draftEl.firstElementChild;
