@@ -52,8 +52,8 @@ def test_all_tts_stubs_satisfy_contract() -> None:
         p = cls(settings)
         caps = p.capabilities()
         assert caps.languages
-        if name in ("edge", "f5"):
-            continue  # 已实装，行为见 test_edge.py / test_f5.py
+        if name in ("edge", "f5", "kokoro"):
+            continue  # 已实装，行为见 test_edge.py / test_f5.py / test_kokoro.py
         with pytest.raises(NotImplementedError):
             asyncio.run(p.warmup())
 

@@ -44,7 +44,7 @@ class _TtsLink:
     # ---------- 消息分发 ----------
 
     async def handle(self, item: dict | bytes) -> bool:
-        if isinstance(item, (bytes, bytearray)):
+        if isinstance(item, bytes | bytearray):
             # TTS 链路只产下行帧；任何上行二进制都是 wrong direction。
             await self._ctx.send_error("BAD_MESSAGE", "unexpected binary frame on tts link")
             return True

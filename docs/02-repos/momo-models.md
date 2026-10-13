@@ -29,6 +29,10 @@ provider 同级可切换：每种能力经 registry 按 env 选实现——TTS `
 
 provider 内的具体权重由 MANIFEST 指定：ASR 用 `MOMO_ASR_MODEL` 选条目名，条目 `dest` 即 `${MOMO_MODELS_DIR}` 下的模型目录，运行时只读该目录并按条目校验 sha256（条目名未知或清单缺失 → readyz 不就绪）。
 
+TTS provider 实装状态：`kokoro`（默认）与 `edge` 已实装，`f5`/`cosyvoice3`/`sovits` 为 stub。kokoro 固定 MANIFEST 条目 `kokoro-82m`（dest 即模型目录，`config.json`/`kokoro-v1_0.pth`/`voices/*.pt` 经 sha256 门控），`KModel` 直接吃本地路径不经 HF 下载；音色优先级 `MOMO_TTS_VOICE` > `VoiceRef.lang`/`MOMO_TTS_LANG` 映射（zh→zf_xiaoxiao、en→af_heart、ja→jf_alpha），pipeline lang_code 取音色名首字母；产出统一为 PCM s16le 24kHz mono，cancel 在 chunk 边界停产出。
+
+情感：`output.sentence.emotion`（protocol 固定 8 tag）经 `providers/tts/emotion.py` 的 `map_emotion(tag, provider, caps)` 落成各 provider 参数——kokoro→`speed`、edge→`rate`/`pitch`/`volume`、cosyvoice3→`instruct` 指令、sovits→参考音情感提示；`None`/未知 tag 兜底 `neutral`，`caps.emotion=False` 返回空表（产出与 neutral 一致）。消费 emotion 的 provider 声明 `caps.emotion=True`。
+
 VAD 是独立 provider（`providers/vad/`），不从属于 ASR：`VADProvider.feed(pcm)` 以窗口喂入上行 PCM，产出 `VadEvent`——`speech_start`（供 app 打断判定）与 `speech_end`（携带整段裁剪 PCM 供 ASR 识别）；`flush`/`reset` 收尾。默认实现 `silero` 走 sherpa-onnx `VadModel`（窗口级 `is_speech` + min-speech/min-silence/max-speech 迟滞），权重经 MANIFEST sha256 校验后懒加载；选 sherpa 而非 `silero-vad` pip 包是因后者拖入完整 torch 依赖，对 CPU 断句过重。判停时长 `MOMO_VAD_SILENCE_MS`。
 
 模型选型、官方标称与带日期的实测记录集中在 [research.md](../00-context/research.md) 与 [decisions.md](../00-context/decisions.md)，作为复现与比较基线。
