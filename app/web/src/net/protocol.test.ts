@@ -11,6 +11,7 @@ import {
   encodeAudioFrame,
   newId,
   newUlid,
+  normalizeEmotion,
   parseServerMsg,
   ulidFromBytes,
   ulidToBytes,
@@ -163,5 +164,22 @@ describe("server msg 解析（golden 对拍）", () => {
 
   it("非法 JSON 返回 null", () => {
     expect(parseServerMsg("not json")).toBeNull();
+  });
+});
+describe("emotion tag", () => {
+  it("表内值原样返回，表外值归一 neutral", () => {
+    expect(normalizeEmotion("happy")).toBe("happy");
+    expect(normalizeEmotion("sleepy")).toBe("sleepy");
+    expect(normalizeEmotion("ecstatic")).toBe("neutral");
+    expect(normalizeEmotion("")).toBe("neutral");
+  });
+});
+
+describe("id 生成", () => {
+  it("带前缀且全局唯一", () => {
+    const a = newId("r");
+    const b = newId("r");
+    expect(a).toMatch(/^r_[0-9A-HJKMNP-TV-Z]{26}$/);
+    expect(a).not.toBe(b);
   });
 });

@@ -1,9 +1,9 @@
 // 启动装配：canvas + ws-client + ui + PTT mic capture（momo-app.md §前端）。
 
 import "./style.css";
-import { uiToken, wsUrl } from "./config";
+import { avatarModelUrl, uiToken, wsUrl } from "./config";
 import { WsClient } from "./net/ws-client";
-import { newId } from "./net/protocol";
+import { newId, normalizeEmotion } from "./net/protocol";
 import { AudioPlayer } from "./audio/player";
 import { MicCapture } from "./audio/capture";
 import type { MicCaptureSink } from "./audio/capture";
@@ -15,16 +15,27 @@ const stageEl = document.querySelector<HTMLCanvasElement>("#stage");
 const chatEl = document.querySelector<HTMLElement>("#chat");
 const statusEl = document.querySelector<HTMLElement>("#status");
 const micBtn = document.querySelector<HTMLButtonElement>("#mic");
+const fallbackEl = document.querySelector<HTMLElement>("#avatar-fallback");
 if (!stageEl || !chatEl || !statusEl) {
   throw new Error("index.html 缺少 #stage/#chat/#status 挂载点");
 }
 
-// 装配（骨架：模型路径等 P0 实装时接入）。
 const stage = new Live2DStage();
 stage.init(stageEl);
-// TODO(P0): stage.loadModel(assetBase() + "models/<cubism-sample>/model.json")
+
+// 模型加载失败不阻断聊天：可见降级提示（#95）。
+stage.loadModel(avatarModelUrl()).catch((err: unknown) => {
+  console.error("live2d model load failed:", err);
+  if (fallbackEl) {
+    fallbackEl.hidden = false;
+    fallbackEl.textContent = "Avatar failed to load — chat still works. Check the model assets and reload.";
+  }
+});
 
 const player = new AudioPlayer();
+// 口型链：worklet RMS → mouthOpenY → ParamMouthOpenY（#96）。
+player.onMouthOpen = (v) => stage.setMouthOpen(v);
+
 const status = new StatusIndicator(statusEl);
 const chat = initChat(chatEl);
 
@@ -32,6 +43,9 @@ const client = new WsClient(wsUrl(), uiToken());
 client.onState = (state) => status.setConn(state);
 client.onAudioChunk = (header, payload) => {
   player.ensureContext();
+  void player.init().catch((err: unknown) => {
+    console.error("audio worklet init failed:", err);
+  });
   player.enqueue(header, payload);
 };
 client.onServerMsg = (msg) => {
@@ -42,8 +56,8 @@ client.onServerMsg = (msg) => {
       status.setTurn(msg.state);
       break;
     case "output.sentence":
-      // 字幕气泡按句流式追加（P0：聚合到 assistant 气泡）。
-      chat.addBubble("assistant", msg.text);
+      // 字幕气泡按句流式追加，emotion 渲染到气泡情感位（#94）。
+      chat.addBubble("assistant", msg.text, normalizeEmotion(msg.emotion));
       break;
     case "control.cancel":
       // orchestrator 取消 turn/stream：同步停播、清空播放缓冲（protocol §8）。
@@ -60,6 +74,8 @@ client.onServerMsg = (msg) => {
 };
 
 chat.onSubmit = (text) => {
+  // 用户手势窗口内 resume AudioContext（autoplay policy），TTS 下行才不哑。
+  void player.ensureContext().resume();
   client.send({ type: "input.text", id: newId("r"), text, lang: "auto" });
 };
 
