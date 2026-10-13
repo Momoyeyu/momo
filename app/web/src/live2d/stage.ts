@@ -83,16 +83,23 @@ export class Live2DStage {
     return this.model != null;
   }
 
+  /** 加载 Live2D 模型（Cubism 4 runtime）；失败 reject，由调用方给降级提示。
+   * 已有模型时先卸载再加载（设置面换形象复用此路径）。 */
   async loadModel(url: string): Promise<void> {
     if (!this.app) throw new Error("stage not initialized");
     await ensureCubismCore();
     const mod: any = await import("pixi-live2d-display/cubism4");
     mod.config.sound = false;
     const model = await mod.Live2DModel.from(url);
+    const old = this.model;
     this.model = model;
     const b = model.getLocalBounds();
     this.bounds = { x: b.x, y: b.y, width: b.width, height: b.height };
     this.app.stage.addChild(model as PIXI.DisplayObject);
+    if (old) {
+      this.app.stage.removeChild(old);
+      old.destroy({ children: true });
+    }
     this.fitModel();
   }
 
@@ -112,6 +119,11 @@ export class Live2DStage {
     this.model.scale.set(scale);
     this.model.x = (availW - b.width * scale) / 2 - b.x * scale;
     this.model.y = availH - (b.y + b.height) * scale;
+  }
+
+  /** 视图切换后重算安全区落位（菜单视图无面板/对话框避让）。 */
+  refit(): void {
+    this.fitModel();
   }
 
   /** 口型：写 ParamMouthOpenY（0..1），由 player worklet 的 RMS 驱动。 */

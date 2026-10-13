@@ -9,11 +9,13 @@ use axum::{
     extract::{State, ws::WebSocketUpgrade},
     http::{HeaderMap, HeaderValue, Method, StatusCode, header},
     response::{IntoResponse, Response},
+    routing::{get, put},
 };
 use tower_http::{cors::CorsLayer, services::ServeDir};
 
 use crate::{
     session::{SessionDeps, manager::SessionManager},
+    settings::{self, ProviderSettings},
     ws::conn,
 };
 
@@ -21,13 +23,54 @@ use crate::{
 pub struct AppState {
     pub config: Arc<Config>,
     pub sessions: SessionManager,
+    /// 生效 provider 配置（settings.json 覆盖 env；设置面 PUT 更新）。
+    pub settings: tokio::sync::RwLock<ProviderSettings>,
+    pub llm: Arc<OpenAiCompatLlm>,
+    /// settings.json 落盘路径。
+    pub settings_path: std::path::PathBuf,
     /// 进程启动时刻，供 `/healthz` 报 uptime。
     pub started_at: Instant,
 }
 
 impl AppState {
+    pub fn new(config: Arc<Config>) -> Result<Self, AppError> {
+        let settings = ProviderSettings::load(&config)?;
+        let llm = Arc::new(OpenAiCompatLlm::new(
+            settings.llm_endpoint.clone(),
+            settings.llm_model.clone(),
+            settings.llm_api_key.clone(),
+            config.llm_timeout,
+        ));
+            sessions: SessionManager::new(deps),
+            settings: tokio::sync::RwLock::new(settings),
+            llm,
+            asr,
+            tts,
             config,
             started_at: Instant::now(),
+    }
+
+    /// 测试用：注入自定义 deps（mock client）；settings 句柄独立构造，
+    /// 不读 settings.json，不参与 deps 内的 client 生命周期。
+    #[allow(clippy::missing_errors_doc)]
+    pub fn from_deps(config: Arc<Config>, deps: SessionDeps) -> Result<Self, AppError> {
+        let settings = ProviderSettings::from_config(&config);
+        let llm = Arc::new(OpenAiCompatLlm::new(
+            settings.llm_endpoint.clone(),
+            settings.llm_model.clone(),
+            settings.llm_api_key.clone(),
+            config.llm_timeout,
+        ));
+        Ok(Self {
+            sessions: SessionManager::new(deps),
+            settings: tokio::sync::RwLock::new(settings),
+            llm,
+            asr,
+            tts,
+            settings_path: std::path::PathBuf::from("momo-test-settings.json"),
+            config,
+            started_at: Instant::now(),
+        })
     }
 
     pub fn listen_addr(&self) -> SocketAddr {
@@ -36,6 +79,7 @@ impl AppState {
 }
 
 /// 构建 momod 的 HTTP/WS 路由。
+pub fn router(config: Arc<Config>) -> Result<Router, AppError> {
 
     let mut app = Router::new()
         .route("/healthz", get(healthz))
@@ -43,6 +87,8 @@ impl AppState {
         // readiness 门控（下游 svc 懒连接），先与 /healthz 同义。
         .route("/readyz", get(healthz))
         .route("/ws/ui", get(ws_ui))
+        .route("/api/settings", get(api::get_settings))
+        .route("/api/settings", put(api::put_settings))
         // TODO(P4): /ws/action upgrade（action 链路注册/调用）
         .with_state(state.clone())
         .layer(cors_layer(&state.config));

@@ -142,6 +142,25 @@ impl SessionDeps {
             persona: Persona::new(config.persona_file.clone()),
         }
     }
+
+    /// 注入外部构造的 client（AppState 持有具体类型供设置面热改）。
+    pub fn with_clients(
+        config: &Config,
+        llm: Arc<OpenAiCompatLlm>,
+    ) -> Self {
+        Self {
+            history_turns: config.history_turns,
+            sent_soft_chars: config.sent_soft_chars,
+            sent_max_chars: config.sent_max_chars,
+            llm: Some(llm),
+            asr: Some(asr),
+            tts: Some(tts),
+            barge_in_enabled: config.barge_in_enabled,
+            barge_in_min: config.barge_in_min,
+            resume_ttl: config.session_resume_ttl,
+            persona: Persona::new(config.persona_file.clone()),
+        }
+    }
 }
 
 /// 外界持有的会话句柄（momo-app.md §ws 子系统）。

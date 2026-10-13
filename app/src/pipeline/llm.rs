@@ -38,9 +38,18 @@ pub trait LlmClient: Send + Sync {
     ) -> Result<ChatStream, AppError>;
 }
 
+/// 连接面（endpoint/model/api_key）：设置面可热改，读路径每请求取快照。
+#[derive(Debug, Clone)]
+struct LlmConf {
     endpoint: Url,
     model: String,
     api_key: Option<Arc<SecretString>>,
+}
+
+/// OpenAI-compatible 客户端（`MOMO_LLM_*` 端点；DeepSeek 等同协议端点通用）。
+#[derive(Debug)]
+pub struct OpenAiCompatLlm {
+    conf: std::sync::RwLock<LlmConf>,
     /// `MOMO_LLM_TIMEOUT_MS`：请求总超时，覆盖 connect/headers/整个流。
     timeout: Duration,
     http: reqwest::Client,
@@ -54,6 +63,11 @@ impl OpenAiCompatLlm {
         timeout: Duration,
     ) -> Self {
         Self {
+            conf: std::sync::RwLock::new(LlmConf {
+                endpoint,
+                model,
+                api_key: api_key.map(Arc::new),
+            }),
             timeout,
             http: reqwest::Client::new(),
         }
@@ -69,11 +83,30 @@ impl OpenAiCompatLlm {
         )
     }
 
+    /// 设置面热更新连接面；下一请求生效（在途请求仍用旧快照）。
+    pub fn set_conf(&self, endpoint: Url, model: String, api_key: Option<SecretString>) {
+        let conf = LlmConf {
+            endpoint,
+            model,
+            api_key: api_key.map(Arc::new),
+        };
+        *self.conf.write().expect("llm conf lock") = conf;
+    }
+
+    /// 当前连接面快照。
+    fn conf(&self) -> LlmConf {
+        self.conf.read().expect("llm conf lock").clone()
+    }
+
+    pub fn model(&self) -> String {
+        self.conf().model
     }
 
     /// `Url::join` 会吃掉末段，故手工拼接。
+    fn chat_completions_url(endpoint: &Url) -> String {
         format!(
             "{}/chat/completions",
+            endpoint.as_str().trim_end_matches('/')
         )
     }
 }
@@ -89,7 +122,9 @@ impl LlmClient for OpenAiCompatLlm {
             return Err(cancelled_err());
         }
 
+        let conf = self.conf();
         let model = if req.model.is_empty() {
+            &conf.model
         } else {
             &req.model
         };
@@ -108,9 +143,11 @@ impl LlmClient for OpenAiCompatLlm {
 
         let mut rb = self
             .http
+            .post(Self::chat_completions_url(&conf.endpoint))
             .header("accept", "text/event-stream")
             .timeout(self.timeout)
             .json(&body);
+        if let Some(key) = &conf.api_key {
             rb = rb.bearer_auth(key.expose());
         }
 

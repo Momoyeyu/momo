@@ -31,6 +31,7 @@ use momo_app::{
             TurnState, new_id,
         },
     },
+    session::{ChatMessage, Role, SessionDeps},
     ws::{conn, server::AppState},
 };
 use serde_json::{Value, json};
@@ -229,6 +230,8 @@ fn test_state(
         resume_ttl: Duration::from_secs(60),
         persona: Persona::new(std::path::PathBuf::from("persona/momo.yaml")),
     };
+    Arc::new(
+    )
 }
 
 /// 测试侧 UI 连接（inbound 注入帧，outbound 收服务端帧）。

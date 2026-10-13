@@ -569,3 +569,258 @@ body.chat-closed #chat-panel {
     left: 12px;
   }
 }
+
+/* ---------- 视图路由（menu / scene / settings） ---------- */
+
+/* 主页与设置层：场景交互件隐藏，人物全安全区落位 */
+body.view-menu #chat-panel,
+body.view-menu #chat-toggle,
+body.view-menu #subtitle,
+body.view-menu #status,
+body.view-menu #menu-btn,
+body.view-settings #chat-panel,
+body.view-settings #chat-toggle,
+body.view-settings #subtitle,
+body.view-settings #status,
+body.view-settings #menu-btn {
+  display: none;
+}
+
+body.view-menu,
+body.view-settings {
+  --stage-safe-right: 0px;
+  --dialog-zone-h: 0px;
+}
+
+/* ---------- 主页 ---------- */
+
+#menu {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+body:not(.view-menu) #menu {
+  display: none;
+}
+
+#menu-inner {
+  margin-left: clamp(36px, 9vw, 150px);
+  pointer-events: auto;
+  user-select: none;
+}
+
+#menu-title {
+  margin: 0;
+  font-size: clamp(52px, 8vw, 92px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--pink-deep);
+  text-shadow: 0 4px 24px rgba(226, 85, 143, 0.35);
+}
+
+#menu-tagline {
+  margin: 4px 0 44px 4px;
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+}
+
+#menu-items {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+#menu-items button {
+  padding: 6px 20px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 22px;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    color 0.18s,
+    transform 0.18s;
+}
+
+#menu-items button:hover {
+  background: var(--pink-soft);
+  color: var(--pink-deep);
+  transform: translateX(8px);
+}
+
+/* ---------- 设置层 ---------- */
+
+#settings {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+body.view-settings #settings {
+  display: flex;
+}
+
+#settings-form {
+  width: min(480px, 92vw);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 28px 32px 24px;
+  background: var(--panel);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 22px;
+  box-shadow: var(--shadow-soft);
+}
+
+#settings-form > h2 {
+  margin: 0 0 18px;
+  font-size: 20px;
+  letter-spacing: 0.24em;
+  color: var(--pink-deep);
+}
+
+.settings-group {
+  margin-bottom: 16px;
+}
+
+.settings-group h3 {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+
+.settings-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border: 1.5px solid rgba(226, 85, 143, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+  border-color: var(--pink);
+}
+
+#settings-msg {
+  min-height: 18px;
+  margin: 6px 0 10px;
+  font-size: 12.5px;
+  color: #34c98e;
+}
+
+#settings-msg.error {
+  color: #c2445f;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.settings-actions button {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  border-radius: 999px;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  cursor: pointer;
+}
+
+#settings-save {
+  background: var(--pink);
+  color: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
+#settings-save:hover {
+  background: var(--pink-deep);
+}
+
+#settings-back {
+  background: rgba(226, 85, 143, 0.1);
+  color: var(--ink);
+}
+
+#settings-back:hover {
+  background: var(--pink-soft);
+}
+
+/* ---------- 场景内回主页 / 面板内设置入口 ---------- */
+
+#menu-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  color: var(--ink-soft);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+#menu-btn:hover {
+  color: var(--pink-deep);
+}
+
+body.view-scene #status {
+  left: 62px;
+}
+
+#chat-settings {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+#chat-settings:hover {
+  color: var(--pink-deep);
+}

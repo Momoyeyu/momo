@@ -21,6 +21,7 @@ use momo_app::{
         codec::{self, CLOSE_NORMAL},
         message::{Msg, ReceiptStatus, TurnState, new_id},
     },
+    session::{ChatMessage, Role, SessionDeps},
     ws::{conn, server::AppState},
 };
 use serde_json::{Value, json};
@@ -82,6 +83,8 @@ fn test_state(llm: Option<Arc<MockLlm>>, resume_ttl: Duration) -> Arc<AppState> 
         resume_ttl,
         persona: Persona::new(std::path::PathBuf::from("persona/momo.yaml")),
     };
+    Arc::new(
+    )
 }
 
 // ---------- 测试侧 UI 连接 ----------

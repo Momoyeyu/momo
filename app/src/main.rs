@@ -12,6 +12,7 @@ async fn main() -> Result<(), AppError> {
     // 生效配置打进日志；敏感项由 SecretString 的 Debug 打码（config.md §4）。
     tracing::info!(config = ?config, "momod effective config");
 
+    let app = ws::server::router(config.clone())?;
     let listener = tokio::net::TcpListener::bind(config.orch_listen).await?;
     tracing::info!(addr = %config.orch_listen, "momod listening");
 
