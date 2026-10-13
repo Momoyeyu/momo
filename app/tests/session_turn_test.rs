@@ -77,6 +77,10 @@ fn spawn_session(llm: Option<Arc<MockLlm>>) -> (SessionHandle, mpsc::Receiver<Ou
             let client: Arc<dyn LlmClient> = l;
             client
         }),
+        asr: None,
+        tts: None,
+        barge_in_enabled: true,
+        barge_in_min: Duration::from_millis(250),
     };
     let handle = Session::spawn(
         "sess_test".into(),

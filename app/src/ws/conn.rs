@@ -116,9 +116,13 @@ where
             },
             Ok(Message::Binary(bytes)) => {
                 match codec::AudioHeader::decode(&bytes) {
-                    Ok((header, _payload)) => {
-                        // TODO(P2): 上行音频帧转发 ASR uplink task。
-                        debug!(%conn_id, seq = header.chunk_seq, dir = ?header.direction, "uplink audio chunk dropped (P2 stub)");
+                    Ok((header, payload)) => {
+                        // 上行帧进 Session：按 audio.open 绑定路由到 per-capture
+                        // uplink task（seq/溢出校验在 actor 内，不静默丢帧）。
+                        let frame = SessionCmd::Audio(header, Bytes::copy_from_slice(payload));
+                        if cmd_tx.send(frame).await.is_err() {
+                            break;
+                        }
                     }
                     Err(err) => {
                         let _ = tx.send(OutboundFrame::Json(error_frame(&err))).await;
