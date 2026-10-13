@@ -94,6 +94,7 @@ MOMO_EMOTION_MAP=config/emotion.map.yaml   # tag → Live2D 表情映射
 
 ```toml
 schema = 1            # 文件格式版本
+key = [ { name, type, values?, default, sensitive?, readers, files, examples?, component, description } ]
 passthrough = [ { name, type?, default, files, description } ]   # 非 MOMO_ 前缀，第三方库自读
 ```
 
