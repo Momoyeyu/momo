@@ -585,3 +585,122 @@ async fn models_pull_contract() {
     assert_eq!(status, 403);
     assert_error_envelope(&v, "csrf");
 }
+
+// ---------- 训练页端点（#42） ----------
+
+/// `GET /api/pipelines`：定义清单契约（wizard 数据源）。
+/// 测试 cwd = infra/ → `pipelines` 候选命中实仓定义目录。
+#[tokio::test]
+async fn pipelines_contract() {
+    let app = web::router(state(None));
+
+    let (status, v) = call(app.clone(), req("GET", "/api/pipelines")).await;
+    assert_eq!(status, 200);
+    assert_eq!(v["schema"], 1, "{v}");
+    assert_eq!(v["command"], "pipeline list", "{v}");
+    assert!(v["dir"].is_string(), "{v}");
+    let pipes = v["pipelines"].as_array().expect("pipelines array");
+    assert!(pipes.len() >= 2, "{v}");
+    let voice = pipes
+        .iter()
+        .find(|p| p["name"] == "voice-sft")
+        .expect("voice-sft present");
+    assert_eq!(voice["activate_env"], "MOMO_TTS_MODEL_DIR", "{voice}");
+    assert!(voice["artifact_dir"].is_string(), "{voice}");
+    assert!(voice["steps"].as_array().unwrap().len() >= 2, "{voice}");
+    // vars：wizard 表单依据；voice-sft 的 input 为 required。
+    let vars = voice["vars"].as_array().expect("vars array");
+    let input = vars
+        .iter()
+        .find(|x| x["name"] == "input")
+        .expect("input var");
+    assert_eq!(input["required"], true, "{input}");
+
+    // 只读端点：POST → 405
+    let (status, v) = call(app, post("/api/pipelines", None)).await;
+    assert_eq!(status, 405);
+    assert_error_envelope(&v, "method_not_allowed");
+}
+
+/// `POST /api/jobs` pipeline 快捷提交的校验面（均在 store 建档前拒绝，无副作用）：
+/// executor ssh:* → 422；args×pipeline 互斥 → 422；未知 pipeline → 422；
+/// required var 缺项 → 422 逐字段归因；空 args → 400。
+#[tokio::test]
+async fn jobs_submit_pipeline_validation() {
+    let app = web::router(state(None));
+
+    // executor：exec_ssh 目标属 #51，字段级 422。
+    let (status, v) = call(
+        app.clone(),
+        post(
+            "/api/jobs",
+            Some(r#"{"pipeline":"persona-qlora","executor":"ssh:bigstrong"}"#),
+        ),
+    )
+    .await;
+    assert_eq!(status, 422, "{v}");
+    assert_error_envelope(&v, "validation_failed");
+    assert!(v["error"]["fields"]["executor"].is_string(), "{v}");
+
+    // args 与 pipeline 互斥 → 422
+    let (status, v) = call(
+        app.clone(),
+        post(
+            "/api/jobs",
+            Some(r#"{"pipeline":"voice-sft","args":["echo","hi"]}"#),
+        ),
+    )
+    .await;
+    assert_eq!(status, 422, "{v}");
+    assert!(v["error"]["fields"]["args"].is_string(), "{v}");
+
+    // 未知 pipeline → 422
+    let (status, v) = call(
+        app.clone(),
+        post("/api/jobs", Some(r#"{"pipeline":"__missing__"}"#)),
+    )
+    .await;
+    assert_eq!(status, 422, "{v}");
+    assert!(v["error"]["fields"]["pipeline"].is_string(), "{v}");
+
+    // voice-sft 缺 required var input → 422 fields["set.input"]
+    let (status, v) = call(
+        app.clone(),
+        post("/api/jobs", Some(r#"{"pipeline":"voice-sft"}"#)),
+    )
+    .await;
+    assert_eq!(status, 422, "{v}");
+    assert!(v["error"]["fields"]["set.input"].is_string(), "{v}");
+
+    // 空 args → 400（原形态校验不变）
+    let (status, v) = call(app.clone(), post("/api/jobs", Some(r#"{"args":[]}"#))).await;
+    assert_eq!(status, 400);
+    assert_error_envelope(&v, "bad_request");
+
+    // 无 CSRF → 403（守卫先于 handler）
+    let (status, v) = call(app, req("POST", "/api/jobs")).await;
+    assert_eq!(status, 403);
+    assert_error_envelope(&v, "csrf");
+}
+
+/// promote / metrics 的未知 id → JSON 404（load 先行，不跑 reconcile 写路径）。
+#[tokio::test]
+async fn jobs_promote_metrics_unknown_id() {
+    let app = web::router(state(None));
+
+    let (status, v) = call(app.clone(), post("/api/jobs/01JNOPE42/promote", Some("{}"))).await;
+    assert_eq!(status, 404, "{v}");
+    assert_error_envelope(&v, "not_found");
+
+    let (status, v) = call(app.clone(), req("GET", "/api/jobs/01JNOPE42/metrics")).await;
+    assert_eq!(status, 404, "{v}");
+    assert_error_envelope(&v, "not_found");
+
+    // promote 为写端点：GET → 405（axum 方法门控先于 handler，空 body
+    // ——与 `/{id}/cancel` 等 post-only 子路由同口径，不走 JSON 错误包络）。
+    let res = app
+        .oneshot(req("GET", "/api/jobs/01JNOPE42/promote"))
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 405);
+}
