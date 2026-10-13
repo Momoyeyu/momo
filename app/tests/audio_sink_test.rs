@@ -79,7 +79,10 @@ async fn push_opens_stream_and_sends_ordered_frames() {
     );
     let stream_id = open.stream_id.clone();
 
-    assert!(stream_id.starts_with("st_"), "downlink stream_id st_ prefixed");
+    assert!(
+        stream_id.starts_with("st_"),
+        "downlink stream_id st_ prefixed"
+    );
     let (seq, sent, off, eos, sid) = recv_audio(&mut rx).await;
     assert_eq!((seq, sent, off, eos), (0, 1, 0, false));
     assert_eq!(format!("st_{sid}"), stream_id);
