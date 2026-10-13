@@ -35,12 +35,16 @@ pub const HELLO_TIMEOUT: Duration = Duration::from_secs(5);
 /// conn_tx 单帧写 socket 的 stall deadline：超时说明对端消费不动，直接关连。
 pub const CONN_TX_STALL: Duration = Duration::from_secs(5);
 
-/// conn_tx 的出站单元：JSON 文本帧 / 二进制音频帧 / 关闭帧。
+/// conn_tx 的出站单元：JSON 文本帧 / 二进制音频帧 / Pong / 关闭帧。
 #[derive(Debug)]
 pub enum OutboundFrame {
     Json(Msg),
+    /// 已序列化的 JSON 文本帧（客户端方向消息等非 `Msg` 类型，如模型链路）。
+    JsonText(String),
     /// `audio.chunk`：头 + PCM 载荷。
     Audio(codec::AudioHeader, Bytes),
+    /// 传输层 keepalive 应答（ws::client 收到对端 Ping 时回写）。
+    Pong(Bytes),
     Close(u16, &'static str),
 }
 
@@ -251,6 +255,8 @@ where
                     continue;
                 }
             },
+            OutboundFrame::JsonText(text) => (Message::Text(Utf8Bytes::from(text)), false),
+            OutboundFrame::Pong(payload) => (Message::Pong(payload), false),
             OutboundFrame::Audio(header, payload) => (
                 Message::Binary(codec::encode_audio_frame(header, &payload)),
                 false,
