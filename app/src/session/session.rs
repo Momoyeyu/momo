@@ -31,11 +31,11 @@ use crate::{
         codec::{AudioHeader, Direction},
         message::{
             AudioCodec, AudioEndMsg, AudioOpenMsg, BargeInMsg, CancelTarget, ClientKind,
-            ControlCancelMsg, ErrorMsg, InputAcceptedMsg, InputAudioMsg, InputAudioSegmentMsg,
-            InputAudioStartMsg, InputReceipt, InputRejectedMsg, InputTextMsg, InputVadMsg, Msg,
-            OutputCompleteMsg, OutputSentenceMsg, PlaybackProgressMsg, PlaybackStartedMsg,
-            ReceiptStatus, ServerEnv, SessionSnapshotMsg, SnapshotTurn, StateTurnMsg,
-            TurnFinishedMsg, TurnOutcome, TurnState, VadEvent,
+            ControlCancelMsg, ErrorAttribution, ErrorMsg, InputAcceptedMsg, InputAudioMsg,
+            InputAudioSegmentMsg, InputAudioStartMsg, InputReceipt, InputRejectedMsg, InputTextMsg,
+            InputVadMsg, Msg, OutputCompleteMsg, OutputSentenceMsg, PlaybackProgressMsg,
+            PlaybackStartedMsg, ReceiptStatus, ServerEnv, SessionSnapshotMsg, SnapshotTurn,
+            StateTurnMsg, TurnFinishedMsg, TurnOutcome, TurnState, VadEvent,
         },
     },
     session::{
@@ -590,10 +590,16 @@ impl Session {
         let matched = self.turn.as_ref().is_some_and(|t| t.id == b.turn_id);
         if !matched {
             warn!(session = %self.id, turn = %b.turn_id, reason = ?b.reason, "barge_in for unknown/stale turn");
-            self.error(&AppError::BadMessage(format!(
-                "control.barge_in targets unknown/stale turn {}",
-                b.turn_id
-            )))
+            self.error_at(
+                &AppError::BadMessage(format!(
+                    "control.barge_in targets unknown/stale turn {}",
+                    b.turn_id
+                )),
+                ErrorAttribution {
+                    turn_id: Some(b.turn_id.clone()),
+                    ..Default::default()
+                },
+            )
             .await;
             return;
         }
@@ -620,7 +626,15 @@ impl Session {
             }
             Err(err) => {
                 warn!(session = %self.id, %err, "interrupt rejected");
-                self.error(&AppError::BadMessage(err.to_string())).await;
+                let turn_id = turn.id.clone();
+                self.error_at(
+                    &AppError::BadMessage(err.to_string()),
+                    ErrorAttribution {
+                        turn_id: Some(turn_id),
+                        ..Default::default()
+                    },
+                )
+                .await;
             }
         }
     }
@@ -684,15 +698,16 @@ impl Session {
     /// `audio.open`（UI 侧）：仅接受 uplink；校验后建立 stream↔capture 绑定。
     async fn on_audio_open(&mut self, open: AudioOpenMsg) {
         if let Err(err) = open.validate() {
-            self.error(&err).await;
+            self.error_at(&err, audio_open_attr(&open)).await;
             return;
         }
         match open.direction {
             Direction::Uplink => self.bind_uplink(open).await,
             Direction::Downlink => {
-                self.error(&AppError::BadMessage(
-                    "downlink audio.open is orchestrator-originated".into(),
-                ))
+                self.error_at(
+                    &AppError::BadMessage("downlink audio.open is orchestrator-originated".into()),
+                    audio_open_attr(&open),
+                )
                 .await;
             }
         }
@@ -701,19 +716,23 @@ impl Session {
     /// uplink 绑定：格式校验 → spawn per-capture uplink task → 登记路由表。
     /// v2 上行固定 pcm_s16le/16kHz/mono（protocol §6）。
     async fn bind_uplink(&mut self, open: AudioOpenMsg) {
+        let attr = audio_open_attr(&open);
         let Some(key) = stream_key(&open.stream_id) else {
-            self.error(&AppError::BadMessage(format!(
-                "audio.open bad stream_id {:?}",
-                open.stream_id
-            )))
+            self.error_at(
+                &AppError::BadMessage(format!("audio.open bad stream_id {:?}", open.stream_id)),
+                attr,
+            )
             .await;
             return;
         };
         if self.uplinks.contains_key(&key) {
-            self.error(&AppError::BadMessage(format!(
-                "audio.open duplicate stream_id {:?}",
-                open.stream_id
-            )))
+            self.error_at(
+                &AppError::BadMessage(format!(
+                    "audio.open duplicate stream_id {:?}",
+                    open.stream_id
+                )),
+                attr,
+            )
             .await;
             return;
         }
@@ -721,17 +740,21 @@ impl Session {
             || open.sample_rate != UPLINK_SAMPLE_RATE
             || open.channels != 1
         {
-            self.error(&AppError::BadMessage(format!(
-                "audio.open unsupported uplink format: {:?} {}Hz {}ch",
-                open.codec, open.sample_rate, open.channels
-            )))
+            self.error_at(
+                &AppError::BadMessage(format!(
+                    "audio.open unsupported uplink format: {:?} {}Hz {}ch",
+                    open.codec, open.sample_rate, open.channels
+                )),
+                attr,
+            )
             .await;
             return;
         }
         let Some(asr) = self.asr.clone() else {
-            self.error(&AppError::ModelUnreachable(
-                "asr uplink not configured".into(),
-            ))
+            self.error_at(
+                &AppError::ModelUnreachable("asr uplink not configured".into()),
+                attr,
+            )
             .await;
             return;
         };
@@ -762,9 +785,13 @@ impl Session {
     /// gap 或缓冲溢出中止 capture（不静默丢帧，protocol §6/runtime.md）。
     async fn on_uplink_frame(&mut self, header: AudioHeader, payload: Bytes) {
         if header.direction != Direction::Uplink {
-            self.error(&AppError::BadMessage(
-                "ui must not send downlink frames".into(),
-            ))
+            self.error_at(
+                &AppError::BadMessage("ui must not send downlink frames".into()),
+                ErrorAttribution {
+                    stream_id: Some(format!("st_{}", header.stream_id)),
+                    ..Default::default()
+                },
+            )
             .await;
             return;
         }
@@ -810,10 +837,13 @@ impl Session {
     /// `audio.end`：校验 `last_chunk_seq` 与最后接收帧一致后按序收尾 stream。
     async fn on_audio_end(&mut self, end: AudioEndMsg) {
         let Some(key) = stream_key(&end.stream_id) else {
-            self.error(&AppError::BadMessage(format!(
-                "audio.end bad stream_id {:?}",
-                end.stream_id
-            )))
+            self.error_at(
+                &AppError::BadMessage(format!("audio.end bad stream_id {:?}", end.stream_id)),
+                ErrorAttribution {
+                    stream_id: Some(end.stream_id.clone()),
+                    ..Default::default()
+                },
+            )
             .await;
             return;
         };
@@ -875,10 +905,24 @@ impl Session {
     /// capture 收尾公共路径：`err` 为 Some 时附带 error 帧（异常中止）。
     /// 摘 uplink sender 掉落 → uplink task 向 svc-asr 发 control.cancel{capture}。
     async fn close_capture(&mut self, capture_id: &str, err: Option<AppError>) {
+        // 摘除前取归因：异常 error 帧可定位到具体 stream/capture。
+        let stream_id = self
+            .uplinks
+            .iter()
+            .find(|(_, up)| up.capture_id == capture_id)
+            .map(|(key, _)| format!("st_{key}"));
         self.uplinks.retain(|_, up| up.capture_id != capture_id);
         self.captures.remove(capture_id);
         if let Some(err) = err {
-            self.error(&err).await;
+            self.error_at(
+                &err,
+                ErrorAttribution {
+                    capture_id: Some(capture_id.to_string()),
+                    stream_id,
+                    ..Default::default()
+                },
+            )
+            .await;
         }
         // 通知 UI 释放 mic（control.cancel 向各方向取消同一对象，protocol §2）。
         self.send(Msg::ControlCancel(ControlCancelMsg {
@@ -920,18 +964,15 @@ impl Session {
                 .await;
                 self.on_audio_segment(seg).await;
             }
-            AsrEvent::Error(err) => {
+            AsrEvent::Error(mut err) => {
                 warn!(session = %self.id, code = ?err.code, msg = %err.message, "svc-asr error");
+                // 透传归因字段（capture_id/stream_id 等），只 restamp 本 session envelope。
                 let env = self.env.next();
-                self.send(Msg::Error(ErrorMsg {
-                    session_id: Some(env.session_id),
-                    event_id: Some(env.event_id),
-                    at_ms: Some(env.at_ms),
-                    event_seq: Some(env.event_seq),
-                    code: err.code,
-                    message: err.message,
-                }))
-                .await;
+                err.session_id = Some(env.session_id);
+                err.event_id = Some(env.event_id);
+                err.at_ms = Some(env.at_ms);
+                err.event_seq = Some(env.event_seq);
+                self.send(Msg::Error(err)).await;
             }
             AsrEvent::LinkDown(err) => {
                 warn!(session = %self.id, %err, "asr link down, aborting captures");
@@ -991,7 +1032,14 @@ impl Session {
                 if self.live_turn(&turn_id).is_none() {
                     return;
                 }
-                self.error(&error).await;
+                self.error_at(
+                    &error,
+                    ErrorAttribution {
+                        turn_id: Some(turn_id.clone()),
+                        ..Default::default()
+                    },
+                )
+                .await;
                 // LLM 失败：invalidate audio + 清 pending + finished(failed)。
                 if let Some(t) = self.turn.as_mut() {
                     if let Ok(next) = t.on_event(TurnEvent::LlmFailed) {
@@ -1016,7 +1064,15 @@ impl Session {
                 // 已自行出站告警的降级（sink 溢出）不重复发帧。
                 if let Some(err) = &error {
                     warn!(session = %self.id, %err, seq = ?sentence_seq, "output degraded");
-                    self.error(err).await;
+                    self.error_at(
+                        err,
+                        ErrorAttribution {
+                            turn_id: Some(turn_id.clone()),
+                            sentence_seq,
+                            ..Default::default()
+                        },
+                    )
+                    .await;
                 }
                 let Some(turn) = self.turn.as_mut() else {
                     return;
@@ -1379,18 +1435,24 @@ impl Session {
         }
     }
 
-    /// `AppError` → 带本 session envelope 的 `error` 帧。
-    async fn error(&mut self, err: &AppError) {
+    /// `AppError` → 带本 session envelope + 归因引用的 `error` 帧（#132）。
+    async fn error_at(&mut self, err: &AppError, attr: ErrorAttribution) {
         let env = self.env.next();
-        self.send(Msg::Error(ErrorMsg {
+        let mut msg = ErrorMsg {
             session_id: Some(env.session_id),
             event_id: Some(env.event_id),
             at_ms: Some(env.at_ms),
             event_seq: Some(env.event_seq),
             code: err.code(),
             message: err.to_string(),
-        }))
-        .await;
+            ref_id: None,
+            turn_id: None,
+            capture_id: None,
+            stream_id: None,
+            sentence_seq: None,
+        };
+        attr.apply_to(&mut msg);
+        self.send(Msg::Error(msg)).await;
     }
 
     async fn accept_input(&mut self, ref_id: String, turn_id: TurnId) {
@@ -1427,6 +1489,16 @@ impl Session {
         if self.seen_inputs.len() > RECEIPT_CACHE {
             self.seen_inputs.pop_front();
         }
+    }
+}
+
+/// `audio.open` 校验/拒绝路径的归因：stream_id 必填，capture_id/turn_id 随方向携带。
+fn audio_open_attr(open: &AudioOpenMsg) -> ErrorAttribution {
+    ErrorAttribution {
+        stream_id: Some(open.stream_id.clone()),
+        capture_id: open.capture_id.clone(),
+        turn_id: open.turn_id.clone(),
+        ..Default::default()
     }
 }
 

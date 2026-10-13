@@ -54,11 +54,46 @@ KNOWN_TYPES = frozenset(
 log = get_logger(__name__)
 
 
-def _error_frame(code: str, message: str, *, ref_id: str | None = None) -> dict:
-    frame: dict[str, Any] = {"type": "error", "code": code, "message": message}
-    if ref_id is not None:
-        frame["ref_id"] = ref_id
-    return frame
+# error 帧可选归因字段（protocol §2；#132 异步失败定位到 stream/capture/turn）。
+_ERROR_ATTR_FIELDS = frozenset(
+    {"ref_id", "turn_id", "capture_id", "stream_id", "sentence_seq"}
+)
+
+
+def _error_frame(code: str, message: str, **attribution: Any) -> dict:
+    """error 帧体（无 envelope，握手期用）。
+
+    `**attribution` 为可选归因字段（ref_id/turn_id/capture_id/stream_id/
+    sentence_seq），None 或表外键不上线。
+    """
+    return {
+        "type": "error",
+        "code": code,
+        "message": message,
+        **{
+            k: v
+            for k, v in attribution.items()
+            if k in _ERROR_ATTR_FIELDS and v is not None
+        },
+    }
+
+
+def msg_attribution(msg: dict) -> dict[str, Any]:
+    """从入站消息提取 error 归因字段（#132）：str 型 id 与 int 型
+    `sentence_seq`/`seq` 原样携带，其余形态视为未知不带。"""
+    seq = msg.get("sentence_seq", msg.get("seq"))
+
+    def _str(key: str) -> str | None:
+        v = msg.get(key)
+        return v if isinstance(v, str) else None
+
+    return {
+        "ref_id": _str("ref_id"),
+        "turn_id": _str("turn_id"),
+        "capture_id": _str("capture_id"),
+        "stream_id": _str("stream_id"),
+        "sentence_seq": seq if isinstance(seq, int) and not isinstance(seq, bool) else None,
+    }
 
 
 @dataclass
@@ -98,14 +133,16 @@ class WsContext:
         async with self._send_lock:
             await self.ws.send_bytes(payload)
 
-    async def send_error(self, code: str, message: str) -> None:
+    async def send_error(self, code: str, message: str, **attribution: Any) -> None:
+        """error 帧（envelope + code/message + 可选归因字段，#132）。"""
+        frame = _error_frame(code, message, **attribution)
+        frame.pop("type")
         async with self._send_lock:
             await self.ws.send_json(
                 {
                     "type": "error",
                     **self.envelope(),
-                    "code": code,
-                    "message": message,
+                    **frame,
                 }
             )
 

@@ -13,10 +13,16 @@ from fastapi import FastAPI
 from momo_models.audio import UPLINK_SAMPLE_RATE
 from momo_models.config import Settings, get_settings
 from momo_models.logging import configure_logging, get_logger
-from momo_models.proto import DIR_UPLINK, AudioHeader, FrameError, ulid_to_bytes
+from momo_models.proto import (
+    DIR_UPLINK,
+    AudioHeader,
+    FrameError,
+    ulid_from_bytes,
+    ulid_to_bytes,
+)
 from momo_models.providers.base import SPEECH_END, ASRProvider, VadEvent, VADProvider
 from momo_models.providers.registry import create_asr_provider, create_vad_provider
-from momo_models.services.common import WsContext, make_app, serve
+from momo_models.services.common import WsContext, make_app, msg_attribution, serve
 
 log = get_logger(__name__)
 
@@ -87,45 +93,54 @@ class _AsrLink:
 
     async def _on_open(self, msg: dict) -> None:
         ctx = self._ctx
+        attr = msg_attribution(msg)
         if msg.get("direction") != "uplink":
-            await ctx.send_error("BAD_MESSAGE", "audio.open on asr link requires direction=uplink")
+            await ctx.send_error(
+                "BAD_MESSAGE", "audio.open on asr link requires direction=uplink", **attr
+            )
             return
         if msg.get("sentence_seq") is not None or msg.get("turn_id") is not None:
             await ctx.send_error(
-                "BAD_MESSAGE", "uplink audio.open must not carry sentence_seq/turn_id"
+                "BAD_MESSAGE",
+                "uplink audio.open must not carry sentence_seq/turn_id",
+                **attr,
             )
             return
         capture_id = msg.get("capture_id")
         if not isinstance(capture_id, str) or not capture_id:
-            await ctx.send_error("BAD_MESSAGE", "audio.open requires capture_id")
+            await ctx.send_error("BAD_MESSAGE", "audio.open requires capture_id", **attr)
             return
         if (
             msg.get("codec") != "pcm_s16le"
             or msg.get("sample_rate") != UPLINK_SAMPLE_RATE
             or msg.get("channels") != 1
         ):
-            await ctx.send_error("BAD_MESSAGE", "audio.open requires pcm_s16le 16000Hz mono")
+            await ctx.send_error(
+                "BAD_MESSAGE", "audio.open requires pcm_s16le 16000Hz mono", **attr
+            )
             return
         stream_id = msg.get("stream_id")
         if not isinstance(stream_id, str) or not stream_id:
-            await ctx.send_error("BAD_MESSAGE", "audio.open requires stream_id")
+            await ctx.send_error("BAD_MESSAGE", "audio.open requires stream_id", **attr)
             return
         try:
             raw_stream = ulid_to_bytes(stream_id.removeprefix("st_"))
         except ValueError:
-            await ctx.send_error("BAD_MESSAGE", f"invalid stream_id {stream_id!r}")
+            await ctx.send_error("BAD_MESSAGE", f"invalid stream_id {stream_id!r}", **attr)
             return
         if self._cap is not None:
-            await ctx.send_error("BAD_MESSAGE", f"uplink stream {self._cap.stream_id} already open")
+            await ctx.send_error(
+                "BAD_MESSAGE", f"uplink stream {self._cap.stream_id} already open", **attr
+            )
             return
         vad = self._vad()
         if not getattr(ctx.app.state, "ready", False) or vad is None or self._asr() is None:
-            await ctx.send_error("ASR_FAILED", "asr/vad provider not ready")
+            await ctx.send_error("ASR_FAILED", "asr/vad provider not ready", **attr)
             return
         try:
             vad.reset()
         except Exception as e:
-            await ctx.send_error("ASR_FAILED", f"vad reset failed: {e}")
+            await ctx.send_error("ASR_FAILED", f"vad reset failed: {e}", **attr)
             return
         cap = _Capture(stream_id=stream_id, raw_stream=raw_stream, capture_id=capture_id)
         cap.worker = asyncio.create_task(self._segment_worker(cap), name=f"asr-seg-{stream_id}")
@@ -142,15 +157,28 @@ class _AsrLink:
             await ctx.send_error("BAD_MESSAGE", f"audio frame: {e}")
             return
         if header.direction != DIR_UPLINK:
-            await ctx.send_error("BAD_MESSAGE", "audio frame: wrong direction for asr link")
+            await ctx.send_error(
+                "BAD_MESSAGE",
+                "audio frame: wrong direction for asr link",
+                stream_id=f"st_{ulid_from_bytes(header.stream_id)}",
+            )
             return
         cap = self._cap
         if cap is None or header.stream_id != cap.raw_stream:
-            await ctx.send_error("BAD_MESSAGE", "audio frame: unknown stream")
+            await ctx.send_error(
+                "BAD_MESSAGE",
+                "audio frame: unknown stream",
+                stream_id=f"st_{ulid_from_bytes(header.stream_id)}",
+            )
             return
         if cap.eos:
             # EOS 后不再接受数据帧；stream 等 audio.end/cancel 收尾。
-            await ctx.send_error("BAD_MESSAGE", "audio frame after EOS")
+            await ctx.send_error(
+                "BAD_MESSAGE",
+                "audio frame after EOS",
+                stream_id=cap.stream_id,
+                capture_id=cap.capture_id,
+            )
             return
         if header.chunk_seq != cap.next_seq or header.sample_offset != cap.next_offset:
             # seq/offset 不连续按 §6 中止 stream（对端需重开）。
@@ -158,6 +186,8 @@ class _AsrLink:
                 "BAD_MESSAGE",
                 f"audio frame gap: expected seq={cap.next_seq} offset={cap.next_offset}, "
                 f"got seq={header.chunk_seq} offset={header.sample_offset}",
+                stream_id=cap.stream_id,
+                capture_id=cap.capture_id,
             )
             await self._close(cap, discard=True)
             return
@@ -176,7 +206,12 @@ class _AsrLink:
         try:
             await self._emit(cap, vad.feed(pcm))
         except Exception as e:
-            await self._ctx.send_error("ASR_FAILED", f"vad feed failed: {e}")
+            await self._ctx.send_error(
+                "ASR_FAILED",
+                f"vad feed failed: {e}",
+                stream_id=cap.stream_id,
+                capture_id=cap.capture_id,
+            )
 
     async def _emit(self, cap: _Capture, events: Iterator[VadEvent]) -> None:
         """VadEvent → input.vad；speech_end 的段 PCM 入转写队列。"""
@@ -203,7 +238,12 @@ class _AsrLink:
             events.extend(vad.flush())
             await self._emit(cap, iter(events))
         except Exception as e:
-            await self._ctx.send_error("ASR_FAILED", f"vad flush failed: {e}")
+            await self._ctx.send_error(
+                "ASR_FAILED",
+                f"vad flush failed: {e}",
+                stream_id=cap.stream_id,
+                capture_id=cap.capture_id,
+            )
         cap.queue.put_nowait(None)
         if cap.worker is not None:
             # 末段转写完再算 stream 收尾（decode 有界，约段长×RTF）。
@@ -218,12 +258,22 @@ class _AsrLink:
                 return
             asr = self._asr()
             if asr is None:
-                await ctx.send_error("ASR_FAILED", "asr provider not ready")
+                await ctx.send_error(
+                    "ASR_FAILED",
+                    "asr provider not ready",
+                    stream_id=cap.stream_id,
+                    capture_id=cap.capture_id,
+                )
                 continue
             try:
                 t = await asr.transcribe(pcm, lang=None)
             except Exception as e:
-                await ctx.send_error("ASR_FAILED", f"transcribe failed: {e}")
+                await ctx.send_error(
+                    "ASR_FAILED",
+                    f"transcribe failed: {e}",
+                    stream_id=cap.stream_id,
+                    capture_id=cap.capture_id,
+                )
                 continue
             if not t.text.strip():
                 log.info("asr.segment_empty", capture_id=cap.capture_id)
@@ -249,13 +299,17 @@ class _AsrLink:
         ctx = self._ctx
         cap = self._cap
         if cap is None or cap.stream_id != msg.get("stream_id"):
-            await ctx.send_error("BAD_MESSAGE", "audio.end for unknown stream")
+            await ctx.send_error(
+                "BAD_MESSAGE", "audio.end for unknown stream", **msg_attribution(msg)
+            )
             return
         last = msg.get("last_chunk_seq")
         if not isinstance(last, int) or isinstance(last, bool) or last != cap.next_seq - 1:
             await ctx.send_error(
                 "BAD_MESSAGE",
                 f"audio.end last_chunk_seq={last!r} != last received frame seq={cap.next_seq - 1}",
+                stream_id=cap.stream_id,
+                capture_id=cap.capture_id,
             )
             await self._close(cap, discard=True)
             return
@@ -267,7 +321,11 @@ class _AsrLink:
         ctx = self._ctx
         cap = self._cap
         if cap is None or cap.capture_id != msg.get("capture_id"):
-            await ctx.send_error("BAD_MESSAGE", f"unknown capture {msg.get('capture_id')!r}")
+            await ctx.send_error(
+                "BAD_MESSAGE",
+                f"unknown capture {msg.get('capture_id')!r}",
+                **msg_attribution(msg),
+            )
             return
         if not discard:
             await self._flush(cap)
@@ -285,16 +343,22 @@ class _AsrLink:
             if cap is not None and cap.capture_id == obj_id:
                 await self._close(cap, discard=True)
             else:
-                await ctx.send_error("BAD_MESSAGE", f"unknown capture {obj_id!r}")
+                await ctx.send_error(
+                    "BAD_MESSAGE", f"unknown capture {obj_id!r}", capture_id=obj_id
+                )
         elif target == "stream":
             if cap is not None and cap.stream_id == obj_id:
                 await self._close(cap, discard=True)
             else:
-                await ctx.send_error("BAD_MESSAGE", f"unknown stream {obj_id!r}")
+                await ctx.send_error(
+                    "BAD_MESSAGE", f"unknown stream {obj_id!r}", stream_id=obj_id
+                )
         elif target == "turn":
             log.info("asr.cancel_ignored", target=target, id=obj_id)  # 非 ASR 职责
         else:
-            await ctx.send_error("BAD_MESSAGE", f"unknown cancel target {target!r}")
+            await ctx.send_error(
+                "BAD_MESSAGE", f"unknown cancel target {target!r}", ref_id=obj_id
+            )
 
     async def _close(self, cap: _Capture, *, discard: bool = False) -> None:
         """关 stream；discard=True 丢弃未转写段并取消 worker。"""
