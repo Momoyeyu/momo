@@ -704,7 +704,17 @@ fn spawn_component(
     proc::prepare_spawn(&mut cmd);
     match cmd.spawn() {
         Ok(child) => {
-            proc::adopt_spawned(&c.name, child.id());
+            // 挂接失败仅失去整树强杀——留诊断行进组件日志便于排查。
+            if let Err(err) = proc::adopt_spawned(&c.name, child.id()) {
+                if let Ok(mut f) = std::fs::OpenOptions::new().append(true).open(&log_path) {
+                    let _ = writeln!(
+                        f,
+                        "[serve] job-assign failed for pid {} (win32 {})",
+                        child.id(),
+                        err
+                    );
+                }
+            }
             Ok((child, log_path))
         }
         Err(e) => Err(AppError::Io(std::io::Error::new(
@@ -954,7 +964,7 @@ args = ["--exact", "cmds::serve::tests::wrapper_entry"]
 
     #[test]
     fn up_spawns_pidfile_and_log() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("spawn");
         let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         let code = up(&doc, &common(), "t", &test_ctx()).unwrap();
@@ -978,7 +988,7 @@ args = ["--exact", "cmds::serve::tests::wrapper_entry"]
 
     #[test]
     fn failed_external_probe_stops_owned_children() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("cleanup");
         // stub 先拉起，随后的 external 探活指向无监听端口 → fail → 清理 stub。
         std::env::set_var("MOMO_TEST_EP", "http://127.0.0.1:1");
@@ -1007,7 +1017,7 @@ probe_path = "/models"
 
     #[test]
     fn only_unknown_component_is_usage_error() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         let c = ServeCommon {
             profile: None,
@@ -1019,7 +1029,7 @@ probe_path = "/models"
 
     #[test]
     fn local_endpoint_only_skipped_off_loopback() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("skip");
         std::env::set_var("MOMO_LLM_ENDPOINT", "https://api.deepseek.com/v1");
         let toml = profile(&format!(
@@ -1046,7 +1056,7 @@ cmd = "llama-server-nonexistent-bin"
 
     #[test]
     fn down_is_idempotent_noop() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("down-noop");
         let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         // 未运行即 down：no-op 成功，再次 down 同样成功。
@@ -1058,7 +1068,7 @@ cmd = "llama-server-nonexistent-bin"
 
     #[test]
     fn down_stops_running_component_and_cleans_state() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("down-stop");
         let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         assert_eq!(up(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
@@ -1077,7 +1087,7 @@ cmd = "llama-server-nonexistent-bin"
 
     #[test]
     fn down_removes_stale_pidfile() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("down-stale");
         let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         // 写一个不可能存活的 pid → down 应清掉 pidfile 且成功。
@@ -1090,7 +1100,7 @@ cmd = "llama-server-nonexistent-bin"
 
     #[test]
     fn status_reports_stopped_running_and_stale() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("status");
         let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
 
@@ -1118,7 +1128,7 @@ cmd = "llama-server-nonexistent-bin"
 
     #[test]
     fn restart_replaces_running_component() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("restart");
         let doc = ServeProfile::parse(&profile(&stub_component())).unwrap();
         assert_eq!(up(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
@@ -1138,7 +1148,7 @@ cmd = "llama-server-nonexistent-bin"
     /// 但仍在 spawn 时的进程组/Job 内；`serve down` 按组收口连孤儿一起停。
     #[test]
     fn down_reaps_orphaned_grandchild() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("group-orphan");
         let marker = std::env::temp_dir().join(format!("momo-gc-{}", std::process::id()));
         let _ = fs::remove_file(&marker);
@@ -1171,7 +1181,7 @@ cmd = "llama-server-nonexistent-bin"
     /// 一起杀（旧行为 `child.kill()` 对已退出 wrapper 是 no-op，孙进程泄漏）。
     #[test]
     fn abort_reaps_group_after_wrapper_exit() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("group-abort");
         let marker = std::env::temp_dir().join(format!("momo-gc-abort-{}", std::process::id()));
         let _ = fs::remove_file(&marker);
@@ -1188,7 +1198,21 @@ cmd = "llama-server-nonexistent-bin"
         );
 
         let gc = wait_reported_pid(&marker);
-        wait_pid_dead(gc);
+        // windows 下 assign/terminate 任一环节断裂都会留活口——失败时带诊断。
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while proc::is_alive(gc) {
+            if Instant::now() >= deadline {
+                #[cfg(windows)]
+                panic!(
+                    "grandchild {gc} still alive; job_active={} stub_log={:?}",
+                    proc::job_active("stub"),
+                    fs::read_to_string(proc::log_dir().join("stub.log")).unwrap_or_default()
+                );
+                #[cfg(not(windows))]
+                panic!("pid {gc} still alive");
+            }
+            thread::sleep(Duration::from_millis(50));
+        }
         assert!(
             proc::read_pidfile("stub").is_err(),
             "pidfile removed on abort"
@@ -1203,7 +1227,7 @@ cmd = "llama-server-nonexistent-bin"
     /// 持端口）→ 下次 `serve up` 先收孤儿再拉起，而不是 stale 一删了之。
     #[test]
     fn up_reaps_orphan_group_before_respawn() {
-        let _g = LOCK.lock().unwrap();
+        let _g = LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let state = state_dir("group-reap");
         let marker = std::env::temp_dir().join(format!("momo-gc-reap-{}", std::process::id()));
         let _ = fs::remove_file(&marker);

@@ -92,12 +92,15 @@ pub fn prepare_spawn(cmd: &mut std::process::Command) {
 /// spawn 后置：windows 把 child 挂进具名 Job Object `momo-serve-<component>`
 /// （up/down 跨进程按名重开；成员的后代自动入 Job）。挂接失败仅失去整树
 /// 强杀，退回单 pid 阶梯。unix 组关系已在 `prepare_spawn` 落定，此处 no-op。
-pub fn adopt_spawned(component: &str, pid: u32) {
+pub fn adopt_spawned(component: &str, pid: u32) -> Result<(), u32> {
     #[cfg(windows)]
-    assign_to_job(component, pid);
+    {
+        assign_to_job(component, pid)
+    }
     #[cfg(not(windows))]
     {
         let _ = (component, pid);
+        Ok(())
     }
 }
 
@@ -283,37 +286,41 @@ const JOB_OBJECT_QUERY_ACCESS: u32 = 0x0004;
 /// 挂 child 进具名 Job：Job 不存在则创建；同名已存在 = 上次泄漏的孤儿组
 /// 仍在，直接复用——后续 `TerminateJobObject` 一并收掉。
 #[cfg(windows)]
-fn assign_to_job(component: &str, pid: u32) -> bool {
-    use windows_sys::Win32::Foundation::CloseHandle;
+fn assign_to_job(component: &str, pid: u32) -> Result<(), u32> {
+    use windows_sys::Win32::Foundation::{CloseHandle, GetLastError};
     use windows_sys::Win32::System::JobObjects::{AssignProcessToJobObject, CreateJobObjectW};
     use windows_sys::Win32::System::Threading::{
         OpenProcess, PROCESS_SET_QUOTA, PROCESS_TERMINATE,
     };
     if pid == 0 {
-        return false;
+        return Err(0);
     }
     unsafe {
         let name = job_name(component);
         let job = CreateJobObjectW(std::ptr::null(), name.as_ptr());
         if job == 0 {
-            return false;
+            return Err(GetLastError());
         }
         let ph = OpenProcess(PROCESS_SET_QUOTA | PROCESS_TERMINATE, 0, pid);
-        let ok = if ph == 0 {
-            false
+        let r = if ph == 0 {
+            Err(GetLastError())
         } else {
-            let ok = AssignProcessToJobObject(job, ph) != 0;
+            let r = if AssignProcessToJobObject(job, ph) != 0 {
+                Ok(())
+            } else {
+                Err(GetLastError())
+            };
             CloseHandle(ph);
-            ok
+            r
         };
         CloseHandle(job);
-        ok
+        r
     }
 }
 
 /// Job 仍有活动成员 → 组件算活（wrapper 死后孙进程残留情形）。
 #[cfg(windows)]
-fn job_active(component: &str) -> bool {
+pub(crate) fn job_active(component: &str) -> bool {
     use windows_sys::Win32::Foundation::CloseHandle;
     use windows_sys::Win32::System::JobObjects::{
         JobObjectBasicAccountingInformation, OpenJobObjectW, QueryInformationJobObject,
