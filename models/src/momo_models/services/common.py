@@ -3,11 +3,12 @@
 业务消息由 `business_factory` 注入的 WsBusiness 处理；未实装消息回 not implemented。
 """
 
+import asyncio
 import json
 import time
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 import uvicorn
@@ -64,12 +65,18 @@ def _error_frame(
 
 @dataclass
 class WsContext:
-    """已握手连接上下文；envelope/send_error 自动携带单调 event_seq。"""
+    """已握手连接上下文；envelope/send_error 自动携带单调 event_seq。
+
+    所有发送走 `send`/`send_error` 并经 `_send_lock` 串行：取号与发送
+    原子，避免并发任务（接收循环 vs 业务 worker）造成 event_seq 乱序
+    或 Starlette ws 字节级交错。
+    """
 
     ws: WebSocket
     app: FastAPI
     session_id: str
     event_seq: int = 0
+    _send_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
     def envelope(self) -> dict[str, Any]:
         """服务端业务消息公共 envelope（event_seq 每次 +1）。"""
@@ -81,16 +88,24 @@ class WsContext:
             "event_seq": self.event_seq,
         }
 
+    async def send(self, payload: dict[str, Any]) -> None:
+        """锁内注入 envelope 发送业务消息（payload 不含 envelope 字段）。"""
+        payload = dict(payload)
+        msg_type = payload.pop("type", None)
+        async with self._send_lock:
+            await self.ws.send_json({"type": msg_type, **self.envelope(), **payload})
+
     async def send_error(self, code: str, message: str, *, fatal: bool = False) -> None:
-        await self.ws.send_json(
-            {
-                "type": "error",
-                **self.envelope(),
-                "code": code,
-                "message": message,
-                "fatal": fatal,
-            }
-        )
+        async with self._send_lock:
+            await self.ws.send_json(
+                {
+                    "type": "error",
+                    **self.envelope(),
+                    "code": code,
+                    "message": message,
+                    "fatal": fatal,
+                }
+            )
 
 
 class WsBusiness(Protocol):
