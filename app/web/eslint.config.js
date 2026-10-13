@@ -27,4 +27,18 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
   },
+  {
+    // public/worklets/*.js 以 classic script 加载进 AudioWorkletGlobalScope。
+    files: ["public/**/*.js"],
+    languageOptions: {
+      sourceType: "script",
+      globals: {
+        AudioWorkletProcessor: "readonly",
+        registerProcessor: "readonly",
+        sampleRate: "readonly",
+        currentFrame: "readonly",
+        currentTime: "readonly",
+      },
+    },
+  },
 );

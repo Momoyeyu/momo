@@ -33,6 +33,9 @@ stage.loadModel(avatarModelUrl()).catch((err: unknown) => {
 });
 
 const player = new AudioPlayer();
+// 口型链：worklet RMS → mouthOpenY → ParamMouthOpenY（#96）。
+player.onMouthOpen = (v) => stage.setMouthOpen(v);
+
 const status = new StatusIndicator(statusEl);
 const chat = initChat(chatEl);
 
@@ -40,6 +43,9 @@ const client = new WsClient(wsUrl(), uiToken());
 client.onState = (state) => status.setConn(state);
 client.onAudioChunk = (header, payload) => {
   player.ensureContext();
+  void player.init().catch((err: unknown) => {
+    console.error("audio worklet init failed:", err);
+  });
   player.enqueue(header, payload);
 };
 client.onServerMsg = (msg) => {
@@ -68,6 +74,8 @@ client.onServerMsg = (msg) => {
 };
 
 chat.onSubmit = (text) => {
+  // 用户手势窗口内 resume AudioContext（autoplay policy），TTS 下行才不哑。
+  void player.ensureContext().resume();
   client.send({ type: "input.text", id: newId("r"), text, lang: "auto" });
 };
 
