@@ -69,6 +69,41 @@ dest = "owner/repo"
 files = []
 """
 
+# GitHub-only 上游：source = "url" 走逐文件直链，不经 HF_ENDPOINT。
+MANIFEST_URL_SOURCE = f"""
+[[model]]
+name = "gh-only"
+repo_id = "owner/repo"
+revision = "master"
+dest = "owner/repo"
+source = "url"
+files = [
+  {{ path = "w.onnx", url = "https://raw.githubusercontent.com/owner/repo/master/w.onnx", sha256 = "{SHA_A}" }},
+]
+"""
+
+# source = "url" 但文件未给 url → 非法（pull 无从拼 URL）。
+MANIFEST_URL_MISSING_URL = """
+[[model]]
+name = "bad-url-source"
+repo_id = "owner/repo"
+revision = "main"
+dest = "owner/repo"
+source = "url"
+files = [ { path = "w.onnx", sha256 = "TODO" } ]
+"""
+
+# source 取值限定 hf|url。
+MANIFEST_BAD_SOURCE = """
+[[model]]
+name = "bad-source"
+repo_id = "owner/repo"
+revision = "main"
+dest = "owner/repo"
+source = "ftp"
+files = []
+"""
+
 
 def _write_manifest(tmp_path: Path, text: str = MANIFEST_OK) -> Path:
     p = tmp_path / "MANIFEST.toml"
@@ -118,6 +153,26 @@ def test_load_manifest_other_license_requires_name(tmp_path: Path) -> None:
 def test_load_manifest_missing_field(tmp_path: Path) -> None:
     with pytest.raises(ManifestError):
         load_manifest(_write_manifest(tmp_path, MANIFEST_BAD))
+
+
+def test_load_manifest_url_source(tmp_path: Path) -> None:
+    """source = "url" 条目解析出直链字段；缺省条目 source = "hf"。"""
+    e = load_manifest(_write_manifest(tmp_path, MANIFEST_URL_SOURCE))[0]
+    assert e.source == "url"
+    assert e.files[0].url == "https://raw.githubusercontent.com/owner/repo/master/w.onnx"
+
+    default = load_manifest(_write_manifest(tmp_path, MANIFEST_NO_LICENSE))[0]
+    assert default.source == "hf"
+
+
+def test_load_manifest_url_source_requires_file_url(tmp_path: Path) -> None:
+    with pytest.raises(ManifestError):
+        load_manifest(_write_manifest(tmp_path, MANIFEST_URL_MISSING_URL))
+
+
+def test_load_manifest_rejects_unknown_source(tmp_path: Path) -> None:
+    with pytest.raises(ManifestError):
+        load_manifest(_write_manifest(tmp_path, MANIFEST_BAD_SOURCE))
 
 
 def test_sha256_file(tmp_path: Path) -> None:
@@ -189,3 +244,16 @@ def test_real_manifest_declares_license() -> None:
     # 非 SPDX 自定义许可：spdx = "other" 且带 name。
     assert by_name["sense-voice-small-int8"].spdx == "other"
     assert by_name["sense-voice-small-int8"].name
+
+
+def test_real_manifest_silero_uses_url_source() -> None:
+    """silero-vad 上游仅 GitHub：须声明 source = "url" + 直链，其余条目默认 hf。"""
+    from momo_models.manifest import DEFAULT_MANIFEST
+
+    entries = load_manifest(DEFAULT_MANIFEST)
+    by_name = {e.name: e for e in entries}
+    for e in entries:
+        assert e.source in ("hf", "url")
+    silero = by_name["silero-vad"]
+    assert silero.source == "url"
+    assert silero.files[0].url and silero.files[0].url.startswith("https://")

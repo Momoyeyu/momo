@@ -1,6 +1,7 @@
 //! `momoctl pull` 下载路径集成测试（wiremock 本地 HTTP 服）：
 //! 新鲜下载 / `.part` 断点续传 / sha256 不匹配 / pull.lock 并发互斥 /
-//! 已落位跳过。HF_ENDPOINT 指向 mock server，不触网。
+//! 已落位跳过 / `source = "url"` 与 file.url 直链分发。
+//! HF_ENDPOINT 指向 mock server，不触网。
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -194,4 +195,90 @@ async fn already_present_file_skips_download() {
         .unwrap()
         .contains("already present"));
     assert!(models.join("models.lock").exists());
+}
+
+/// `source = "url"` 条目：逐文件直链下载，不拼 HF_ENDPOINT resolve URL
+/// （HF_ENDPOINT 指到不通地址也应成功）。silero-vad 类 GitHub-only 上游用例。
+#[tokio::test]
+async fn url_source_downloads_direct_and_ignores_hf_endpoint() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/raw/silero_vad.onnx"))
+        .respond_with(ResponseTemplate::new(200).set_body_bytes(CONTENT))
+        .mount(&server)
+        .await;
+
+    let root = tmpdir("urlsrc");
+    let manifest = root.join("MANIFEST.toml");
+    fs::write(
+        &manifest,
+        format!(
+            r#"[[model]]
+name = "silero-vad"
+repo_id = "snakers4/silero-vad"
+revision = "master"
+source = "url"
+dest = "snakers4/silero-vad"
+files = [ {{ path = "silero_vad.onnx", url = "{}/raw/silero_vad.onnx", sha256 = "{GOOD_SHA}", size = 15 }} ]
+"#,
+            server.uri()
+        ),
+    )
+    .unwrap();
+    let models = root.join("models");
+
+    // 故意把 HF_ENDPOINT 指到不可达地址：直链源不应触碰它。
+    let out = run_pull(&manifest, &models, "http://127.0.0.1:1", &[]);
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "stdout: {} stderr: {}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(
+        fs::read(models.join("snakers4/silero-vad/silero_vad.onnx")).unwrap(),
+        CONTENT
+    );
+    let lock = fs::read_to_string(models.join("models.lock")).unwrap();
+    assert!(lock.contains("snakers4/silero-vad@master"), "lock: {lock}");
+}
+
+/// `hf` 条目（缺省 source）下 file.url 单文件覆盖：绕过 resolve 拼接走直链。
+#[tokio::test]
+async fn hf_entry_per_file_url_overrides_resolve_path() {
+    let server = MockServer::start().await;
+    // 只挂直链路径；若仍拼 /a/b/resolve/main/w.bin 会命中 404 → fail。
+    Mock::given(method("GET"))
+        .and(path("/direct/w.bin"))
+        .respond_with(ResponseTemplate::new(200).set_body_bytes(CONTENT))
+        .mount(&server)
+        .await;
+
+    let root = tmpdir("fileurl");
+    let manifest = root.join("MANIFEST.toml");
+    fs::write(
+        &manifest,
+        format!(
+            r#"[[model]]
+name = "m"
+repo_id = "a/b"
+revision = "main"
+files = [ {{ path = "w.bin", url = "{}/direct/w.bin", sha256 = "{GOOD_SHA}", size = 15 }} ]
+"#,
+            server.uri()
+        ),
+    )
+    .unwrap();
+    let models = root.join("models");
+
+    let out = run_pull(&manifest, &models, &server.uri(), &[]);
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "stdout: {} stderr: {}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(fs::read(models.join("a/b/w.bin")).unwrap(), CONTENT);
 }

@@ -1,6 +1,8 @@
 //! `momoctl pull [--manifest PATH] [--only NAME] [--check]`：模型下载 + sha256 校验。
 //! `.part` + Range 续传 → size+sha256 复算 → rename → `models.lock`；`pull.lock`
 //! 原子占位防并发。`--check` 只校验不下载（占位 "TODO"/缺失按 fail）。
+//! 下载源按条目 `source` 分发：`hf`（默认）拼 `<HF_ENDPOINT>/<repo>/resolve/
+//! <rev>/<path>`，`url` 逐文件取 `files[].url` 直链（GitHub raw 等非 HF 源）。
 //! 退出码：2 usage/config、4 网络、5 校验（02-repos/momo-infra.md）。
 
 use std::fs::{self, OpenOptions};
@@ -167,7 +169,7 @@ fn fetch_file(
 ) -> FileFetch {
     let id = format!("{}/{}", m.name, f.path);
     let dest = m.dest_dir(models_dir).join(&f.path);
-    let url = format!("{endpoint}/{}/resolve/{}/{}", m.repo_id, m.revision, f.path);
+    let url = file_url(endpoint, m, f);
 
     // 幂等：已落位且校验通过 → 跳过下载。
     if dest.is_file() {
@@ -215,14 +217,15 @@ fn fetch_file(
     match download(client, &url, &part, resume) {
         Ok(done) => eprintln!("pull: {id}: {done} bytes in .part"),
         Err(detail) => {
+            let hint = if f.url.is_some() {
+                "check the file url is reachable (direct-url source ignores HF_ENDPOINT); .part kept for resume"
+            } else {
+                "if network is unreachable set HF_ENDPOINT to a mirror and retry; .part kept for resume"
+            };
             return FileFetch::fail(
-                Check::fail(
-                    id,
-                    format!("download failed: {detail}"),
-                    "if network is unreachable set HF_ENDPOINT to a mirror and retry; .part kept for resume",
-                ),
+                Check::fail(id, format!("download failed: {detail}"), hint),
                 FailKind::Net,
-            )
+            );
         }
     }
 
@@ -276,6 +279,16 @@ fn fetch_file(
             sha256: sha,
         },
     )
+}
+
+/// 单文件下载 URL：`files[].url` 存在 → 直链原样 GET（`source = "url"` 条目
+/// 或 hf 条目的单文件覆盖，均不经 `HF_ENDPOINT`）；否则按 HF resolve 拼
+/// `<endpoint>/<repo_id>/resolve/<revision>/<path>`。
+fn file_url(endpoint: &str, m: &ModelEntry, f: &FileEntry) -> String {
+    match &f.url {
+        Some(u) => u.clone(),
+        None => format!("{endpoint}/{}/resolve/{}/{}", m.repo_id, m.revision, f.path),
+    }
 }
 
 /// `.part` 路径：`<dest>` 同级追加 `.part` 后缀（`w.bin` → `w.bin.part`）。

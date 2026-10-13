@@ -186,6 +186,7 @@ mod tests {
     fn file(path: &str, size: u64) -> FileEntry {
         FileEntry {
             path: path.into(),
+            url: None,
             sha256: None,
             size: Some(size),
         }

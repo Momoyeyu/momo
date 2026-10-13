@@ -1,6 +1,6 @@
 //! MANIFEST.toml 解析/校验单元测试（口径：momo-models.md `name/repo_id/revision/files/sha256/dest/notes`）。
 
-use momo_infra::manifest::Manifest;
+use momo_infra::manifest::{Manifest, SourceKind};
 
 const SAMPLE: &str = r#"
 [[model]]
@@ -134,4 +134,89 @@ dest = "../escape"
 fn tolerates_empty_manifest() {
     let m = Manifest::parse("").unwrap();
     assert!(m.models.is_empty());
+}
+
+#[test]
+fn defaults_to_hf_source() {
+    // 无 source 字段的条目保持 HF resolve 行为（向后兼容）。
+    let m = Manifest::parse(SAMPLE).unwrap();
+    assert_eq!(m.models[0].source, SourceKind::Hf);
+    assert!(m.models[0].files[0].url.is_none());
+}
+
+#[test]
+fn parses_url_source_with_file_urls() {
+    let m = Manifest::parse(
+        r#"
+[[model]]
+name = "silero-vad"
+repo_id = "snakers4/silero-vad"
+revision = "master"
+source = "url"
+files = [
+  { path = "silero_vad.onnx", url = "https://raw.githubusercontent.com/snakers4/silero-vad/master/src/silero_vad/data/silero_vad.onnx" },
+]
+"#,
+    )
+    .unwrap();
+    let e = &m.models[0];
+    assert_eq!(e.source, SourceKind::Url);
+    assert!(e.files[0].url.as_deref().unwrap().starts_with("https://"));
+}
+
+#[test]
+fn rejects_url_source_without_file_url() {
+    let bad = r#"
+[[model]]
+name = "x"
+repo_id = "a/b"
+source = "url"
+files = [ { path = "f.bin" } ]
+"#;
+    assert!(Manifest::parse(bad).is_err());
+}
+
+#[test]
+fn rejects_non_http_file_url() {
+    let bad = r#"
+[[model]]
+name = "x"
+repo_id = "a/b"
+files = [ { path = "f.bin", url = "file:///etc/passwd" } ]
+"#;
+    assert!(Manifest::parse(bad).is_err());
+}
+
+#[test]
+fn rejects_unknown_source() {
+    let bad = r#"
+[[model]]
+name = "x"
+repo_id = "a/b"
+source = "ftp"
+"#;
+    assert!(Manifest::parse(bad).is_err());
+}
+
+#[test]
+fn hf_entry_allows_per_file_url_override() {
+    // source = "hf"（缺省）下 file.url 合法，pull 时对该文件走直链。
+    let m = Manifest::parse(
+        r#"
+[[model]]
+name = "x"
+repo_id = "a/b"
+files = [
+  { path = "f.bin", url = "https://example.com/f.bin" },
+  { path = "g.bin" },
+]
+"#,
+    )
+    .unwrap();
+    assert_eq!(m.models[0].source, SourceKind::Hf);
+    assert_eq!(
+        m.models[0].files[0].url.as_deref(),
+        Some("https://example.com/f.bin")
+    );
+    assert!(m.models[0].files[1].url.is_none());
 }

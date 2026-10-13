@@ -19,6 +19,7 @@ class ManifestFile:
     path: str
     sha256: str
     size: int | None = None
+    url: str | None = None  # 直链下载地址；条目 source="url" 时必填
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,12 @@ class ManifestEntry:
     files: tuple[ManifestFile, ...] = field(default_factory=tuple)
     notes: str = ""
     license: ManifestLicense | None = None
+    # 下载源："hf"（缺省，HF resolve 拼 URL）或 "url"（files[].url 直链）。
+    # 运行时只做本地校验不下载，字段仅作口径对齐与结构校验。
+    source: str = "hf"
+
+
+_VALID_SOURCES = ("hf", "url")
 
 
 @dataclass(frozen=True)
@@ -100,9 +107,11 @@ def load_manifest(path: Path = DEFAULT_MANIFEST) -> list[ManifestEntry]:
                     path=str(f["path"]),
                     sha256=str(f["sha256"]).lower(),
                     size=int(f["size"]) if "size" in f else None,
+                    url=str(f["url"]) if "url" in f else None,
                 )
                 for f in item.get("files", [])
             )
+            source = str(item.get("source", "hf")).strip().lower()
             entries.append(
                 ManifestEntry(
                     name=str(item["name"]),
@@ -112,10 +121,19 @@ def load_manifest(path: Path = DEFAULT_MANIFEST) -> list[ManifestEntry]:
                     files=files,
                     notes=str(item.get("notes", "")),
                     license=_parse_license(where, item.get("license")),
+                    source=source,
                 )
             )
         except KeyError as e:
             raise ManifestError(f"{where}: missing required fields {e}") from e
+        if source not in _VALID_SOURCES:
+            raise ManifestError(f'{where}: source must be one of {_VALID_SOURCES}')
+        if source == "url":
+            for f in entries[-1].files:
+                if not f.url or not f.url.startswith(("http://", "https://")):
+                    raise ManifestError(
+                        f'{where}: file "{f.path}" needs an http(s) url when source = "url"'
+                    )
     return entries
 
 

@@ -119,6 +119,19 @@ CLI 不提供 `-v/-vv`：日志级别由 `MOMO_LOG_LEVEL`（内置默认 `info`�
 
 `status` ∈ `ok|warn|fail`；`hint` 恒出现（可为 `null`）；`groups` 固定含 system/toolchain/python/network/env/models/endpoints 七组。
 
+### MANIFEST 下载源（`source` 字段）
+
+`pull` 按清单条目 `source` 分发下载 URL，缺省 `hf`（无 `source` 字段的旧清单行为不变）：
+
+| `source` | 下载 URL 口径 |
+|---|---|
+| `hf`（缺省） | `<HF_ENDPOINT>/<repo_id>/resolve/<revision>/<files[].path>` |
+| `url` | 逐文件 GET `files[].url` 原文（仅 http/https），不经 `HF_ENDPOINT`；`repo_id`/`revision` 不参与拼接，仅作 `dest` 默认值与 `models.lock` 的 `repo@revision` 身份 |
+
+- `source = "url"` 时每个 `files[]` 必须声明 `url`（GitHub raw、`media.githubusercontent.com`、其他镜像仓直链均可）；缺 `url` 或 scheme 非 http/https → MANIFEST 校验拒绝（exit 5）。
+- `hf` 条目下单个 `files[].url` 是合法覆盖：存在即对该文件走直链，其余文件仍走 resolve 拼接。
+- sha256/size 校验、`.part` + Range 续传、`models.lock` 登记口径与 hf 源完全一致。实例：`silero-vad` 条目上游仅 GitHub（HF 无 `snakers4/silero-vad`），以 `source = "url"` + `raw.githubusercontent.com` 直链下载（#148）。
+
 ## 控制面
 
 ```mermaid

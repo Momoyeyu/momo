@@ -34,7 +34,7 @@ flowchart TD
 
 ## 操作检查
 
-- [x] manifest 包含 repo/revision/files/checksum/destination，及结构化 `license`（`spdx`/`source`，非 SPDX 许可另带 `name`）。
+- [x] manifest 包含 repo/revision/files/checksum/destination，及结构化 `license`（`spdx`/`source`，非 SPDX 许可另带 `name`）；非 HF 上游用 `source = "url"` + `files[].url` 直链（如 silero-vad 走 GitHub raw）。
 - [ ] 下载失败可续传或干净重试，不把半文件注册为 ready。
 - [ ] warmup/probe 失败 active 不变。
 - [ ] promotion 后有明确 rollback 目标。

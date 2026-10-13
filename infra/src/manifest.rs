@@ -20,11 +20,15 @@ pub struct Manifest {
 pub struct ModelEntry {
     /// 短名，`pull --only <name>` / `gc` 引用它。
     pub name: String,
-    /// HF/ModelScope repo id（`<owner>/<repo>`）。
+    /// HF/ModelScope repo id（`<owner>/<repo>`）；`source = "url"` 时仍作
+    /// 上游身份标识（dest 默认值 + `models.lock` 的 `repo@revision`）。
     pub repo_id: String,
     /// 分支/tag/commit；默认 `main`。
     #[serde(default = "default_revision")]
     pub revision: String,
+    /// 下载源：`hf`（默认，HF resolve URL）或 `url`（逐文件直链）。
+    #[serde(default)]
+    pub source: SourceKind,
     /// 落盘子目录（相对 `$MOMO_MODELS_DIR`）；默认镜像 `repo_id` 布局。
     #[serde(default)]
     pub dest: Option<String>,
@@ -50,10 +54,27 @@ pub struct LicenseEntry {
     pub name: Option<String>,
 }
 
+/// 条目下载源（`source` 字段取值）。`hf` 走 `<endpoint>/<repo_id>/resolve/
+/// <revision>/<path>`；`url` 逐文件用 `files[].url` 直链（GitHub raw、
+/// media.githubusercontent、HF 镜像仓等不经 `HF_ENDPOINT` 拼接的地址）。
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SourceKind {
+    /// HF 兼容端点 resolve 拼 URL（缺省行为，向后兼容）。
+    #[default]
+    Hf,
+    /// 逐文件直链：`files[].url` 必填，`repo_id`/`revision` 不参与 URL 拼接。
+    Url,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct FileEntry {
     /// 相对 dest 的文件路径。
     pub path: String,
+    /// 直链下载 URL。`source = "url"` 时必填；`hf` 条目下可作单文件覆盖，
+    /// 存在即绕过 repo_id/revision 拼 URL。
+    #[serde(default)]
+    pub url: Option<String>,
     /// 期望 sha256（64 hex，可选；缺省只做存在性检查）。
     #[serde(default)]
     pub sha256: Option<String>,
@@ -126,6 +147,21 @@ impl Manifest {
                         "model '{}': file with empty path",
                         m.name
                     )));
+                }
+                match &f.url {
+                    Some(u) if !is_http_url(u) => {
+                        return Err(AppError::Manifest(format!(
+                            "model '{}': file '{}': url must be http(s)",
+                            m.name, f.path
+                        )));
+                    }
+                    None if m.source == SourceKind::Url => {
+                        return Err(AppError::Manifest(format!(
+                            "model '{}': file '{}': url is required when source = \"url\"",
+                            m.name, f.path
+                        )));
+                    }
+                    _ => {}
                 }
                 if let Some(h) = &f.sha256 {
                     if !is_sha256_hex(h) && !is_placeholder_sha(h) {
@@ -258,6 +294,12 @@ pub fn sha256_file(path: &Path) -> Result<String, AppError> {
 
 fn is_sha256_hex(s: &str) -> bool {
     s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+/// 直链 URL 准入：仅 http/https scheme（防 `file://` 等本地协议进入下载路径）。
+fn is_http_url(s: &str) -> bool {
+    let s = s.trim();
+    s.starts_with("https://") || s.starts_with("http://")
 }
 
 /// MANIFEST 允许的 sha256 占位值（pull 实装前按实际文件补齐）。

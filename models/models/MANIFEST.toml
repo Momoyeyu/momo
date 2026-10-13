@@ -7,6 +7,10 @@
 #
 # license：结构化许可（spdx/source；非 SPDX 许可另带 name），逐条按上游仓库核对。
 #
+# source：条目下载源，`hf`（缺省）经 HF_ENDPOINT 拼 `<endpoint>/<repo_id>/resolve/
+# <revision>/<path>`；`url` 为逐文件直链（files[].url 必填，如 GitHub raw），
+# 不经 HF_ENDPOINT。hf 条目下 files[].url 可作单文件覆盖。
+#
 # sha256 口径：LFS 文件取 HF tree API 的 `lfs.oid`（即内容 sha256）；
 # 非 LFS 小文件按 hf-mirror resolve 实下载后本地 sha256sum 得出。
 
@@ -95,12 +99,14 @@ files = [
 name = "silero-vad"
 repo_id = "snakers4/silero-vad"
 revision = "master"
+# 上游仅 GitHub（HF 无 snakers4/silero-vad）：source = "url" 走逐文件直链，
+# repo_id/revision 只作 dest/models.lock 身份标识，不参与 URL 拼接。
+source = "url"
 dest = "snakers4/silero-vad"
 notes = "VAD 断句（不做识别）；onnx 权重供 sherpa-onnx 或 silero-vad 包加载"
-# 上游仅 GitHub（HF 无 snakers4/silero-vad），许可取自其仓库根 LICENSE。
 license = { spdx = "mit", source = "https://github.com/snakers4/silero-vad/blob/master/LICENSE" }
 files = [
-  # 上游只有 GitHub（HF 无 snakers4/silero-vad）：源文件为
-  # src/silero_vad/data/silero_vad.onnx @ v6.2.x；pull 需走 GitHub raw 或换 HF 镜像仓
-  { path = "silero_vad.onnx", sha256 = "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3", size = 2327524 },
+  # 源文件为 src/silero_vad/data/silero_vad.onnx @ master（非 LFS，raw 直链即内容）；
+  # sha256/size 已按实下载核对。
+  { path = "silero_vad.onnx", url = "https://raw.githubusercontent.com/snakers4/silero-vad/master/src/silero_vad/data/silero_vad.onnx", sha256 = "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3", size = 2327524 },
 ]

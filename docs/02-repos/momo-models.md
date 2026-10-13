@@ -23,7 +23,7 @@ flowchart LR
 
 ## provider 与产物
 
-provider 抽象：`ASRProvider`、`TTSProvider`、`EmbeddingProvider`。manifest 固定 revision/checksum 并逐条声明结构化 `license`（`spdx`/`source`，非 SPDX 许可另带 `name`）；推理服务只读已校验本地产物，不在活动 turn 中在线下载。
+provider 抽象：`ASRProvider`、`TTSProvider`、`EmbeddingProvider`。manifest 固定 revision/checksum 并逐条声明结构化 `license`（`spdx`/`source`，非 SPDX 许可另带 `name`）；下载源按条目 `source` 分发——缺省 `hf` 走 HF resolve 拼接，`url` 走逐文件 `files[].url` 直链（GitHub-only 上游如 silero-vad，详见 [momo-infra.md](./momo-infra.md)「MANIFEST 下载源」）。推理服务只读已校验本地产物，不在活动 turn 中在线下载。
 
 provider 同级可切换：每种能力经 registry 按 env 选实现——TTS `MOMO_TTS_PROVIDER`、ASR `MOMO_ASR_PROVIDER`、VAD `MOMO_VAD_PROVIDER`（本地 sherpa 与云端实现同级注册）。同一约定推广到 app 侧：LLM 经 `MOMO_LLM_ENDPOINT` 指向任意 OpenAI 兼容上游（本地 llama-server 或云端 API 等价），Live2D 模型/声线由 app 侧资源选择承担。用户可在设置项里于 momo 支持的 provider 列表中切换；自定义 provider 接入属长期方向，注册入口已预留。
 
