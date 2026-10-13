@@ -8,7 +8,6 @@
 //! 结构化类型（不手写 `json!`），与 CLI `--json` 同 schema；错误统一
 //! `{schema:1, error:{code,message}}`。
 
-
 use std::convert::Infallible;
 use std::io::{Read, Seek, SeekFrom};
 use std::sync::Arc;

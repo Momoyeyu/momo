@@ -476,6 +476,8 @@ pub struct JobLogChunk {
 #[derive(Debug, Serialize)]
 pub struct JobLogEnd {
     pub status: String,
+}
+
 /// `GET /api/serve/logs/{name}/stream` 查询参数：
 /// `profile` 用于组件名校验；`cursor` 为字节偏移（SSE 断线续传，
 /// 前端也可走 `Last-Event-ID` 头）。

@@ -163,20 +163,20 @@ fn web_base_routes_and_spa_fallback() {
     }
 
     // 占位路由：GET（只读）→ 501 错误 DTO
-    let r = client.get(format!("{base}/api/jobs")).send().unwrap();
+    let r = client.get(format!("{base}/api/config")).send().unwrap();
     assert_eq!(r.status(), 501);
     let v: serde_json::Value = serde_json::from_str(&r.text().unwrap()).unwrap();
     assert_error(&v, "not_implemented");
 
     // 占位路由 mutation：无 CSRF → 403；回带签发 token → 到达 handler（501）
-    let r = client.post(format!("{base}/api/jobs")).send().unwrap();
+    let r = client.post(format!("{base}/api/config")).send().unwrap();
     assert_eq!(r.status(), 403);
     let v: serde_json::Value = serde_json::from_str(&r.text().unwrap()).unwrap();
     assert_error(&v, "csrf");
 
     let csrf = fetch_csrf(&client, &base, None);
     let r = client
-        .post(format!("{base}/api/jobs"))
+        .post(format!("{base}/api/config"))
         .header("x-csrf-token", &csrf)
         .send()
         .unwrap();
@@ -295,7 +295,7 @@ fn web_token_mode_requires_bearer() {
     // mutation：Bearer + CSRF 双要件，缺一不可
     let csrf = fetch_csrf(&client, &base, Some("test-token"));
     let r = client
-        .post(format!("{base}/api/jobs"))
+        .post(format!("{base}/api/config"))
         .bearer_auth("test-token")
         .send()
         .unwrap();
@@ -304,14 +304,14 @@ fn web_token_mode_requires_bearer() {
     assert_error(&v, "csrf");
 
     let r = client
-        .post(format!("{base}/api/jobs"))
+        .post(format!("{base}/api/config"))
         .header("x-csrf-token", &csrf)
         .send()
         .unwrap();
     assert_eq!(r.status(), 401);
 
     let r = client
-        .post(format!("{base}/api/jobs"))
+        .post(format!("{base}/api/config"))
         .bearer_auth("test-token")
         .header("x-csrf-token", &csrf)
         .send()
