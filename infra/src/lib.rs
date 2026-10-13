@@ -3,6 +3,7 @@
 //! 设计口径以 momo-docs `02-repos/momo-infra.md` 为准；
 //! env 全集见 `01-architecture/config.md`，模型清单见 `05-ops/model-fetch.md`。
 
+pub mod api;
 pub mod cli;
 pub mod cmds;
 pub mod config_schema;

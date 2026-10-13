@@ -1,8 +1,9 @@
 //! `/api/*` 路由树基座：本文件是唯一注册点。
-//! `healthz`/`readyz`/`events` 已实装；`doctor`/`serve`/`models`/`jobs`/`config`
+//! `healthz`/`readyz`/`events`/`csrf` 已实装；`doctor`/`serve`/`models`/`jobs`/`config`
 //! 为 501 占位——真实 handler 由后续 issue 挂接（DTO 统一、页面功能），
 //! 一律复用 `cmds`/`serve`/`manifest`/`env_cfg` 现有 core 函数，
-//! JSON 顶层恒 `schema:1`，与 CLI `--json` 同口径。
+//! JSON 顶层恒 `schema:1`，与 CLI `--json` 同口径；
+//! 错误统一 `{schema:1, error:{code,message}}`（`api::dto::ApiError`）。
 
 use std::convert::Infallible;
 use std::sync::Arc;
@@ -18,6 +19,7 @@ use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::{Stream, StreamExt};
 
 use super::WebState;
+use crate::api::dto;
 
 /// `/api` 子树。挂到外层 `nest("/api", ..)`；子树内未命中走 JSON 404，
 /// 与 SPA fallback（index.html）分流，互不误判。
@@ -27,6 +29,7 @@ pub fn router(state: Arc<WebState>) -> Router {
         .route("/healthz", get(healthz))
         .route("/readyz", get(readyz))
         .route("/events", get(events))
+        .route("/csrf", get(csrf))
         // 占位路由：any 接全方法（后续写操作经 CSRF 中间件后挂真实 handler）。
         .route("/doctor", any(placeholder))
         .route("/serve", any(placeholder))
@@ -52,6 +55,7 @@ pub(crate) async fn index() -> Json<serde_json::Value> {
             "GET /api/healthz",
             "GET /api/readyz",
             "GET /api/events",
+            "GET /api/csrf",
             "/api/doctor (placeholder)",
             "/api/serve/* (placeholder)",
             "/api/models/* (placeholder)",
@@ -84,28 +88,36 @@ async fn events(
     Sse::new(stream)
 }
 
-/// 占位 handler：501 + `schema:1` JSON。挂接点前任何方法均无 core 副作用。
+/// `GET /api/csrf`：签发进程级 CSRF token，state-changing 请求以
+/// `X-CSRF-Token` 头回带（guard::require_auth 校验）。
+/// 响应不带 CORS 允许头——跨源页面读不到该值（SOP），token 不会泄漏给第三方站点。
+async fn csrf(State(state): State<Arc<WebState>>) -> Json<dto::CsrfToken> {
+    Json(dto::CsrfToken {
+        schema: dto::SCHEMA_VERSION,
+        csrf_token: state.csrf_token.clone(),
+    })
+}
+
+/// 统一错误出口：`{schema:1, error:{code,message}}`（dto::ApiError 口径）。
+/// guard 中间件与 handler 共用，保证 /api 错误形态唯一。
+pub(crate) fn error(status: StatusCode, code: &str, message: impl Into<String>) -> Response {
+    (status, Json(dto::ApiError::new(code, message))).into_response()
+}
+
+/// 占位 handler：501 + 错误 DTO。挂接点前任何方法均无 core 副作用。
 async fn placeholder(uri: Uri) -> Response {
-    (
+    error(
         StatusCode::NOT_IMPLEMENTED,
-        Json(json!({
-            "schema": 1,
-            "status": "not_implemented",
-            "route": uri.path(),
-        })),
+        "not_implemented",
+        format!("route {} is not implemented yet", uri.path()),
     )
-        .into_response()
 }
 
 /// `/api` 子树内未命中 → JSON 404（区别于 SPA fallback 的 index.html）。
 async fn not_found(uri: Uri) -> Response {
-    (
+    error(
         StatusCode::NOT_FOUND,
-        Json(json!({
-            "schema": 1,
-            "status": "not_found",
-            "route": uri.path(),
-        })),
+        "not_found",
+        format!("no route {}", uri.path()),
     )
-        .into_response()
 }

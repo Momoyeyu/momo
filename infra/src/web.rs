@@ -1,13 +1,15 @@
 //! `momoctl web` 的 axum server 基座：`/api/*` 路由树 + include_dir 内嵌 SPA。
-//! 请求级认证链（token + CSRF 中间件）由后续 issue 以 layer 形式挂到
-//! [`router`] 的 api 子树上；本模块只定义组装点与共享状态。
+//! `/api` 子树挂请求级认证链（`guard::require_auth`：Bearer token + CSRF，
+//! 口径见 momo-infra.md Web 控制台节）；SPA 静态资产不经认证层。
 
 pub mod api;
 pub mod guard;
 pub mod spa;
 
+use std::net::SocketAddr;
 use std::sync::Arc;
 
+use axum::middleware;
 use axum::Router;
 use tokio::sync::broadcast;
 
@@ -22,28 +24,46 @@ pub const EVENT_CHANNEL_CAP: usize = 256;
 pub struct WebState {
     /// SSE 事件源：jobs/serve 日志等事件统一经此 broadcast 下发。
     pub events_tx: broadcast::Sender<String>,
-    /// `MOMO_WEB_TOKEN` 是否已配置（只存 bool，不存值：敏感键不回显，config.md §4）。
-    pub token_configured: bool,
+    /// `MOMO_WEB_TOKEN`：Some → `/api` 全请求须 `Authorization: Bearer`；
+    /// None → 仅 loopback peer + 回环 Host 放行。
+    /// 敏感值不回显、不落日志（config.md §4）。
+    pub token: Option<String>,
+    /// 进程级随机 CSRF token：`GET /api/csrf` 签发，
+    /// state-changing 请求须 `X-CSRF-Token` 回带（guard::require_auth）。
+    pub csrf_token: String,
 }
 
-/// 组装完整 Router：`/api` 子树集中注册，其余路径走 SPA fallback。
-/// 认证中间件（启动守卫外的请求级链路）后续在这里 `.layer()` 到 api 子树。
+/// 组装完整 Router：`/api` 子树集中注册并统一叠认证层，其余路径走 SPA fallback。
 pub fn router(state: Arc<WebState>) -> Router {
     Router::new()
         // `/api/`（带尾斜杠）不匹配 nest 的 `/api/{*rest}`，会落 SPA fallback；
-        // 显式挂到 api 索引，保证 api 命名空间不回 HTML。
-        .route("/api/", axum::routing::get(api::index))
-        .nest("/api", api::router(state))
+        // 显式挂到 api 索引并叠同一认证层，保证 api 命名空间不回 HTML 也不绕开守卫。
+        .route(
+            "/api/",
+            axum::routing::get(api::index).route_layer(middleware::from_fn_with_state(
+                state.clone(),
+                guard::require_auth,
+            )),
+        )
+        .nest(
+            "/api",
+            api::router(state.clone())
+                .layer(middleware::from_fn_with_state(state, guard::require_auth)),
+        )
         .fallback(spa::fallback)
 }
 
 /// 在已 bind 好的 listener 上服务至 Ctrl-C。
 /// listener 由调用方先 bind：CLI 可在启动日志里打印真实 local_addr（含 :0 随机端口）。
+/// `into_make_service_with_connect_info` 让认证层拿到对端 IP（loopback 判定）。
 pub async fn serve(listener: tokio::net::TcpListener, app: Router) -> Result<(), AppError> {
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .map_err(AppError::Io)
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await
+    .map_err(AppError::Io)
 }
 
 async fn shutdown_signal() {
