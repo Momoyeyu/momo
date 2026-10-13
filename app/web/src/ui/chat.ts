@@ -6,6 +6,7 @@
 
 import type { EmotionTag } from "../net/protocol";
 
+
 /** 初始化聊天 UI；返回后的 onSubmit 回调由 main.ts 接到 ws-client。 */
 export function initChat(root: HTMLElement): {
   onSubmit: ((text: string) => void) | null;
@@ -25,6 +26,10 @@ export function initChat(root: HTMLElement): {
     draftEl?.remove();
     draftEl = null;
     draftCaptureId = null;
+  }
+
+    while (root.childElementCount > MAX_BUBBLES) {
+    }
   }
 
   const chat = {

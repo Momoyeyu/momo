@@ -237,9 +237,22 @@ fn origin_allowlist() {
         assert!(server::origin_allowed(&h, &config), "origin {o}");
     }
 
+    // momod 自托管 UI（MOMO_UI_DIR）时浏览器源 = http://{orch_listen}（默认 7800）；
+    // loopback 监听下 localhost/[::1] 字面量等价放行。
+    for o in [
+        "http://127.0.0.1:7800",
+        "http://localhost:7800",
+        "http://[::1]:7800",
+    ] {
+        h.insert(header::ORIGIN, HeaderValue::from_static(o));
+        assert!(server::origin_allowed(&h, &config), "origin {o}");
+    }
+    // 其他端口不放行。
     h.insert(
         header::ORIGIN,
+        HeaderValue::from_static("http://localhost:7801"),
     );
+    assert!(!server::origin_allowed(&h, &config));
 
     // 自定义 MOMO_WEB_ORIGIN 生效，旧默认不再放行。
     let config =
