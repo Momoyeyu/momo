@@ -275,16 +275,16 @@ async fn error_envelope_contract() {
     assert_error_envelope(&v, "not_found");
 
     // 占位路由（GET 只读）→ 501 not_implemented
-    let (status, v) = call(app.clone(), req("GET", "/api/config")).await;
+    let (status, v) = call(app.clone(), req("GET", "/api/models/_placeholder")).await;
     assert_eq!(status, 501);
     assert_error_envelope(&v, "not_implemented");
 
     // 占位路由 mutation：CSRF 通过 → 501（先 403 → 见下）
-    let (status, v) = call(app.clone(), req("POST", "/api/config")).await;
+    let (status, v) = call(app.clone(), req("POST", "/api/models/_placeholder")).await;
     assert_eq!(status, 403);
     assert_error_envelope(&v, "csrf");
 
-    let mut r = req("POST", "/api/config");
+    let mut r = req("POST", "/api/models/_placeholder");
     r.headers_mut()
         .insert("x-csrf-token", CSRF.parse().unwrap());
     let (status, v) = call(app.clone(), r).await;
@@ -345,7 +345,7 @@ async fn token_mode_contract() {
     assert_eq!(status, 200);
 
     // Bearer + CSRF 双要件：缺一 → 401/403
-    let mut r = req("POST", "/api/config");
+    let mut r = req("POST", "/api/models/_placeholder");
     r.headers_mut().insert(
         header::AUTHORIZATION,
         format!("Bearer {TOKEN}").parse().unwrap(),
@@ -354,14 +354,14 @@ async fn token_mode_contract() {
     assert_eq!(status, 403);
     assert_error_envelope(&v, "csrf");
 
-    let mut r = req("POST", "/api/config");
+    let mut r = req("POST", "/api/models/_placeholder");
     r.headers_mut()
         .insert("x-csrf-token", CSRF.parse().unwrap());
     let (status, v) = call(app.clone(), r).await;
     assert_eq!(status, 401);
     assert_error_envelope(&v, "unauthorized");
 
-    let mut r = req("POST", "/api/config");
+    let mut r = req("POST", "/api/models/_placeholder");
     r.headers_mut().insert(
         header::AUTHORIZATION,
         format!("Bearer {TOKEN}").parse().unwrap(),

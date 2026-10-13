@@ -105,7 +105,9 @@ pub(crate) async fn index() -> Json<dto::IndexReport> {
             "GET /api/config",
             "PUT /api/config",
             "POST /api/config/rollback",
-            "/api/config/* (placeholder)",            "GET /api/config/schema",        ],
+            "/api/config/* (placeholder)",
+            "GET /api/config/schema",
+        ],
     })
 }
 
@@ -898,7 +900,6 @@ fn internal(e: AppError) -> Box<Response> {
         e.to_string(),
     ))
 }
-
 
 /// GET/HEAD → Some(profile 解析结果)；其余方法或非法 profile → None
 /// （由 `bad_method_or_profile` 产出对应错误响应）。
