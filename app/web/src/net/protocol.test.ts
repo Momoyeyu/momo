@@ -179,7 +179,7 @@ describe("id 生成", () => {
   it("带前缀且全局唯一", () => {
     const a = newId("r");
     const b = newId("r");
-    expect(a).toMatch(/^r_[0-9A-F]{26}$/);
+    expect(a).toMatch(/^r_[0-9A-HJKMNP-TV-Z]{26}$/);
     expect(a).not.toBe(b);
   });
 });
