@@ -20,8 +20,8 @@ def _fake_edge_tts(chunks: list[dict]) -> types.ModuleType:
     mod.last_call = {}
 
     class Communicate:
-        def __init__(self, text, voice="default", **_kw):
-            mod.last_call = {"text": text, "voice": voice}
+        def __init__(self, text, voice="default", **kw):
+            mod.last_call = {"text": text, "voice": voice, **kw}
 
         async def stream(self):
             for c in chunks:
@@ -55,7 +55,35 @@ def test_synth_stream_pcm_deltas(monkeypatch: pytest.MonkeyPatch) -> None:
     assert b"".join(chunks) == _fake_decode(b"\xff" * 3000)
     assert len(chunks) >= 2  # 流式：不是一次吐完
     assert all(len(c) % 2 == 0 for c in chunks)  # s16le 对齐
-    assert mod.last_call == {"text": "你好", "voice": "zh-CN-XiaoxiaoNeural"}
+    assert mod.last_call == {
+        "text": "你好",
+        "voice": "zh-CN-XiaoxiaoNeural",
+        "rate": "+0%",
+        "volume": "+0%",
+        "pitch": "+0Hz",
+    }
+
+
+def test_synth_stream_emotion_maps_to_edge_params(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """#33：emotion tag 经 map_emotion → Communicate 的 rate/pitch/volume。"""
+    mod = _fake_edge_tts([{"type": "audio", "data": b"\xff" * 1000}])
+    monkeypatch.setitem(sys.modules, "edge_tts", mod)
+    monkeypatch.setattr(edge, "mp3_to_pcm", _fake_decode)
+    p = edge.EdgeTTSProvider(Settings())
+
+    async def run(emotion):
+        return [c async for c in p.synth_stream("你好", voice=VoiceRef(), emotion=emotion)]
+
+    asyncio.run(run("happy"))
+    assert mod.last_call["rate"] == "+8%"
+    assert mod.last_call["pitch"] == "+4Hz"
+    assert mod.last_call["volume"] == "+0%"
+    asyncio.run(run(None))  # None → neutral 兜底
+    assert mod.last_call["rate"] == "+0%"
+    asyncio.run(run("nope"))  # 未知 tag → neutral
+    assert mod.last_call["rate"] == "+0%"
 
 
 def test_synth_stream_skips_non_audio_and_short_audio(

@@ -13,6 +13,7 @@ from momo_models.audio import DOWNLINK_SAMPLE_RATE, numpy_to_s16le_bytes, resamp
 from momo_models.config import Settings
 from momo_models.logging import get_logger
 from momo_models.providers.base import TTSCaps, TTSProvider, VoiceRef
+from momo_models.providers.tts.emotion import map_emotion
 
 log = get_logger(__name__)
 
@@ -65,7 +66,7 @@ class EdgeTTSProvider(TTSProvider):
             streaming=True,
             languages=("zh", "en", "ja"),
             clone=False,
-            emotion=False,
+            emotion=True,  # map_emotion → rate/pitch/volume（#33 消费侧）
         )
 
     async def warmup(self) -> None:
@@ -81,20 +82,28 @@ class EdgeTTSProvider(TTSProvider):
     ) -> AsyncIterator[bytes]:
         """MP3 流增量解码 → PCM s16le 24kHz mono chunk。
 
-        前缀解码复杂度 O(n²)，句子级长度可接受；emotion 忽略（caps.emotion=False）。
+        前缀解码复杂度 O(n²)，句子级长度可接受；emotion 经 map_emotion
+        映射为 edge-tts 的 rate/pitch/volume（参数表见 providers/tts/emotion.py）。
         """
         import edge_tts
 
         text = text.strip()
         if not text:
             return
+        params = map_emotion(emotion, self.name, self.capabilities())
         cancel = asyncio.Event()
         self._cancel_events.add(cancel)
         mp3 = bytearray()
         emitted = 0  # 已产出的 samples 数
         t0 = time.perf_counter()
         try:
-            communicate = edge_tts.Communicate(text, voice=_resolve_voice(self._settings, voice))
+            communicate = edge_tts.Communicate(
+                text,
+                voice=_resolve_voice(self._settings, voice),
+                rate=params.get("rate", "+0%"),
+                volume=params.get("volume", "+0%"),
+                pitch=params.get("pitch", "+0Hz"),
+            )
             async for chunk in communicate.stream():
                 if cancel.is_set():
                     break
