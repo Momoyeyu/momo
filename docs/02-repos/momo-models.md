@@ -27,6 +27,8 @@ flowchart LR
 
 provider 同级可切换：每种能力经 registry 按 env 选实现——TTS `MOMO_TTS_PROVIDER`、ASR `MOMO_ASR_PROVIDER`、VAD `MOMO_VAD_PROVIDER`（本地 sherpa 与云端实现同级注册）。同一约定推广到 app 侧：LLM 经 `MOMO_LLM_ENDPOINT` 指向任意 OpenAI 兼容上游（本地 llama-server 或云端 API 等价），Live2D 模型/声线由 app 侧资源选择承担。用户可在设置项里于 momo 支持的 provider 列表中切换；自定义 provider 接入属长期方向，注册入口已预留。
 
+provider 内的具体权重由 MANIFEST 指定：ASR 用 `MOMO_ASR_MODEL` 选条目名，条目 `dest` 即 `${MOMO_MODELS_DIR}` 下的模型目录，运行时只读该目录并按条目校验 sha256（条目名未知或清单缺失 → readyz 不就绪）。
+
 VAD 是独立 provider（`providers/vad/`），不从属于 ASR：`VADProvider.feed(pcm)` 以窗口喂入上行 PCM，产出 `VadEvent`——`speech_start`（供 app 打断判定）与 `speech_end`（携带整段裁剪 PCM 供 ASR 识别）；`flush`/`reset` 收尾。默认实现 `silero` 走 sherpa-onnx `VadModel`（窗口级 `is_speech` + min-speech/min-silence/max-speech 迟滞），权重经 MANIFEST sha256 校验后懒加载；选 sherpa 而非 `silero-vad` pip 包是因后者拖入完整 torch 依赖，对 CPU 断句过重。判停时长 `MOMO_VAD_SILENCE_MS`。
 
 模型选型、官方标称与带日期的实测记录集中在 [research.md](../00-context/research.md) 与 [decisions.md](../00-context/decisions.md)，作为复现与比较基线。

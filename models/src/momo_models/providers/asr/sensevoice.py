@@ -1,7 +1,8 @@
 """SenseVoice-Small via sherpa-onnx（纯 CPU）：实测 RTF 0.040，CPU×4。
 
 zh/en/ja/ko/yue + 自动语言 + 情感/事件标记。注意 onnx 与 tokens.txt 配套；
-模型路径 = $MOMO_MODELS_DIR/sherpa-onnx/sense-voice-*/。见 momo-models.md 后端表。
+模型目录 = $MOMO_MODELS_DIR/<MANIFEST 条目 dest>，条目由 MOMO_ASR_MODEL
+指定（见 momo-models.md 后端表与 models/MANIFEST.toml）。
 
 sherpa-onnx 懒加载：核心依赖不带重库，import 仅在 load()/transcribe() 内发生，
 测试通过 sys.modules 注入假 sherpa_onnx。
@@ -13,12 +14,8 @@ from pathlib import Path
 
 from momo_models.audio import UPLINK_SAMPLE_RATE, s16le_bytes_to_numpy
 from momo_models.config import Settings
+from momo_models.manifest import ManifestEntry
 from momo_models.providers.base import ASRProvider, Transcript
-
-# 与 models/MANIFEST.toml 中 sense-voice-small-int8 条目的 dest/name 保持一致；
-# 权重实体在 $MOMO_MODELS_DIR 下镜像 <owner>/<repo> 布局，不入库。
-_MODEL_SUBDIR = Path("sherpa-onnx") / "sense-voice-zh-en-ja-ko-yue-2024-07-17"
-_MANIFEST_ENTRY = "sense-voice-small-int8"
 
 # SenseVoice 支持的语言档（sherpa-onnx from_sense_voice(language=...) 口径）。
 _VALID_LANGS = ("auto", "zh", "en", "ja", "ko", "yue")
@@ -103,7 +100,8 @@ def _parse_result(result, hint: str) -> tuple[str, str, str | None, tuple[str, .
 class SenseVoiceASRProvider(ASRProvider):
     """SenseVoice-Small（sherpa-onnx，纯 CPU）→ Transcript。
 
-    - load()：定位 $MOMO_MODELS_DIR 下模型文件，按 MANIFEST 校验 sha256，
+    - load()：按 MOMO_ASR_MODEL（MANIFEST 条目名）定位
+      $MOMO_MODELS_DIR/<条目 dest> 下的模型文件，按该条目校验 sha256，
       构建 language=auto 的 recognizer。
     - transcribe()：按 lang 提示懒建对应 recognizer（同一 onnx 会话按语言
       分实例缓存），解码在 worker 线程执行以免阻塞事件循环。
@@ -121,12 +119,35 @@ class SenseVoiceASRProvider(ASRProvider):
 
     # ---------- 模型定位与校验 ----------
 
-    def _model_dir(self) -> Path:
-        return self._settings.models_dir.expanduser() / _MODEL_SUBDIR
+    def _entry(self) -> ManifestEntry:
+        """按 MOMO_ASR_MODEL 解析 MANIFEST 条目；未知值/清单缺失抛 SenseVoiceError。
 
-    def _resolve_files(self) -> tuple[Path, Path]:
+        MANIFEST.toml 由 momo-infra `momoctl pull` 消费、随仓库分发；运行时
+        条目名 → dest 是模型目录的唯一来源，不再硬编码目录。
+        """
+        from momo_models.manifest import DEFAULT_MANIFEST, load_manifest
+
+        if not DEFAULT_MANIFEST.is_file():
+            raise SenseVoiceError(
+                f"MANIFEST.toml not found at {DEFAULT_MANIFEST}; "
+                f"cannot resolve MOMO_ASR_MODEL={self.model!r}"
+            )
+        entries = load_manifest(DEFAULT_MANIFEST)
+        entry = next((e for e in entries if e.name == self.model), None)
+        if entry is None:
+            names = ", ".join(e.name for e in entries)
+            raise SenseVoiceError(
+                f"unknown MOMO_ASR_MODEL={self.model!r}; MANIFEST entries: {names}"
+            )
+        return entry
+
+    def _model_dir(self, entry: ManifestEntry) -> Path:
+        """条目 dest 即 $MOMO_MODELS_DIR 下的模型目录（镜像 <owner>/<repo> 布局）。"""
+        return self._settings.models_dir.expanduser() / entry.dest
+
+    def _resolve_files(self, entry: ManifestEntry) -> tuple[Path, Path]:
         """定位 onnx 权重（优先 int8）与 tokens.txt；缺失抛 SenseVoiceError。"""
-        root = self._model_dir()
+        root = self._model_dir(entry)
         model = root / "model.int8.onnx"
         if not model.is_file():
             model = root / "model.onnx"
@@ -135,22 +156,14 @@ class SenseVoiceASRProvider(ASRProvider):
         if missing:
             raise SenseVoiceError(
                 f"sensevoice 模型文件缺失 {missing}（期望目录 {root}）；"
-                "请先 `momoctl pull --only sense-voice-small-int8` 或按 MANIFEST 手动下载"
+                f"请先 `momoctl pull --only {entry.name}` 或按 MANIFEST 手动下载"
             )
         return model, tokens
 
-    def _verify_manifest(self) -> None:
-        """按 MANIFEST.toml 校验 sha256；清单缺失时只做文件存在性检查。"""
-        from momo_models.manifest import DEFAULT_MANIFEST, load_manifest, verify_entry
+    def _verify_entry(self, entry: ManifestEntry) -> None:
+        """按 MOMO_ASR_MODEL 命中的 MANIFEST 条目校验 sha256。"""
+        from momo_models.manifest import verify_entry
 
-        if not DEFAULT_MANIFEST.is_file():
-            return
-        entry = next(
-            (e for e in load_manifest(DEFAULT_MANIFEST) if e.name == _MANIFEST_ENTRY),
-            None,
-        )
-        if entry is None:
-            return
         result = verify_entry(entry, self._settings.models_dir.expanduser())
         if result.mismatched:
             raise SenseVoiceError(
@@ -190,9 +203,10 @@ class SenseVoiceASRProvider(ASRProvider):
     # ---------- ASRProvider 契约 ----------
 
     async def load(self) -> None:
-        """加载模型；readyz 以此为据。"""
-        model, tokens = self._resolve_files()
-        self._verify_manifest()
+        """加载 MOMO_ASR_MODEL 指定的模型；readyz 以此为据。"""
+        entry = self._entry()
+        model, tokens = self._resolve_files(entry)
+        self._verify_entry(entry)
         self._model_path, self._tokens_path = model, tokens
         self._recognizers["auto"] = await asyncio.to_thread(self._build_recognizer, "auto")
 
