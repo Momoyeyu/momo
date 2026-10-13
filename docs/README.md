@@ -19,6 +19,7 @@ flowchart LR
 ## 阅读顺序
 
 1. [产品定义](./00-context/product.md)
+2. [路线图](./00-context/roadmap.md)
 3. [总体架构](./01-architecture/system.md)
 4. [桌面宿主](./01-architecture/desktop.md)
 5. [运行时](./01-architecture/runtime.md)

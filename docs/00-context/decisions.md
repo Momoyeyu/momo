@@ -55,7 +55,9 @@ flowchart TD
 
 ### ADR-019 为外部 ingress/egress 预留过滤边界
 
+- **决策**：本地单用户 turn core 不绑定平台过滤业务；未来 streaming adapter 若接外部输入，必须在 adapter 边界实装输入/输出过滤与一键熔断。
 - **理由**：外部内容的风险模型与本地 companion 不同，过滤必须在公开接入前完成，同时不能污染 turn core。
+- **被否**：把平台过滤写进 turn core runtime；公开接入后再补。
 
 
 
@@ -76,11 +78,13 @@ flowchart TD
 
 
 
+### ADR-015 工具与截图逐次授权
 
 - **决策**：工具/action 使用独立扩展消息组；每次请求向用户展示动作、范围和数据去向，只有 allow 后执行，deny/cancel/late-result 都有显式路径。
 - **理由**：LLM 不直接执行；用户授权与结构化 schema 共同形成安全边界。
 - **被否**：LLM 直接执行代码；本地可信即默认永久授权；把工具业务写进 turn core。
 
+### ADR-016 截图 = 用户逐次授权的 provider adapter
 
 - **决策**：截图先展示采集范围与数据去向；allow once 后交给可配置 vision provider，不自建 VLM。
 - **理由**：屏幕内容敏感，授权边界比具体 provider 更稳定。

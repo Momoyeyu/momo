@@ -2,6 +2,7 @@
 
 > 从文字、语音和桌面操作进入，沿每个决策分支看到 momo 如何回应、取消、重试与保存结果。协议字段见 [通信协议](./protocol.md)。
 
+## 输入与对话
 
 ### 文字回合
 
@@ -106,6 +107,7 @@ sequenceDiagram
     O-->>UI: output.complete + turn.finished(completed)
 ```
 
+## 会话、连接与 provider
 
 ### 断线、resume 与 receipt
 
@@ -171,7 +173,9 @@ flowchart TD
     SUCCESS --> LIST
 ```
 
+会话管理提供查看、改标题、correction、删除、导出与新对话。已经听见的 audit entry 不可原地改写；记忆能力上线后，correction 再触发 derived-memory 的失效与重建。
 
+## companion 控制
 
 ### quiet / focus / companion
 
@@ -223,6 +227,7 @@ flowchart TD
     RESPONSE -->|"关闭功能"| DISABLE["持久关闭 proactive"]
 ```
 
+## 权限扩展
 
 ### 工具与截图
 
@@ -249,3 +254,4 @@ flowchart LR
     CORE -.-> NO["adapter 不承载 turn / 记忆 / 推理业务"]
 ```
 
+它是未来扩展，不属于当前交付承诺。

@@ -2,6 +2,7 @@
 
 > 人格先由稳定的人设与可纠正的上下文建立；微调是可选的后续工具。
 
+基础闭环使用本地 persona 与 conversation correction；随后让 card、context、routine 和 derived memory 的来源、修正与失效路径对用户可见。
 
 ```mermaid
 flowchart TD
@@ -23,6 +24,7 @@ flowchart TD
 <details>
 <summary>历史实验规格与复现记录</summary>
 
+> 目标：momo 说话像「她」而不是通用助手。策略分两步——**先用 character card + system prompt 逼近**，**攒够数据后做 QLoRA 把人格写进权重**。
 
 ## 总流程
 
@@ -80,6 +82,8 @@ system prompt 由编排器在会话开始时装配一次，逐回合只追加情
 
 ```text
 [系统] 你是 momo …(card 核心字段渲染：identity/personality/speech_style/emotion/behavior)
+[示范] dialogue_examples（按当前情境相似度选 2-3 组，记忆检索上线后由检索选出）
+[记忆] 近期会话摘要 + 检索命中条目（sqlite-vec + BGE-M3）
 [情境] 当前状态：时长/最近话题/idle 秒数（每回合动态注入）
 ```
 
@@ -100,6 +104,7 @@ system prompt 由编排器在会话开始时装配一次，逐回合只追加情
 
 - 开关：`MOMO_DATA_COLLECTION=on|off`，默认 on；存储 `data/sessions/*.jsonl`（本地，不入 git）。
 - 保留期：原始会话 90 天滚动清理；修写后的训练样本永久保留。
+- 使用者原则：默认单人使用场景；一旦引入多用户输入（如直播弹幕），采集规范需单独评审。
 
 ## 人工修写流程
 

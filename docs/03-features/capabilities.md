@@ -10,3 +10,4 @@ flowchart LR
     TOOL --> RESULT["结构化结果回到当前 turn"]
 ```
 
+详细权限路径见 [受控扩展](./dialogue.md) 与 [用户操作路径图谱](../01-architecture/workflows.md)。工具/action 使用独立扩展消息组。

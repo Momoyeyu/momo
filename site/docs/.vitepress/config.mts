@@ -17,6 +17,7 @@ export default defineConfig({
       { text: '介绍', link: '/' },
       { text: '桌面', link: '/guide/desktop' },
       { text: '设计图谱', link: '/guide/architecture' },
+      { text: '路线图', link: '/guide/roadmap' },
       { text: '素材与许可', link: '/guide/credits' },
       { text: 'GitHub', link: 'https://github.com/Momoyeyu/momo' },
     ],
@@ -32,7 +33,9 @@ export default defineConfig({
         ],
       },
       {
+        text: '功能',
         items: [
+          { text: '能力扩展', link: '/guide/dialogue' },
           { text: '路线图', link: '/guide/roadmap' },
         ],
       },
@@ -56,6 +59,9 @@ export default defineConfig({
         items: [
           { text: '文档索引', link: '/guide/docs-index' },
           { text: '架构决策', link: '/guide/decisions' },
+          { text: '记忆与人格', link: '/guide/soul' },
+          { text: '工具与感知', link: '/guide/capabilities' },
+          { text: '直播扩展', link: '/guide/streaming' },
           { text: 'GitHub Project 策略', link: '/guide/github-project' },
         ],
       },

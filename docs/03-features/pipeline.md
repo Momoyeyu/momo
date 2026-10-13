@@ -20,6 +20,7 @@ flowchart TD
     INTERRUPT --> MUTE["关闭麦克风；文字仍可用"]
 ```
 
+## 验收
 
 - [ ] 文字流程覆盖 IME、空输入、4000 字符、重复 id、busy turn 与 Stop。
 - [ ] PTT 覆盖 press/release、无非静音 segment、取消和失焦；VAD 失败释放 mic 并提供重新启用。
