@@ -136,7 +136,9 @@ describe.skipIf(!URL_ENV)("ws e2e（需运行 momod）", () => {
     // 逐条消费直到取到 error；顺带校验 accepted 回执确实到达。
     let errJson: Record<string, unknown> | null = null;
     let sawAccepted = false;
-    for (let i = 0; i < 4 && !errJson; i++) {
+    // BAD_MESSAGE 在 conn_rx decode 时直发，accepted 经 session actor，
+    // 两条路径序不保证——drain 到两者都见（或上限）再断言。
+    for (let i = 0; i < 4 && !(errJson && sawAccepted); i++) {
       const m = await c.take();
       if (m.type !== "text") continue;
       const j = JSON.parse(m.text!);

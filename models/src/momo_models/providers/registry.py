@@ -1,10 +1,6 @@
-"""名称 → provider 类映射；env 选择。
+"""名称 → provider 类映射；env 选择（`MOMO_{TTS,ASR,VAD}_PROVIDER`）。
 
-- TTS：`MOMO_TTS_PROVIDER=edge|kokoro|f5|cosyvoice3|sovits`
-- ASR：`MOMO_ASR_PROVIDER=sensevoice`；本地 sherpa 与云端实现同级注册
-- VAD：`MOMO_VAD_PROVIDER=silero`
-- embed：单实现（P3），无需 registry env
-- LLM：无 registry —— 无网关后上游就是 `MOMO_LLM_ENDPOINT`，归 app 侧
+LLM 无 registry：编排器直连 `MOMO_LLM_ENDPOINT`，不经本层。
 """
 
 from momo_models.config import Settings

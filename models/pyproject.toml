@@ -4,7 +4,7 @@
 [project]
 name = "momo-models"
 version = "0.1.0"
-description = "momo 模型服务与训练：momo-svc-asr / momo-svc-tts / momo-svc-embed，声线克隆、人格微调、评测"
+description = "momo model services and training: momo-svc-asr / momo-svc-tts / momo-svc-embed, voice cloning, persona fine-tuning, eval"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
@@ -100,6 +100,6 @@ select = ["E", "F", "I", "UP", "B", "W"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-    "gpu: 需要 GPU / 真实模型权重，CI 跳过（-m 'not gpu and not slow'）",
-    "slow: 慢速测试，CI 跳过",
+    "gpu: needs GPU / real model weights, skipped on CI (-m 'not gpu and not slow')",
+    "slow: slow tests, skipped on CI",
 ]

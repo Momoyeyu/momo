@@ -1,9 +1,6 @@
 //! `Msg`：serde `tag = "type"` 多态，对齐 protocol.md 核心类型与必需字段表。
-//!
-//! 音频不走 JSON：二进制音频帧见 [`crate::proto::codec`]。
-//! `turn_id` 的必需性按各消息字段表落在消息自身字段上，故 [`Envelope`]
-//! 只含恒定字段与可选关联 `reply_to`；hello/hello.ok 发生在 session
-//! 建立前，不带 envelope。
+//! 音频走二进制帧（[`crate::proto::codec`]）；`turn_id` 必需性落在各消息自身
+//! 字段上，[`Envelope`] 只含恒定字段与可选 `reply_to`（hello 前无 envelope）。
 
 use std::sync::{
     Arc,

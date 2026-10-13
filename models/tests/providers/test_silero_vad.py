@@ -140,7 +140,7 @@ def _load(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, **kw) -> SileroVadPro
 
 def test_load_missing_model(tmp_path: Path) -> None:
     p = SileroVadProvider(_settings(tmp_path))
-    with pytest.raises(SileroVadError, match="模型文件缺失"):
+    with pytest.raises(SileroVadError, match="model file missing"):
         asyncio.run(p.load())
 
 
@@ -174,7 +174,7 @@ def test_load_builds_model_with_silence_ms(tmp_path: Path, monkeypatch: pytest.M
 
 def test_feed_before_load(tmp_path: Path) -> None:
     p = SileroVadProvider(_settings(tmp_path))
-    with pytest.raises(SileroVadError, match="未 load"):
+    with pytest.raises(SileroVadError, match="not loaded"):
         list(p.feed(_pcm(512)))
 
 
@@ -303,7 +303,7 @@ _MODEL_PRESENT = _REAL_MODEL.is_file() and importlib.util.find_spec("sherpa_onnx
 @pytest.mark.slow
 @pytest.mark.skipif(
     not _MODEL_PRESENT,
-    reason="silero_vad.onnx / sherpa-onnx 未就绪（需 uv sync --extra asr + momoctl pull）",
+    reason="silero_vad.onnx / sherpa-onnx not available (needs uv sync --extra asr + momoctl pull)",
 )
 def test_real_model_sentence_segmentation(tmp_path: Path) -> None:
     """真实断句冒烟：静音-语音-静音-语音-静音 → 恰好两段。"""
@@ -319,7 +319,7 @@ def test_real_model_sentence_segmentation(tmp_path: Path) -> None:
         / "zh.wav"
     )
     if not wav.is_file():
-        pytest.skip("sensevoice test_wavs 缺失，无法构造真实语音流")
+        pytest.skip("sensevoice test_wavs missing; cannot build a real speech stream")
     pcm, rate, channels = wav_unwrap(wav.read_bytes())
     assert rate == 16000 and channels == 1
     speech = np.frombuffer(pcm, dtype="<i2")

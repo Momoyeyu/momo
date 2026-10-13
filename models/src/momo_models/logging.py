@@ -1,8 +1,4 @@
-"""统一日志：structlog。
-
-`MOMO_LOG_FORMAT=pretty` → 控制台可读输出；`json` → 逐行 JSON（生产/采集）。
-键名与取值见 momo-docs/01-architecture/config.md §2.1。
-"""
+"""统一日志：structlog；`MOMO_LOG_FORMAT=pretty|json`（config.md §2.1）。"""
 
 import logging
 import sys

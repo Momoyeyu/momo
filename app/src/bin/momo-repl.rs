@@ -1,9 +1,6 @@
 //! `momo-repl`：dev-only 打字→TTS→出声 bring-up 工具（issue #23）。
-//!
-//! stdin 逐行文本 → `SentenceSplitter`（`MOMO_SENT_*`）→ `TtsClient::synth_stream`
-//! 连 `MOMO_TTS_ENDPOINT` → 本地扬声器（rodio，`--no-play` 关闭）与可选
-//! WAV 落盘（`--out`）。每行一个合成回合，分阶段耗时打 stderr：
-//! split / TTS 首 chunk / 单句合成总长 / 播放 drain / 行级 e2e。
+//! stdin 逐行 → `SentenceSplitter`（`MOMO_SENT_*`）→ `TtsClient::synth_stream`
+//! → 扬声器（rodio，`--no-play`）/可选 WAV（`--out`）；分阶段耗时打 stderr。
 //! 不挂 LLM/Session/Turn；`/quit` 或 EOF 退出。
 
 use std::io::Write as _;

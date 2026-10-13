@@ -1,10 +1,7 @@
 """models/MANIFEST.toml 解析与 sha256 校验。
 
-口径见 docs/02-repos/momo-models.md「provider 与产物」：
-每条目 `name / repo_id / revision / files[] / dest / notes`，以及结构化
-`license`（`{spdx, source, name?}`）；`files[]` 元素为 `{path, sha256, size?}`。
-下载由 momo-infra `momoctl pull` 执行；运行时 provider 只读本地路径，
-启动校验失败 → readyz 拒绝就绪。
+条目口径见 docs/02-repos/momo-models.md「provider 与产物」；下载由
+momo-infra `momoctl pull` 执行，启动校验失败 → readyz 拒绝就绪。
 """
 
 import hashlib
@@ -118,7 +115,7 @@ def load_manifest(path: Path = DEFAULT_MANIFEST) -> list[ManifestEntry]:
                 )
             )
         except KeyError as e:
-            raise ManifestError(f"{where}: 缺少必填字段 {e}") from e
+            raise ManifestError(f"{where}: missing required fields {e}") from e
     return entries
 
 

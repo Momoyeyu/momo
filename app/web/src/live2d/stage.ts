@@ -1,4 +1,4 @@
-// pixi 舞台 + pixi-live2d-display 模型加载（momo-app.md §前端）。
+// pixi 舞台 + pixi-live2d-display 模型加载（momo-app.md §模块结构）。
 //
 // 模型：Cubism 免费 sample（开发期）；直播 license P5 前确认。
 // pixi 主版本锁定 v7 = pixi-live2d-display@0.5.0-beta 的 peer 范围。

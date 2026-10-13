@@ -1,6 +1,6 @@
 //! `ContentFilter` trait：输入/输出双向过滤，默认 `Noop`。
 //!
-//! 接口预留；P5 直播前必须实装（momo-app.md §范围）。
+//! 接口预留；P5 直播前必须实装（p5-streaming.md）。
 //! 开关：`MOMO_FILTER_ENABLED`（默认 `false`）。
 
 use async_trait::async_trait;

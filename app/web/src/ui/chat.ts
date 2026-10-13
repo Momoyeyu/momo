@@ -1,4 +1,4 @@
-// 文本气泡、输入框（momo-app.md §前端）。
+// 文本气泡、输入框（momo-app.md §模块结构）。
 // 无框架原生 DOM：#chat 气泡列表 + #composer 表单。
 // output.sentence.emotion → 气泡情感位（8 个固定 tag，样式表映射）。
 

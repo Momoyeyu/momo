@@ -5,7 +5,7 @@
 
 [profile]
 name = "normal"
-description = "正常档：laptop asr/tts/momod + mac-studio MLX 大脑（外部端点，只探活）"
+description = "normal profile: laptop asr/tts/momod + mac-studio MLX brain (external endpoint, probe-only)"
 
 # 大脑：mac-studio MLX（MOMO_LLM_ENDPOINT 默认 http://mac-studio:7820/v1）
 [[component]]

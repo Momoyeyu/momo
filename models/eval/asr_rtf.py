@@ -1,16 +1,8 @@
 #!/usr/bin/env python3
-"""ASR RTF 复测：SenseVoice-Small（sherpa-onnx 纯 CPU）对一段 wav 解码计时。
+"""ASR RTF 复测：SenseVoice-Small 对一段 wav 解码计时（基线 CPU×4 RTF 0.040，research.md）。
 
-口径见 docs/00-context/research.md 实测基线：laptop CPU×4 RTF 0.040（8.4s→337ms）。
-
-用法：
-
-    cd models && uv sync --extra asr
-    uv run python eval/asr_rtf.py <16kHz wav> [--runs N] [--lang auto]
-
-wav 需 16kHz mono s16le（协议上行口径）；自动按 PCM 长度算 RTF。
-依赖 sherpa-onnx 与 $MOMO_MODELS_DIR 下 sense-voice-small-int8 条目
-（`momoctl pull` 或 hf CLI 手动下载）。
+用法：`uv sync --extra asr && uv run python eval/asr_rtf.py <16kHz mono wav>
+[--runs N]`；权重走 MANIFEST `sense-voice-small-int8`（`momoctl pull`）。
 """
 
 import argparse
@@ -25,15 +17,15 @@ from momo_models.providers.asr.sensevoice import SenseVoiceASRProvider
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="SenseVoice ASR RTF 复测")
+    ap = argparse.ArgumentParser(description="SenseVoice ASR RTF re-measurement")
     ap.add_argument("wav", type=Path, help="16kHz mono s16le wav")
-    ap.add_argument("--runs", type=int, default=3, help="重复解码次数取最优")
-    ap.add_argument("--lang", default=None, help="auto|zh|en|ja|ko|yue，默认 auto")
+    ap.add_argument("--runs", type=int, default=3, help="decode repetitions, best-of taken")
+    ap.add_argument("--lang", default=None, help="auto|zh|en|ja|ko|yue, default auto")
     args = ap.parse_args()
 
     pcm, rate, channels = wav_unwrap(args.wav.read_bytes())
     if rate != 16000 or channels != 1:
-        raise SystemExit(f"需要 16kHz mono wav，实际 {rate}Hz/{channels}ch")
+        raise SystemExit(f"expected 16kHz mono wav, got {rate}Hz/{channels}ch")
 
     provider = SenseVoiceASRProvider(Settings())
     asyncio.run(provider.load())
@@ -54,7 +46,7 @@ def main() -> None:
             f"RTF={rtf:.3f} lang={t.lang} emotion={t.speech_emotion} "
             f"events={t.events}"
         )
-    print(f"best RTF={best:.3f}（基线 0.040，laptop CPU×4）")
+    print(f"best RTF={best:.3f} (baseline 0.040, laptop CPU x4)")
     print(f"text: {text}")
     sys.exit(0)
 

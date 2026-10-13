@@ -1,8 +1,7 @@
 """silero-vad via sherpa-onnx VadModel（纯 CPU）：断句，不做识别。
 
-权重 = MANIFEST `silero-vad` 条目；不走 silero-vad pip 包（拖入 torch）。
-is_speech 内部已做迟滞与 max_speech 切分；本类只对齐窗口、翻转点回推
-迟滞时长得 speech_start/speech_end，并截取段 PCM 供 ASR。
+权重 = MANIFEST `silero-vad` 条目（不走 silero-vad pip 包，避免拖入 torch）；
+本类只做窗口对齐与翻转点回推，产出 speech_start/speech_end 与段 PCM。
 """
 
 import asyncio
@@ -37,7 +36,7 @@ def _import_sherpa():
         import sherpa_onnx
     except ImportError as e:  # pragma: no cover —— 无重依赖环境兜底
         raise SileroVadError(
-            "缺少 sherpa-onnx 依赖：请在 models/ 下执行 `uv sync --extra asr`"
+            "missing sherpa-onnx dependency: run `uv sync --extra asr` under models/"
         ) from e
     return sherpa_onnx
 
@@ -68,8 +67,8 @@ class SileroVadProvider(VADProvider):
         p = self._settings.models_dir.expanduser() / _MODEL_SUBDIR / _MODEL_FILE
         if not p.is_file():
             raise SileroVadError(
-                f"silero-vad 模型文件缺失 {p}；"
-                "请先 `momoctl pull --only silero-vad` 或按 MANIFEST 手动下载"
+                f"silero-vad model file missing: {p}; "
+                "run `momoctl pull --only silero-vad` or download manually per MANIFEST"
             )
         return p
 
@@ -88,7 +87,7 @@ class SileroVadProvider(VADProvider):
         result = verify_entry(entry, self._settings.models_dir.expanduser())
         if result.mismatched:
             raise SileroVadError(
-                f"silero-vad 模型 sha256 校验失败 {list(result.mismatched)}；请重新拉取模型文件"
+                f"silero-vad model sha256 mismatch {list(result.mismatched)}; re-fetch model files"
             )
 
     def _build(self, model: Path):
@@ -125,7 +124,7 @@ class SileroVadProvider(VADProvider):
     def feed(self, pcm: bytes) -> Iterator[VadEvent]:
         """喂入一块 PCM s16le 16kHz mono，产出 0..n 个边界事件。"""
         if self._vad is None:
-            raise SileroVadError("silero-vad 未 load：先等待 readyz 就绪")
+            raise SileroVadError("silero-vad not loaded: wait for readyz first")
         # int16 对齐防御：奇数字节尾截断。
         if len(pcm) % 2:
             pcm = pcm[:-1]
@@ -153,7 +152,7 @@ class SileroVadProvider(VADProvider):
     def flush(self) -> Iterator[VadEvent]:
         """冲刷：补静音凑满尾窗；仍在 speech 则强制 speech_end。"""
         if self._vad is None:
-            raise SileroVadError("silero-vad 未 load：先等待 readyz 就绪")
+            raise SileroVadError("silero-vad not loaded: wait for readyz first")
         ws = self._window_size
         if len(self._pending):
             pad = np.zeros(ws - len(self._pending), dtype=np.float32)

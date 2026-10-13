@@ -1,4 +1,4 @@
-//! 协议 e2e：mock 模型服务 + 真 ws client 全链路（momo-app.md §测试策略）。
+//! 协议 e2e：mock 模型服务 + 真 ws client 全链路（momo-app.md §P0 验收指针）。
 //!
 //! 骨架阶段：只验证 `/healthz` 与路由装配；
 //! mock LLM SSE / TTS-WS / ASR 与 barge-in 三动作断言随管线实装补齐。
@@ -46,6 +46,5 @@ async fn ws_ui_requires_upgrade() {
 
 // TODO(P0): e2e 回合——mock LLM SSE + mock TTS/ASR WS + 真 ws client，
 // 断言 input.text → output.sentence → audio.chunk 顺序与历史记账。
-//
 // TODO(P0): barge-in e2e——Speaking 中发 control.barge_in，断言停播通知、
-// 上游 cancel、partial 记账三件事，以及取消后无残留帧。
+// 上游 cancel、partial 记账与取消后无残留帧。

@@ -1,8 +1,6 @@
 //! `Turn` 状态机迁移表穷举（runtime.md「turn 状态机」）。
-//!
-//! `LEGAL` 逐行对应文档 mermaid 的 18 条迁移；`state_event_matrix` 把
-//! 5 状态 × 12 事件的全表跑一遍：表内迁移到目标态，表外组合必须
-//! `IllegalTransition` 显式拒绝且不改状态。
+//! `LEGAL` 对应文档 18 条迁移；`state_event_matrix` 跑 5 状态 × 12 事件
+//! 全表：表外组合必须 `IllegalTransition` 且不改状态。
 
 use momo_app::{
     pipeline::splitter::Sentence,

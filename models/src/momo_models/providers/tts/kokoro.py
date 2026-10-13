@@ -1,8 +1,7 @@
 """Kokoro-82M（已实测兜底）：首包 ~209ms、RTF 0.023、VRAM 0.76GB @ 3070 Laptop。
 
-接入：`kokoro` pip 包 + torch（版本须与 torchaudio 对齐，
-见 docs/00-context/decisions.md「ADR-018」）。
-g2p 依赖 espeak-ng/misaki，按语言懒加载；已知坑见 docs/02-repos/momo-models.md「provider 与产物」。
+`kokoro` pip 包 + torch（版本须与 torchaudio 对齐，ADR-018）；g2p 依赖
+espeak-ng/misaki，按语言懒加载。
 """
 
 from collections.abc import AsyncIterator
@@ -10,7 +9,7 @@ from collections.abc import AsyncIterator
 from momo_models.config import Settings
 from momo_models.providers.base import TTSCaps, TTSProvider, VoiceRef
 
-_TODO = "kokoro 接入：P0 实现（docs/02-repos/momo-models.md「provider 与产物」）"
+_TODO = "kokoro integration: implement in P0 (docs/02-repos/momo-models.md 'provider 与产物')"
 
 
 class KokoroTTSProvider(TTSProvider):

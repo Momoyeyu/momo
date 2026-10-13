@@ -1,8 +1,6 @@
 //! momo-ws 客户端连接（orchestrator → 模型服务链路）。
-//!
-//! 与 server 侧 conn.rs 对称：tx 走 `OutboundFrame` 有界 mpsc 背压保序、
-//! 每帧带 [`CONN_TX_STALL`] deadline；rx task 解码后经 `Inbound` 送达业务方。
-//! 传输 tokio-tungstenite（TLS 一律 rustls）；握手与帧格式见 protocol.md §4/§6。
+//! 与 server 侧 conn.rs 对称：`OutboundFrame` 有界 mpsc 背压 + [`CONN_TX_STALL`]
+//! deadline；TLS 走 rustls；握手/帧格式见 protocol.md §4/§6。
 
 use std::fmt::Display;
 

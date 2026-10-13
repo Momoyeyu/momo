@@ -175,7 +175,12 @@ def make_app(
         @app.post(debug_path)
         async def debug_endpoint() -> JSONResponse:
             return JSONResponse(
-                {"error": {"code": "NOT_IMPLEMENTED", "message": f"{debug_path} P0 实现"}},
+                {
+                    "error": {
+                        "code": "NOT_IMPLEMENTED",
+                        "message": f"{debug_path} not implemented (P0)",
+                    }
+                },
                 status_code=501,
             )
 

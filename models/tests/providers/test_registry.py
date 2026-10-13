@@ -85,5 +85,5 @@ def test_asr_provider_selected_by_env(tmp_path) -> None:
     # 实装后 load 不再是 stub：模型文件缺失时抛 SenseVoiceError（readyz 拒绝就绪）。
     from momo_models.providers.asr.sensevoice import SenseVoiceError
 
-    with pytest.raises(SenseVoiceError, match="模型文件缺失"):
+    with pytest.raises(SenseVoiceError, match="model files missing"):
         asyncio.run(p.load())

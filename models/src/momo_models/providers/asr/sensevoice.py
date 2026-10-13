@@ -1,11 +1,7 @@
 """SenseVoice-Small via sherpa-onnx（纯 CPU）：实测 RTF 0.040，CPU×4。
 
-zh/en/ja/ko/yue + 自动语言 + 情感/事件标记。注意 onnx 与 tokens.txt 配套；
-模型目录 = $MOMO_MODELS_DIR/<MANIFEST 条目 dest>，条目由 MOMO_ASR_MODEL
-指定（见 docs/02-repos/momo-models.md「provider 与产物」与 models/MANIFEST.toml）。
-
-sherpa-onnx 懒加载：核心依赖不带重库，import 仅在 load()/transcribe() 内发生，
-测试通过 sys.modules 注入假 sherpa_onnx。
+zh/en/ja/ko/yue + 情感/事件标记；onnx 须与 tokens.txt 配套；模型目录由
+MOMO_ASR_MODEL 的 MANIFEST 条目解析；sherpa-onnx 懒加载（测试经 sys.modules 注入）。
 """
 
 import asyncio
@@ -39,7 +35,7 @@ def _import_sherpa():
         import sherpa_onnx
     except ImportError as e:  # pragma: no cover —— 无重依赖环境兜底
         raise SenseVoiceError(
-            "缺少 sherpa-onnx 依赖：请在 models/ 下执行 `uv sync --extra asr`"
+            "missing sherpa-onnx dependency: run `uv sync --extra asr` under models/"
         ) from e
     return sherpa_onnx
 
@@ -155,8 +151,8 @@ class SenseVoiceASRProvider(ASRProvider):
         missing = [p.name for p in (model, tokens) if not p.is_file()]
         if missing:
             raise SenseVoiceError(
-                f"sensevoice 模型文件缺失 {missing}（期望目录 {root}）；"
-                f"请先 `momoctl pull --only {entry.name}` 或按 MANIFEST 手动下载"
+                f"sensevoice model files missing {missing} (expected dir {root}); "
+                f"run `momoctl pull --only {entry.name}` or download manually per MANIFEST"
             )
         return model, tokens
 
@@ -167,7 +163,7 @@ class SenseVoiceASRProvider(ASRProvider):
         result = verify_entry(entry, self._settings.models_dir.expanduser())
         if result.mismatched:
             raise SenseVoiceError(
-                f"sensevoice 模型 sha256 校验失败 {list(result.mismatched)}；请重新拉取模型文件"
+                f"sensevoice model sha256 mismatch {list(result.mismatched)}; re-fetch model files"
             )
 
     # ---------- 识别 ----------
@@ -214,7 +210,7 @@ class SenseVoiceASRProvider(ASRProvider):
         """转写一段 PCM s16le 16kHz mono。"""
         hint = _normalize_lang(lang)
         if not self._recognizers:
-            raise SenseVoiceError("sensevoice 未 load：先等待 readyz 就绪")
+            raise SenseVoiceError("sensevoice not loaded: wait for readyz first")
 
         # int16 对齐防御：奇数字节尾截断，空输入直接短路。
         if len(pcm) % 2:

@@ -1,7 +1,5 @@
-//! 解析 momo-models 仓的 `models/MANIFEST.toml`。
-//! 条目口径与其 `manifest.py` 一致：`name / repo_id / revision / files[] / sha256 / dest / notes`
-//! 以及结构化 `license`（`spdx / source / name?`）
-//! （momo-docs `02-repos/momo-models.md`、`05-ops/model-fetch.md`）。
+//! 解析 momo-models 仓的 `models/MANIFEST.toml`；条目口径与其 `manifest.py`
+//! 一致（momo-docs `02-repos/momo-models.md`、`05-ops/model-fetch.md`）。
 
 use std::fs;
 use std::path::{Path, PathBuf};

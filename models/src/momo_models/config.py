@@ -1,8 +1,7 @@
-"""MOMO_* 环境变量读取（pydantic-settings）。
+"""MOMO_* 环境变量读取（pydantic-settings）；只声明 models 服务侧读取的键。
 
-key 全集与默认值以 momo-docs/01-architecture/config.md §2.3 为准；
-本文件只声明 momo-models 服务侧读取的键。新增/修改 env 键必须同步
-`.env.example` 与 momo-docs 的 config.md。
+key 全集与默认值以 momo-docs/01-architecture/config.md §2.3 为准；改动需同步
+`.env.example` 与 config.md。
 """
 
 from functools import lru_cache

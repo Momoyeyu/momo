@@ -1,10 +1,7 @@
 //! `momoctl pull [--manifest PATH] [--only NAME] [--check]`：模型下载 + sha256 校验。
-//! 下载：`{HF_ENDPOINT:-hf-mirror}/{repo}/resolve/{rev}/{path}` → `<dest>/<path>.part`
-//! （Range 头续传）→ size+sha256 复算 → rename 落位 → 按条目写 `models.lock`。
-//! `pull.lock`（`create_new` 原子占位，Drop 清理）防止并发 pull 写坏同一目录。
-//! `--check`：定位 MANIFEST.toml → 逐文件存在性 + sha256 复算，占位（"TODO"）
-//! 与缺失文件按 fail 上报，退出码 5。
-//! 退出码：usage/config=2，网络=4，校验=5，成功=0（02-repos/momo-infra.md）。
+//! `.part` + Range 续传 → size+sha256 复算 → rename → `models.lock`；`pull.lock`
+//! 原子占位防并发。`--check` 只校验不下载（占位 "TODO"/缺失按 fail）。
+//! 退出码：2 usage/config、4 网络、5 校验（02-repos/momo-infra.md）。
 
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
@@ -73,7 +70,7 @@ fn pull(args: &PullArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
             checks.push(Check::warn(
                 format!("{}/", m.name),
                 "entry declares no files",
-                "MANIFEST.toml 条目口径见 momo-models.md",
+                "see MANIFEST.toml entry schema in momo-models.md",
             ));
             continue;
         }
@@ -197,7 +194,11 @@ fn fetch_file(
     if let Some(dir) = part.parent() {
         if let Err(e) = fs::create_dir_all(dir) {
             return FileFetch::fail(
-                Check::fail(id, format!("mkdir {}: {e}", dir.display()), "检查目录权限"),
+                Check::fail(
+                    id,
+                    format!("mkdir {}: {e}", dir.display()),
+                    "check directory permissions",
+                ),
                 FailKind::Net,
             );
         }
@@ -219,7 +220,7 @@ fn fetch_file(
                 Check::fail(
                     id,
                     format!("download failed: {detail}"),
-                    "网络不通时设 HF_ENDPOINT 镜像后重试；.part 已保留可续传",
+                    "if network is unreachable set HF_ENDPOINT to a mirror and retry; .part kept for resume",
                 ),
                 FailKind::Net,
             )
@@ -232,7 +233,11 @@ fn fetch_file(
         Err(why) => {
             let _ = fs::remove_file(&part);
             return FileFetch::fail(
-                Check::fail(id, format!("verify failed: {why}"), "删除残留后重跑 pull"),
+                Check::fail(
+                    id,
+                    format!("verify failed: {why}"),
+                    "delete leftovers and re-run pull",
+                ),
                 FailKind::Verify,
             );
         }
@@ -247,7 +252,7 @@ fn fetch_file(
             Check::fail(
                 id,
                 format!("rename to {}: {e}", dest.display()),
-                "检查目录权限",
+                "check directory permissions",
             ),
             FailKind::Net,
         );
@@ -257,7 +262,7 @@ fn fetch_file(
         Some(h) if is_placeholder_sha(h) => Check::warn(
             id,
             format!("downloaded {size} bytes; sha256 placeholder, recorded actual"),
-            "在 MANIFEST.toml 回填实际 sha256 以启用校验",
+            "backfill the actual sha256 in MANIFEST.toml to enable verification",
         ),
         _ => Check::ok(
             id,
@@ -407,7 +412,7 @@ fn check(args: &PullArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
             checks.push(Check::warn(
                 format!("{}/", m.name),
                 "entry declares no files",
-                "MANIFEST.toml 条目口径见 momo-models.md",
+                "see MANIFEST.toml entry schema in momo-models.md",
             ));
         }
         for f in &m.files {
@@ -444,7 +449,7 @@ fn check_file(path: PathBuf, model: &str, f: &FileEntry) -> Check {
         return Check::fail(
             id,
             format!("missing: {}", path.display()),
-            format!("momoctl pull --only {model} 下载后重跑 --check"),
+            format!("run `momoctl pull --only {model}` then re-run --check"),
         );
     }
     if let Some(expected) = f.size {
@@ -454,17 +459,23 @@ fn check_file(path: PathBuf, model: &str, f: &FileEntry) -> Check {
                 return Check::fail(
                     id,
                     format!("size {} != expected {}", md.len(), expected),
-                    "文件可能不完整；重新 pull",
+                    "file may be incomplete; pull again",
                 )
             }
-            Err(e) => return Check::fail(id, format!("stat failed: {e}"), "检查文件权限与路径"),
+            Err(e) => {
+                return Check::fail(
+                    id,
+                    format!("stat failed: {e}"),
+                    "check file permissions and path",
+                )
+            }
         }
     }
     match &f.sha256 {
         Some(h) if is_placeholder_sha(h) => Check::fail(
             id,
             "sha256 is placeholder (TODO); cannot verify",
-            "MANIFEST sha256 待 pull 实装后按实际文件补齐",
+            "MANIFEST sha256 to be backfilled from actual files once pull lands",
         ),
         Some(expected) => match sha256_file(&path) {
             Ok(actual) if actual.eq_ignore_ascii_case(expected) => {
@@ -477,9 +488,13 @@ fn check_file(path: PathBuf, model: &str, f: &FileEntry) -> Check {
                     &actual[..12],
                     &expected[..12.min(expected.len())]
                 ),
-                format!("删除 {} 后重新 pull", path.display()),
+                format!("delete {} and pull again", path.display()),
             ),
-            Err(e) => Check::fail(id, format!("sha256 read failed: {e}"), "检查文件可读性"),
+            Err(e) => Check::fail(
+                id,
+                format!("sha256 read failed: {e}"),
+                "check file readability",
+            ),
         },
         None => Check::ok(id, "present (no sha256 declared)"),
     }

@@ -448,7 +448,7 @@ fn up_inner(
                         checks.push(Check::fail(
                             c.name.clone(),
                             detail,
-                            "外部 provider 不可达：检查端点/网络后重试 serve up",
+                            "external provider unreachable; check endpoint/network then retry serve up",
                         ));
                         aborted = true;
                     }
@@ -457,7 +457,7 @@ fn up_inner(
                 checks.push(Check::warn(
                     c.name.clone(),
                     "skipped: MOMO_LLM_ENDPOINT is not loopback",
-                    "local_endpoint_only 组件仅在本地大脑档下拉起",
+                    "local_endpoint_only components spawn only under a local brain profile",
                 ));
             }
             continue;
@@ -501,7 +501,7 @@ fn up_inner(
                             Check::fail(
                                 c.name.clone(),
                                 format!("spawned pid {pid} but {why}: {url}"),
-                                format!("查看 {}", log_path.display()),
+                                format!("see {}", log_path.display()),
                             )
                         }
                     }
@@ -519,7 +519,7 @@ fn up_inner(
                 checks.push(Check::fail(
                     c.name.clone(),
                     format!("spawn failed: {e}"),
-                    "检查 cmd/cwd；momod 可用 --app-bin 指定二进制",
+                    "check cmd/cwd; for momod use --app-bin to point at the binary",
                 ));
                 aborted = true;
             }

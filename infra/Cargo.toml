@@ -2,7 +2,7 @@
 name = "momo-infra"
 version = "0.1.0"
 edition = "2021"
-description = "momo 运维 CLI：doctor / pull / serve / switch / bench / gc / config"
+description = "momo ops CLI: doctor / pull / serve / switch / bench / gc / config"
 
 [lib]
 name = "momo_infra"

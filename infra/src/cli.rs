@@ -12,11 +12,11 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
     about = "momo ops CLI: doctor / pull / serve / switch / bench / gc / config"
 )]
 pub struct Cli {
-    /// 以 JSON 输出单一对象（schema 版本化，供 CI/脚本消费）
+    /// Emit a single JSON object (versioned schema, for CI/scripts)
     #[arg(long, global = true)]
     pub json: bool,
 
-    /// .env 文件路径（默认自动发现 ./.env）
+    /// .env file path (auto-discovers ./.env by default)
     #[arg(long, global = true, value_name = "PATH")]
     pub env_file: Option<PathBuf>,
 
@@ -26,19 +26,19 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// 环境检查矩阵（系统/工具链/Python/网络/env/模型/端点）
+    /// Environment check matrix (system/toolchain/python/network/env/models/endpoints)
     Doctor(DoctorArgs),
-    /// 模型下载 + sha256 校验（清单来自 momo-models 的 MANIFEST.toml）
+    /// Model download + sha256 verification (manifest from momo-models MANIFEST.toml)
     Pull(PullArgs),
-    /// 本地服务编排：up/down/status/logs/restart
+    /// Local service orchestration: up/down/status/logs/restart
     Serve(ServeArgs),
-    /// normal ↔ degraded 档位切换
+    /// Switch between normal and degraded profiles
     Switch(SwitchArgs),
-    /// 端到端延迟测量（p50/p95，目标 <1.5s 出声）
+    /// End-to-end latency measurement (p50/p95, target <1.5s to first audio)
     Bench(BenchArgs),
-    /// 模型 GC：N-1 代清理、models.lock 联动
+    /// Model GC: keep N-1 generations, reconcile models.lock
     Gc(GcArgs),
-    /// env schema 漂移检查（config.schema.toml ↔ .env.example / config.md）
+    /// env schema drift check (config.schema.toml vs .env.example / config.md)
     Config(ConfigArgs),
 }
 
@@ -60,22 +60,22 @@ impl Profile {
 
 #[derive(Debug, Args)]
 pub struct DoctorArgs {
-    /// 按指定档位校验必需 env 与端点（默认读 MOMO_PROFILE，缺省 normal）
+    /// Validate required env and endpoints for a profile (default: MOMO_PROFILE, else normal)
     #[arg(long, value_enum)]
     pub profile: Option<Profile>,
 }
 
 #[derive(Debug, Args)]
 pub struct PullArgs {
-    /// MANIFEST.toml 路径（默认 momo-models 仓 models/MANIFEST.toml）
+    /// MANIFEST.toml path (default: momo-models repo models/MANIFEST.toml)
     #[arg(long, value_name = "PATH")]
     pub manifest: Option<PathBuf>,
 
-    /// 只处理指定条目（可重复）
+    /// Process only the named entries (repeatable)
     #[arg(long, value_name = "NAME")]
     pub only: Vec<String>,
 
-    /// 只校验不下载（按 models.lock / MANIFEST 复算 sha256）
+    /// Verify only, no download (recompute sha256 per models.lock / MANIFEST)
     #[arg(long)]
     pub check: bool,
 }
@@ -88,13 +88,13 @@ pub struct ServeArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum ServeAction {
-    /// 按 profile 组件表依序拉起并等待就绪
+    /// Spawn components in profile start order and wait for readiness
     Up(ServeCommon),
-    /// 按 pidfile 逆序 SIGTERM→SIGKILL
+    /// SIGTERM→SIGKILL in reverse pidfile order
     Down(ServeCommon),
-    /// pid 存活 + /healthz 探测
+    /// pid liveness + /healthz probes
     Status(ServeCommon),
-    /// tail 组件日志（-n 行数，-f 持续跟随）
+    /// Tail component logs (-n lines, -f follow)
     Logs(LogsArgs),
     /// down + up
     Restart(ServeCommon),
@@ -102,15 +102,15 @@ pub enum ServeAction {
 
 #[derive(Debug, Args)]
 pub struct ServeCommon {
-    /// 组件清单档位（默认读 MOMO_PROFILE，缺省 normal）
+    /// Component profile (default: MOMO_PROFILE, else normal)
     #[arg(long, value_enum)]
     pub profile: Option<Profile>,
 
-    /// 只作用于指定组件（可重复）
+    /// Apply only to the named components (repeatable)
     #[arg(long, value_name = "COMPONENT", visible_alias = "component")]
     pub only: Vec<String>,
 
-    /// momod 二进制路径（默认 PATH 查找）
+    /// momod binary path (default: PATH lookup)
     #[arg(long, value_name = "PATH")]
     pub app_bin: Option<PathBuf>,
 }
@@ -120,33 +120,33 @@ pub struct LogsArgs {
     #[command(flatten)]
     pub common: ServeCommon,
 
-    /// 每个组件输出最后 N 行
+    /// Print the last N lines per component
     #[arg(short = 'n', long = "lines", default_value_t = 50, value_name = "N")]
     pub lines: usize,
 
-    /// 持续跟随新增日志（Ctrl-C 退出）
+    /// Keep following new log output (Ctrl-C to exit)
     #[arg(short = 'f', long)]
     pub follow: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct SwitchArgs {
-    /// 目标档位：.env 符号链接重指 .env.<to>
+    /// Target profile: repoint .env symlink to .env.<to>
     #[arg(long, value_enum)]
     pub to: Profile,
 
-    /// 切换后自动 serve down && serve up
+    /// Automatically serve down && serve up after switching
     #[arg(long)]
     pub restart: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct BenchArgs {
-    /// 测量回合数（取 p50/p95）
+    /// Number of turns to measure (p50/p95)
     #[arg(long, default_value_t = 5, value_name = "N")]
     pub turns: u32,
 
-    /// 超标（>=1.5s 出声）时以退出码 3 结束
+    /// Exit with code 3 when over budget (>=1.5s to first audio)
     #[arg(long)]
     pub strict: bool,
 }
@@ -159,28 +159,28 @@ pub struct ConfigArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum ConfigAction {
-    /// 校验三侧 .env.example 与 config.md 是否和 config.schema.toml 一致
+    /// Check the three .env.example files and config.md against config.schema.toml
     Check(ConfigCheckArgs),
 }
 
 #[derive(Debug, Args)]
 pub struct ConfigCheckArgs {
-    /// 仓库根目录（默认从 CWD 向上定位 config.schema.toml）
+    /// Repo root (default: locate config.schema.toml upward from CWD)
     #[arg(long, value_name = "PATH")]
     pub root: Option<PathBuf>,
 }
 
 #[derive(Debug, Args)]
 pub struct GcArgs {
-    /// 只报告不删除（默认行为；删除需显式 --yes）
+    /// Report only, do not delete (default; deletion requires --yes)
     #[arg(long)]
     pub dry_run: bool,
 
-    /// 微调产物保留代数（默认 2，即 N-1 中保留最新两代）
+    /// Fine-tune artifact generations to keep (default 2, i.e. newest two of N-1)
     #[arg(long, default_value_t = 2, value_name = "N")]
     pub keep: u32,
 
-    /// 确认执行删除（不带 --yes 时等价 --dry-run）
+    /// Confirm deletion (without --yes this is equivalent to --dry-run)
     #[arg(long)]
     pub yes: bool,
 }
