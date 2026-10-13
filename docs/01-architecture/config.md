@@ -74,6 +74,8 @@ flowchart LR
 | `MOMO_TTS_VOICE_REF` | 克隆用参考音频路径 | 空 | path | models | 否 |
 | `MOMO_TTS_MODEL_DIR` | SFT 克隆产物目录（灰度切换/回滚指向） | 空 | path | models | 否 |
 | `MOMO_TTS_LANG` | 合成默认语言 | `auto` | `zh`/`en`/`ja`/`auto` | models | 否 |
+| `MOMO_COSYVOICE3_HOME` | FunAudioLLM/CosyVoice 源码 checkout（官方推理栈；含 third_party/Matcha-TTS 子模块） | 空 | path | models | 否 |
+| `MOMO_COSYVOICE3_PYTHON` | cosyvoice3 隔离 venv/conda 解释器（官方栈不走本包 venv） | 空 | path | models | 否 |
 | `MOMO_MEMORY_ENABLED`（记忆） | 记忆检索开关 | `false` | bool | models | 否 |
 | `MOMO_MEMORY_DB`（记忆） | sqlite-vec 库路径 | `data/momo.vec.db` | path | models | 否 |
 | `MOMO_VISION_ENDPOINT`（视觉） | 视觉 API | `https://api.deepseek.com/v1` | URL | models | 否 |
@@ -153,6 +155,8 @@ MOMO_TTS_VOICE=              # 音色名（后端各自解释；空=按 MOMO_TTS
 MOMO_TTS_VOICE_REF=
 MOMO_TTS_MODEL_DIR=            # SFT 克隆产物目录（灰度切换/回滚）
 MOMO_TTS_LANG=auto
+MOMO_COSYVOICE3_HOME=          # FunAudioLLM/CosyVoice 源码 checkout（官方推理栈）
+MOMO_COSYVOICE3_PYTHON=        # cosyvoice3 隔离 venv/conda 解释器
 MOMO_MEMORY_ENABLED=false
 MOMO_MEMORY_DB=data/momo.vec.db
 MOMO_VISION_ENDPOINT=https://api.deepseek.com/v1

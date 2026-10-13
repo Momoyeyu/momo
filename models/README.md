@@ -38,6 +38,6 @@ uv sync --extra torch-cu124 --extra tts
 uv sync --extra asr
 ```
 
-- `torch`/`torchaudio` 版本按文档红线锁 `2.6.*` 档；cosyvoice3 / sovits 不发 PyPI，按官方源码栈部署。
+- `torch`/`torchaudio` 版本按文档红线锁 `2.6.*` 档；cosyvoice3 / sovits 不发 PyPI，按官方源码栈部署——cosyvoice3 为隔离 venv 子进程接入，需另设 `MOMO_COSYVOICE3_HOME`（源码 checkout）与 `MOMO_COSYVOICE3_PYTHON`（该 venv 解释器）。
 - 模型权重在 `$MOMO_MODELS_DIR`（默认 `~/.cache/momo/models`），清单口径见 `models/MANIFEST.toml`；laptop 需 `HF_ENDPOINT=https://hf-mirror.com`（见 `.env.example`）。
 - 任何引入 fugashi/MeCab 依赖的 backend 一律拒绝（依赖红线）。

@@ -29,7 +29,11 @@ provider 同级可切换：每种能力经 registry 按 env 选实现——TTS `
 
 provider 内的具体权重由 MANIFEST 指定：ASR 用 `MOMO_ASR_MODEL` 选条目名，条目 `dest` 即 `${MOMO_MODELS_DIR}` 下的模型目录，运行时只读该目录并按条目校验 sha256（条目名未知或清单缺失 → readyz 不就绪）。
 
-TTS provider 实装状态：`kokoro`（默认）与 `edge` 已实装，`f5`/`cosyvoice3`/`sovits` 为 stub。kokoro 固定 MANIFEST 条目 `kokoro-82m`（dest 即模型目录，`config.json`/`kokoro-v1_0.pth`/`voices/*.pt` 经 sha256 门控），`KModel` 直接吃本地路径不经 HF 下载；音色优先级 `MOMO_TTS_VOICE` > `VoiceRef.lang`/`MOMO_TTS_LANG` 映射（zh→zf_xiaoxiao、en→af_heart、ja→jf_alpha），pipeline lang_code 取音色名首字母；产出统一为 PCM s16le 24kHz mono，cancel 在 chunk 边界停产出。
+TTS provider 实装状态：`kokoro`（默认）、`edge`、`f5`、`cosyvoice3` 已实装，`sovits` 为 stub。kokoro 固定 MANIFEST 条目 `kokoro-82m`（dest 即模型目录，`config.json`/`kokoro-v1_0.pth`/`voices/*.pt` 经 sha256 门控），`KModel` 直接吃本地路径不经 HF 下载；音色优先级 `MOMO_TTS_VOICE` > `VoiceRef.lang`/`MOMO_TTS_LANG` 映射（zh→zf_xiaoxiao、en→af_heart、ja→jf_alpha），pipeline lang_code 取音色名首字母；产出统一为 PCM s16le 24kHz mono，cancel 在 chunk 边界停产出。
+
+克隆 provider（f5/cosyvoice3）共用参考音口径：`VoiceRef.ref_audio`（服务层注入 `MOMO_TTS_VOICE_REF`）经素材规范预检（可读 WAV/FLAC、≥24kHz、非空）后统一转写 24kHz PCM16 临时 WAV 喂给后端；`ref_text` 解析顺序为请求携带 → 参考音同名 `.txt` sidecar → SenseVoice 兜底转写（asr extra + sense-voice 权重就绪时，按 `(path, mtime)` 缓存）。
+
+`cosyvoice3`（Fun-CosyVoice3-0.5B-2512，首选目标）：官方推理栈不发 PyPI 且推荐 py3.10，按 voice-clone.md 风险节走源码 checkout + 隔离 venv/conda 部署——provider 以 `MOMO_COSYVOICE3_PYTHON` 指向的解释器拉起 stdlib-only 的 `cosyvoice3_worker.py` 子进程，`MOMO_COSYVOICE3_HOME` 指向含 `third_party/Matcha-TTS` 子模块的源码 checkout；父子间走 stdin/stdout「JSON 头行 + f32le 负载」协议，帧回显请求 id 使 cancel 后迟发帧可丢弃。warmup 先校验模型目录——默认按 MANIFEST `cosyvoice3-0.5b` sha256 门控，`MOMO_TTS_MODEL_DIR` 非空时吃 SFT 产物目录（有对应 models.lock 条目则按其校验，未登记只做必需文件存在性检查）——再拉起 worker 等 ready 帧（上报模型实际采样率，下行统一重采样到 24kHz）。emotion 非 neutral 时走 `inference_instruct2`（instruct 指令来自 emotion 映射层，参考音仅供说话人特征，不需要转写）；否则 `inference_zero_shot`（prompt_text = 官方前缀 + ref_text）。cancel 置位在途流并在 synth 锁内发 cancel 消息，保证先于下一请求到达 worker。
 
 情感：`output.sentence.emotion`（protocol 固定 8 tag）经 `providers/tts/emotion.py` 的 `map_emotion(tag, provider, caps)` 落成各 provider 参数——kokoro→`speed`、edge→`rate`/`pitch`/`volume`、cosyvoice3→`instruct` 指令、sovits→参考音情感提示；`None`/未知 tag 兜底 `neutral`，`caps.emotion=False` 返回空表（产出与 neutral 一致）。消费 emotion 的 provider 声明 `caps.emotion=True`。
 

@@ -29,8 +29,10 @@ momo-svc-embed = "momo_models.services.embed_service:main"
 #   laptop（linux + CUDA，走 pytorch cu124 index）：
 #     uv sync --extra torch-cu124 --extra tts
 #
-# cosyvoice3（Fun-CosyVoice3-0.5B）与 sovits（GPT-SoVITS）不发 PyPI，
-# 按官方源码栈部署后再 `pip install -e . --extra tts`，此处不留 extra 条目。
+# cosyvoice3（Fun-CosyVoice3-0.5B）与 sovits（GPT-SoVITS）不发 PyPI：
+# cosyvoice3 走官方源码栈 + 隔离 venv 子进程接入（MOMO_COSYVOICE3_HOME/PYTHON，
+# 见 providers/tts/cosyvoice3.py），本 venv 只需 `tts` extra 的 soundfile 做参考音预检；
+# sovits 同路子进程隔离（实装中），此处不留 extra 条目。
 [project.optional-dependencies]
 torch-mac = [
     "torch==2.6.*",

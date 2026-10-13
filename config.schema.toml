@@ -52,6 +52,8 @@ key = [
   { name = "MOMO_VISION_MODEL", type = "string", default = "deepseek-v4-flash-vision-exp", readers = ["models"], files = ["app", "models"], component = "models", description = "视觉模型" },
   { name = "MOMO_VISION_API_KEY", type = "string", default = "", sensitive = true, readers = ["models"], files = ["app", "models"], component = "models", description = "视觉 provider 鉴权 key" },
   { name = "MOMO_EMBED_LISTEN", type = "string", default = "127.0.0.1:7812", readers = ["models"], files = ["app", "models"], component = "models", description = "embed 服务 WS 监听（记忆检索）" },
+  { name = "MOMO_COSYVOICE3_HOME", type = "path", default = "", readers = ["models"], files = ["app", "models"], component = "models", description = "FunAudioLLM/CosyVoice 源码 checkout（cosyvoice3 官方推理栈；含 third_party/Matcha-TTS 子模块）" },
+  { name = "MOMO_COSYVOICE3_PYTHON", type = "path", default = "", readers = ["models"], files = ["app", "models"], component = "models", description = "cosyvoice3 隔离 venv/conda 解释器（官方栈不走本包 venv）" },
   # ===== infra 读（大脑启停、momoctl web 鉴权） =====
   { name = "MOMO_WEB_TOKEN", type = "string", default = "", sensitive = true, readers = ["infra"], files = ["app", "infra"], component = "infra", description = "momoctl web 控制台鉴权 token；--listen 放宽出 localhost 时必填（未设拒绝启动）" },
   { name = "MOMO_BRAIN_BACKEND", type = "enum", values = ["mlx", "vllm", "deepseek", "local"], default = "mlx", readers = ["infra"], files = ["app", "infra"], component = "infra", description = "大脑后端类型" },

@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     tts_voice_ref: str = ""  # 克隆用参考音频路径
     tts_model_dir: str = ""  # SFT 克隆产物目录（灰度切换/回滚）
     tts_lang: str = "auto"  # zh | en | ja | auto
+    cosyvoice3_home: str = ""  # FunAudioLLM/CosyVoice 源码 checkout（含 Matcha-TTS 子模块）
+    cosyvoice3_python: str = ""  # cosyvoice3 隔离 venv/conda 解释器路径
 
     # embed（momo-svc-embed，P3）
     embed_listen: str = "127.0.0.1:7812"
