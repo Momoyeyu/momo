@@ -10,7 +10,7 @@ from collections.abc import AsyncIterator
 from momo_models.config import Settings
 from momo_models.providers.base import TTSCaps, TTSProvider, VoiceRef
 
-_TODO = "kokoro 接入：P0 实现（docs/02-repos/momo-models.md「provider 与产物」）"
+_TODO = "kokoro integration: implement in P0 (docs/02-repos/momo-models.md 'provider 与产物')"
 
 
 class KokoroTTSProvider(TTSProvider):

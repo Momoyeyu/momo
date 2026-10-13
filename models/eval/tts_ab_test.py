@@ -8,7 +8,7 @@
 
 
 def main() -> None:
-    raise SystemExit("tts_ab_test: P2 实现（见 momo-docs/02-repos/momo-models.md）")
+    raise SystemExit("tts_ab_test: implemented in P2 (see momo-docs/02-repos/momo-models.md)")
 
 
 if __name__ == "__main__":

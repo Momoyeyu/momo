@@ -10,7 +10,7 @@ from collections.abc import AsyncIterator
 from momo_models.config import Settings
 from momo_models.providers.base import TTSCaps, TTSProvider, VoiceRef
 
-_TODO = "cosyvoice3 接入：P2 实现（官方推理栈部署需求待实测）"
+_TODO = "cosyvoice3 integration: implement in P2 (official inference stack requirements TBD)"
 
 
 class CosyVoice3Provider(TTSProvider):

@@ -11,7 +11,7 @@
 
 
 def main() -> None:
-    raise SystemExit("sft_cosyvoice3: P2 实现（见 momo-docs/02-repos/momo-models.md）")
+    raise SystemExit("sft_cosyvoice3: implemented in P2 (see momo-docs/02-repos/momo-models.md)")
 
 
 if __name__ == "__main__":

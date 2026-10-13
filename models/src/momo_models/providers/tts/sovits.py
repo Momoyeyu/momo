@@ -10,7 +10,7 @@ from collections.abc import AsyncIterator
 from momo_models.config import Settings
 from momo_models.providers.base import TTSCaps, TTSProvider, VoiceRef
 
-_TODO = "sovits 接入：P2 实现（子进程隔离方案待定）"
+_TODO = "sovits integration: implement in P2 (subprocess isolation plan TBD)"
 
 
 class SoVITSProvider(TTSProvider):

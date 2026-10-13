@@ -144,7 +144,7 @@ def _make_mp3(seconds: float = 1.0) -> bytes:
     try:
         sf.write(buf, sig, sr, format="MP3")
     except Exception as e:
-        pytest.skip(f"libsndfile 不支持 MP3 编码：{e}")
+        pytest.skip(f"libsndfile cannot encode MP3: {e}")
     return buf.getvalue()
 
 
@@ -178,6 +178,6 @@ def test_real_edge_synthesis() -> None:
     try:
         chunks = _collect(p, "你好，我是默默。")
     except Exception as e:
-        pytest.skip(f"edge-tts 网络不可达：{e!r}")
+        pytest.skip(f"edge-tts network unreachable: {e!r}")
     assert len(chunks) > 1
     assert sum(map(len, chunks)) > 4800  # >100ms 的 24k s16le

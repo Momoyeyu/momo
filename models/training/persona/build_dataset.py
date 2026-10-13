@@ -7,7 +7,9 @@
 
 
 def main() -> None:
-    raise SystemExit("build_dataset: P3 实现（见 momo-docs/04-tracks 与 02-repos/momo-models.md）")
+    raise SystemExit(
+        "build_dataset: implemented in P3 (see momo-docs/04-tracks and 02-repos/momo-models.md)"
+    )
 
 
 if __name__ == "__main__":

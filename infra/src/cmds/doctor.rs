@@ -62,7 +62,7 @@ fn check_system() -> CheckGroup {
                 checks.push(Check::warn(
                     "gpu.metal",
                     "Metal framework not found",
-                    "MLX/llama.cpp 将退化 CPU；确认 macOS 版本与 Xcode CLT",
+                    "MLX/llama.cpp will fall back to CPU; check macOS version and Xcode CLT",
                 ));
             }
         }
@@ -71,7 +71,7 @@ fn check_system() -> CheckGroup {
             None => checks.push(Check::warn(
                 "gpu.cuda",
                 "nvidia-smi not found",
-                "TTS CUDA 档需要 NVIDIA 驱动；纯 CPU 部署可忽略",
+                "TTS CUDA profile needs NVIDIA drivers; ignore on pure-CPU deploys",
             )),
         },
         _ => checks.push(Check::ok("gpu", "no gpu probe for this OS")),
@@ -138,12 +138,12 @@ fn check_toolchain() -> CheckGroup {
             None if *required => Check::fail(
                 format!("tool.{bin}"),
                 format!("{bin} not found in PATH"),
-                "安装后重试；rust 走 rustup，uv 见 astral.sh",
+                "install and retry; rust via rustup, uv via astral.sh",
             ),
             None => Check::warn(
                 format!("tool.{bin}"),
                 format!("{bin} not found in PATH"),
-                "前端构建/音频转码时需要",
+                "needed for frontend build / audio transcoding",
             ),
         })
         .collect();
@@ -196,7 +196,7 @@ fn check_python_deps() -> CheckGroup {
                 checks.push(Check::warn(
                     "py.cuda",
                     "torch.cuda.is_available()=False",
-                    "TTS CUDA 档需要 CUDA build 的 torch；cpu/mps 档可忽略",
+                    "TTS CUDA profile needs a CUDA-enabled torch build; ignore on cpu/mps",
                 ));
             } else {
                 checks.push(Check::ok("py.cuda", "cuda=False (non-linux; mps/cpu path)"));
@@ -212,13 +212,13 @@ fn check_python_deps() -> CheckGroup {
             checks.push(Check::fail(
                 "py.torch",
                 format!("torch/torchaudio import failed: {err}"),
-                "在 momo-models 仓 `uv sync` 建 venv；doctor 探的是系统 python3",
+                "run `uv sync` in the momo-models repo to create the venv; doctor probes system python3",
             ));
         }
         Err(_) => checks.push(Check::fail(
             "py.torch",
             "python3 not found",
-            "安装 python3 与 uv",
+            "install python3 and uv",
         )),
     }
     CheckGroup::new("python", checks)
@@ -251,7 +251,7 @@ fn check_network(env: &EnvCfg) -> CheckGroup {
             "net.hf-mirror" => Check::fail(
                 *id,
                 format!("{url} unreachable: {}", p.describe()),
-                "laptop 主源必须可通；排查代理/DNS，备选 ModelScope",
+                "laptop primary model source must be reachable; check proxy/DNS, ModelScope as fallback",
             ),
             // huggingface.co 直连不可达是已知事实（laptop），warn + hint HF_ENDPOINT。
             "net.huggingface" if p.reachable => Check::ok(*id, p.describe()),
@@ -265,7 +265,7 @@ fn check_network(env: &EnvCfg) -> CheckGroup {
             _ => Check::warn(
                 *id,
                 format!("{url} unreachable: {}", p.describe()),
-                "仅 degraded 档 DeepSeek 大脑 / P4 视觉需要",
+                "only needed by the degraded DeepSeek brain / P4 vision",
             ),
         };
         checks.push(check);
@@ -278,7 +278,7 @@ fn check_network(env: &EnvCfg) -> CheckGroup {
         checks.push(Check::warn(
             "net.pypi-mirror",
             "UV_INDEX_URL / PIP_INDEX_URL unset",
-            "laptop 建议配置 PyPI 镜像（05-ops/model-fetch.md）",
+            "configure a PyPI mirror on laptop (05-ops/model-fetch.md)",
         ));
     }
     CheckGroup::new("network", checks)
@@ -298,7 +298,7 @@ fn check_env(env: &EnvCfg, profile: Profile) -> CheckGroup {
             None => Check::fail(
                 format!("env.{key}"),
                 "unset",
-                format!("在 .env 中设置 {key}（模板见 .env.example）"),
+                format!("set {key} in .env (template: .env.example)"),
             ),
         });
     }
@@ -327,7 +327,7 @@ fn check_env(env: &EnvCfg, profile: Profile) -> CheckGroup {
             checks.push(Check::fail(
                 "env.MOMO_LLM_API_KEY",
                 "unset but MOMO_LLM_ENDPOINT is api.deepseek.com",
-                "degraded DeepSeek 档必须设置 MOMO_LLM_API_KEY",
+                "MOMO_LLM_API_KEY is required for the degraded DeepSeek profile",
             ));
         }
     }
@@ -359,7 +359,7 @@ fn check_models(env: &EnvCfg) -> CheckGroup {
         checks.push(Check::warn(
             "models.dir",
             format!("{} missing", models_dir.display()),
-            "首次 `momoctl pull` 会创建",
+            "created by the first `momoctl pull`",
         ));
     }
 
@@ -369,7 +369,7 @@ fn check_models(env: &EnvCfg) -> CheckGroup {
             checks.push(Check::fail(
                 "models.manifest",
                 "MANIFEST.toml not found",
-                "预期 ../momo-models/models/MANIFEST.toml（克隆 momo-models 仓）",
+                "expected ../momo-models/models/MANIFEST.toml (clone the momo-models repo)",
             ));
             return CheckGroup::new("models", checks);
         }
@@ -385,7 +385,7 @@ fn check_models(env: &EnvCfg) -> CheckGroup {
             checks.push(Check::fail(
                 "models.manifest",
                 format!("parse failed: {e}"),
-                "条目口径见 momo-models.md：name/repo_id/revision/files/sha256/dest",
+                "entry schema in momo-models.md: name/repo_id/revision/files/sha256/dest",
             ));
             return CheckGroup::new("models", checks);
         }
@@ -431,12 +431,12 @@ fn check_models(env: &EnvCfg) -> CheckGroup {
                 Ok(_) => checks.push(Check::fail(
                     format!("model.{}", m.name),
                     format!("sha256 mismatch on {}", f.path),
-                    format!("删除后 `momoctl pull --only {}` 重下", m.name),
+                    format!("delete it and re-run `momoctl pull --only {}`", m.name),
                 )),
                 Err(e) => checks.push(Check::warn(
                     format!("model.{}", m.name),
                     format!("sha256 spot-check failed: {e}"),
-                    "检查文件可读性",
+                    "check file readability",
                 )),
             }
         } else {
@@ -475,7 +475,7 @@ fn check_endpoints(env: &EnvCfg) -> CheckGroup {
             checks.push(Check::fail(
                 *id,
                 format!("{url} → {}", p.describe()),
-                "未启动：`momoctl serve up`；启动后应返回 200",
+                "not running: `momoctl serve up`; should return 200 once started",
             ));
         }
     }
@@ -491,14 +491,14 @@ fn check_endpoints(env: &EnvCfg) -> CheckGroup {
                 checks.push(Check::fail(
                     "ep.brain",
                     format!("{url} → {}", p.describe()),
-                    "正常档查 mac-studio MLX；不可用则 `momoctl switch --to degraded`",
+                    "normal profile uses mac-studio MLX; if unavailable run `momoctl switch --to degraded`",
                 ));
             }
         }
         None => checks.push(Check::fail(
             "ep.brain",
             "MOMO_LLM_ENDPOINT unset",
-            "在 .env 中设置 MOMO_LLM_ENDPOINT",
+            "set MOMO_LLM_ENDPOINT in .env",
         )),
     }
     CheckGroup::new("endpoints", checks)

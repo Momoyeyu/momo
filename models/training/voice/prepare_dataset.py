@@ -14,10 +14,10 @@ import argparse
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", required=True, help="原始素材目录")
-    parser.add_argument("--output", required=True, help="训练集输出目录")
+    parser.add_argument("--input", required=True, help="raw source material directory")
+    parser.add_argument("--output", required=True, help="training set output directory")
     parser.parse_args()
-    raise SystemExit("prepare_dataset: P2 实现（见 momo-docs/02-repos/momo-models.md）")
+    raise SystemExit("prepare_dataset: implemented in P2 (see momo-docs/02-repos/momo-models.md)")
 
 
 if __name__ == "__main__":

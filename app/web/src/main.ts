@@ -17,7 +17,7 @@ const statusEl = document.querySelector<HTMLElement>("#status");
 const micBtn = document.querySelector<HTMLButtonElement>("#mic");
 const fallbackEl = document.querySelector<HTMLElement>("#avatar-fallback");
 if (!stageEl || !chatEl || !statusEl) {
-  throw new Error("index.html 缺少 #stage/#chat/#status 挂载点");
+  throw new Error("index.html is missing the #stage/#chat/#status mount points");
 }
 
 const stage = new Live2DStage();

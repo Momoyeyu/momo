@@ -30,7 +30,7 @@ _DEFAULT_VOICES = {
 }
 _FALLBACK_VOICE = _DEFAULT_VOICES["zh"]
 
-_DEPS_HINT = "edge provider 依赖未安装：`uv sync --extra tts`"
+_DEPS_HINT = "edge provider dependencies not installed: `uv sync --extra tts`"
 
 
 def mp3_to_pcm(mp3: bytes) -> bytes:

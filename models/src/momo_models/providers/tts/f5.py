@@ -9,7 +9,7 @@ from collections.abc import AsyncIterator
 from momo_models.config import Settings
 from momo_models.providers.base import TTSCaps, TTSProvider, VoiceRef
 
-_TODO = "f5-tts 接入：P0/P2 实现（docs/02-repos/momo-models.md「provider 与产物」）"
+_TODO = "f5-tts integration: implement in P0/P2 (docs/02-repos/momo-models.md 'provider 与产物')"
 
 
 class F5TTSProvider(TTSProvider):

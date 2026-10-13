@@ -6,7 +6,7 @@
 
 [profile]
 name = "degraded"
-description = "降级档：laptop 全栈；大脑 = DeepSeek API（外部端点）或本地 llama-server :7820"
+description = "degraded profile: full stack on laptop; brain = DeepSeek API (external) or local llama-server :7820"
 
 # 大脑端点探活（DeepSeek 或本地 llama-server 都经 MOMO_LLM_ENDPOINT）
 [[component]]

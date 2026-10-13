@@ -118,7 +118,7 @@ def load_manifest(path: Path = DEFAULT_MANIFEST) -> list[ManifestEntry]:
                 )
             )
         except KeyError as e:
-            raise ManifestError(f"{where}: 缺少必填字段 {e}") from e
+            raise ManifestError(f"{where}: missing required fields {e}") from e
     return entries
 
 

@@ -8,7 +8,7 @@ from collections.abc import AsyncIterator
 
 from momo_models.providers.base import ChatDelta, ChatRequest, LLMProvider
 
-_TODO = "openai_compat 接入：P3 eval/bench 需要时实现（openai.AsyncOpenAI）"
+_TODO = "openai_compat integration: implement when P3 eval/bench needs it (openai.AsyncOpenAI)"
 
 
 class OpenAICompatProvider(LLMProvider):

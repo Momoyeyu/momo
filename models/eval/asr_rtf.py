@@ -25,15 +25,15 @@ from momo_models.providers.asr.sensevoice import SenseVoiceASRProvider
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="SenseVoice ASR RTF 复测")
+    ap = argparse.ArgumentParser(description="SenseVoice ASR RTF re-measurement")
     ap.add_argument("wav", type=Path, help="16kHz mono s16le wav")
-    ap.add_argument("--runs", type=int, default=3, help="重复解码次数取最优")
-    ap.add_argument("--lang", default=None, help="auto|zh|en|ja|ko|yue，默认 auto")
+    ap.add_argument("--runs", type=int, default=3, help="decode repetitions, best-of taken")
+    ap.add_argument("--lang", default=None, help="auto|zh|en|ja|ko|yue, default auto")
     args = ap.parse_args()
 
     pcm, rate, channels = wav_unwrap(args.wav.read_bytes())
     if rate != 16000 or channels != 1:
-        raise SystemExit(f"需要 16kHz mono wav，实际 {rate}Hz/{channels}ch")
+        raise SystemExit(f"expected 16kHz mono wav, got {rate}Hz/{channels}ch")
 
     provider = SenseVoiceASRProvider(Settings())
     asyncio.run(provider.load())
@@ -54,7 +54,7 @@ def main() -> None:
             f"RTF={rtf:.3f} lang={t.lang} emotion={t.speech_emotion} "
             f"events={t.events}"
         )
-    print(f"best RTF={best:.3f}（基线 0.040，laptop CPU×4）")
+    print(f"best RTF={best:.3f} (baseline 0.040, laptop CPU x4)")
     print(f"text: {text}")
     sys.exit(0)
 

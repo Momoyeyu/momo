@@ -7,7 +7,9 @@ LoRA 候选也用同一套；走 providers/llm/openai_compat 薄客户端（MOMO
 
 
 def main() -> None:
-    raise SystemExit("persona_regression: P3 实现（见 momo-docs/02-repos/momo-models.md）")
+    raise SystemExit(
+        "persona_regression: implemented in P3 (see momo-docs/02-repos/momo-models.md)"
+    )
 
 
 if __name__ == "__main__":

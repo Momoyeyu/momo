@@ -187,7 +187,7 @@ def _pcm(seconds: float = 1.0) -> bytes:
 def test_load_missing_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_manifest_bare(monkeypatch, tmp_path)
     p = SenseVoiceASRProvider(_settings(tmp_path))
-    with pytest.raises(SenseVoiceError, match="模型文件缺失"):
+    with pytest.raises(SenseVoiceError, match="model files missing"):
         asyncio.run(p.load())
 
 
@@ -319,7 +319,7 @@ def test_load_without_sherpa_raises(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     monkeypatch.delitem(sys.modules, "sherpa_onnx", raising=False)
     p = SenseVoiceASRProvider(_settings(tmp_path))
     if importlib.util.find_spec("sherpa_onnx") is not None:
-        pytest.skip("本环境已装 sherpa-onnx，无法覆盖缺依赖分支")
+        pytest.skip("sherpa-onnx installed here; cannot cover the missing-dependency branch")
     with pytest.raises(SenseVoiceError, match="sherpa-onnx"):
         asyncio.run(p.load())
 
@@ -329,7 +329,7 @@ def test_load_without_sherpa_raises(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 
 def test_transcribe_before_load(tmp_path: Path) -> None:
     p = SenseVoiceASRProvider(_settings(tmp_path))
-    with pytest.raises(SenseVoiceError, match="未 load"):
+    with pytest.raises(SenseVoiceError, match="not loaded"):
         asyncio.run(p.transcribe(_pcm(), lang=None))
 
 
@@ -436,7 +436,7 @@ _MODEL_PRESENT = (
 @pytest.mark.slow
 @pytest.mark.skipif(
     not _MODEL_PRESENT,
-    reason="sensevoice 权重/sherpa-onnx 未就绪（需 uv sync --extra asr + momoctl pull）",
+    reason="sensevoice weights / sherpa-onnx not available (uv sync --extra asr + momoctl pull)",
 )
 def test_transcribe_real_model() -> None:
     """真模型冒烟：zh/en 各跑一段真实 wav，打印 RTF 供人工核对 0.040 基线。"""

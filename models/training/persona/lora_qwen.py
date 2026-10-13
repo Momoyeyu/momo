@@ -7,7 +7,7 @@
 
 
 def main() -> None:
-    raise SystemExit("lora_qwen: P3 实现（见 momo-docs/02-repos/momo-models.md）")
+    raise SystemExit("lora_qwen: implemented in P3 (see momo-docs/02-repos/momo-models.md)")
 
 
 if __name__ == "__main__":
