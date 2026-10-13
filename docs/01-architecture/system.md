@@ -19,7 +19,7 @@ flowchart TB
     TURN -->|"确认播出的内容"| DATA
 ```
 
-`app/src-tauri` 承载桌面产品，浏览器用于网站与开发预览。infra 是独立控制面，只负责启停、探测和产物管理，不承载 conversation 数据；详见 [模块边界](./boundaries.md) 与 [infra 控制面](../02-repos/momo-infra.md)。
+当前交付形态是 **`momod` + Web UI**（Web 是交互主迭代面，ADR-011）；Tauri 桌面壳在交互定稿后复刻同一交互。infra 是独立控制面，只负责启停、探测和产物管理，不承载 conversation 数据；详见 [模块边界](./boundaries.md) 与 [infra 控制面](../02-repos/momo-infra.md)。
 
 ## 呈现的内部协作
 
@@ -72,9 +72,9 @@ flowchart TB
 
 ASR/TTS 不就绪不阻止 LLM 文字回复；LLM 不就绪时只保留 draft、设置与 idle avatar。
 
-## normal 与 degraded
+## 可用性与容灾边界
 
-normal/degraded 使用同一代码与协议；差异是本机拥有的 child process 与连接的 provider。应用退出只终止自己启动并记录为 owned 的 child process，绝不关闭 attached remote provider。provider 切换先 warmup/probe，成功后原子激活；活动回合存在时先显式取消。
+normal/degraded profile 使用同一代码与协议；差异是本机拥有的 child process 与连接的 provider——这是 **infra 运维面**的档位概念（`momoctl switch`），不是 app 内的容灾逻辑。app 侧每类 provider 只配一个 endpoint（ADR-028）：provider 故障时 app 只做 UI 呈现降级（TTS 挂→文字兜底、ASR 挂→禁语音输入），多模型容灾/负载均衡由服务侧或 momo-infra gateway 承担（ADR-029）。应用退出只终止自己启动并记录为 owned 的 child process，绝不关闭 attached remote provider。provider 切换先 warmup/probe，成功后原子激活；活动回合存在时先显式取消。
 
 ## 核心不变量
 

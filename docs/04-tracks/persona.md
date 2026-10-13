@@ -51,7 +51,7 @@ version: 1                    # schema 版本
 name: momo
 one_liner: ""                 # 一句话身份
 identity:
-  species: ""                 # 设定（AI VTuber 等）
+  species: ""                 # 设定（数字存在 / 伙伴等）
   birthday: ""
   likes: []                   # 喜好/厌恶
   dislikes: []

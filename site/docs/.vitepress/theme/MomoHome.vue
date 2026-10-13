@@ -35,12 +35,12 @@ const blueprintLinks = [
   <main class="momo-home">
     <section class="momo-hero" aria-labelledby="momo-title">
       <div class="momo-intro">
-        <p class="eyebrow">LOCAL-FIRST · DESKTOP COMPANION</p>
+        <p class="eyebrow">LOCAL-FIRST · COMPANION</p>
         <h1 id="momo-title"><span>今天，也有</span><span><em>momo</em> 在。</span></h1>
         <p class="hero-copy">让桌面多一个，懂得回应的存在。</p>
         <p class="hero-detail">说句话，敲几个字。<br>她接得住，也懂得安静陪着。</p>
         <div class="hero-links"><a :href="withBase('/guide/')">认识 momo <span aria-hidden="true">→</span></a><a :href="withBase('/guide/architecture')">打开设计图谱</a></div>
-        <p class="build-note">正在构建 P0：有形象、能对话、可打断的桌宠。</p>
+        <p class="build-note">正在构建：有形象、有性格、会自己记住你的伙伴。</p>
       </div>
       <div class="momo-scene"><Live2DStage /></div>
     </section>
@@ -86,16 +86,16 @@ const blueprintLinks = [
     <section class="momo-road" aria-labelledby="road-title">
       <div>
         <p class="eyebrow">03 / ROAD</p>
-        <h2 id="road-title">先成为桌宠，再慢慢熟悉。</h2>
+        <h2 id="road-title">先在 Web 上活起来，再长出自己的形态。</h2>
       </div>
       <ol>
-        <li><span>P0</span><strong>桌宠 MVP</strong><p>真实形象、文字与语音、随时可打断的桌面闭环。</p></li>
-        <li><span>P1</span><strong>熟悉陪伴</strong><p>可纠正的上下文、用户确认的记忆与有授权的声线。</p></li>
-        <li><span>P2</span><strong>能力扩展</strong><p>逐次授权的工具、截图，以及带外运维与训练界面。</p></li>
+        <li><span>当前</span><strong>Web 交互闭环</strong><p>真实形象、人格化对话、文字与语音、随时可打断。</p></li>
+        <li><span>随后</span><strong>像人深化</strong><p>momo 自管理的长期记忆、可纠正的人格与有授权的声线。</p></li>
+        <li><span>之后</span><strong>形态与扩展</strong><p>Tauri 桌面壳复刻同一交互；工具、截图与 momo-infra 训练底座。</p></li>
       </ol>
       <div class="road-end">
         <a :href="withBase('/guide/roadmap')">阅读完整路线 <span aria-hidden="true">→</span></a>
-        <p>Streaming 只是未来的 adapter，不改变桌面 companion 的核心。</p>
+        <p>Streaming 是保留的方向：直播只是未来的 adapter，不改变 companion 的内核。</p>
       </div>
     </section>
 

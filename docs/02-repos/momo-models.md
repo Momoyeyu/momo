@@ -1,6 +1,6 @@
-# `models/`：Python inference adapters 与训练实体
+# `models/`：Python inference adapters 与训练实体（未来的 `momo-infra` 一部分）
 
-> 模型层提供语音识别、语音合成与文本向量能力，通过适配器复用成熟推理库，并与桌面业务和回合状态解耦。
+> 模型层提供语音识别、语音合成与文本向量能力，通过适配器复用成熟推理库，并与交互业务和回合状态解耦。拆分后与 `infra/` 合并为 `momo-infra`（ADR-027/029）：训练实体成为 AI infra 的训练 pipeline 输入，provider 封装成为 momo-infra gateway/语音服务后的内部实现。
 
 ## 边界
 

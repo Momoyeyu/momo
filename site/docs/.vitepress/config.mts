@@ -4,7 +4,7 @@ import { remapCanonicalLink } from './markdown-links.mjs'
 
 export default defineConfig({
   title: 'momo',
-  description: 'momo 是本地优先的 AI 桌宠：有形象，能听你说话，也能安静陪着你。',
+  description: 'momo 是一个有形象、有性格、有自己记忆的伙伴：她能听你说话，也懂得怎么陪你。',
   base: '/momo/',
   lang: 'zh-CN',
   cleanUrls: true,
@@ -36,8 +36,8 @@ export default defineConfig({
       {
         text: '功能',
         items: [
-          { text: '桌宠 MVP', link: '/guide/pipeline' },
-          { text: '熟悉陪伴', link: '/guide/stage' },
+          { text: 'Web 交互闭环', link: '/guide/pipeline' },
+          { text: '像人深化', link: '/guide/stage' },
           { text: '能力扩展', link: '/guide/dialogue' },
           { text: '路线图', link: '/guide/roadmap' },
         ],
@@ -57,7 +57,7 @@ export default defineConfig({
         text: '模块与运维',
         collapsed: true,
         items: [
-          { text: 'Monorepo 边界', link: '/guide/repos' },
+          { text: '模块边界', link: '/guide/repos' },
           { text: 'app 模块', link: '/guide/momo-app' },
           { text: 'models 模块', link: '/guide/momo-models' },
           { text: 'infra 控制面', link: '/guide/infra-console' },
@@ -83,7 +83,7 @@ export default defineConfig({
     outline: { level: [2, 3], label: '本页内容' },
     socialLinks: [{ icon: 'github', link: 'https://github.com/Momoyeyu/momo' }],
     footer: {
-      message: '让桌面多一个，懂得回应的存在。',
+      message: '让屏幕里多一个，真正像人的存在。',
       copyright: 'momo · 设计文档',
     },
     search: { provider: 'local' },

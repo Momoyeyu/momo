@@ -1,6 +1,8 @@
 # 桌面宿主与形象生命周期
 
 > 桌面宿主让 momo 成为日常桌面的一部分：可拖动、可交互、可收起，也能在设备切换和休眠后自然回到你身边。
+>
+> **形态说明（ADR-011）**：本章描述的是 **Tauri 桌面壳**的目标行为——它不是当前交付形态（当前是 `momod` + Web UI）。Web 上的交互定稿后，桌面壳复刻同一套交互、由本文档描述窗口/权限/生命周期这层壳独有的行为；对话、呈现与回合语义完全复用。
 
 ## 启动、单实例与 readiness
 
@@ -68,7 +70,7 @@ flowchart TD
     SWITCH -->|"退出"| DISPOSE["dispose model / textures / ticker"] --> TERMINAL["结束"]
 ```
 
-桃濑日和 Hiyori 是网站固定互动 demo，保持官方模型与角色设计原样。网站使用的 sample data、Cubism Core 与应用代码适用不同许可。未来桌面版若开放任意 avatar 导入与公开发布，必须按目标 SDK 与素材用途重新核对 publication license。
+桃濑日和 Hiyori 是网站互动 demo 与 app 的**默认**模型，保持官方模型与角色设计原样；app 内 Live2D 模型为用户可替换资源。网站使用的 sample data、Cubism Core 与应用代码适用不同许可。开放任意 avatar 导入与公开发布时，必须按目标 SDK 与素材用途重新核对 publication license。
 
 ## 拖拽、点击、缩放与显示器恢复
 

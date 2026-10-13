@@ -1,6 +1,15 @@
-# `infra/`：带外运维与训练编排
+# `infra/`：带外运维与训练编排（未来的 `momo-infra` 一部分）
 
-> `momoctl` 承担基础运维，Web 控制台与训练可视化属扩展能力；不读取对话内容，不转发 turn 音频/文本，不实现推理。
+> `infra/` 与 `models/` 共同演化为 **`momo-infra`**——自有 AI 基础设施（ADR-027/029）：训练 pipeline（LLM 后训练、ASR/TTS 全链路）+ 复用开源底座的 serving 能力 + 统一对外 gateway。当前 `momoctl` 承担基础运维，Web 控制台与训练可视化属扩展能力；不读取对话内容，不转发 turn 音频/文本，不实现推理引擎。
+
+## 演进范围（momo-infra 终态）
+
+| 域 | 内容 | 复用 / 自研 |
+|---|---|---|
+| 训练 | LLM 后训练、ASR/TTS 全训练 pipeline、frozen eval gate、promotion | 复用现有 job/pipeline 编排（本文档），训练实体脚本在 models/ |
+| Serving | LLM 推理 serving | **复用 vLLM 等开源底座**，不手搓推理/KV cache |
+| Gateway | 对内多模型容灾与负载均衡，对外单一 OpenAI-compatible 接口 | 自研（差异化价值所在） |
+| ASR/TTS 服务 | 对外接口形态对齐主流云服务（REST/WS），app 可直接配置 | 自研服务封装 + models/ adapters |
 
 ## 能力
 
