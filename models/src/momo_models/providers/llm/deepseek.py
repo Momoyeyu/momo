@@ -1,6 +1,6 @@
 """DeepSeek 薄子类：仅承载 DS 特有参数差异，其余同 openai_compat。
 
-仅 eval/bench 用；key 见 MOMO_DEEPSEEK_API_KEY（app 侧持有，P4 视觉共用）。
+仅 eval/bench 用；key 由调用方注入（对应 MOMO_LLM_API_KEY，app 侧持有；config.md §2.2 按端点统一命名，不按厂商分键）。
 """
 
 from momo_models.providers.llm.openai_compat import OpenAICompatProvider

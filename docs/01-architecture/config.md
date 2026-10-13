@@ -37,7 +37,7 @@ flowchart LR
 | `MOMO_UI_TOKEN` | `/ws/ui` hello 的期望 `auth_token`；desktop 启动时注入，空=standalone dev 不比对（字段仍必填） | 空 | str | **是** |
 | `MOMO_LLM_ENDPOINT` | 大脑 OpenAI-compatible base URL | `http://mac-studio.local:7820/v1` | URL | 否 |
 | `MOMO_LLM_MODEL` | 传给大脑的 model 字段 | `qwen3-8b-4bit` | str | 否 |
-| `MOMO_LLM_API_KEY` | 大脑端点鉴权 key；本地可为空 | 空 | str | **是** |
+| `MOMO_LLM_API_KEY` | `MOMO_LLM_ENDPOINT` 所指上游的鉴权 key（不按厂商分键）；本地可空，远端如 DeepSeek 档必填 | 空 | str | **是** |
 | `MOMO_LLM_TIMEOUT_MS` | LLM 请求总超时 | `30000` | ms | 否 |
 | `MOMO_ASR_ENDPOINT` | ASR 服务 WS 地址 | `ws://127.0.0.1:7810/ws` | ws:// | 否 |
 | `MOMO_TTS_ENDPOINT` | TTS 服务 WS 地址 | `ws://127.0.0.1:7811/ws` | ws:// | 否 |
@@ -49,10 +49,11 @@ flowchart LR
 | `MOMO_SENT_MAX_CHARS` | 句切硬上限 | `60` | 字符数 | 否 |
 | `MOMO_HISTORY_TURNS` | 注入 LLM 的历史回合数 | `20` | int | 否 |
 | `MOMO_FILTER_ENABLED` | 未来外部 ingress/egress 过滤开关（streaming adapter 前置） | `false` | bool | 否 |
-| `MOMO_DEEPSEEK_API_KEY` | DeepSeek key：LLM 兜底与 P2 视觉 provider 共用 | 空 | str | **是** |
 | `MOMO_DATA_COLLECTION` | 会话采集开关（语料落盘供训练/微调） | `on` | `on`/`off` | 否 |
 | `MOMO_DATA_KEEP_AUDIO` | 原始麦音频短期保留（仅显式开启且授权时，供 ASR 排错） | `off` | `on`/`off` | **是** |
 | `MOMO_EMOTION_MAP` | emotion tag → Live2D 表情映射文件路径 | `config/emotion.map.yaml` | path | 否 |
+
+上游凭据只有一套，按**端点**而非厂商划分：`MOMO_LLM_API_KEY` 就是 `MOMO_LLM_ENDPOINT` 所指上游的 key——把 endpoint 改成 `https://api.deepseek.com/v1` 即切到 DeepSeek，不需要新键（ADR-006 统一 OpenAI 兼容接口；ADR-016 已否掉「把单一远端 provider 写死为产品能力」）。视觉上游同规则，用 `MOMO_VISION_*` 成套通用命名。
 
 ### 2.3 模型服务（models 读）
 
@@ -75,14 +76,15 @@ flowchart LR
 | `MOMO_MEMORY_DB`（P1） | sqlite-vec 库路径 | `data/momo.vec.db` | path | 否 |
 | `MOMO_VISION_ENDPOINT`（P2） | 视觉 API | `https://api.deepseek.com/v1` | URL | 否 |
 | `MOMO_VISION_MODEL`（P2） | 视觉模型 | `deepseek-v4-flash-vision-exp` | str | 否 |
+| `MOMO_VISION_API_KEY`（P2） | `MOMO_VISION_ENDPOINT` 所指上游的鉴权 key（通用命名，不按厂商分键） | 空 | str | **是** |
 | `MOMO_EMBED_LISTEN`（P1） | embed 服务 WS 监听（记忆检索） | `127.0.0.1:7812` | host:port | 否 |
 
 ### 2.4 infra 读（大脑服务启停、`momoctl web` 鉴权；mac-studio 侧大脑由 infra 远程/本地拉起）
 
 | 名称 | 含义 | 默认值 | 取值 | 敏感 |
 |---|---|---|---|---|
+| `MOMO_LLM_API_KEY` | 见 §2.2；infra 侧仅 `momoctl doctor` 查 set/unset，不取值不回显 | 空 | str | **是** |
 | `MOMO_WEB_TOKEN` | `momoctl web` 控制台鉴权 token；`--listen` 放宽出 localhost 时必填（未设拒绝启动） | 空 | str | **是** |
-| `MOMO_DEEPSEEK_API_KEY` | DeepSeek key：LLM 兜底与 P2 视觉 provider 共用；infra 侧仅 `momoctl doctor` 查 set/unset，不取值不回显（见 §2.2） | 空 | str | **是** |
 | `MOMO_BRAIN_BACKEND` | 大脑后端类型 | `mlx` | `mlx`/`vllm`/`deepseek`/`local` | 否 |
 | `MOMO_BRAIN_MODEL_PATH` | 本地模型目录 | `~/models/Qwen3-8B-4bit` | path | 否 |
 | `MOMO_BRAIN_PORT` | 大脑服务端口（对应 `MOMO_LLM_ENDPOINT`） | `7820` | port | 否 |
@@ -129,7 +131,6 @@ MOMO_SENT_SOFT_CHARS=25
 MOMO_SENT_MAX_CHARS=60
 MOMO_HISTORY_TURNS=20
 MOMO_FILTER_ENABLED=false
-MOMO_DEEPSEEK_API_KEY=         # 敏感：LLM 兜底 + P4 视觉
 MOMO_DATA_COLLECTION=on        # 会话采集开关（语料落盘）
 MOMO_DATA_KEEP_AUDIO=off       # 敏感产物：授权排错时短期保留原始麦音频
 MOMO_EMOTION_MAP=config/emotion.map.yaml   # tag → Live2D 表情映射
@@ -152,6 +153,7 @@ MOMO_MEMORY_ENABLED=false
 MOMO_MEMORY_DB=data/momo.vec.db
 MOMO_VISION_ENDPOINT=https://api.deepseek.com/v1
 MOMO_VISION_MODEL=deepseek-v4-flash-vision-exp
+MOMO_VISION_API_KEY=         # 敏感：视觉 provider 鉴权 key；与 MOMO_VISION_ENDPOINT 配套
 MOMO_EMBED_LISTEN=127.0.0.1:7812   # P3 记忆检索服务
 
 # momo-infra（大脑启停 / web 控制台）
@@ -177,11 +179,11 @@ HF_ENDPOINT=https://hf-mirror.com   # laptop 必须
 
 ## 4. 敏感项与安全
 
-- **敏感清单**：`MOMO_LLM_API_KEY`、`MOMO_DEEPSEEK_API_KEY`、`MOMO_WEB_TOKEN`、`MOMO_UI_TOKEN`、`MOMO_DATA_KEEP_AUDIO`（后续新增一律按"值即密钥/隐私开关"判断）。
+- **敏感清单**：`MOMO_LLM_API_KEY`、`MOMO_VISION_API_KEY`、`MOMO_WEB_TOKEN`、`MOMO_UI_TOKEN`、`MOMO_DATA_KEEP_AUDIO`（后续新增一律按"值即密钥/隐私开关"判断）。
 - **敏感数据（非 key）**：`MOMO_DATA_KEEP_AUDIO=on` 时落盘的原始麦音频属隐私数据——key 本身只是开关，但其产物按敏感数据同等纪律处理（短期保留、仅 ASR 排错用途、到期清理、不外传）。
 - `.env` 已在各仓 `.gitignore`；`.env.example` 中敏感项**只留空值占位**，禁止提交真实 key。
 - 日志/诊断输出对敏感值打码（显示前 4 位 + `…`）；`momoctl doctor` 只做"是否设置"检查，不回显。
-- 组件间不转发敏感变量：DeepSeek key 由 app 持有并注入 LLM 请求；infra 只在 `momoctl doctor` 里检查其 set/unset（不回显、不取值，见 §2.4），models 不读（P2 视觉若下沉到 models，届时在 decisions.md 补记）。
+- 组件间不转发敏感变量：LLM 凭据（`MOMO_LLM_API_KEY`）由 app 持有并注入请求；infra 只在 `momoctl doctor` 里检查其 set/unset（不回显、不取值，见 §2.4），models 不读。P2 视觉凭据（`MOMO_VISION_API_KEY`）随视觉 provider 下沉到 models 时一并下移，届时在 decisions.md 补记。
 
 ## 5. 与配置发布平台的兼容
 

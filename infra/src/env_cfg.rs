@@ -36,7 +36,7 @@ pub const REQUIRED_KEYS: &[&str] = &[
 ];
 
 /// 敏感键：doctor 只查「是否设置」，不回显值（config.md §4）。
-pub const SENSITIVE_KEYS: &[&str] = &["MOMO_LLM_API_KEY", "MOMO_DEEPSEEK_API_KEY"];
+pub const SENSITIVE_KEYS: &[&str] = &["MOMO_LLM_API_KEY"];
 
 /// 有内置默认、但值得在 doctor 中报告取值的键。
 pub const DEFAULTED_KEYS: &[&str] = &[
