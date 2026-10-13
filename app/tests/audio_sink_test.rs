@@ -79,12 +79,16 @@ async fn push_opens_stream_and_sends_ordered_frames() {
     );
     let stream_id = open.stream_id.clone();
 
+    assert!(
+        stream_id.starts_with("st_"),
+        "downlink stream_id st_ prefixed"
+    );
     let (seq, sent, off, eos, sid) = recv_audio(&mut rx).await;
     assert_eq!((seq, sent, off, eos), (0, 1, 0, false));
-    assert_eq!(sid.to_string(), stream_id);
+    assert_eq!(format!("st_{sid}"), stream_id);
     let (seq, sent, off, eos, sid) = recv_audio(&mut rx).await;
     assert_eq!((seq, sent, off, eos), (1, 1, 1200, true));
-    assert_eq!(sid.to_string(), stream_id);
+    assert_eq!(format!("st_{sid}"), stream_id);
 }
 
 #[tokio::test]
@@ -112,7 +116,7 @@ async fn sentence_switch_ends_previous_stream() {
     assert_eq!(open2.sentence_seq, Some(2));
     let (seq, sent, off, eos, sid) = recv_audio(&mut rx).await;
     assert_eq!((seq, sent, off, eos), (0, 2, 0, true));
-    assert_eq!(sid.to_string(), open2.stream_id);
+    assert_eq!(format!("st_{sid}"), open2.stream_id);
 }
 
 #[tokio::test]

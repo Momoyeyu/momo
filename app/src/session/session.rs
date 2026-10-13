@@ -11,7 +11,8 @@ use std::{
 
 use bytes::Bytes;
 use futures_util::StreamExt;
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{mpsc, oneshot, watch};
+use tokio_util::sync::CancellationToken;
 use tracing::{debug, warn};
 use ulid::Ulid;
 
@@ -22,8 +23,8 @@ use crate::{
     pipeline::{
         asr::{AsrClient, AsrEvent, MomoWsAsr, UPLINK_SAMPLE_RATE, stream_key},
         llm::{ChatRequest, LlmClient, OpenAiCompatLlm},
-        splitter::SentenceSplitter,
-        tts::{MomoWsTts, TtsClient},
+        splitter::{Sentence, SentenceSplitter},
+        tts::{MomoWsTts, SynthRequest, TtsClient},
     },
     proto::{
         codec::{AudioHeader, Direction},
@@ -80,9 +81,12 @@ pub enum PipelineEvent {
     /// LLM/管线失败：显式异常终态。
     Failed { turn_id: TurnId, error: AppError },
     /// 设备/mute/TTS 失败降级；`sentence_seq` 为 `None` 时移除全部 pending stream。
+    /// `error` 为需通知 UI 的原因（合成失败/断链）；`None` 表示报告方已自行
+    /// 出站告警（如 sink 溢出已发 error + control.cancel），不再重复发帧。
     Degraded {
         turn_id: TurnId,
         sentence_seq: Option<u32>,
+        error: Option<AppError>,
     },
     /// settlement deadline 到：interrupted 无新输入则回 idle。
     Settled { turn_id: TurnId },
@@ -153,8 +157,9 @@ pub struct Session {
     /// 当前回合（含 listening capture 回合）；`None` = idle。
     /// barge-in 时新回合用新 CancellationToken。
     turn: Option<Turn>,
-    /// 当前回合的下行音频下发器（与 turn 同生命周期）。
-    sink: Option<AudioSink>,
+    /// 当前回合的下行音频下发器（与 turn 同生命周期）；
+    /// `Arc` 共享给各句合成任务 push，stop/drain/溢出语义不变。
+    sink: Option<Arc<AudioSink>>,
     /// 对话历史与已播文本记账（`MOMO_HISTORY_TURNS`）。
     history: History,
     llm: Option<Arc<dyn LlmClient>>,
@@ -873,8 +878,18 @@ impl Session {
             PipelineEvent::Degraded {
                 turn_id,
                 sentence_seq,
+                error,
             } => {
-                let Some(turn) = self.live_turn(&turn_id) else {
+                if self.live_turn(&turn_id).is_none() {
+                    return;
+                }
+                // 合成失败/断链通知 UI（runtime.md：text-only badge）；
+                // 已自行出站告警的降级（sink 溢出）不重复发帧。
+                if let Some(err) = &error {
+                    warn!(session = %self.id, %err, seq = ?sentence_seq, "output degraded");
+                    self.error(err).await;
+                }
+                let Some(turn) = self.turn.as_mut() else {
                     return;
                 };
                 match turn.state() {
@@ -975,11 +990,11 @@ impl Session {
 
     /// 接管新回合：绑定每回合 `AudioSink`（与 conn_tx + env seq 共享）。
     fn adopt(&mut self, turn: Turn) {
-        self.sink = Some(AudioSink::spawn(
+        self.sink = Some(Arc::new(AudioSink::spawn(
             self.out_tx.clone(),
             turn.id.clone(),
             self.env.clone(),
-        ));
+        )));
         self.turn = Some(turn);
     }
 
@@ -1117,8 +1132,9 @@ impl Session {
 
     // ---------- 回合管线 ----------
 
-    /// reply 管线：history 注入 prompt → LLM stream → 句切 → `Sentence` 事件。
-    /// TTS 逐句合成与 sink 下发仍为 TODO(P0)，当前走 `audio=false` 纯文字路径。
+    /// reply 管线：history 注入 prompt → LLM stream → 句切 → `Sentence` 事件；
+    /// 配置了 TTS 时每句 spawn 合成任务，`AudioSink` 逐句下发 conn 下行
+    /// （runtime.md「generation、TTS 与播放」）。
     fn spawn_reply(&self) {
         let Some(turn) = &self.turn else {
             return;
@@ -1138,20 +1154,22 @@ impl Session {
             messages: self.llm_prompt(&turn.user_text),
             stream: true,
         };
-        let cancel = turn.cancel.child_token();
-        let cmd_tx = self.cmd_tx.clone();
         let soft = self.sent_soft_chars;
         let hard = self.sent_max_chars;
+        let mut ctx = ReplyCtx {
+            cmd_tx: self.cmd_tx.clone(),
+            tts: self.tts.clone(),
+            sink: self.sink.clone(),
+            turn_id,
+            lang: turn.lang.clone(),
+            cancel: turn.cancel.child_token(),
+            synth_gate: None,
+        };
         tokio::spawn(async move {
-            let mut stream = match llm.chat_stream(req, cancel).await {
+            let mut stream = match llm.chat_stream(req, ctx.cancel.clone()).await {
                 Ok(s) => s,
                 Err(error) => {
-                    let _ = cmd_tx
-                        .send(SessionCmd::Pipeline(PipelineEvent::Failed {
-                            turn_id,
-                            error,
-                        }))
-                        .await;
+                    ctx.failed(error).await;
                     return;
                 }
             };
@@ -1160,42 +1178,24 @@ impl Session {
                 match item {
                     Ok(delta) => {
                         for sentence in splitter.push(&delta) {
-                            if cmd_tx
-                                .send(SessionCmd::Pipeline(PipelineEvent::Sentence {
-                                    turn_id: turn_id.clone(),
-                                    sentence,
-                                    audio: false,
-                                }))
-                                .await
-                                .is_err()
-                            {
+                            if !ctx.emit_sentence(sentence).await {
                                 return;
                             }
                         }
                     }
                     Err(error) => {
-                        let _ = cmd_tx
-                            .send(SessionCmd::Pipeline(PipelineEvent::Failed {
-                                turn_id,
-                                error,
-                            }))
-                            .await;
+                        ctx.failed(error).await;
                         return;
                     }
                 }
             }
             if let Some(sentence) = splitter.flush() {
-                let _ = cmd_tx
-                    .send(SessionCmd::Pipeline(PipelineEvent::Sentence {
-                        turn_id: turn_id.clone(),
-                        sentence,
-                        audio: false,
-                    }))
-                    .await;
+                let _ = ctx.emit_sentence(sentence).await;
             }
-            let _ = cmd_tx
+            let _ = ctx
+                .cmd_tx
                 .send(SessionCmd::Pipeline(PipelineEvent::GenerationDone {
-                    turn_id,
+                    turn_id: ctx.turn_id.clone(),
                 }))
                 .await;
         });
@@ -1311,4 +1311,161 @@ async fn run_uplink(
         }
     }
     let _ = asr.cancel(CancelTarget::Capture, &capture_id).await;
+}
+
+/// reply 管线任务的共享上下文：LLM 流任务持有，逐句 clone 给合成任务。
+struct ReplyCtx {
+    cmd_tx: mpsc::Sender<SessionCmd>,
+    tts: Option<Arc<dyn TtsClient>>,
+    sink: Option<Arc<AudioSink>>,
+    turn_id: TurnId,
+    /// `output.sentence.lang`（跟随输入 lang）。
+    lang: String,
+    /// turn 取消令牌的子令牌；扇出到 LLM 流与全部合成任务。
+    cancel: CancellationToken,
+    /// 合成发起闸门：保持 svc-tts 收到的 `output.sentence` 序 = 句序
+    /// （`synth_stream` 内 send_mu 只保证单句原子，句间顺序由本闸门传递）。
+    synth_gate: Option<oneshot::Receiver<()>>,
+}
+
+impl ReplyCtx {
+    /// LLM/管线失败回传。
+    async fn failed(&self, error: AppError) {
+        let _ = self
+            .cmd_tx
+            .send(SessionCmd::Pipeline(PipelineEvent::Failed {
+                turn_id: self.turn_id.clone(),
+                error,
+            }))
+            .await;
+    }
+
+    /// 句切成形句的统一出口：`Sentence` 事件先入队（`audio` 标记是否有 TTS
+    /// 合成跟随），随后按序 spawn 合成任务。`Sentence` 一定先于该句的
+    /// `Degraded` 到达 actor（同一发送者、先 send 后 spawn），pending audio
+    /// 注册先于降级摘除，无乱序悬挂。
+    async fn emit_sentence(&mut self, sentence: Sentence) -> bool {
+        let audio = self.tts.is_some() && self.sink.is_some();
+        if self
+            .cmd_tx
+            .send(SessionCmd::Pipeline(PipelineEvent::Sentence {
+                turn_id: self.turn_id.clone(),
+                sentence: sentence.clone(),
+                audio,
+            }))
+            .await
+            .is_err()
+        {
+            return false;
+        }
+        if let (Some(tts), Some(sink)) = (self.tts.clone(), self.sink.clone()) {
+            let (gate_tx, gate_rx) = oneshot::channel();
+            let synth = SynthCtx {
+                tts,
+                sink,
+                cmd_tx: self.cmd_tx.clone(),
+                turn_id: self.turn_id.clone(),
+                lang: self.lang.clone(),
+                cancel: self.cancel.clone(),
+            };
+            tokio::spawn(run_synth(
+                synth,
+                sentence,
+                self.synth_gate.replace(gate_rx),
+                gate_tx,
+            ));
+        }
+        true
+    }
+}
+
+/// 单句合成任务的可 clone 句柄集。
+struct SynthCtx {
+    tts: Arc<dyn TtsClient>,
+    sink: Arc<AudioSink>,
+    cmd_tx: mpsc::Sender<SessionCmd>,
+    turn_id: TurnId,
+    lang: String,
+    cancel: CancellationToken,
+}
+
+/// 单句合成任务：等前一句 `output.sentence` 上线后发起 `synth_stream`（保持
+/// wire 序 = 句序），PCM 帧经 `AudioSink::push` 下发 conn 下行。发起失败 /
+/// 流内错误 / 下发失败上报 `Degraded{sentence_seq}`（该句转纯文字，不阻塞
+/// 后续句）；turn 取消或 sink 停播后静默退出 —— 迟到帧不再下发 UI，也不向
+/// 已收尾回合重复上报。
+async fn run_synth(
+    ctx: SynthCtx,
+    sentence: Sentence,
+    prev: Option<oneshot::Receiver<()>>,
+    gate: oneshot::Sender<()>,
+) {
+    let seq = sentence.index;
+    // 等前一句完成发起；闸门对端掉落视为已通过（前句提前退出）。
+    if let Some(prev) = prev {
+        let _ = prev.await;
+    }
+    if ctx.cancel.is_cancelled() {
+        // gate 随 drop 释放，后续句同样快速短路。
+        return;
+    }
+    let stream = ctx
+        .tts
+        .synth_stream(
+            SynthRequest {
+                turn_id: ctx.turn_id.clone(),
+                lang: ctx.lang.clone(),
+                sentence,
+            },
+            ctx.cancel.clone(),
+        )
+        .await;
+    // 发起结果落定（成功 = output.sentence 已上线；失败 = 不再发起）才放行后句。
+    let _ = gate.send(());
+    let mut stream = match stream {
+        Ok(s) => s,
+        Err(error) => {
+            ctx.degraded(seq, Some(error)).await;
+            return;
+        }
+    };
+    while let Some(item) = stream.next().await {
+        match item {
+            Ok(chunk) => {
+                if ctx.cancel.is_cancelled() {
+                    return;
+                }
+                if let Err(error) = ctx.sink.push(chunk) {
+                    // 溢出已由 sink 自行发 error{BACKPRESSURE_OVERFLOW} +
+                    // control.cancel{turn}；其余下发失败带 error 通知 UI。
+                    let error =
+                        (!matches!(error, AppError::BackpressureOverflow(_))).then_some(error);
+                    ctx.degraded(seq, error).await;
+                    return;
+                }
+            }
+            Err(error) => {
+                ctx.degraded(seq, Some(error)).await;
+                return;
+            }
+        }
+    }
+}
+
+impl SynthCtx {
+    /// 合成失败降级回传：该句转纯文字，`error` 为 `Some` 时 actor 补发
+    /// error 帧；turn 已取消则静默（stale 事件本就被丢弃）。
+    async fn degraded(&self, sentence_seq: u32, error: Option<AppError>) {
+        if self.cancel.is_cancelled() {
+            return;
+        }
+        let _ = self
+            .cmd_tx
+            .send(SessionCmd::Pipeline(PipelineEvent::Degraded {
+                turn_id: self.turn_id.clone(),
+                sentence_seq: Some(sentence_seq),
+                error,
+            }))
+            .await;
+    }
 }
