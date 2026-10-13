@@ -21,3 +21,4 @@
 
 ## License
 
+代码以 **MIT License** 发布（[LICENSE](./LICENSE.md)）。`site/docs/public/live2d/` 下的 Live2D sample 素材、Cubism Core 与模型权重等第三方资源按各自许可，不受本许可覆盖。
