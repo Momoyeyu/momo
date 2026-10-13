@@ -228,11 +228,11 @@ passthrough = [ { name, type?, default, files, description } ]   # 非 MOMO_ 前
 | `name` | env 键名，`MOMO_` 前缀；非前缀变量进 `passthrough` |
 | `type` | `string`/`bool`/`int`/`path`/`url`/`enum`；供配置页渲染与校验用 |
 | `values` | `type=enum` 时的合法取值集合 |
-| `default` | 内置默认值；空字符串 = 无默认/留空占位，**敏感项一律为空** |
+| `default` | 内置默认值；空字符串 = 无默认/留空占位。**密钥型敏感项（`string`/`url`/`path`）一律为空**；开关型敏感项（`bool`/`enum`/`int`，如 `MOMO_DATA_KEEP_AUDIO`）保留安全常量默认——"敏感"指产物隐私而非值即密钥 |
 | `sensitive` | 仅 `true` 时书写；日志/doctor 打码、配置页掩码的判据 |
 | `readers` | 代码中消费该键的模块：`app`/`models`/`infra` |
 | `files` | 该键必须以非注释行出现在哪些 `<mod>/.env.example`；config.md §3 完整模板恒按 `app` 口径 |
-| `examples` | 可选：某文件示例值偏离 `default` 时的覆盖，如 `{ infra = "warn" }` |
+| `examples` | 可选：某文件示例值偏离 `default` 时的覆盖，如 `{ infra = "warn" }`；**敏感项不得覆写真实值**（只允许等于 `default`），真实 key/开关取值一律走本地 `.env` |
 | `description` | 含义，与 §2「含义」列保持一致 |
 
 `passthrough.files = []` 表示该变量只允许以注释形式出现在 `.env.example`（如 `UV_INDEX_URL`、`PIP_INDEX_URL`、`HTTPS_PROXY`）。

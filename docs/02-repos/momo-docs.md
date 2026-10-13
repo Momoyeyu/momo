@@ -23,6 +23,10 @@ flowchart TD
 - env 默认值与模板只有 [config.md](../01-architecture/config.md) 是单一来源；UI settings 不伪装成 env。
 - public guide 不复制图或协议，通过 include 消费 canonical 文件。
 
+## 站点 CI
+
+- `ci-site.yml`：`site/**`、`docs/**`（guide 页经 include 消费 canonical docs，docs 变更同样可能打坏 build）与 workflow 自身变更的 PR/push 上跑 `pnpm test` + `pnpm build`；平台 `ubuntu-latest` 单档，`pages.yml` 负责 master 合入后的 Pages 部署。
+
 ## 阅读入口
 
 1. [产品](../00-context/product.md)

@@ -48,7 +48,7 @@ flowchart TD
 
 ### ADR-023 infra CLI 唯一命名 `momoctl`
 
-- **决策**：momo-infra 的命令行工具唯一名字是 `momoctl`；子命令集：`doctor` / `pull [--check]` / `serve up|down|status|logs|restart` / `switch --to` / `bench` / `gc`。
+- **决策**：momo-infra 的命令行工具唯一名字是 `momoctl`；子命令集：`doctor` / `pull [--check]` / `serve up|down|status|logs|restart` / `switch --to` / `bench` / `gc` / `web`（ADR-025）/ `config check`（ADR-026）。
 - **理由**：与产品名 `momo` 及进程名 `momod` 区分开，避免把产品名直接当命令用的歧义；`kubectl`/`systemctl` 同类惯例。
 - **被否**：以 `momo` 作 CLI 名（与应用主体/产品同名易混）；`momoctl models verify|gc` 独立子命令树（作废，verify=`pull --check`、gc=`gc`）。
 
@@ -57,6 +57,12 @@ flowchart TD
 - **决策**：`momoctl web` 子命令起 axum 控制台（REST + SSE + 内嵌静态 SPA），覆盖组件起停/模型管理/训练 pipeline/env 配置四块运维面；训练 job 状态机（queued→preparing→running→succeeded/failed/canceled→promoted）由 infra `jobs/` 编排，执行器分本地子进程与 SSH 远程（4090D/mac-studio），训练实体脚本仍在 momo-models `training/`。CLI 与 Web 共用同一核心与 `--json` schema（详见 [`../02-repos/momo-infra.md`](../02-repos/momo-infra.md) Web 专节）。
 - **理由**：用户明确需求（2026-10-11）——web 页面操作 infra、管理推理与训练、模型选择与微调 pipeline、常见配置；单 binary 内嵌 SPA 保住单文件分发与 bootstrap 独立性；训练实体与编排分离守住「infra 无推理」硬约束。
 - **被否**：独立 momo-web 仓/进程（多一套分发与版本对齐，收益不足）；Gradio 式 Python UI（引入 Python 依赖，违背 infra bootstrap 独立约束）；训练编排放 momo-models（模型仓不该管进程/ssh/状态目录等机器运维）。
+
+### ADR-026 `momoctl config check`：env schema 漂移校验 + 敏感项默认纪律
+
+- **决策**：`momoctl` 新增 `config check` 子命令，只读比对 `config.schema.toml` ↔ 三侧 `.env.example` ↔ `config.md`（CI `ci-config.yml` 门禁）。schema 校验实装敏感项纪律：密钥型敏感项（`string`/`url`/`path`）`default` 必须为空；开关型敏感项（`bool`/`enum`/`int`，如 `MOMO_DATA_KEEP_AUDIO`）保留安全常量默认；两类 `examples` 均不得覆写为真实值（只允许等于 `default`）。
+- **理由**：密钥/凭据不能入库，`default` 留空从源头杜绝默认值泄钥；`examples` 覆写会经 `expected_entries` 反向要求真实值写进 `.env.example`。开关型敏感项的"敏感"指产物隐私（保留音频），安全常量 `off` 正是要固化的默认，置空反而丢掉安全默认并破坏 enum 取值校验。
+- **被否**：敏感项一律空默认（`MOMO_DATA_KEEP_AUDIO` 等开关型被迫无默认，enum 校验与"安全默认"语义双输）；敏感项 `examples` 放开覆写（`sk-...` 类真实值可入库）。
 
 ## 架构与协议
 

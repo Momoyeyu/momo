@@ -36,9 +36,9 @@ ready = "http://127.0.0.1:7811/readyz"
 env = { MOMO_TTS_LISTEN = "127.0.0.1:7811", MOMO_TTS_PROVIDER = "kokoro", MOMO_TTS_LANG = "auto" }
 
 # 编排器：momo-app 仓 momod，PATH 或 --app-bin 定位；启动时握手下探 llm/tts/asr
+# 监听默认回环（MOMO_ORCH_LISTEN=127.0.0.1:7800）；需外部可达时在 .env 显式配置
 [[component]]
 name = "momod"
 order = 30
 cmd = "momod"
 ready = "http://127.0.0.1:7800/readyz"
-env = { MOMO_ORCH_LISTEN = "0.0.0.0:7800" }
