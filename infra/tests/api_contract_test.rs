@@ -623,18 +623,18 @@ async fn pipelines_contract() {
 }
 
 /// `POST /api/jobs` pipeline 快捷提交的校验面（均在 store 建档前拒绝，无副作用）：
-/// executor ssh:* → 422；args×pipeline 互斥 → 422；未知 pipeline → 422；
+/// pipeline+ssh executor → 422；args×pipeline 互斥 → 422；未知 pipeline → 422；
 /// required var 缺项 → 422 逐字段归因；空 args → 400。
 #[tokio::test]
 async fn jobs_submit_pipeline_validation() {
     let app = web::router(state(None));
 
-    // executor：exec_ssh 目标属 #51，字段级 422。
+    // pipeline 形态只能走 local 执行器（pipeline step 自带 ssh 目标）→ 422。
     let (status, v) = call(
         app.clone(),
         post(
             "/api/jobs",
-            Some(r#"{"pipeline":"persona-qlora","executor":"ssh:bigstrong"}"#),
+            Some(r#"{"pipeline":"persona-qlora","executor":"ssh","ssh":{"host":"bigstrong"}}"#),
         ),
     )
     .await;

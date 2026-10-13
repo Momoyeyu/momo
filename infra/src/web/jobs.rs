@@ -117,10 +117,7 @@ async fn submit_job(Json(body): Json<dto::JobSubmitRequest>) -> Response {
     // pipeline 快捷提交只能走 local 执行器——pipeline 定义自带 ssh step，
     // 本地 momoctl 驱动远端；把整段 argv 塞进 exec_ssh 会把编排器搬走。
     if body.pipeline.is_some()
-        && !matches!(
-            body.executor,
-            None | Some(crate::jobs::JobExecutor::Local)
-        )
+        && !matches!(body.executor, None | Some(crate::jobs::JobExecutor::Local))
     {
         let mut fields = BTreeMap::new();
         fields.insert(

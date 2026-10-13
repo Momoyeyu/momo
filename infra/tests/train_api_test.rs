@@ -187,11 +187,11 @@ fn api_train_flow_pipelines_submit_metrics_promote() {
         "voice-sft input var: {vars:?}"
     );
 
-    // ---- 校验：ssh executor → 422 字段级；required var 缺项 → 422 ----
+    // ---- 校验：pipeline+ssh executor → 422 字段级；required var 缺项 → 422 ----
     let (code, v) = post_json(
         &client,
         &format!("{base}/api/jobs"),
-        &serde_json::json!({"pipeline": "persona-qlora", "executor": "ssh:bigstrong"}),
+        &serde_json::json!({"pipeline": "persona-qlora", "executor": "ssh", "ssh": {"host": "bigstrong"}}),
         &csrf,
     );
     assert_eq!(code, 422, "{v}");

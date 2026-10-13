@@ -9,7 +9,7 @@
 //   train-manifest.json → loss 曲线（内联 SVG sparkline，无外部依赖）；
 // - promote：succeeded job → confirm → POST /api/jobs/{id}/promote
 //   （frozen gate 通过 + 显式动作 → 原子 activate，.bak 保留回滚）。
-// exec_ssh 目标属 #51：选中提交会收到后端 422 字段级错误（如实展示）。
+// exec_ssh 目标选中提交会收到后端 422 字段级解释（pipeline 只走 local）。
 
 import {
   api,
@@ -24,11 +24,12 @@ import {
 const POLL_MS = 5000;
 const LOG_MAX_LINES = 500;
 
-// 执行器选项：exec_local 今日可用；exec_ssh 目标为 #51 占位（submit 由后端拒绝）。
+// 执行器选项：pipeline 快捷提交只能走 local（pipeline step 自带 ssh 目标——
+// ssh 选项保留在列表里说明这点，选中提交会收到后端 422 字段级解释）。
 const EXECUTORS = [
   { value: "local", label: "exec_local — this host" },
-  { value: "ssh:bigstrong", label: "exec_ssh — bigstrong (4090D) [#51 pending]" },
-  { value: "ssh:mac-studio", label: "exec_ssh — mac-studio [#51 pending]" },
+  { value: "ssh:bigstrong", label: "exec_ssh — bigstrong (4090D) [pipelines run local]" },
+  { value: "ssh:mac-studio", label: "exec_ssh — mac-studio [pipelines run local]" },
 ];
 
 // job status → badge 配色
@@ -143,7 +144,7 @@ export default async function render(root) {
           el("td", {}, [
             execSel,
             el("div", { class: "help" },
-              "exec_local runs `momoctl pipeline run` here; exec_ssh targets are placeholders until #51 lands"),
+              "exec_local runs `momoctl pipeline run` here; pipeline jobs always run local (steps manage their own ssh targets)"),
           ]),
           el("td", { class: "field-err", dataset: { ferr: "executor" } }),
         ]),
@@ -251,7 +252,9 @@ export default async function render(root) {
             kind: "train",
             pipeline: def.name,
             set: collectSet(),
-            executor: execSel.value,
+            ...(execSel.value.startsWith("ssh:")
+              ? { executor: "ssh", ssh: { host: execSel.value.slice(4) } }
+              : { executor: execSel.value }),
             dry_run: dryRun.checked,
             desc: previewLine().slice(2),
           },
