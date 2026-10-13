@@ -58,7 +58,7 @@ class _AsrLink:
     # ---------- 消息分发 ----------
 
     async def handle(self, item: dict | bytes) -> bool:
-        if isinstance(item, (bytes, bytearray)):
+        if isinstance(item, bytes | bytearray):
             await self._on_frame(bytes(item))
             return True
         msg_type = item.get("type")
