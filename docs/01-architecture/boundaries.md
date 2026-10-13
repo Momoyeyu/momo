@@ -30,7 +30,7 @@ flowchart LR
 
 ## `models/`：推理 adapters 与训练实体
 
-拥有：ASR/VAD、TTS、`EmbeddingAdapter`、provider 封装、模型 manifest、声线/persona 训练与既有评估脚本。
+拥有：ASR/VAD、TTS、`EmbeddingProvider`、provider 封装、模型 manifest、声线/persona 训练与既有评估脚本。
 
 不拥有：memory proposal、memory 正文、vector index、persona/context 决策、turn/打断状态、桌面窗口、用户许可决策与服务编排。模型服务接到取消后停止产出；最终丢弃迟到结果仍由 `TurnCoordinator` 兜底。
 
@@ -54,7 +54,7 @@ flowchart LR
 | `CompanionShell` | menu/窗口/权限/平台降级 | Tauri commands/plugins |
 | `TurnCoordinator` | turn 真相、取消与历史 ledger | Rust session actor |
 | `ConversationRepository` | transcript、correction、persona、memory 正文/index | Rust 本地 repository |
-| `EmbeddingAdapter` | 文本到向量 | Python provider adapter |
+| `EmbeddingProvider` | 文本到向量 | Python provider adapter |
 
 ## 新功能归属速查
 

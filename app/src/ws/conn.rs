@@ -3,7 +3,7 @@
 //! 拓扑（momo-app.md §ws 子系统）：
 //! `conn_rx`（读帧→decode→`mpsc` 给 Session）、`conn_tx`（Session→encode→写帧）。
 //! tx 用有界 mpsc 做背压：单队列保序不丢帧；JSON 控制帧永不丢弃，对端消费
-//! 不动（stall 超 [`CONN_TX_STALL`]）则关连（protocol §7）。
+//! 不动（stall 超 [`CONN_TX_STALL`]）则关连（protocol §10）。
 
 use std::{fmt::Display, sync::Arc, time::Duration};
 
@@ -65,7 +65,7 @@ where
     let (tx, rx) = mpsc::channel::<OutboundFrame>(CONN_TX_CAP);
     let tx_task = tokio::spawn(tx_loop(sink, rx));
 
-    // 首帧必须是 hello（protocol §3）；握手失败也要把 error/close 帧排空再退出。
+    // 首帧必须是 hello（protocol §4）；握手失败也要把 error/close 帧排空再退出。
     let Some(session) = handshake(&conn_id, &mut stream, &tx, &state).await else {
         drop(tx);
         let _ = tx_task.await;

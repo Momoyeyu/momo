@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::{config::ConfigError, proto::message::ErrorCode};
 
-/// 编排器错误；`code()` 给出协议 §6 `error.code` 的映射。
+/// 编排器错误；`code()` 给出协议 §2 `error.code` 的映射。
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error(transparent)]
@@ -38,7 +38,7 @@ pub enum AppError {
 }
 
 impl AppError {
-    /// 映射为 protocol.md §6 的 error code。
+    /// 映射为 protocol.md §2 的 error code。
     pub fn code(&self) -> ErrorCode {
         match self {
             AppError::Config(_) | AppError::Io(_) | AppError::Internal(_) => ErrorCode::Internal,

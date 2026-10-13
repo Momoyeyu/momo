@@ -2,7 +2,7 @@
 
 zh/en/ja/ko/yue + 自动语言 + 情感/事件标记。注意 onnx 与 tokens.txt 配套；
 模型目录 = $MOMO_MODELS_DIR/<MANIFEST 条目 dest>，条目由 MOMO_ASR_MODEL
-指定（见 momo-models.md 后端表与 models/MANIFEST.toml）。
+指定（见 docs/02-repos/momo-models.md「provider 与产物」与 models/MANIFEST.toml）。
 
 sherpa-onnx 懒加载：核心依赖不带重库，import 仅在 load()/transcribe() 内发生，
 测试通过 sys.modules 注入假 sherpa_onnx。

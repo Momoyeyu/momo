@@ -17,7 +17,7 @@ use crate::{
 pub enum SessionCmd {
     /// conn_rx 解码出的客户端消息。
     Msg(Msg),
-    /// WS 断开：取消活动回合、保留会话历史（protocol §7）。
+    /// WS 断开：取消活动回合、保留会话历史（protocol §5）。
     ConnClosed,
     /// 被新连接顶掉 / 进程关停。
     Shutdown,

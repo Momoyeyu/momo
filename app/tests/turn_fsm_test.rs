@@ -32,7 +32,7 @@ fn cancel_token_fans_out_to_children() {
 
 #[test]
 fn turn_state_wire_values_match_protocol() {
-    // `state.turn.state` 枚举 lower_snake（protocol §6）。
+    // `state.turn.state` 枚举 lower_snake（protocol §1）。
     let cases = [
         (TurnState::Idle, "idle"),
         (TurnState::Listening, "listening"),

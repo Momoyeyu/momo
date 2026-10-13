@@ -33,7 +33,7 @@ flowchart LR
     ACTOR --> TURN["TurnCoordinator"]
     TURN -->|"domain events"| UI
     TURN --> REPO["local conversation repository"]
-    REPO --> EMBED["Python EmbeddingAdapter"]
+    REPO --> EMBED["Python EmbeddingProvider"]
     TURN --> LLM["OpenAI SSE"]
     TURN <--> MODELS["Python ASR / TTS adapters"]
 ```

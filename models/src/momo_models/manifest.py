@@ -1,6 +1,6 @@
 """models/MANIFEST.toml 解析与 sha256 校验。
 
-口径见 momo-docs/05-ops/model-fetch.md「操作检查」：
+口径见 docs/02-repos/momo-models.md「provider 与产物」：
 每条目 `name / repo_id / revision / files[] / dest / notes`，以及结构化
 `license`（`{spdx, source, name?}`）；`files[]` 元素为 `{path, sha256, size?}`。
 下载由 momo-infra `momoctl pull` 执行；运行时 provider 只读本地路径，

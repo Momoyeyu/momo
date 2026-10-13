@@ -1,7 +1,7 @@
 //! `AsrClient` trait：上行音频转发 + `input.audio.segment` 接收。
 //!
 //! 编排器作为客户端连 momo-svc-asr（momo-ws v1）：UI 上行 `audio.chunk`
-//! 原样转发，ASR 回报 `input.vad` / `input.audio.segment`（protocol §6）。
+//! 原样转发，ASR 回报 `input.vad` / `input.audio.segment`（protocol §2）。
 
 use async_trait::async_trait;
 use bytes::Bytes;

@@ -1,6 +1,6 @@
 # eval/ —— 评测口径
 
-设计：momo-docs/02-repos/momo-models.md「评测脚本」。
+设计：docs/02-repos/momo-models.md「训练边界」。
 
 | 脚本 | 目的 | 阶段 |
 |---|---|---|

@@ -1,6 +1,6 @@
 //! axum router：`GET /ws/ui` upgrade、`GET /healthz`、静态文件。
 //!
-//! `/ws/action` 为 P4 预留（protocol §1 action 链路）。
+//! `/ws/action` 为 P4 预留（protocol §2 action 消息组）。
 
 use std::{net::SocketAddr, sync::Arc, time::Instant};
 

@@ -43,7 +43,7 @@ client.onServerMsg = (msg) => {
       chat.addBubble("assistant", msg.text);
       break;
     case "control.barge_in":
-      // 打断通知：清空播放缓冲并回报 played_seq（protocol §6(c)）。
+      // 打断通知：清空播放缓冲并回报 played_seq（protocol §8）。
       if (msg.applied) {
         player.stop();
         client.send({ type: "control.barge_in", turn_id: msg.turn_id, applied: true, played_seq: 0 });

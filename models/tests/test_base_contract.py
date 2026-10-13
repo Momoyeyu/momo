@@ -1,4 +1,4 @@
-"""ABC 契约测试：假 backend 注入，验证签名级契约（momo-models.md「统一服务接口」）。
+"""ABC 契约测试：假 backend 注入，验证签名级契约（momo-models.md「provider 与产物」）。
 
 全 mock，无 torch/GPU/网络依赖。
 """
@@ -124,7 +124,7 @@ def test_llm_contract() -> None:
 
 
 def test_emotion_tags_match_protocol() -> None:
-    """protocol.md §6：v1 固定 8 值。"""
+    """protocol.md §2：v1 固定 8 值。"""
     assert len(EMOTION_TAGS) == 8
     assert set(EMOTION_TAGS) == {
         "neutral",
