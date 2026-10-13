@@ -40,3 +40,27 @@ export function uiToken(): string {
   }
   return import.meta.env.VITE_MOMO_UI_TOKEN ?? "";
 }
+
+/** Live2D 模型入口（.model3.json）URL。
+ *
+ */
+export function avatarModelUrl(): string {
+  const override = import.meta.env.VITE_MOMO_AVATAR_URL;
+  if (typeof override === "string" && override.trim() !== "") {
+    return override;
+  }
+  return `${assetBase()}live2d/hiyori/Hiyori.model3.json`;
+}
+
+/** Cubism Core（live2dcubismcore.min.js）加载地址。
+ *
+ * Core 不 vendored（docs/00-context/resources.md）：默认 Live2D 官方版本化地址，
+ * `VITE_MOMO_CUBISM_CORE_URL` 可换镜像/离线副本。
+ */
+export function cubismCoreUrl(): string {
+  const override = import.meta.env.VITE_MOMO_CUBISM_CORE_URL;
+  if (typeof override === "string" && override.trim() !== "") {
+    return override;
+  }
+  return "https://cubism.live2d.com/sdk-web/core/05/live2dcubismcore.min.js";
+}

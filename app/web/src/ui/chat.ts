@@ -1,13 +1,27 @@
 // 无框架原生 DOM：#chat 气泡列表 + #composer 表单。
+// output.sentence.emotion → 气泡情感位（8 个固定 tag，样式表映射）。
+
+import type { EmotionTag } from "../net/protocol";
 
 /** 初始化聊天 UI；返回后的 onSubmit 回调由 main.ts 接到 ws-client。 */
 export function initChat(root: HTMLElement): {
   onSubmit: ((text: string) => void) | null;
+  addBubble: (role: "user" | "assistant", text: string, emotion?: EmotionTag) => void;
 } {
   const chat = {
     onSubmit: null as ((text: string) => void) | null,
+    addBubble(role: "user" | "assistant", text: string, emotion?: EmotionTag): void {
       const div = document.createElement("div");
       div.className = `bubble ${role}`;
+      if (emotion) {
+        // 情感位：tag 文本 + emotion-* 样式类（style.css 定义 8 tag 映射）。
+        const tag = document.createElement("span");
+        tag.className = `emotion-tag emotion-${emotion}`;
+        tag.textContent = emotion;
+      }
+      const body = document.createElement("span");
+      body.className = "bubble-text";
+      body.textContent = text;
       root.appendChild(div);
       root.scrollTop = root.scrollHeight;
     },

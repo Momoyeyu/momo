@@ -4,9 +4,17 @@ import type { TurnState } from "../net/protocol";
 import type { WsConnState } from "../net/ws-client";
 
 const TURN_LABEL: Record<TurnState, string> = {
+  idle: "idle",
+  listening: "listening",
+  thinking: "thinking",
+  speaking: "speaking",
+  interrupted: "interrupted",
 };
 
 const CONN_LABEL: Record<WsConnState, string> = {
+  connecting: "connecting…",
+  open: "connected",
+  closed: "disconnected",
 };
 
 export class StatusIndicator {
