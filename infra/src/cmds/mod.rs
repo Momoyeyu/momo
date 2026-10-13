@@ -8,7 +8,9 @@ pub mod pull;
 pub mod serve;
 pub mod switch;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Ctx {
     pub json: bool,
+    /// 显式 `--env-file`（switch 重指符号链接时定位 .env）。
+    pub env_file: Option<std::path::PathBuf>,
 }

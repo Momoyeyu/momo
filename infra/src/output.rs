@@ -31,6 +31,8 @@ pub enum AppError {
     Config(String),
     #[error("manifest: {0}")]
     Manifest(String),
+    #[error("network: {0}")]
+    Net(String),
 }
 
 impl AppError {
@@ -39,6 +41,7 @@ impl AppError {
             AppError::Io(_) => ExitCode::Runtime as i32,
             AppError::Config(_) => ExitCode::Usage as i32,
             AppError::Manifest(_) => ExitCode::Verify as i32,
+            AppError::Net(_) => ExitCode::Network as i32,
         }
     }
 }

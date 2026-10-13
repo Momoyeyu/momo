@@ -209,6 +209,40 @@ impl ModelsLock {
             .retain(|e| e.name != entry.name && e.repo != entry.repo);
         self.entries.push(entry);
     }
+
+    /// 删除命中谓词的条目并落盘（gc 摘 stale 条目）。
+    pub fn retain(&mut self, keep: impl Fn(&LockEntry) -> bool) {
+        self.entries.retain(keep);
+    }
+}
+
+impl LockEntry {
+    /// `repo` 中的 repo_id（`<owner>/<repo>@revision` → `<owner>/<repo>`）。
+    pub fn repo_id(&self) -> &str {
+        self.repo.split('@').next().unwrap_or(&self.repo)
+    }
+}
+
+/// MANIFEST.toml 自动探测候选（cwd 相对路径）：momo-models 仓内、
+/// monorepo 根、infra/ 子目录、momo-models 兄弟仓。pull/doctor/gc 共用。
+const MANIFEST_CANDIDATES: &[&str] = &[
+    "models/MANIFEST.toml",
+    "models/models/MANIFEST.toml",
+    "../models/models/MANIFEST.toml",
+    "../momo-models/models/MANIFEST.toml",
+];
+
+/// 首个存在的候选路径；都找不到返回 None（调用方决定报错或降级）。
+pub fn default_manifest_path() -> Option<PathBuf> {
+    MANIFEST_CANDIDATES
+        .iter()
+        .map(PathBuf::from)
+        .find(|p| p.is_file())
+}
+
+/// `default_manifest_path` 的候选清单（错误提示用）。
+pub fn manifest_candidates() -> &'static [&'static str] {
+    MANIFEST_CANDIDATES
 }
 
 /// 文件 sha256 复算（校验用）。
