@@ -12,6 +12,11 @@ class FakeEl {
   children: FakeEl[] = [];
   scrollTop = 0;
   scrollHeight = 0;
+  attrs: Record<string, string> = {};
+
+  setAttribute(name: string, value: string): void {
+    this.attrs[name] = value;
+  }
 
   get firstElementChild(): FakeEl | null {
     return this.children[0] ?? null;
@@ -47,7 +52,9 @@ beforeEach(() => {
     createElement: () => new FakeEl(),
     querySelector: () => null,
     querySelectorAll: () => [],
+    body: { classList: { toggle: () => {}, add: () => {} } },
   });
+  vi.stubGlobal("window", { matchMedia: () => ({ matches: false }) });
 });
 
 // appendChild 需要回填 parentRef（remove 依赖它）；包一层实现。
@@ -71,18 +78,28 @@ describe("initChat", () => {
     expect(root.children[1].className).toContain("user");
   });
 
+  it("trims oldest bubbles beyond the 120-bubble cap", () => {
     const root = fakeRoot();
     wrapAppend(root);
     const chat = initChat(root as unknown as HTMLElement);
+    for (let i = 0; i < 130; i++) chat.addBubble("assistant", `m${i}`);
+    expect(root.childElementCount).toBe(120);
+    // 最旧的 m0..m9 被裁掉，最旧现存为 m10；文本在 bubble-content 内层。
+    const content = root.children[0].children.at(-1);
+    expect(content?.children.at(-1)?.textContent).toBe("m10");
   });
 
   it("draft survives trimming (always tail) and commits to a user bubble", () => {
     const root = fakeRoot();
     wrapAppend(root);
     const chat = initChat(root as unknown as HTMLElement);
+    for (let i = 0; i < 119; i++) chat.addBubble("assistant", `m${i}`);
     chat.setDraft("cap1", "partial text");
+    expect(root.childElementCount).toBe(120);
     chat.setDraft("cap1", "partial more");
+    expect(root.childElementCount).toBe(120); // 原地更新，不新增
     chat.commitDraft("cap1", "final text");
+    expect(root.childElementCount).toBe(120); // draft removed, final appended
     const last = root.children.at(-1);
     expect(last?.className).toContain("user");
     expect(last?.className).not.toContain("draft");
