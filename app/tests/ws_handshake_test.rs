@@ -237,6 +237,10 @@ fn origin_allowlist() {
         assert!(server::origin_allowed(&h, &config), "origin {o}");
     }
 
+    h.insert(
+        header::ORIGIN,
+    );
+
     // 自定义 MOMO_WEB_ORIGIN 生效，旧默认不再放行。
     let config =
         Config::load(|key| (key == "MOMO_WEB_ORIGIN").then(|| "http://127.0.0.1:5173".to_string()))
