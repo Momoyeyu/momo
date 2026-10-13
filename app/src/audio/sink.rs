@@ -244,6 +244,7 @@ impl StreamState {
             let open = Msg::AudioOpen(AudioOpenMsg {
                 env,
                 event_seq: Some(event_seq),
+                stream_id: format!("st_{}", self.stream_id),
                 direction: Direction::Downlink,
                 capture_id: None,
                 turn_id: Some(turn_id.to_string()),
@@ -285,6 +286,7 @@ impl StreamState {
         let end = Msg::AudioEnd(AudioEndMsg {
             env,
             event_seq: Some(event_seq),
+            stream_id: format!("st_{}", self.stream_id),
             last_chunk_seq: self.chunk_seq.saturating_sub(1),
         });
         let _ = out_tx.send(OutboundFrame::Json(end)).await;
