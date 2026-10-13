@@ -101,6 +101,7 @@ pub(crate) async fn index() -> Json<dto::IndexReport> {
             "POST /api/jobs",
             "GET /api/jobs/{id}",
             "POST /api/jobs/{id}/cancel",
+            "POST /api/jobs/{id}/recover",
             "GET /api/jobs/{id}/logs?cursor= (SSE)",
             "GET /api/config",
             "PUT /api/config",

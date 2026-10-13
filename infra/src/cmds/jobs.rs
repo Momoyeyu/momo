@@ -9,9 +9,10 @@ use std::time::Duration;
 
 use serde::Serialize;
 
-use crate::cli::{JobsAction, JobsArgs, JobsLogArgs};
+use crate::cli::{JobsAction, JobsArgs, JobsLogArgs, JobsSubmitArgs};
+use crate::jobs::ssh::SshSubmit;
 use crate::jobs::store::{self, JobStore};
-use crate::jobs::{runner, JobRecord};
+use crate::jobs::{runner, JobExecutor, JobRecord};
 use crate::output::{AppError, ExitCode};
 
 /// `jobs log -f` 轮询间隔（同 serve logs 口径）。
@@ -33,12 +34,20 @@ pub fn run(args: &JobsArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
     let store = JobStore::open_default();
     match &args.action {
         JobsAction::Submit(a) => {
+            let ssh = build_ssh_submit(a)?;
             let desc = a.desc.clone().unwrap_or_else(|| a.cmd.join(" "));
-            let rec = runner::submit(&store, a.kind, a.cmd.clone(), desc)?;
+            let (rec, warns) = runner::submit(&store, a.kind, a.cmd.clone(), desc, ssh)?;
+            warn_stderr(&warns);
             emit_job("jobs submit", &rec, None, ctx)?;
             Ok(ExitCode::Ok as i32)
         }
         JobsAction::Exec(a) => runner::exec(&store, &a.id),
+        JobsAction::Recover(a) => {
+            reconcile(&store)?;
+            let (rec, note) = runner::recover(&store, &a.id)?;
+            emit_job("jobs recover", &rec, Some(note), ctx)?;
+            Ok(ExitCode::Ok as i32)
+        }
         JobsAction::List => {
             reconcile(&store)?;
             let (jobs, warnings) = store.list()?;
@@ -66,10 +75,58 @@ pub fn run(args: &JobsArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
         JobsAction::Cancel(a) => {
             reconcile(&store)?;
             let (rec, note) = runner::cancel(&store, &a.id)?;
-            emit_job("jobs cancel", &rec, Some(note), ctx)?;
+            emit_job("jobs cancel", &rec, Some(note.as_str()), ctx)?;
             Ok(ExitCode::Ok as i32)
         }
         JobsAction::Log(a) => log(&store, a, ctx),
+    }
+}
+
+/// `jobs submit` flags → `Option<SshSubmit>`。
+/// `--executor ssh` 必须有 `--host`；local 执行器拒绝任何 ssh flag。
+fn build_ssh_submit(a: &JobsSubmitArgs) -> Result<Option<SshSubmit>, AppError> {
+    let ssh_flags_used = a.host.is_some()
+        || a.user.is_some()
+        || a.key.is_some()
+        || a.remote_dir.is_some()
+        || !a.env.is_empty()
+        || !a.data.is_empty()
+        || a.artifact_name.is_some()
+        || a.lease_hours.is_some();
+    match a.executor {
+        JobExecutor::Local => {
+            if ssh_flags_used {
+                return Err(AppError::Config(
+                    "ssh flags require `--executor ssh`".into(),
+                ));
+            }
+            Ok(None)
+        }
+        JobExecutor::Ssh => {
+            let Some(host) = a.host.clone() else {
+                return Err(AppError::Config(
+                    "--executor ssh requires --host (ssh alias or hostname)".into(),
+                ));
+            };
+            let mut env = std::collections::BTreeMap::new();
+            for e in &a.env {
+                // KEY=VALUE 显式值；裸 KEY = 取本地 env（value None）
+                match e.split_once('=') {
+                    Some((k, v)) => env.insert(k.to_string(), Some(v.to_string())),
+                    None => env.insert(e.clone(), None),
+                };
+            }
+            Ok(Some(SshSubmit {
+                host,
+                user: a.user.clone(),
+                key: a.key.clone(),
+                remote_dir: a.remote_dir.clone(),
+                env,
+                data: a.data.clone(),
+                artifact_name: a.artifact_name.clone(),
+                lease_hours: a.lease_hours,
+            }))
+        }
     }
 }
 
@@ -212,11 +269,26 @@ fn render_record(w: &mut impl Write, r: &JobRecord) -> Result<(), AppError> {
     writeln!(w, "job {}", r.id)?;
     writeln!(w, "  status   {}", r.status.as_str())?;
     writeln!(w, "  kind     {}", r.kind.as_str())?;
+    writeln!(w, "  executor {}", r.executor.as_str())?;
     if !r.desc.is_empty() {
         writeln!(w, "  desc     {}", r.desc)?;
     }
     writeln!(w, "  args     {}", r.args.join(" "))?;
     writeln!(w, "  created  {} ago", fmt_age(r.created_at))?;
+    if let Some(spec) = &r.ssh {
+        let host = match &spec.user {
+            Some(u) => format!("{u}@{}", spec.host),
+            None => spec.host.clone(),
+        };
+        writeln!(w, "  remote   {host}:{}", spec.remote_dir)?;
+        if let Some(ms) = spec.release_ms {
+            let left_s = ms.saturating_sub(crate::jobs::now_ms()) / 1000;
+            writeln!(w, "  release  in {}m", left_s / 60)?;
+        }
+    }
+    if let Some(rid) = &r.remote_id {
+        writeln!(w, "  remote id {rid}")?;
+    }
     if let Some(pid) = r.pid {
         writeln!(w, "  pid      {pid}")?;
     }

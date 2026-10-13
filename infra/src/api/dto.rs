@@ -8,7 +8,8 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 use crate::config_schema::SourceReport;
-use crate::jobs::{JobKind, JobRecord};
+use crate::jobs::ssh::SshSubmit;
+use crate::jobs::{JobExecutor, JobKind, JobRecord};
 
 /// 全部报告/错误顶层的 schema 版本号。
 pub const SCHEMA_VERSION: u8 = 1;
@@ -463,13 +464,20 @@ pub struct ProfileQuery {
 
 // ---------- jobs ----------
 
-/// `POST /api/jobs` 请求体：`{kind?, args, desc?}`。
+/// `POST /api/jobs` 请求体：`{kind?, executor?, ssh?, args, desc?}`。
 #[derive(Debug, Deserialize)]
 pub struct JobSubmitRequest {
     /// job 类别；缺省 `train`。
     #[serde(default)]
     pub kind: Option<JobKind>,
-    /// exec_local 载荷 argv（args[0] 为可执行程序）。
+    /// 执行器；缺省 `local`。`ssh` 时 `ssh` 字段必填（host 至少给出）。
+    #[serde(default)]
+    pub executor: Option<JobExecutor>,
+    /// exec_ssh 远端规格（host/user?/key?/remote_dir?/env/data/artifact_name/lease_hours）。
+    /// env 的 value 为 null 时取 web server 进程 env；敏感键恒被丢弃。
+    #[serde(default)]
+    pub ssh: Option<SshSubmit>,
+    /// payload argv（exec_local：本地可执行程序；exec_ssh：打包进 run.sh 远端执行）。
     #[serde(default)]
     pub args: Vec<String>,
     #[serde(default)]

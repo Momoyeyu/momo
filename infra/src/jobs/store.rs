@@ -85,6 +85,14 @@ impl JobStore {
         Ok(self.logs_dir().join(format!("{id}.log")))
     }
 
+    /// `bundles/<id>/`：exec_ssh 的 staging 根——`payload/` 为推上远端的
+    /// bundle（run.sh/env.sh/data/），同级放拉回暂存（remote-run.log、
+    /// pull.offset、ckpt/、artifacts-prefetch/），不随 rsync 上行。
+    pub fn bundle_dir(&self, id: &str) -> Result<PathBuf, AppError> {
+        check_id(id)?;
+        Ok(self.dir.join("bundles").join(id))
+    }
+
     fn ensure_dirs(&self) -> Result<(), AppError> {
         fs::create_dir_all(self.meta_dir())?;
         fs::create_dir_all(self.logs_dir())?;
@@ -106,6 +114,8 @@ impl JobStore {
             kind,
             desc,
             args,
+            executor: crate::jobs::JobExecutor::Local,
+            ssh: None,
             status: JobStatus::Queued,
             created_at: now,
             updated_at: now,
@@ -115,6 +125,7 @@ impl JobStore {
             log_path: self.log_path(&id)?.display().to_string(),
             exit: None,
             error: None,
+            cancel_requested: false,
         };
         self.append_index(&rec, None)?;
         self.save(&rec)?;

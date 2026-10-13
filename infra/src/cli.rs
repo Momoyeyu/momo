@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
-use crate::jobs::JobKind;
+use crate::jobs::{JobExecutor, JobKind};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -194,7 +194,7 @@ pub struct JobsArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum JobsAction {
-    /// Submit a job to the local runner (detached exec; `--` separates payload argv)
+    /// Submit a job (local runner by default; `--executor ssh` for a remote host)
     Submit(JobsSubmitArgs),
     /// List all jobs (oldest first)
     List,
@@ -202,8 +202,10 @@ pub enum JobsAction {
     Status(JobIdArgs),
     /// Tail a job's captured stdout/stderr log
     Log(JobsLogArgs),
-    /// Cancel a queued/running job (SIGTERM→SIGKILL on the payload pid)
+    /// Cancel a queued/running job (local: SIGTERM→SIGKILL; ssh: remote TERM→KILL)
     Cancel(JobIdArgs),
+    /// Reattach a runner to a recovering ssh job (re-query by remote job id)
+    Recover(JobIdArgs),
     /// Internal runner spawned by `jobs submit`; not a user action
     #[command(hide = true)]
     Exec(JobIdArgs),
@@ -211,13 +213,53 @@ pub enum JobsAction {
 
 #[derive(Debug, Args)]
 pub struct JobsSubmitArgs {
-    /// Job kind domain (execution is always exec_local)
+    /// Job kind domain
     #[arg(long, value_enum, default_value_t = JobKind::Train)]
     pub kind: JobKind,
+
+    /// Executor: local child process or remote ssh host
+    #[arg(long, value_enum, default_value_t = JobExecutor::Local)]
+    pub executor: JobExecutor,
 
     /// Human-readable description (default: joined argv)
     #[arg(long, value_name = "TEXT")]
     pub desc: Option<String>,
+
+    // ----- exec_ssh options (require --executor ssh) -----
+    /// SSH target: Host alias from ~/.ssh/config (e.g. 4090D, mac-studio) or hostname
+    #[arg(long, value_name = "HOST")]
+    pub host: Option<String>,
+
+    /// SSH login user (default: ssh config / current user)
+    #[arg(long, value_name = "USER")]
+    pub user: Option<String>,
+
+    /// SSH identity file (default: ssh config)
+    #[arg(long, value_name = "PATH")]
+    pub key: Option<PathBuf>,
+
+    /// Remote working root; the job dir is <remote-dir>/<job-id>
+    /// (default: ~/.cache/momo/remote-jobs on the remote host)
+    #[arg(long, value_name = "PATH")]
+    pub remote_dir: Option<String>,
+
+    /// Env whitelist entry pushed to the remote job: KEY (= local env) or KEY=VALUE.
+    /// Sensitive keys (*_API_KEY/*_TOKEN/*_SECRET/…) are always dropped.
+    #[arg(long = "env", value_name = "KEY[=VALUE]")]
+    pub env: Vec<String>,
+
+    /// Extra file/dir shipped inside the job bundle under data/ (repeatable)
+    #[arg(long = "data", value_name = "PATH")]
+    pub data: Vec<PathBuf>,
+
+    /// Register remote artifacts/ into $MOMO_MODELS_DIR under this name on success
+    #[arg(long, value_name = "NAME")]
+    pub artifact_name: Option<String>,
+
+    /// Hours until the remote machine is released (e.g. 24 on 4090D);
+    /// artifacts are prefetched >=1h before the deadline
+    #[arg(long, value_name = "HOURS")]
+    pub lease_hours: Option<f64>,
 
     /// Payload command and args (place after `--`)
     #[arg(

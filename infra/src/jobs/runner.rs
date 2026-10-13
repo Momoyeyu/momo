@@ -27,12 +27,18 @@ const TERM_GRACE: Duration = Duration::from_secs(10);
 
 /// 提交 job：建档(queued) → spawn detached helper。helper 接管后续迁移，
 /// submit 立即返回（`jobs status`/`log -f` 跟进）。
+/// `ssh` 非空走 exec_ssh（`jobs::ssh::submit`：校验 spec + 打包 bundle），
+/// 返回 (record, warns)——warns 为 env 白名单丢弃等提示（exec_local 恒空）。
 pub fn submit(
     store: &JobStore,
     kind: JobKind,
     args: Vec<String>,
     desc: String,
-) -> Result<JobRecord, AppError> {
+    ssh: Option<crate::jobs::ssh::SshSubmit>,
+) -> Result<(JobRecord, Vec<String>), AppError> {
+    if let Some(spec) = ssh {
+        return crate::jobs::ssh::submit(store, kind, args, desc, spec);
+    }
     if args.is_empty() || args[0].trim().is_empty() {
         return Err(AppError::Config(
             "jobs submit: empty command (expected `-- CMD [ARGS...]`)".into(),
@@ -45,12 +51,12 @@ pub fn submit(
         let _ = store.transition(&mut rec, JobStatus::Failed, Some(detail));
         return Err(AppError::Io(e));
     }
-    Ok(rec)
+    Ok((rec, Vec::new()))
 }
 
 /// spawn `momoctl jobs exec --id <id>`：stdin 置空 detach；
 /// stdout/stderr 并入 job 日志（runner 诊断与 panic 不落终端）。
-fn spawn_helper(store: &JobStore, id: &str) -> io::Result<Child> {
+pub(crate) fn spawn_helper(store: &JobStore, id: &str) -> io::Result<Child> {
     let exe = std::env::current_exe()?;
     let log = store.log_path(id).map_err(io::Error::other)?;
     if let Some(parent) = log.parent() {
@@ -66,7 +72,24 @@ fn spawn_helper(store: &JobStore, id: &str) -> io::Result<Child> {
         .spawn()
 }
 
-/// helper 主流程（exec_local）。只处理 queued；其他状态直接退出
+/// helper 认领：写 `runner_pid` 并（仅 queued → preparing）迁移；
+/// 写后回读确认未被其他 runner 覆盖——输家返回 false 自行退出。
+/// queued 之外的入口状态（recovering/canceling）同态重写只刷 meta。
+pub(crate) fn claim(store: &JobStore, rec: &mut JobRecord) -> Result<bool, AppError> {
+    rec.runner_pid = Some(std::process::id());
+    let to = match rec.status {
+        JobStatus::Queued => JobStatus::Preparing,
+        s => s,
+    };
+    store.transition(rec, to, None)?;
+    Ok(store
+        .load(&rec.id)?
+        .and_then(|r| r.runner_pid)
+        .is_some_and(|p| p == std::process::id()))
+}
+
+/// helper 主流程：按 record.executor 分发到 exec_local（本函数）或
+/// exec_ssh（`jobs::ssh::exec`）。exec_local 只处理 queued；其他状态直接退出
 /// ——状态是唯一的 claim，绝不重复 launch。
 /// 返回值是 runner 自身的退出码（payload 成败写入 store，不回传）。
 pub fn exec(store: &JobStore, id: &str) -> Result<i32, AppError> {
@@ -76,19 +99,15 @@ pub fn exec(store: &JobStore, id: &str) -> Result<i32, AppError> {
             return Err(AppError::Config(format!("job {id} not found")));
         }
     };
+    if rec.executor == crate::jobs::JobExecutor::Ssh {
+        return crate::jobs::ssh::exec(store, id);
+    }
     if rec.status != JobStatus::Queued {
         return Ok(ExitCode::Ok as i32);
     }
 
-    // claim：写入 runner_pid + preparing；写后回读确认 claim 未被其他
-    // runner 覆盖（两个 exec 并发时 last-writer-wins，输家自行退出）。
-    rec.runner_pid = Some(std::process::id());
-    store.transition(&mut rec, JobStatus::Preparing, None)?;
-    if store
-        .load(id)?
-        .and_then(|r| r.runner_pid)
-        .is_some_and(|p| p != std::process::id())
-    {
+    // claim：写入 runner_pid + preparing；输家退出。
+    if !claim(store, &mut rec)? {
         return Ok(ExitCode::Ok as i32);
     }
 
@@ -228,27 +247,34 @@ fn runner_log(rec: &JobRecord, line: &str) {
 
 /// cancel：非终态 → `canceling` + kill payload pid；runner 缺席时由本函数
 /// 确认停止后写 `canceled`。终态幂等返回。
+/// ssh job 分发到 `jobs::ssh::cancel`（远端 TERM→KILL / recovering 只记意图）。
 /// 返回 (record, note)——note 给 human 输出描述结果。
-pub fn cancel(store: &JobStore, id: &str) -> Result<(JobRecord, &'static str), AppError> {
+pub fn cancel(store: &JobStore, id: &str) -> Result<(JobRecord, String), AppError> {
     let mut rec = store
         .load(id)?
         .ok_or_else(|| AppError::Config(format!("job {id} not found")))?;
+    if rec.executor == crate::jobs::JobExecutor::Ssh {
+        return crate::jobs::ssh::cancel(store, id);
+    }
     if rec.status.is_terminal() {
-        return Ok((rec, "already terminal"));
+        return Ok((rec, "already terminal".into()));
     }
     if rec.status == JobStatus::Recovering {
         return Ok((
             rec,
-            "cannot confirm process identity (recovering); not canceled",
+            "cannot confirm process identity (recovering); not canceled".into(),
         ));
     }
 
+    rec.cancel_requested = true;
     if rec.status != JobStatus::Canceling {
         store.transition(
             &mut rec,
             JobStatus::Canceling,
             Some("cancel requested".into()),
         )?;
+    } else {
+        store.save(&rec)?;
     }
 
     let note = match rec.pid {
@@ -260,7 +286,8 @@ pub fn cancel(store: &JobStore, id: &str) -> Result<(JobRecord, &'static str), A
             }
         }
         _ => "cancel requested",
-    };
+    }
+    .to_string();
 
     // 收尾：重读 meta，进程已确认停止且仍是 canceling → 落 canceled。
     // runner 在场时它的 wait 也会收敛到 canceled，两条路径殊途同归。
@@ -276,6 +303,33 @@ pub fn cancel(store: &JobStore, id: &str) -> Result<(JobRecord, &'static str), A
         rec = fresh;
     }
     Ok((rec, note))
+}
+
+/// recover：给 recovering（或未被认领的 queued）ssh job 重挂 helper。
+/// helper 认领后按 remote job id + process identity 重查——确认同一进程
+/// 存活 → running 续传；确认消亡 → 收口。绝不重复 launch。
+pub fn recover(store: &JobStore, id: &str) -> Result<(JobRecord, &'static str), AppError> {
+    let rec = store
+        .load(id)?
+        .ok_or_else(|| AppError::Config(format!("job {id} not found")))?;
+    if rec.status.is_terminal() {
+        return Ok((rec, "already terminal"));
+    }
+    if rec.executor != crate::jobs::JobExecutor::Ssh {
+        return Err(AppError::Config(format!(
+            "job {id} is not an ssh job (local jobs are adopted automatically)"
+        )));
+    }
+    if rec.runner_pid.is_some_and(proc::is_alive) {
+        return Ok((rec, "runner alive"));
+    }
+    match rec.status {
+        JobStatus::Recovering | JobStatus::Queued => {
+            spawn_helper(store, id)?;
+            Ok((rec, "recovery runner spawned"))
+        }
+        _ => Ok((rec, "nothing to recover")),
+    }
 }
 
 #[cfg(test)]

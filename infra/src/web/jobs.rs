@@ -28,6 +28,7 @@ where
         .route("/", get(list_jobs).post(submit_job))
         .route("/{id}", get(get_job))
         .route("/{id}/cancel", post(cancel_job))
+        .route("/{id}/recover", post(recover_job))
         .route("/{id}/logs", get(job_logs))
 }
 
@@ -77,6 +78,8 @@ async fn get_job(Path(id): Path<String>) -> Response {
 }
 
 /// `POST /api/jobs`：建档 + spawn detached runner（同 `jobs submit`）。
+/// `executor:"ssh"` 时 `ssh` 对象必填且 `ssh.host` 非空；
+/// local 执行器带 `ssh` 字段 → 400（与 CLI `--executor` 同口径）。
 async fn submit_job(Json(body): Json<dto::JobSubmitRequest>) -> Response {
     if body.args.is_empty() || body.args[0].trim().is_empty() {
         return error(
@@ -85,6 +88,29 @@ async fn submit_job(Json(body): Json<dto::JobSubmitRequest>) -> Response {
             "body.args must be a non-empty argv array",
         );
     }
+    let executor = body.executor.unwrap_or(crate::jobs::JobExecutor::Local);
+    let ssh = match executor {
+        crate::jobs::JobExecutor::Local => {
+            if body.ssh.is_some() {
+                return error(
+                    StatusCode::BAD_REQUEST,
+                    "bad_request",
+                    "body.ssh requires executor \"ssh\"",
+                );
+            }
+            None
+        }
+        crate::jobs::JobExecutor::Ssh => match body.ssh {
+            Some(s) if !s.host.trim().is_empty() => Some(s),
+            _ => {
+                return error(
+                    StatusCode::BAD_REQUEST,
+                    "bad_request",
+                    "executor \"ssh\" requires body.ssh.host",
+                )
+            }
+        },
+    };
     let store = JobStore::open_default();
     let desc = body.desc.unwrap_or_else(|| body.args.join(" "));
     match runner::submit(
@@ -92,14 +118,20 @@ async fn submit_job(Json(body): Json<dto::JobSubmitRequest>) -> Response {
         body.kind.unwrap_or(crate::jobs::JobKind::Train),
         body.args,
         desc,
+        ssh,
     ) {
-        Ok(rec) => Json(dto::JobReport {
+        Ok((rec, warns)) => Json(dto::JobReport {
             schema: dto::SCHEMA_VERSION,
             status: "ok",
             job: rec,
-            note: None,
+            note: if warns.is_empty() {
+                None
+            } else {
+                Some(warns.join("; "))
+            },
         })
         .into_response(),
+        Err(crate::output::AppError::Config(m)) => error(StatusCode::BAD_REQUEST, "bad_request", m),
         Err(e) => error(StatusCode::INTERNAL_SERVER_ERROR, "internal", e.to_string()),
     }
 }
@@ -117,6 +149,24 @@ async fn cancel_job(Path(id): Path<String>) -> Response {
         })
         .into_response(),
         Err(crate::output::AppError::Config(m)) if m.contains("not found") => not_found(&id),
+        Err(e) => error(StatusCode::INTERNAL_SERVER_ERROR, "internal", e.to_string()),
+    }
+}
+
+/// `POST /api/jobs/{id}/recover`：recovering ssh job 重挂 runner（同 `jobs recover`）。
+async fn recover_job(Path(id): Path<String>) -> Response {
+    let store = JobStore::open_default();
+    reconcile(&store);
+    match runner::recover(&store, &id) {
+        Ok((rec, note)) => Json(dto::JobReport {
+            schema: dto::SCHEMA_VERSION,
+            status: "ok",
+            job: rec,
+            note: Some(note.to_string()),
+        })
+        .into_response(),
+        Err(crate::output::AppError::Config(m)) if m.contains("not found") => not_found(&id),
+        Err(crate::output::AppError::Config(m)) => error(StatusCode::BAD_REQUEST, "bad_request", m),
         Err(e) => error(StatusCode::INTERNAL_SERVER_ERROR, "internal", e.to_string()),
     }
 }

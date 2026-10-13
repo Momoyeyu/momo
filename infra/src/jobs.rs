@@ -1,16 +1,18 @@
 //! jobs 子系统：job 描述与状态机（本模块）、store（`jobs/store.rs`）、
-//! exec_local 执行器（`jobs/runner.rs`）。
+//! exec_local 执行器（`jobs/runner.rs`）、exec_ssh 执行器（`jobs/ssh.rs`）。
 //!
 //! 状态机口径锁定 momo-infra.md「训练 lifecycle 与恢复」：
 //! `queued → preparing → running → succeeded/failed`，
 //! `canceling/canceled` 独立终态不写成 failed；
-//! `recovering` 属 SSH runner（#51）占位，`promoted` 属 promotion issue——
-//! 两者进枚举（store/API 要能反序列化），本 runner 不主动迁入。
+//! `recovering` 归 exec_ssh（断线重查，#51），`promoted` 属 promotion issue。
 //!
 //! 面向用户输出英文；源码注释中文。
 
 pub mod runner;
+pub mod ssh;
 pub mod store;
+
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
@@ -31,6 +33,53 @@ impl JobKind {
             JobKind::Train => "train",
         }
     }
+}
+
+/// 执行器（JobRecord.executor）。serde 小写；旧 meta 无此字段 → `local`。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "lowercase")]
+pub enum JobExecutor {
+    // exec_local：本地子进程 runner（`jobs/runner.rs`）。
+    #[default]
+    #[value(help = "local child process runner")]
+    Local,
+    // exec_ssh：rsync 推 bundle + ssh 远端执行（`jobs/ssh.rs`）。
+    #[value(help = "remote execution over ssh + rsync")]
+    Ssh,
+}
+
+impl JobExecutor {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            JobExecutor::Local => "local",
+            JobExecutor::Ssh => "ssh",
+        }
+    }
+}
+
+/// exec_ssh 的远端连接规格（JobRecord.ssh；submit 时校验后落盘，
+/// helper 重启/接管后凭它重建远端命令——host 别名、user、key 不依赖本次会话）。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SshJobSpec {
+    /// ssh 目标：Host 别名（`4090D`/`mac-studio`）或 hostname；认证走 `~/.ssh/config`。
+    pub host: String,
+    /// 显式登录用户；缺省交给 ssh config / 本机用户。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
+    /// 显式 identity 文件；缺省交给 ssh config。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key: Option<PathBuf>,
+    /// 远端工作根（job 目录 = `<remote_dir>/<id>`），远端 shell 语义（`~` 可展开）。
+    pub remote_dir: String,
+    /// 推入 env.sh 的白名单键名（只存名不存值——值在 bundle 里，不进 meta/API）。
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub env_keys: Vec<String>,
+    /// 成功收尾时登记到 `${MOMO_MODELS_DIR}` 的产物名（相对路径）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub artifact_name: Option<String>,
+    /// 远端机器预计释放时刻（epoch ms；4090D 的 24h 纪律，`--lease-hours` 换算）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub release_ms: Option<u64>,
 }
 
 /// job 状态（store 与 API 的序列化值即小写名）。
@@ -74,7 +123,8 @@ impl JobStatus {
     /// 合法迁移表。momo-infra.md 状态图：
     /// - queued → preparing（launch）/ canceled（launch 前取消）；
     ///   canceling 为带 runner 的取消路径，queued/preparing → canceling 同样合法；
-    /// - preparing → running（spawn 成功+process identity 已记）/ failed / canceling / canceled；
+    /// - preparing → running（spawn 成功+process identity 已记）/ failed / canceling / canceled /
+    ///   recovering（exec_ssh launch 结果未确认——命令可能已到达远端，须重查不得重发，#51）；
     /// - running → canceling / recovering / succeeded / failed；
     /// - canceling → canceled（确认停止）/ failed / recovering / running（rescan 确认存活）；
     /// - recovering → running / failed / canceled（SSH runner 的重连收口，#51）；
@@ -84,7 +134,7 @@ impl JobStatus {
         use JobStatus::*;
         match self {
             Queued => matches!(to, Preparing | Canceling | Canceled | Failed),
-            Preparing => matches!(to, Running | Failed | Canceling | Canceled),
+            Preparing => matches!(to, Running | Failed | Canceling | Canceled | Recovering),
             Running => matches!(to, Canceling | Recovering | Succeeded | Failed),
             Canceling => matches!(to, Canceled | Failed | Running | Recovering),
             Recovering => matches!(to, Running | Failed | Canceled),
@@ -102,8 +152,15 @@ pub struct JobRecord {
     pub id: String,
     pub kind: JobKind,
     pub desc: String,
-    /// exec_local 载荷 argv（args[0] 为可执行程序）。
+    /// payload argv（exec_local：args[0] 为本地可执行程序；
+    /// exec_ssh：打包进 run.sh 远端执行）。
     pub args: Vec<String>,
+    /// 执行器；旧 meta 无字段 → `local`。
+    #[serde(default)]
+    pub executor: JobExecutor,
+    /// exec_ssh 远端规格（本地 job 恒为 None）。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ssh: Option<SshJobSpec>,
     pub status: JobStatus,
     pub created_at: u64,
     pub updated_at: u64,
@@ -123,6 +180,15 @@ pub struct JobRecord {
     /// failed 的原因（spawn/exit/interrupted 等）。
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// cancel 意图标记：状态被 reconcile 翻成 recovering 后 canceling 会丢，
+    /// flag 持久保存「用户要停它」，helper 重连后据此收口（exec_ssh）。
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub cancel_requested: bool,
+}
+
+/// `skip_serializing_if` 用的 bool 判空（serde 需要路径引用）。
+fn is_false(v: &bool) -> bool {
+    !*v
 }
 
 /// unix epoch 毫秒（record 时间戳与 jobs.jsonl ts 共用）。
