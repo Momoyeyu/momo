@@ -76,14 +76,16 @@ where
 
     // conn_rx 循环：帧 → Msg → Session。
     let cmd_tx = session.cmd_tx.clone();
-    let mut session_gone = session.state_rx.clone();
+    let mut conn_owner = session.conn_rx.clone();
     loop {
         let msg = tokio::select! {
             next = stream.next() => next,
-            changed = session_gone.changed() => {
-                if changed.is_err() {
-                    // session actor 退出（被新 UI 连接顶掉 / Shutdown）：
-                    // 单活跃策略下旧连接按协议关连（close 1000）。
+            changed = conn_owner.changed() => {
+                // actor 退出（sender 掉落）或 conn 换主（resume/新连接顶掉）：
+                // 单活跃策略下本连接按协议关连（close 1000）。
+                let superseded = changed.is_err()
+                    || conn_owner.borrow().as_str() != conn_id.as_str();
+                if superseded {
                     let _ = tx
                         .send(OutboundFrame::Close(
                             CLOSE_NORMAL,
@@ -92,6 +94,7 @@ where
                         .await;
                     break;
                 }
+                // resume 接管广播（值=本 conn_id）：继续服务。
                 continue;
             }
         };
@@ -135,8 +138,17 @@ where
         }
     }
 
-    let _ = cmd_tx.send(SessionCmd::ConnClosed).await;
-    drop(tx); // 关闭 conn_tx：tx_loop 排空后退出。
+    let _ = cmd_tx
+        .send(SessionCmd::ConnClosed {
+            conn_id: conn_id.clone(),
+        })
+        .await;
+    // 收尾 close 帧：session 断线后进保活窗口继续持有 out_tx sender，
+    // 仅靠 drop(tx) 不会关闭 conn_tx；Close 帧让 tx_loop 排空后自行退出。
+    let _ = tx
+        .send(OutboundFrame::Close(CLOSE_NORMAL, "connection closed"))
+        .await;
+    drop(tx); // 关闭本 conn 的 sender：tx_loop 排空至 Close 帧退出。
     let _ = tx_task.await;
     debug!(%conn_id, "ws connection closed");
 }
@@ -224,8 +236,15 @@ where
         }
     }
 
-    // 单活跃 session 策略：后连顶掉前连（SessionManager::attach）。
-    let session = state.sessions.attach(conn_id, hello.client, tx.clone());
+    // 单活跃 session 策略 + session restore：`resume_session_id` 命中
+    // 活跃/保活 session 则复用并随后下发 session.snapshot，否则新 session
+    // 顶掉旧 session（SessionManager::attach，protocol §认证）。
+    let session = state.sessions.attach(
+        conn_id,
+        hello.client,
+        tx.clone(),
+        hello.resume_session_id.as_deref(),
+    );
     let hello_ok = Msg::HelloOk(HelloOkMsg {
         version: crate::proto::message::PROTOCOL_VERSION.to_string(),
         session_id: session.id.clone(),

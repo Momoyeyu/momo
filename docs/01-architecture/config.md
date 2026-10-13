@@ -44,6 +44,7 @@ flowchart LR
 | `MOMO_EMBED_ENDPOINT`（P1） | embed 服务 WS 连接地址（编排器→momo-svc-embed） | `ws://127.0.0.1:7812/ws` | ws:// | app | 否 |
 | `MOMO_BARGEIN_ENABLED` | 允许打断 | `true` | bool | app | 否 |
 | `MOMO_BARGEIN_MIN_MS` | 打断防抖：`input.vad{speech_start}` 须持续该时长才触发 barge-in | `250` | ms | app | 否 |
+| `MOMO_SESSION_RESUME_TTL_MS` | WS 断开后 session 保活窗口；TTL 内 `hello.resume_session_id` 命中则复用并下发 `session.snapshot`，超时回收 | `60000` | ms | app | 否 |
 | `MOMO_IDLE_TIMEOUT_S` | 空闲多少秒触发自发行为 | `20` | s，0=关闭 | app | 否 |
 | `MOMO_SENT_SOFT_CHARS` | 句切弱切阈值 | `25` | 字符数 | app | 否 |
 | `MOMO_SENT_MAX_CHARS` | 句切硬上限 | `60` | 字符数 | app | 否 |
@@ -126,6 +127,7 @@ MOMO_TTS_ENDPOINT=ws://127.0.0.1:7811/ws
 MOMO_EMBED_ENDPOINT=ws://127.0.0.1:7812/ws   # P1 编排器→momo-svc-embed
 MOMO_BARGEIN_ENABLED=true
 MOMO_BARGEIN_MIN_MS=250        # speech_start 持续该时长才触发打断
+MOMO_SESSION_RESUME_TTL_MS=60000   # 断线 session 保活窗口；TTL 内 resume_session_id 可恢复
 MOMO_IDLE_TIMEOUT_S=20
 MOMO_SENT_SOFT_CHARS=25
 MOMO_SENT_MAX_CHARS=60
