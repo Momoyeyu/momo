@@ -6,26 +6,15 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::thread;
 
+use crate::api::dto::{Check, CheckGroup, DoctorReport};
 use crate::cli::{DoctorArgs, Profile};
 use crate::env_cfg::{self, EnvCfg};
 use crate::manifest::Manifest;
 use crate::net;
-use crate::output::{AppError, Check, CheckGroup, DoctorReport, ExitCode};
+use crate::output::{AppError, ExitCode};
 
 pub fn run(args: &DoctorArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
-    let env = EnvCfg;
-    let profile = env.profile(args.profile);
-
-    let groups = vec![
-        check_system(),
-        check_toolchain(),
-        check_python_deps(),
-        check_network(&env),
-        check_env(&env, profile),
-        check_models(&env),
-        check_endpoints(&env),
-    ];
-    let report = DoctorReport::new(profile.as_str(), groups);
+    let report = collect_report(args.profile);
 
     if ctx.json {
         println!("{}", serde_json::to_string_pretty(&report).unwrap());
@@ -39,6 +28,23 @@ pub fn run(args: &DoctorArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
     } else {
         ExitCode::Ok as i32
     })
+}
+
+/// doctor 检查矩阵 core：CLI `doctor` 与 `GET /api/doctor` 共用同一 `DoctorReport`。
+/// 做真实探测（进程/网络/文件 IO），web 侧须 `spawn_blocking` 调用。
+pub fn collect_report(profile_arg: Option<Profile>) -> DoctorReport {
+    let env = EnvCfg;
+    let profile = env.profile(profile_arg);
+    let groups = vec![
+        check_system(),
+        check_toolchain(),
+        check_python_deps(),
+        check_network(&env),
+        check_env(&env, profile),
+        check_models(&env),
+        check_endpoints(&env),
+    ];
+    DoctorReport::new(profile.as_str(), groups)
 }
 
 // ---------- system ----------

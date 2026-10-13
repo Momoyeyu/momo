@@ -2,8 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use serde_json::json;
-
+use crate::api::dto::{ConfigCheckReport, ConfigCheckSummary};
 use crate::cli::{ConfigAction, ConfigArgs, ConfigCheckArgs};
 use crate::config_schema::{self, SourceReport};
 use crate::output::{AppError, ExitCode};
@@ -49,13 +48,16 @@ fn repo_root() -> Result<PathBuf, AppError> {
     })
 }
 
-fn report_json(root: &Path, sources: &[SourceReport], drift_count: usize) -> serde_json::Value {
-    json!({
-        "schema": 1,
-        "root": root.display().to_string(),
-        "sources": sources,
-        "summary": { "sources": sources.len(), "drift": drift_count },
-    })
+fn report_json(root: &Path, sources: &[SourceReport], drift_count: usize) -> ConfigCheckReport {
+    ConfigCheckReport {
+        schema: crate::api::dto::SCHEMA_VERSION,
+        root: root.display().to_string(),
+        sources: sources.to_vec(),
+        summary: ConfigCheckSummary {
+            sources: sources.len(),
+            drift: drift_count,
+        },
+    }
 }
 
 fn render_human(sources: &[SourceReport], drift_count: usize) {

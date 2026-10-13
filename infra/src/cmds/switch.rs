@@ -16,37 +16,16 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use serde::Serialize;
-
+use crate::api::dto::{Check, CheckStatus, DiffEntry, Summary, SwitchReport};
 use crate::cli::{ServeCommon, SwitchArgs};
 use crate::config_schema::{self, Schema};
 use crate::env_cfg;
-use crate::output::{AppError, Check, CheckStatus, ExitCode, Summary};
+use crate::output::{AppError, ExitCode};
 use crate::serve::proc;
 use crate::serve::profile::ServeProfile;
 
 /// 生成 `.env.<to>` 的模板：infra 侧 .env.example 编译期内嵌。
 const ENV_EXAMPLE: &str = include_str!("../../.env.example");
-
-#[derive(Debug, Serialize)]
-struct DiffEntry {
-    key: String,
-    /// 敏感键打码后的值；None = 该侧未设置（JSON null）。
-    from: Option<String>,
-    to: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-struct SwitchReport {
-    schema: u8,
-    command: String,
-    to: String,
-    env_file: String,
-    target: String,
-    checks: Vec<Check>,
-    env_diff: Vec<DiffEntry>,
-    summary: Summary,
-}
 
 pub fn run(args: &SwitchArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
     let to = args.to.as_str();
@@ -186,7 +165,7 @@ pub fn run(args: &SwitchArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
         to: to.into(),
         env_file: env_link.display().to_string(),
         target: target_path.display().to_string(),
-        summary: summarize(&checks),
+        summary: Summary::from_checks(&checks),
         checks,
         env_diff: diff,
     };
@@ -553,22 +532,6 @@ fn reload_process_env(link: &Path, old: BTreeMap<String, String>) {
     for (k, v) in map {
         std::env::set_var(k, v);
     }
-}
-
-fn summarize(checks: &[Check]) -> Summary {
-    let mut s = Summary {
-        ok: 0,
-        warn: 0,
-        fail: 0,
-    };
-    for c in checks {
-        match c.status {
-            CheckStatus::Ok => s.ok += 1,
-            CheckStatus::Warn => s.warn += 1,
-            CheckStatus::Fail => s.fail += 1,
-        }
-    }
-    s
 }
 
 fn render(report: &SwitchReport, ctx: &super::Ctx) -> Result<(), AppError> {

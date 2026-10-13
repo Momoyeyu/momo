@@ -1,10 +1,12 @@
-//! 输出渲染：human 表格（着色）+ `--json` 序列化 + 退出码枚举。
-//! JSON 顶层一律带 `"schema": 1`，doctor schema 由 tests/doctor_json_test.rs 锁定。
+//! 输出渲染：human 表格（着色）+ 退出码枚举 + 错误类型。
+//! 报告/检查项 DTO 集中在 `crate::api::dto`（`--json` 与 REST `/api` 同型）；
+//! 本模块不再定义 JSON 结构。
 
 use std::io::{IsTerminal, Write};
 
 use owo_colors::OwoColorize;
-use serde::Serialize;
+
+use crate::api::dto::{CheckStatus, CommandStatus, DoctorReport};
 
 /// 退出码约定（momo-docs `02-repos/momo-infra.md`）。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,123 +45,6 @@ impl AppError {
             AppError::Manifest(_) => ExitCode::Verify as i32,
             AppError::Net(_) => ExitCode::Network as i32,
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum CheckStatus {
-    Ok,
-    Warn,
-    Fail,
-}
-
-impl CheckStatus {
-    fn label(self) -> &'static str {
-        match self {
-            CheckStatus::Ok => "ok",
-            CheckStatus::Warn => "warn",
-            CheckStatus::Fail => "fail",
-        }
-    }
-}
-
-/// doctor 单项检查。`hint` 恒出现在 JSON（schema 稳定），可为 null。
-#[derive(Debug, Serialize)]
-pub struct Check {
-    pub id: String,
-    pub status: CheckStatus,
-    pub detail: String,
-    pub hint: Option<String>,
-}
-
-impl Check {
-    pub fn ok(id: impl Into<String>, detail: impl Into<String>) -> Self {
-        Self {
-            id: id.into(),
-            status: CheckStatus::Ok,
-            detail: detail.into(),
-            hint: None,
-        }
-    }
-
-    pub fn warn(id: impl Into<String>, detail: impl Into<String>, hint: impl Into<String>) -> Self {
-        Self {
-            id: id.into(),
-            status: CheckStatus::Warn,
-            detail: detail.into(),
-            hint: Some(hint.into()),
-        }
-    }
-
-    pub fn fail(id: impl Into<String>, detail: impl Into<String>, hint: impl Into<String>) -> Self {
-        Self {
-            id: id.into(),
-            status: CheckStatus::Fail,
-            detail: detail.into(),
-            hint: Some(hint.into()),
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
-pub struct CheckGroup {
-    pub name: String,
-    pub checks: Vec<Check>,
-}
-
-impl CheckGroup {
-    pub fn new(name: impl Into<String>, checks: Vec<Check>) -> Self {
-        Self {
-            name: name.into(),
-            checks,
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
-pub struct Summary {
-    pub ok: usize,
-    pub warn: usize,
-    pub fail: usize,
-}
-
-/// `momoctl doctor --json` 顶层对象：
-/// `{schema, profile, groups:[{name, checks:[{id,status,detail,hint}]}], summary}`。
-#[derive(Debug, Serialize)]
-pub struct DoctorReport {
-    pub schema: u8,
-    pub profile: String,
-    pub groups: Vec<CheckGroup>,
-    pub summary: Summary,
-}
-
-impl DoctorReport {
-    pub fn new(profile: &str, groups: Vec<CheckGroup>) -> Self {
-        let mut summary = Summary {
-            ok: 0,
-            warn: 0,
-            fail: 0,
-        };
-        for g in &groups {
-            for c in &g.checks {
-                match c.status {
-                    CheckStatus::Ok => summary.ok += 1,
-                    CheckStatus::Warn => summary.warn += 1,
-                    CheckStatus::Fail => summary.fail += 1,
-                }
-            }
-        }
-        Self {
-            schema: 1,
-            profile: profile.to_string(),
-            groups,
-            summary,
-        }
-    }
-
-    pub fn has_fail(&self) -> bool {
-        self.summary.fail > 0
     }
 }
 
@@ -206,11 +91,11 @@ fn styled_status(status: CheckStatus, color: bool) -> String {
 /// 未实现子命令的统一出口：human 走 stderr，--json 走 stdout；退出码 1。
 pub fn not_implemented(command: &str, json: bool) -> i32 {
     if json {
-        let body = serde_json::json!({
-            "schema": 1,
-            "command": command,
-            "status": "not_implemented",
-        });
+        let body = CommandStatus {
+            schema: crate::api::dto::SCHEMA_VERSION,
+            command: command.into(),
+            status: "not_implemented".into(),
+        };
         println!("{}", serde_json::to_string_pretty(&body).unwrap());
     } else {
         eprintln!("momoctl {command}: not implemented yet");

@@ -15,29 +15,11 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use serde::Serialize;
-
+use crate::api::dto::{Check, CheckStatus, GcReport, Summary};
 use crate::cli::GcArgs;
 use crate::env_cfg::{self, EnvCfg};
 use crate::manifest::{Manifest, ModelsLock};
-use crate::output::{AppError, Check, CheckStatus, ExitCode, Summary};
-
-/// gc 报告：沿用 checks + summary + schema:1 结构。
-#[derive(Debug, Serialize)]
-struct GcReport {
-    schema: u8,
-    command: String,
-    models_dir: String,
-    /// `dry-run`（默认）或 `delete`（--yes 且 pull 未在运行）。
-    mode: String,
-    keep: u32,
-    /// 回收候选数与字节数（dry-run 口径为「可回收」，delete 口径为「已删除」）。
-    candidates: usize,
-    candidate_bytes: u64,
-    deleted_bytes: u64,
-    checks: Vec<Check>,
-    summary: Summary,
-}
+use crate::output::{AppError, ExitCode};
 
 /// 单个扫描条目的处置结论。
 #[derive(Debug)]
@@ -187,7 +169,7 @@ pub fn run(args: &GcArgs, ctx: &super::Ctx) -> Result<i32, AppError> {
         candidates,
         candidate_bytes,
         deleted_bytes,
-        summary: summarize(&checks),
+        summary: Summary::from_checks(&checks),
         checks,
     };
     render(&report, ctx)?;
@@ -574,22 +556,6 @@ fn remove_path(path: &Path) -> Result<(), std::io::Error> {
     } else {
         fs::remove_file(path)
     }
-}
-
-fn summarize(checks: &[Check]) -> Summary {
-    let mut s = Summary {
-        ok: 0,
-        warn: 0,
-        fail: 0,
-    };
-    for c in checks {
-        match c.status {
-            CheckStatus::Ok => s.ok += 1,
-            CheckStatus::Warn => s.warn += 1,
-            CheckStatus::Fail => s.fail += 1,
-        }
-    }
-    s
 }
 
 fn render(report: &GcReport, ctx: &super::Ctx) -> Result<(), AppError> {
