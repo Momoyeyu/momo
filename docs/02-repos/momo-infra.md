@@ -27,7 +27,7 @@
 | `pipeline list\|run\|resume\|status` | 训练 pipeline 编排：`infra/pipelines/*.toml` 定义，串行 step + exec_local/exec_ssh + 断点续跑 + 产物登记 | 已实现 |
 | `config check` | env schema 漂移检查（`config.schema.toml` ↔ 三侧 `.env.example` / `config.md`） | 已实现 |
 | `web` | Web 控制台基座：axum server + include_dir 内嵌 SPA + `/api` 路由树 + SSE | 已实现 |
-| `jobs submit\|list\|status\|log\|cancel` | job runner：exec_local 执行器、状态机、日志 tail；store 落 state dir（`jobs exec` 为内部 helper） | 已实现 |
+| `jobs submit\|list\|status\|log\|cancel\|recover` | job runner：exec_local + exec_ssh 执行器、状态机、日志 tail；store 落 state dir（`jobs exec` 为内部 helper） | 已实现 |
 
 ### 子命令参数
 
@@ -60,13 +60,23 @@
 | `pipeline resume/status` | `--run-id ID` | 最近一个未完成 / 最新 run | 目标 run |
 | `config check` | `--root PATH` | 从 CWD 向上定位 `config.schema.toml` | 仓库根目录 |
 | `web` | `--listen ADDR` | `127.0.0.1:7900` | 监听地址；解析结果任一非 loopback 时 `MOMO_WEB_TOKEN` 必填，未设拒启（exit 2） |
-| `jobs submit` | `--kind pull\|serve\|train` | `train` | job 来源域（执行器恒为 exec_local） |
+| `jobs submit` | `--kind pull\|serve\|train` | `train` | job 来源域 |
+| `jobs submit` | `--executor local\|ssh` | `local` | 执行器：本地子进程 / SSH 远端 |
 | `jobs submit` | `--desc TEXT` | join(argv) | 可读描述 |
-| `jobs submit` | `-- CMD [ARGS...]` | 必填 | payload 命令行；`--` 之后的参数全部按 argv 传给子进程 |
+| `jobs submit` | `-- CMD [ARGS...]` | 必填 | payload 命令行；`--` 之后的参数全部按 argv 传递（ssh 时打包进 run.sh） |
+| `jobs submit` | `--host HOST` | ssh 必填 | SSH 目标：`~/.ssh/config` Host 别名（`4090D`/`mac-studio`）或 hostname |
+| `jobs submit` | `--user USER` | ssh config | 显式登录用户 |
+| `jobs submit` | `--key PATH` | ssh config | 显式 identity 文件 |
+| `jobs submit` | `--remote-dir PATH` | `~/.cache/momo/remote-jobs` | 远端工作根；job 目录为 `<remote-dir>/<id>` |
+| `jobs submit` | `--env KEY[=VALUE]`（可重复） | 空 | env 白名单：裸 KEY 取本地 env；敏感键恒丢弃 |
+| `jobs submit` | `--data PATH`（可重复） | 空 | 随 bundle 上行的数据文件/目录（落 `data/`） |
+| `jobs submit` | `--artifact-name NAME` | 空 | 成功收尾时把远端 `artifacts/` 登记到 `${MOMO_MODELS_DIR}/NAME` |
+| `jobs submit` | `--lease-hours H` | 空 | 远端机器租约时长（如 4090D 24）；换算释放时刻落盘 |
 | `jobs status` | `ID` | 必填 | job id（ULID） |
 | `jobs log` | `-n, --lines N` | `50` | 输出最后 N 行 |
 | `jobs log` | `-f, --follow` | off | 跟随新增输出；job 进终态且日志排空后退出 |
-| `jobs cancel` | `ID` | 必填 | 非终态 → canceling + SIGTERM→SIGKILL（payload pid）；终态幂等 |
+| `jobs cancel` | `ID` | 必填 | 非终态 → canceling + SIGTERM→SIGKILL（本地 pid）/ 远端 TERM→KILL（ssh）；终态幂等 |
+| `jobs recover` | `ID` | 必填 | recovering/未认领的 ssh job 重挂 runner（按 remote job id 重查，不重复 launch） |
 
 ### 全局 flag
 
@@ -186,6 +196,7 @@ stateDiagram-v2
     queued --> preparing: validate data and environment
     preparing --> failed: validation / preparation failed
     preparing --> running: local / SSH launch with remote job id
+    preparing --> recovering: SSH launch result unconfirmed
     running --> canceling: user cancel
     canceling --> canceled: process identity confirmed stopped
     running --> recovering: SSH connection lost
@@ -201,28 +212,42 @@ stateDiagram-v2
 
 ## jobs runner 与 store
 
-通用 job runner（`infra/src/jobs/`）实装上述状态机的本地执行子集：`queued → preparing → running → succeeded/failed`，`canceling → canceled` 独立终态；`recovering` 留给 SSH runner，`promoted` 与 `failed → preparing` retry 留给后续 issue（枚举保留取值，store/API 可反序列化）。
+通用 job runner（`infra/src/jobs/`）：`queued → preparing → running → succeeded/failed`，`canceling → canceled` 独立终态，`recovering` 归 exec_ssh 断线重查；`promoted` 与 `failed → preparing` retry 留给后续 issue（枚举保留取值，store/API 可反序列化）。执行器由 `JobRecord.executor`（`local`/`ssh`）区分，`jobs exec` helper 按它分发。
 
 **store 布局**：复用状态目录 `${XDG_STATE_HOME:-~/.local/state}/momo/jobs/`（不提供 `MOMO_*` 覆盖键，口径同 pidfile）：
 
 - `jobs.jsonl`：每次状态迁移 append 一行 `{id, kind, status, ts, detail?}` 并 fsync——索引是迁移的权威记录，重建时按序回放取最后态；
-- `meta/<id>.json`：`JobRecord` 全量（`id/kind/desc/args/status/created_at/updated_at/remote_id?/pid?/runner_pid?/log_path/exit?/error?`），tmp+rename 原子写；
-- `logs/<id>.log`：payload stdout/stderr 合流追加，log cursor=字节偏移。runner 诊断行以 `[runner]` 前缀写同一文件。
+- `meta/<id>.json`：`JobRecord` 全量（`id/kind/desc/args/executor/ssh?/status/created_at/updated_at/remote_id?/pid?/runner_pid?/log_path/exit?/error?/cancel_requested?`），tmp+rename 原子写；`ssh` 子对象存远端规格（`host/user?/key?/remote_dir/env_keys/artifact_name?/release_ms?`）；
+- `logs/<id>.log`：payload stdout/stderr 合流追加，log cursor=字节偏移。runner 诊断行以 `[runner]` 前缀写同一文件；
+- `bundles/<id>/`：exec_ssh 暂存——`payload/` 是推上远端的 bundle（`run.sh`/`env.sh`/`data/`），同级放拉回暂存（`remote-run.log`、`pull.offset`、`ckpt/`、`artifacts-prefetch/`），不随 rsync 上行。
 
 迁移写入顺序固定「先索引后 meta」：crash 只丢 meta 新版本，rescan 以索引最后态回补；反过来会把已生效迁移回滚成旧态。
 
 **exec_local**：`jobs submit`（或 `POST /api/jobs`）建档后 spawn detached helper `momoctl jobs exec <ID>`（内部命令，CLI 不可见）。helper 是状态机的唯一写入方：写 `runner_pid` 认领 → `preparing` → spawn payload 记 `pid`（process identity）→ `running` → stdout/stderr 增量并入 `logs/<id>.log` → 按 exit code 落 `succeeded`/`failed`；cancel 请求（`canceling`）由 helper 的 wait 返回或 cancel 命令自身收尾到 `canceled`。主进程退出后 helper 继续跑，CLI 与 Web 读写同一 store 无内存共享；非 queued 状态下 exec 是 no-op，绝不重复 launch。
 
-**rescan（重启恢复）**：`momoctl web` 对外接 API 前、以及 CLI/Web 每次读侧入口（list/status/log/cancel）先跑 `store.reconcile()`：回放 `jobs.jsonl`（坏行跳过 warn）对齐落后 meta（终态不反转），再按 process identity 收口非终态 job——`runner_pid` 活着说明迁移仍由 runner 负责（`recovering` 回 `running`）；runner 死亡则探 payload `pid`：确认存活 → `running`（adopt，不重复 launch）；确认消亡 → `failed("interrupted: runner restart")`（`canceling` 中 → `canceled`）；无法确认（`remote_id` 的 SSH job 或 pid 缺失）→ `recovering` 等 #51 接管；`queued/preparing` 未被认领超 60s 宽限 → `failed("interrupted: runner never claimed the job")`。每条修正 append 索引 + fsync，与 runner 写路径同构。
+**exec_ssh**（`jobs/ssh.rs`，issue #51）：`jobs submit --executor ssh --host <alias>` 走远端执行，helper 仍是状态机唯一写入方，远端不跑任何 momo 组件：
+
+1. **bundle staging**：submit 把 `bundles/<id>/payload/` 写好——`run.sh`（监督脚本：记 `job.pid`/`payload.pid`，起 payload，`wait` 后写 `exit.code`）、`env.sh`（env 白名单 `export` 行）、`data/`（`--data` 附带文件）。**env 白名单按名过滤**：`*_API_KEY`、含 `_TOKEN`/`_SECRET`/`_PASSWORD`/`_CREDENTIAL`/`_PRIVATE_KEY` 的键一律丢弃并 warn，绝不推上借来的机器（borrowed-etiquette.md）；meta 只记键名 `env_keys`，值只进 bundle 不进 store/API。
+2. **push + launch**：helper `rsync -az` 推 bundle 到 `<remote_dir>/<id>`（host/user/key 全部交给 `~/.ssh/config` 与 job 字段，ssh 走 `BatchMode`+`ConnectTimeout`），再 `ssh 'nohup sh <dir>/run.sh > run.log 2>&1 </dev/null & echo $!'` 远端 detached launch，回读的远端 pid 记 `remote_id` → `running`。
+3. **周期拉回**：helper 每轮 probe + 增量 rsync 拉回 `run.log` 追加进 `logs/<id>.log`（CLI `jobs log` 与 SSE `/api/jobs/{id}/logs` 同文件，日志路径与本地 job 完全一致）；`ckpt/` 按周期（默认 5min）增量拉回 `bundles/<id>/ckpt/` 本地快照。
+4. **process identity**：`kill -0 <pid>` + `ps -o args= -p <pid>` 须含 `<remote_dir>/run.sh` 标记——pid 被复用时 args 不含 job 目录即判消亡；`remote_id` 缺失时 `pgrep -f <dir>/run.sh` 找回 pid。
+5. **收口**：probe 确认进程消亡（链路必须通）→ 终拉日志/ckpt → 读 `exit.code`：0 且给了 `--artifact-name` → rsync 拉 `artifacts/` 到 `${MOMO_MODELS_DIR}/<name>`，逐文件 sha256+size 写 `models.lock`（`local/<name>@<job_id>` 条目，train-manifest.json 随产物同行）→ `succeeded`；非零 → `failed`；无 exit.code → `failed("remote process exited without status")`。
+6. **断线 recovering**：链路失败（ssh 255/超时）→ `recovering`，按 `recover_poll` 持续重查；确认同一进程存活 → `running` 续传；确认消亡才收口；**未确认前绝不重复 launch**（launch 回复丢失同样进 `recovering`，由 `pgrep` 标记找回）。helper 死亡时 reconcile 把 ssh job 收口为 `recovering`，`jobs recover <ID>`（或 `POST /api/jobs/{id}/recover`）重挂 helper 恢复监控——recovering job 的 cancel 只落 `cancel_requested` 标记，helper 重连后补刀收口 `canceled`。
+7. **4090D 纪律**（borrowed-etiquette.md）：`--lease-hours` 换算释放时刻 `release_ms` 落盘；距释放不足 1h 时把远端 `artifacts/` 预拉快照到 `bundles/<id>/artifacts-prefetch/`（机器被回收前产物已攥在手里，收口时远端拉不到则回退用快照登记）；checkpoint 每 2h 落盘是训练脚本自身纪律，runner 只做周期拉回。
+
+传输抽象在 `Transport` trait（`push/pull/launch/probe/find/read/stop`）：生产走 `SystemTransport`（ssh/rsync 外部命令），单测注入 fake（本地沙盒目录模拟远端 FS + 真 spawn `sh run.sh`），不需要真实远端。Windows 无可靠 OpenSSH+rsync 组合，`--executor ssh` 直接报 unsupported（exit 2）。
+
+**rescan（重启恢复）**：`momoctl web` 对外接 API 前、以及 CLI/Web 每次读侧入口（list/status/log/cancel/recover）先跑 `store.reconcile()`：回放 `jobs.jsonl`（坏行跳过 warn）对齐落后 meta（终态不反转），再按 process identity 收口非终态 job——`runner_pid` 活着说明迁移仍由 runner 负责（`recovering` 回 `running`）；runner 死亡则探 payload `pid`：确认存活 → `running`（adopt，不重复 launch）；确认消亡 → `failed("interrupted: runner restart")`（`canceling` 中 → `canceled`）；无法确认（`remote_id` 的 SSH job 或 pid 缺失）→ `recovering`，由 `jobs recover` 重挂 exec_ssh helper 接管；`queued/preparing` 未被认领超 60s 宽限 → `failed("interrupted: runner never claimed the job")`。每条修正 append 索引 + fsync，与 runner 写路径同构。
 
 **REST**（`/api/jobs`，JSON 顶层恒 `schema:1`）：
 
 | 端点 | 说明 |
 |---|---|
 | `GET /api/jobs` | 全量列表（created_at 升序） |
-| `POST /api/jobs` | 提交：`{kind?, desc?, args:[argv...]}`，同 `jobs submit` |
+| `POST /api/jobs` | 提交：`{kind?, executor?, ssh?, desc?, args:[argv...]}`，同 `jobs submit`；`executor:"ssh"` 时 `ssh:{host,user?,key?,remote_dir?,env?,data?,artifact_name?,lease_hours?}` 必填（env 的 null value = 取 server 进程 env） |
 | `GET /api/jobs/{id}` | 单条 record；未知 id → JSON 404 |
-| `POST /api/jobs/{id}/cancel` | 同 `jobs cancel`；终态幂等 |
+| `POST /api/jobs/{id}/cancel` | 同 `jobs cancel`；终态幂等；recovering ssh job 只记 `cancel_requested` |
+| `POST /api/jobs/{id}/recover` | 同 `jobs recover`；非 ssh job → 400 |
 | `GET /api/jobs/{id}/logs?cursor=N` | SSE tail：`event: log` 携 `{cursor, chunk}`；终态排空后 `event: end` 关流；cursor 越界（截断）从 0 重读 |
 ## 训练 pipeline 编排（`momoctl pipeline`）
 
