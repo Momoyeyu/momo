@@ -312,13 +312,13 @@ pub fn recover(store: &JobStore, id: &str) -> Result<(JobRecord, &'static str), 
     let rec = store
         .load(id)?
         .ok_or_else(|| AppError::Config(format!("job {id} not found")))?;
-    if rec.status.is_terminal() {
-        return Ok((rec, "already terminal"));
-    }
     if rec.executor != crate::jobs::JobExecutor::Ssh {
         return Err(AppError::Config(format!(
             "job {id} is not an ssh job (local jobs are adopted automatically)"
         )));
+    }
+    if rec.status.is_terminal() {
+        return Ok((rec, "already terminal"));
     }
     if rec.runner_pid.is_some_and(proc::is_alive) {
         return Ok((rec, "runner alive"));
