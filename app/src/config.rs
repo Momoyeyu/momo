@@ -30,6 +30,8 @@ pub struct Config {
     pub asr_endpoint: Url,
     /// `MOMO_UI_DIR`，设了且存在则 ServeDir 托管 `web/dist`。
     pub ui_dir: Option<PathBuf>,
+    /// `MOMO_PERSONA_FILE`，persona card 路径；读不到回退内嵌 card。
+    pub persona_file: PathBuf,
     /// `MOMO_LOG_LEVEL`。
     pub log_level: String,
     /// `MOMO_LOG_FORMAT`。
@@ -119,6 +121,8 @@ impl Config {
         let ui_dir = get("MOMO_UI_DIR")
             .filter(|v| !v.is_empty())
             .map(PathBuf::from);
+        let persona_file =
+            PathBuf::from(parse("MOMO_PERSONA_FILE", "persona/momo.yaml").unwrap_or_default());
         let log_level = parse("MOMO_LOG_LEVEL", "info").unwrap_or_else(|| "info".into());
         let log_format = typed(&mut parse, "MOMO_LOG_FORMAT", "pretty", &mut errors);
         let barge_in_enabled = typed(&mut parse, "MOMO_BARGEIN_ENABLED", "true", &mut errors);
@@ -153,6 +157,7 @@ impl Config {
             tts_endpoint: tts_endpoint.unwrap(),
             asr_endpoint: asr_endpoint.unwrap(),
             ui_dir,
+            persona_file,
             log_level,
             log_format: log_format.unwrap(),
             barge_in_enabled: barge_in_enabled.unwrap(),

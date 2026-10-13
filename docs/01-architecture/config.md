@@ -33,6 +33,7 @@ flowchart LR
 |---|---|---|---|---|---|
 | `MOMO_ORCH_LISTEN` | WS + 静态 UI 监听地址 | `127.0.0.1:7800` | host:port | app, infra | 否 |
 | `MOMO_UI_DIR` | 前端静态目录（打包内嵌时忽略） | `./web/dist` | path | app | 否 |
+| `MOMO_PERSONA_FILE` | persona card 路径；读不到回退内嵌 card，每回合重读（热加载） | `persona/momo.yaml` | path | app | 否 |
 | `MOMO_WEB_ORIGIN` | 浏览器来源（CORS/WS Origin 白名单） | `http://localhost:5173` | URL | app | 否 |
 | `MOMO_UI_TOKEN` | `/ws/ui` hello 的期望 `auth_token`；desktop 启动时注入，空=standalone dev 不比对（字段仍必填） | 空 | str | app | **是** |
 | `MOMO_LLM_ENDPOINT` | 大脑 OpenAI-compatible base URL | `http://mac-studio.local:7820/v1` | URL | app, infra | 否 |
@@ -116,6 +117,7 @@ MOMO_MODELS_DIR=~/.cache/momo/models
 # 编排器（momo-app / momod）
 MOMO_ORCH_LISTEN=127.0.0.1:7800
 MOMO_UI_DIR=./web/dist
+MOMO_PERSONA_FILE=persona/momo.yaml
 MOMO_WEB_ORIGIN=http://localhost:5173   # 浏览器来源白名单（vite dev）
 MOMO_UI_TOKEN=               # 敏感：/ws/ui hello auth_token；desktop 启动注入，空=dev 不校验
 MOMO_LLM_ENDPOINT=http://mac-studio.local:7820/v1

@@ -11,6 +11,7 @@ use async_trait::async_trait;
 use futures_util::stream;
 use momo_app::{
     error::AppError,
+    persona::Persona,
     pipeline::{
         llm::{ChatRequest, ChatStream, LlmClient},
         splitter::Sentence,
@@ -82,6 +83,7 @@ fn spawn_session(llm: Option<Arc<MockLlm>>) -> (SessionHandle, mpsc::Receiver<Ou
         barge_in_enabled: true,
         barge_in_min: Duration::from_millis(250),
         resume_ttl: Duration::from_secs(60),
+        persona: Persona::new(std::path::PathBuf::from("persona/momo.yaml")),
     };
     let handle = Session::spawn(
         "sess_test".into(),
@@ -300,13 +302,18 @@ async fn completed_turn_commits_into_next_prompt() {
     let _t2 = open_text_turn(&handle, &mut rx, "in_2", "问二").await;
     let _feed2 = take_feed(&llm).await;
     let req = llm.requests.lock().expect("mock")[1].clone();
-    assert_eq!(req.len(), 3, "history(user+assistant) + current user");
-    assert_eq!(req[0].content, "问一");
-    assert_eq!(req[0].role, Role::User);
-    assert_eq!(req[1].content, "答一。");
-    assert_eq!(req[1].role, Role::Assistant);
-    assert!(!req[1].partial);
-    assert_eq!(req[2].content, "问二");
+    assert_eq!(
+        req.len(),
+        4,
+        "system + history(user+assistant) + current user"
+    );
+    assert_eq!(req[0].role, Role::System, "persona system prompt first");
+    assert_eq!(req[1].content, "问一");
+    assert_eq!(req[1].role, Role::User);
+    assert_eq!(req[2].content, "答一。");
+    assert_eq!(req[2].role, Role::Assistant);
+    assert!(!req[2].partial);
+    assert_eq!(req[3].content, "问二");
 }
 
 #[tokio::test]
@@ -473,12 +480,13 @@ async fn barge_in_stops_audio_and_commits_played_prefix() {
     let _t2 = open_text_turn(&handle, &mut rx, "in_2", "问二").await;
     let _feed2 = take_feed(&llm).await;
     let req = llm.requests.lock().expect("mock")[1].clone();
-    assert_eq!(req.len(), 3);
-    assert_eq!(req[0].content, "问");
-    assert_eq!(req[1].content, "第一句。");
-    assert!(req[1].partial, "interrupted assistant msg is partial");
+    assert_eq!(req.len(), 4);
+    assert_eq!(req[0].role, Role::System);
+    assert_eq!(req[1].content, "问");
+    assert_eq!(req[2].content, "第一句。");
+    assert!(req[2].partial, "interrupted assistant msg is partial");
     assert!(!req.iter().any(|m| m.content.contains("第二句")));
-    assert_eq!(req[2].content, "问二");
+    assert_eq!(req[3].content, "问二");
 }
 
 #[tokio::test]

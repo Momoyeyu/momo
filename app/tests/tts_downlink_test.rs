@@ -19,6 +19,7 @@ use futures_util::{SinkExt, StreamExt};
 use momo_app::{
     config::Config,
     error::AppError,
+    persona::Persona,
     pipeline::{
         llm::{ChatRequest, ChatStream, LlmClient},
         tts::MomoWsTts,
@@ -232,6 +233,7 @@ fn test_state(llm: Arc<MockLlm>, tts_url: url::Url) -> Arc<AppState> {
         barge_in_enabled: true,
         barge_in_min: Duration::from_millis(120),
         resume_ttl: Duration::from_secs(60),
+        persona: Persona::new(std::path::PathBuf::from("persona/momo.yaml")),
     };
     Arc::new(AppState {
         config: Arc::new(Config::load(|_| None).expect("default config")),
