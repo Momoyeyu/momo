@@ -1,4 +1,19 @@
 :root {
+  --chat-w: 372px;
+  /* 舞台安全区：人物落位避开右侧聊天面板与底部对话框（stage.ts 读取） */
+  --stage-safe-right: calc(var(--chat-w) + 32px);
+  --dialog-zone-h: 190px;
+  --stage-model-wfrac: 0.46;
+  --pink: #f472a8;
+  --pink-deep: #e2558f;
+  --pink-soft: #ffd7e6;
+  --panel: rgba(255, 250, 247, 0.82);
+  --ink: #5b4750;
+  --ink-soft: #9b8391;
+  --shadow-soft: 0 8px 32px rgba(226, 85, 143, 0.18);
+  font-family: "Yuanti SC", "Hiragino Maru Gothic ProN", "PingFang SC", "Microsoft YaHei UI",
+    system-ui, sans-serif;
+  color: var(--ink);
 }
 
 html,
@@ -8,6 +23,82 @@ body,
   height: 100%;
 }
 
+body {
+  background: #fdeef3;
+  overflow: hidden;
+}
+
+/* ---------- 舞台层 ---------- */
+
+#stage-bg {
+  position: fixed;
+  inset: 0;
+  background: url("/stage/stage-room.jpg") center / cover no-repeat;
+  transform: scale(1.02);
+}
+
+#stage-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(214, 130, 160, 0.16) 100%),
+    linear-gradient(to top, rgba(255, 214, 229, 0.35), transparent 30%);
+}
+
+/* 角色身后的柔光，把她从背景里托出来；位置跟随安全区中心（stage.ts 同一口径）。 */
+#stage-spotlight {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    40% 50% at calc((100% - var(--stage-safe-right)) / 2)
+      calc((100% - var(--dialog-zone-h)) * 0.54),
+    rgba(255, 255, 255, 0.55),
+    transparent 70%
+  );
+}
+
+/* 脚下接触影：站在对话框上沿而不被遮住。 */
+#stage-shadow {
+  position: fixed;
+  bottom: calc(var(--dialog-zone-h) - 24px);
+  left: calc((100% - var(--stage-safe-right)) / 2);
+  transform: translateX(-50%);
+  width: min(300px, 30vw);
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(122, 74, 92, 0.4), transparent 72%);
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+#stage-particles i {
+  position: fixed;
+  bottom: -4vh;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(255, 214, 230, 0.35) 70%);
+  filter: blur(1px);
+  opacity: 0;
+  animation: float-up linear infinite;
+}
+
+#stage-particles i:nth-child(1) { left: 6%; width: 10px; height: 10px; animation-duration: 12s; }
+#stage-particles i:nth-child(2) { left: 18%; width: 6px; height: 6px; animation-duration: 9s; animation-delay: 2s; }
+#stage-particles i:nth-child(3) { left: 30%; width: 12px; height: 12px; animation-duration: 14s; animation-delay: 5s; }
+#stage-particles i:nth-child(4) { left: 44%; width: 7px; height: 7px; animation-duration: 10s; animation-delay: 1s; }
+#stage-particles i:nth-child(5) { left: 56%; width: 9px; height: 9px; animation-duration: 13s; animation-delay: 4s; }
+#stage-particles i:nth-child(6) { left: 68%; width: 6px; height: 6px; animation-duration: 9.5s; animation-delay: 6s; }
+#stage-particles i:nth-child(7) { left: 80%; width: 11px; height: 11px; animation-duration: 15s; animation-delay: 3s; }
+#stage-particles i:nth-child(8) { left: 90%; width: 7px; height: 7px; animation-duration: 11s; animation-delay: 7s; }
+
+@keyframes float-up {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  8% { opacity: 0.9; }
+  85% { opacity: 0.7; }
+  100% { transform: translateY(-104vh) translateX(3vw); opacity: 0; }
+}
+
 #stage {
   position: fixed;
   inset: 0;
@@ -15,71 +106,463 @@ body,
   height: 100%;
 }
 
+
+#subtitle {
   position: fixed;
+  left: 50%;
+  bottom: 26px;
+  /* 在舞台区（视口扣掉聊天面板）内居中 */
+  transform: translateX(calc(-50% - var(--chat-w) / 2));
+  width: min(760px, calc(100vw - var(--chat-w) - 72px));
+  padding: 22px 30px 20px;
+  background: linear-gradient(180deg, rgba(255, 253, 250, 0.96), rgba(255, 244, 248, 0.94));
+  border: 2.5px solid #ffc9dd;
+  border-radius: 22px;
+  box-shadow: 0 12px 40px rgba(226, 85, 143, 0.22), inset 0 1px 0 #fff;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  z-index: 20;
+}
+
+#subtitle[hidden] {
+  display: none;
+}
+
+body.chat-closed #subtitle {
+  transform: translateX(-50%);
+}
+
+#subtitle-name {
+  position: absolute;
+  top: -16px;
+  left: 26px;
+  padding: 4px 18px;
+  background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: 0 4px 12px rgba(226, 85, 143, 0.35);
+}
+
+#subtitle-text {
+  margin: 0;
+  min-height: 1.75em;
+  font-size: 19px;
+  line-height: 1.75;
+  color: #4a3b42;
+  white-space: pre-wrap;
+}
+
+/* TTS 降级句：斜体区分「没有配音的文字」。 */
+#subtitle.text-only #subtitle-text {
+  font-style: italic;
+  color: #8d7a84;
+}
+
+/* 续行提示：打字中隐藏，整句显示完后闪烁。 */
+#subtitle-next {
+  position: absolute;
+  right: 20px;
+  bottom: 10px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--pink);
+  animation: bob 1s ease-in-out infinite;
+}
+
+#subtitle.typing #subtitle-next {
+  display: none;
+}
+
+@keyframes bob {
+  50% { transform: translateY(3px); }
+}
+
+/* ---------- 直播间聊天面板 ---------- */
+
+#chat-toggle {
+  position: fixed;
+  top: 18px;
+  right: calc(var(--chat-w) + 26px);
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffb3cd, var(--pink));
+  color: #fff;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.25s, right 0.25s;
+}
+
+#chat-toggle:hover {
+  transform: scale(1.08);
+}
+
+body.chat-closed #chat-toggle {
   right: 16px;
+}
+
+#chat-panel {
+  position: fixed;
   top: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 30;
   display: flex;
   flex-direction: column;
+  width: var(--chat-w);
+  background: var(--panel);
+  backdrop-filter: blur(16px) saturate(1.2);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  transition: transform 0.28s ease;
 }
 
+body.chat-closed #chat-panel {
+  transform: translateX(calc(100% + 24px));
 }
 
+#chat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #ff9ec2, var(--pink) 60%, var(--pink-deep));
+  color: #fff;
 }
 
+.chat-header-icon {
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.15));
 }
 
+#chat-header h1 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.05em;
 }
 
+#chat-header p {
+  margin: 0;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.85;
 }
 
+#chat {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--pink-soft) transparent;
 }
 
+#chat::-webkit-scrollbar {
+  width: 6px;
 }
 
+#chat::-webkit-scrollbar-thumb {
+  background: var(--pink-soft);
+  border-radius: 3px;
 }
 
+/* 空面板提示：首条气泡出现后自动消失。 */
+#chat:empty::before {
+  content: "还没有消息，来和 momo 打个招呼吧～";
+  margin: auto;
+  padding: 0 24px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #c9aebc;
 }
 
+.bubble {
+  max-width: 86%;
+  padding: 8px 12px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  animation: bubble-in 0.22s ease-out;
 }
 
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
 }
 
+.bubble.assistant {
+  align-self: flex-start;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fff;
+  border: 1.5px solid #ffe1ec;
+  border-bottom-left-radius: 6px;
+  box-shadow: 0 2px 8px rgba(226, 85, 143, 0.1);
 }
 
+.bubble-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffc1d9, var(--pink));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(226, 85, 143, 0.3);
 }
 
 .bubble.user {
   align-self: flex-end;
+  background: linear-gradient(135deg, #ff9ec2, var(--pink));
   color: #fff;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 2px 8px rgba(226, 85, 143, 0.25);
 }
 
+/* ASR partial 草稿气泡：虚线 + 呼吸提示「正在听」；final 定稿后替换（#147）。 */
 .bubble.user.draft {
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--pink-deep);
+  border: 1.5px dashed #f9a8c5;
   font-style: italic;
+  animation: bubble-in 0.22s ease-out, draft-pulse 1.6s ease-in-out infinite;
 }
 
+@keyframes draft-pulse {
+  50% { border-color: var(--pink); }
 }
 
+.bubble-text {
+  white-space: pre-wrap;
 }
 
+/* 气泡情感位：8 个固定 tag 的贴纸样式（protocol §2）。 */
+.emotion-tag {
+  display: inline-block;
+  margin: 0 6px 2px 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
+.emotion-neutral { background: #efe9ec; color: #8d7a84; }
+.emotion-happy { background: #ffe9b8; color: #b27d0d; }
+.emotion-sad { background: #dbeafe; color: #3b6fb5; }
+.emotion-angry { background: #ffd9d4; color: #c94f3d; }
+.emotion-surprised { background: #ffe4cf; color: #c2701d; }
+.emotion-thinking { background: #d5f3ee; color: #1d8a7a; }
+.emotion-shy { background: #ffd9ea; color: #d14f92; }
+.emotion-sleepy { background: #e3defc; color: #6c5fb5; }
+
+/* ---------- 输入区 ---------- */
 
 #composer {
   display: flex;
   gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-top: 1.5px solid #ffe1ec;
 }
 
 #composer-input {
   flex: 1;
+  min-width: 0;
+  padding: 9px 14px;
+  border: 1.5px solid #ffd0e0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+#composer-input:focus {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(244, 114, 168, 0.18);
+}
+
+#composer-input::placeholder {
+  color: #c9aebc;
+}
+
+#composer-send,
+#mic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
   border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff9ec2, var(--pink-deep));
   color: #fff;
   cursor: pointer;
+  box-shadow: 0 3px 10px rgba(226, 85, 143, 0.3);
+  transition: transform 0.15s;
 }
+
+#composer-send:hover,
+#mic:hover {
+  transform: scale(1.08);
+}
+
+#composer-send:active,
+#mic:active {
+  transform: scale(0.94);
+}
+
+#mic {
+  background: linear-gradient(135deg, #c4b5fd, #a78bfa);
+  box-shadow: 0 3px 10px rgba(139, 109, 227, 0.3);
+}
+
+#mic.recording {
+  background: linear-gradient(135deg, #fb7185, #e11d48);
+  animation: rec-pulse 1s ease-in-out infinite;
+}
+
+@keyframes rec-pulse {
+  50% { box-shadow: 0 0 0 8px rgba(225, 29, 72, 0.18); }
+}
+
+/* ---------- 状态与降级提示 ---------- */
 
 #status {
   position: fixed;
   left: 16px;
+  top: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
   font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+#status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f5b301;
+}
+
+#status[data-conn="open"]::before {
+  background: #34c98e;
+}
+
+#status[data-conn="connecting"]::before {
+  animation: bob 1s infinite;
+}
+
+#status[data-conn="closed"]::before {
+  background: #d0c4cb;
+}
+
+/* 模型加载失败降级提示：可见但不阻断聊天。 */
+#avatar-fallback {
+  position: fixed;
+  left: 16px;
+  top: 62px;
+  z-index: 40;
+  max-width: 300px;
+  padding: 10px 14px;
+  border: 1.5px solid #ffb4c0;
+  border-radius: 14px;
+  background: rgba(255, 245, 247, 0.95);
+  color: #c2445f;
+  box-shadow: var(--shadow-soft);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+#avatar-fallback[hidden] {
+  display: none;
+}
+
+/* ---------- 响应式 ---------- */
+
+@media (max-width: 1100px) {
+  :root {
+    --chat-w: 320px;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --chat-w: min(88vw, 340px);
+    /* 窄屏面板为浮层不占布局：安全区右留白归零，人物居中 */
+    --stage-safe-right: 0px;
+    --dialog-zone-h: 176px;
+    /* 窄屏人物放大一档 */
+    --stage-model-wfrac: 0.62;
+  }
+
+  #subtitle {
+    transform: translateX(-50%);
+    width: calc(100vw - 32px);
+    bottom: 16px;
+    padding: 18px 20px 16px;
+  }
+
+  #subtitle-text {
+    font-size: 16px;
+  }
+
+  #chat-panel {
+    top: 64px;
+    right: 12px;
+    bottom: 12px;
+  }
+
+  #chat-toggle {
+    top: 12px;
+    right: calc(var(--chat-w) + 20px);
+  }
+
+  body.chat-closed #chat-toggle {
+    right: 12px;
+  }
+
+  #status {
+    top: 12px;
+    left: 12px;
+  }
 }

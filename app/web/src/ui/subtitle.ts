@@ -208,13 +208,42 @@ export class SubtitleController {
   }
 }
 
+const TYPEWRITER_MS = 26;
+
+/** 绑定 #subtitle 对话框 DOM（名牌 + #subtitle-text）；返回控制器供 main.ts 接 ws 事件。 */
 export function initSubtitle(el: HTMLElement): SubtitleController {
+  const textEl = el.querySelector<HTMLElement>("#subtitle-text") ?? el;
+  let typeTimer: number | null = null;
+
+  /** 停打字机；finish=true 表示整句显完（露出续行提示）。 */
+  function stopTyping(finish: boolean): void {
+    if (typeTimer !== null) {
+      window.clearInterval(typeTimer);
+      typeTimer = null;
+    }
+    if (finish) el.classList.remove("typing");
+  }
+
   return new SubtitleController({
     show(text, _emotion, textOnly) {
+      stopTyping(false);
       el.classList.toggle("text-only", textOnly);
+      el.classList.add("typing");
       el.hidden = false;
+      textEl.textContent = "";
+      let i = 0;
+      const step = () => {
+        i += 1;
+        textEl.textContent = text.slice(0, i);
+        if (i >= text.length) stopTyping(true);
+      };
+      step();
+      if (i < text.length) {
+        typeTimer = window.setInterval(step, TYPEWRITER_MS);
+      }
     },
     hide() {
+      stopTyping(true);
       el.hidden = true;
     },
   });

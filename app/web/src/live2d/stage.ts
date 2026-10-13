@@ -53,6 +53,13 @@ export function ensureCubismCore(): Promise<void> {
   return corePromise;
 }
 
+/** 读取 :root 上的数值 CSS 变量（px 或无量纲值；解析失败按 fallback）。 */
+function readCssNum(name: string, fallback: number): number {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name);
+  const v = Number.parseFloat(raw);
+  return Number.isFinite(v) ? v : fallback;
+}
+
 export class Live2DStage {
   private app: PIXI.Application | null = null;
   // pixi-live2d-display 类型与其 pixi 版本耦合，按 any 处理。
@@ -88,11 +95,22 @@ export class Live2DStage {
     this.fitModel();
   }
 
+  /** 模型缩放/落位：在安全区（视口扣右侧聊天面板、底部对话框区，CSS 变量
+   * --stage-safe-right / --dialog-zone-h）内居中，底边贴对话框上沿——
+   * 人物不被面板/对话框遮挡（pet 形态）。 */
   private fitModel(): void {
     if (!this.app || !this.model || !this.bounds) return;
     const { screen } = this.app.renderer;
+    const safeRight = readCssNum("--stage-safe-right", 0);
+    const safeBottom = readCssNum("--dialog-zone-h", 0);
+    const availW = Math.max(0, screen.width - safeRight);
+    const availH = Math.max(0, screen.height - safeBottom);
+    const widthFrac = readCssNum("--stage-model-wfrac", 0.46);
     const b = this.bounds;
+    const scale = Math.min((availW * widthFrac) / b.width, (availH * 0.92) / b.height);
     this.model.scale.set(scale);
+    this.model.x = (availW - b.width * scale) / 2 - b.x * scale;
+    this.model.y = availH - (b.y + b.height) * scale;
   }
 
   /** 口型：写 ParamMouthOpenY（0..1），由 player worklet 的 RMS 驱动。 */
