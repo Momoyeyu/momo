@@ -238,6 +238,13 @@ fn origin_allowlist() {
         assert!(server::origin_allowed(&h, &config), "origin {o}");
     }
 
+    // momod 自托管 UI（MOMO_UI_DIR）时浏览器源 = http://{orch_listen}（默认 7800）。
+    h.insert(
+        header::ORIGIN,
+        HeaderValue::from_static("http://127.0.0.1:7800"),
+    );
+    assert!(server::origin_allowed(&h, &config));
+
     // 自定义 MOMO_WEB_ORIGIN 生效，旧默认不再放行。
     let config =
         Config::load(|key| (key == "MOMO_WEB_ORIGIN").then(|| "http://127.0.0.1:5173".to_string()))

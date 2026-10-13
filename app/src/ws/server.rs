@@ -93,14 +93,17 @@ async fn ws_ui(
         .into_response()
 }
 
-/// Origin ∈ {desktop origins} ∪ {`MOMO_WEB_ORIGIN`}；missing 一律拒绝。
+/// Origin ∈ {desktop origins} ∪ {`MOMO_WEB_ORIGIN`} ∪ {`MOMO_UI_DIR` 自托管源}；
+/// missing 一律拒绝。
 ///
 /// `pub` 供测试直接对拍白名单逻辑（真 upgrade 路径由 axum extractor 链保证）。
 pub fn origin_allowed(headers: &HeaderMap, config: &Config) -> bool {
     let Some(origin) = headers.get(header::ORIGIN).and_then(|v| v.to_str().ok()) else {
         return false;
     };
-    origin == config.web_origin || DESKTOP_ORIGINS.contains(&origin)
+    // UI 由 momod 自身托管（MOMO_UI_DIR）时，浏览器源即 http://{orch_listen}。
+    let self_served = format!("http://{}", config.orch_listen);
+    origin == config.web_origin || origin == self_served || DESKTOP_ORIGINS.contains(&origin)
 }
 
 /// CORS：`MOMO_WEB_ORIGIN` 白名单；解析失败退化为放开（dev 兜底）。
