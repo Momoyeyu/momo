@@ -132,9 +132,19 @@ describe.skipIf(!URL_ENV)("ws e2e（需运行 momod）", () => {
     );
     bad[3] = 0x02;
     c.send(bad);
-    const err = await c.take();
-    expect(err.type).toBe("text");
-    expect(JSON.parse(err.text!)).toMatchObject({ type: "error", code: "BAD_MESSAGE" });
+    // input.audio.start 已先回 input.accepted（ref_id=capture_id）排在 error 之前，
+    // 逐条消费直到取到 error；顺带校验 accepted 回执确实到达。
+    let errJson: Record<string, unknown> | null = null;
+    let sawAccepted = false;
+    for (let i = 0; i < 4 && !errJson; i++) {
+      const m = await c.take();
+      if (m.type !== "text") continue;
+      const j = JSON.parse(m.text!);
+      if (j.type === "input.accepted" && j.ref_id === captureId) sawAccepted = true;
+      if (j.type === "error") errJson = j;
+    }
+    expect(sawAccepted).toBe(true);
+    expect(errJson).toMatchObject({ type: "error", code: "BAD_MESSAGE" });
     c.close();
   });
 
