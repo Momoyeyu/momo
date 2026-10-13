@@ -89,6 +89,16 @@ fn wait_running_pid(
         if job["pid"].is_u64()
             || ["succeeded", "failed", "canceled"].contains(&job["status"].as_str().unwrap_or(""))
         {
+            if let Some(pid) = job["pid"].as_u64() {
+                // sleeper 是 `serve logs -f`：启动时向 runner 的 stdout 管写头部。
+                // 若此后立刻杀 runner，首写撞 EPIPE 会让 payload 退出——给一拍
+                // 让启动输出先排空，并确认 payload 健在（区分自退与后杀）。
+                std::thread::sleep(Duration::from_millis(600));
+                assert!(
+                    momo_infra::serve::proc::is_alive(pid as u32),
+                    "payload {pid} exited on its own before running was observed"
+                );
+            }
             return job.clone();
         }
         if Instant::now() >= deadline {

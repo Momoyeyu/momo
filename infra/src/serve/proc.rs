@@ -346,7 +346,7 @@ pub(crate) fn job_active(component: &str) -> bool {
 }
 
 /// 测试诊断：直接查询 pid 是否仍在具名 Job 内（区分「从未挂进」与「杀不动」）。
-#[cfg(windows)]
+#[cfg(all(windows, test))]
 pub(crate) fn pid_in_job(component: &str, pid: u32) -> Option<bool> {
     use windows_sys::Win32::Foundation::{CloseHandle, BOOL};
     use windows_sys::Win32::System::JobObjects::{IsProcessInJob, OpenJobObjectW};
