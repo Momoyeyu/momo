@@ -1,3 +1,4 @@
+// ws url、资源路径：浏览器 / Tauri 两态（momo-app.md §模块结构、desktop.md）。
 //
 // 协议不变是前提：前端永远只跟 ws://127.0.0.1:7800/ws/ui 说话；
 // 浏览器 dev 态经 vite proxy（/ws → momod），Tauri 壳内直连。

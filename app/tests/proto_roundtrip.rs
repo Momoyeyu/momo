@@ -277,6 +277,11 @@ fn all_message_types_match_golden_json() {
             }),
         ),
     ];
+    assert_eq!(
+        cases.len(),
+        23,
+        "protocol.md should have 23 goldens covering all types"
+    );
     for (file, msg) in cases {
         let want = golden(file);
         let got = serde_json::to_value(&msg).unwrap();

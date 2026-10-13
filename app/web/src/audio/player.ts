@@ -1,4 +1,5 @@
 // 音频 chunk 调度播放：PCM s16le 24kHz mono → AudioWorklet 环形缓冲逐帧排播
+// （momo-app.md §模块结构）。worklet 内算输出 RMS → mouthOpenY 平滑 →
 // onMouthOpen 回调写 Live2D ParamMouthOpenY；stop/drain 口型复位。
 
 import { FLAG_EOS } from "../net/protocol";

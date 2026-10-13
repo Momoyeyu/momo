@@ -1,5 +1,6 @@
 //! Session/回合状态机：单活跃 session、命令循环、barge-in。
 //!
+//! 迁移图见 runtime.md §turn 状态机；wire 状态枚举复用
 //! [`crate::proto::message::TurnState`]。
 
 pub mod history;

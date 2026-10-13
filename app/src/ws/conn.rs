@@ -1,4 +1,7 @@
+//! 单连接 actor：rx/tx task、帧编解码、背压（拓扑见 momo-app.md §ws 子系统）。
 //!
+//! `conn_tx` 有界 mpsc 保序不丢帧；JSON 控制帧永不丢弃，对端消费不动
+//! （stall 超 [`CONN_TX_STALL`]）则关连（protocol §10）。
 
 use std::{fmt::Display, sync::Arc, time::Duration};
 

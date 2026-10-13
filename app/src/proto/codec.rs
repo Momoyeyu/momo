@@ -1,4 +1,5 @@
 //! 帧编解码：文本帧 JSON / 二进制音频帧分流，版本握手检查。
+//! 音频帧头 32B 布局见 protocol.md「32-byte 二进制帧」，多字节字段小端序。
 
 use bytes::{Bytes, BytesMut};
 use serde::{Deserialize, Serialize};
@@ -90,6 +91,9 @@ impl AudioHeader {
     }
 
     /// 解码头并返回载荷切片。
+    /// 拒绝（`BadMessage`）：<32B、`ver`/`direction` 非法、reserved flags 非零、
+    /// 奇数字节载荷（s16le）、非 EOS 空载荷、uplink `sentence_seq != 0`；
+    /// unknown stream / seq gap / offset 错位等 stream 状态检查由上层负责。
     pub fn decode(frame: &[u8]) -> Result<(Self, &[u8]), AppError> {
         fn bad(why: &str) -> AppError {
             AppError::BadMessage(format!("audio frame: {why}"))

@@ -1,5 +1,7 @@
 //! `Session` actor：命令循环、回合状态机接线、管线回传。
 //!
+//! 唯一可变状态持有者：所有事件汇进它的 `mpsc`，内部不共享锁
+//! （momo-app.md §ws 子系统）；迁移对齐 runtime.md「turn 状态机」。
 
 
 use futures_util::StreamExt;
@@ -81,6 +83,7 @@ impl SessionDeps {
     }
 }
 
+/// 外界持有的会话句柄（momo-app.md §ws 子系统）。
 #[derive(Debug, Clone)]
 pub struct SessionHandle {
     pub id: String,

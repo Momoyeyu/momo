@@ -1,4 +1,6 @@
 //! `MomoWsTts` 集成测试：axum mock svc-tts 走真实 ws 链路对拍。
+//! 覆盖 protocol §2/§6：role=tts 握手、`audio.open` 绑定、帧序/EOS、
+//! `audio.end.last_chunk_seq`、seq gap 中止、`control.cancel` 下发。
 
 use std::future::Future;
 use std::sync::Arc;

@@ -1,4 +1,6 @@
 //! `Msg`：serde `tag = "type"` 多态，对齐 protocol.md 核心类型与必需字段表。
+//! 音频走二进制帧（[`crate::proto::codec`]）；`turn_id` 必需性落在各消息自身
+//! 字段上，[`Envelope`] 只含恒定字段与可选 `reply_to`（hello 前无 envelope）。
 
 use std::sync::{
     Arc,

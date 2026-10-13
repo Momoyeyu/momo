@@ -1,5 +1,7 @@
 //! `Turn`：回合状态机 + barge-in 取消扇出 + 已播账本。
 //!
+//! 迁移表对齐 runtime.md「turn 状态机」；非法 state×event 组合由
+//! [`transition`]/[`Turn::on_event`] 显式拒绝（`IllegalTransition`）。
 
 use std::{collections::BTreeSet, fmt};
 
@@ -107,6 +109,8 @@ fn invalidates(event: TurnEvent) -> bool {
 }
 
 /// 一个进行中/已结束的回合。
+/// `for_reply` 出生即 `Thinking`，`for_capture` 出生即 `Listening`（可在
+/// `SegmentFinal` 后同体转 reply）；状态仅经 [`Turn::on_event`] 迁移。
 #[derive(Debug)]
 pub struct Turn {
     pub id: TurnId,

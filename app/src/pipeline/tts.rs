@@ -1,3 +1,7 @@
+//! `TtsClient` trait + WS 流式实现（momo-ws v2 客户端，握手/帧流见 protocol.md §2/§4/§6）。
+//! 在途合成经 [`SENT_QUEUE_CAP`] 信号量限流（runtime.md `sentence_q`，容量 8）；
+//! `cancel` 发 `control.cancel{target:turn}`，迟到帧按 stale stream 丢弃。
+//! PCM：s16le 24kHz mono。
 
 use std::collections::HashMap;
 use std::fmt;

@@ -1,3 +1,6 @@
+//! 增量句切：标点 + 上限 + 情感 tag 提取（规则全集见 runtime.md §增量句切）。
+//! 要点：`,` 软切阈值 `soft_chars`、硬上限 `max_chars`，`[tag]` → `emotion`，
+//! code block 内不切。纯字符串操作、无依赖，单测重点。
 
 use crate::proto::message::EmotionTag;
 

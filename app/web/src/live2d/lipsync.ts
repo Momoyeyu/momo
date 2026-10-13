@@ -1,3 +1,4 @@
+// RMS → ParamMouthOpenY 平滑；情感 tag → 表情/动作（momo-app.md §模块结构）。
 // 纯函数，是 vitest 单测重点。
 
 import type { EmotionTag } from "../net/protocol";

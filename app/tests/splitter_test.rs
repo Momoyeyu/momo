@@ -1,3 +1,4 @@
+//! 句切边界用例（runtime.md §增量句切）：
 //! 标点/tag/超长/code block/ASCII lookahead/逗号软切。
 
 use momo_app::{pipeline::splitter::SentenceSplitter, proto::message::EmotionTag};
