@@ -96,6 +96,12 @@ impl EnvCfg {
         self.get("MOMO_LLM_ENDPOINT")
     }
 
+    /// `MOMO_WEB_TOKEN`（无默认）：`momoctl web` 鉴权 token；
+    /// `--listen` 绑出 loopback 时必填。返回 None 表示未配置。
+    pub fn web_token(&self) -> Option<String> {
+        self.get("MOMO_WEB_TOKEN")
+    }
+
     /// `MOMO_BRAIN_PORT`，默认 7820。
     pub fn brain_port(&self) -> u16 {
         self.get("MOMO_BRAIN_PORT")

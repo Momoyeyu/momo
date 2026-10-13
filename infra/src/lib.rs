@@ -11,6 +11,7 @@ pub mod manifest;
 pub mod net;
 pub mod output;
 pub mod serve;
+pub mod web;
 
 use cli::{Cli, Command};
 use output::AppError;
@@ -33,6 +34,7 @@ pub fn run(cli: Cli) -> i32 {
         Command::Bench(args) => cmds::bench::run(args, &ctx),
         Command::Gc(args) => cmds::gc::run(args, &ctx),
         Command::Config(args) => cmds::config::run(args, &ctx),
+        Command::Web(args) => cmds::web::run(args, &ctx),
     };
     finish(result)
 }

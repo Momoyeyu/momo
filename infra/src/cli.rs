@@ -1,4 +1,4 @@
-//! clap 命令定义：全局 `--json` / `--env-file` + 七个子命令。
+//! clap 命令定义：全局 `--json` / `--env-file` + 八个子命令。
 //! 签名对齐 momo-docs `02-repos/momo-infra.md`「子命令清单」。
 
 use std::path::PathBuf;
@@ -9,7 +9,7 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 #[command(
     name = "momoctl",
     version,
-    about = "momo ops CLI: doctor / pull / serve / switch / bench / gc / config"
+    about = "momo ops CLI: doctor / pull / serve / switch / bench / gc / config / web"
 )]
 pub struct Cli {
     /// Emit a single JSON object (versioned schema, for CI/scripts)
@@ -40,6 +40,8 @@ pub enum Command {
     Gc(GcArgs),
     /// env schema drift check (config.schema.toml vs .env.example / config.md)
     Config(ConfigArgs),
+    /// Web console: axum server, embedded SPA + /api route base
+    Web(WebArgs),
 }
 
 /// 部署档位（与 MOMO_PROFILE 取值一致）。
@@ -168,6 +170,14 @@ pub struct ConfigCheckArgs {
     /// Repo root (default: locate config.schema.toml upward from CWD)
     #[arg(long, value_name = "PATH")]
     pub root: Option<PathBuf>,
+}
+
+#[derive(Debug, Args)]
+pub struct WebArgs {
+    /// Listen address (default 127.0.0.1:7900);
+    /// non-loopback requires MOMO_WEB_TOKEN, else refuse to start (exit 2)
+    #[arg(long, value_name = "ADDR", default_value = "127.0.0.1:7900")]
+    pub listen: String,
 }
 
 #[derive(Debug, Args)]
