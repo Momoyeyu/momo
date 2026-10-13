@@ -24,8 +24,8 @@ owo-colors = "4"
 sha2 = "0.10"
 ulid = "1"
 axum = "0.8.9"
-# web server 运行时：rt-multi-thread + TcpListener + Ctrl-C + broadcast(SSE)。
-tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal", "sync"] }
+# web server 运行时：rt-multi-thread + TcpListener + Ctrl-C + broadcast(SSE) + time(SSE 轮询)。
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
 # /api/events SSE 复用 broadcast::Receiver。
 tokio-stream = { version = "0.1.19", features = ["sync"] }
 # SPA 编译期内嵌（infra/web/），不依赖部署目录。

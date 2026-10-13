@@ -26,6 +26,7 @@
 | `gc` | 模型 GC：N-1 代清理、`models.lock` 联动 | 已实现 |
 | `config check` | env schema 漂移检查（`config.schema.toml` ↔ 三侧 `.env.example` / `config.md`） | 已实现 |
 | `web` | Web 控制台基座：axum server + include_dir 内嵌 SPA + `/api` 路由树 + SSE | 已实现 |
+| `jobs submit\|list\|status\|log\|cancel` | job runner：exec_local 执行器、状态机、日志 tail；store 落 state dir（`jobs exec` 为内部 helper） | 已实现 |
 
 ### 子命令参数
 
@@ -51,6 +52,13 @@
 | `gc` | `--yes` | off | 确认执行删除（不带 `--yes` 时等价 `--dry-run`） |
 | `config check` | `--root PATH` | 从 CWD 向上定位 `config.schema.toml` | 仓库根目录 |
 | `web` | `--listen ADDR` | `127.0.0.1:7900` | 监听地址；解析结果任一非 loopback 时 `MOMO_WEB_TOKEN` 必填，未设拒启（exit 2） |
+| `jobs submit` | `--kind pull\|serve\|train` | `train` | job 来源域（执行器恒为 exec_local） |
+| `jobs submit` | `--desc TEXT` | join(argv) | 可读描述 |
+| `jobs submit` | `-- CMD [ARGS...]` | 必填 | payload 命令行；`--` 之后的参数全部按 argv 传给子进程 |
+| `jobs status` | `ID` | 必填 | job id（ULID） |
+| `jobs log` | `-n, --lines N` | `50` | 输出最后 N 行 |
+| `jobs log` | `-f, --follow` | off | 跟随新增输出；job 进终态且日志排空后退出 |
+| `jobs cancel` | `ID` | 必填 | 非终态 → canceling + SIGTERM→SIGKILL（payload pid）；终态幂等 |
 
 ### 全局 flag
 
@@ -117,7 +125,7 @@ flowchart LR
   - **token**：`MOMO_WEB_TOKEN` 已设 → `/api` 全请求（含 loopback）须 `Authorization: Bearer <token>`，缺失/不匹配 → 401；未设 → 仅 loopback peer 且 Host 回环放行（Host 检查防 DNS rebinding），否则 403。token 比对常量时间；token 值不落日志不回显（config.md §4）。
   - **CSRF**：state-changing 方法（非 GET/HEAD/OPTIONS；SSE 走 GET 属只读）须以 `X-CSRF-Token` 头回带 `GET /api/csrf` 签发的进程级 token（每启动重签发），且 `Origin`（若携带）authority 须等于 `Host`；缺失/不匹配 → 403。`/api/csrf` 响应不加 CORS 允许头，跨源页面读不到 token（SOP）。
   - 认证失败与路由错误统一 `{schema:1, error:{code,message}}`（`code` ∈ `unauthorized`/`forbidden`/`csrf`/`not_found`/`not_implemented` 等）。
-- **`/api` 路由树**：集中注册。`GET /api/` 路由索引；`GET /api/healthz` / `readyz`（server 自身探针）；`GET /api/events` SSE 通道（broadcast 基座，jobs/serve 日志复用）；`GET /api/csrf` CSRF token 签发；`GET /api/doctor`（`doctor` 检查矩阵）、`GET /api/serve/status`（组件快照）——两者复用 cmds 同名 core 函数，`?profile=normal|degraded` 可选（缺省读 `MOMO_PROFILE`），检查有 fail 仍 200（fail 是数据非 HTTP 错误，对应 CLI exit 3 语义），其余方法 → 405；`serve`/`models`/`jobs`/`config` 其余路由为 501 占位，由各功能 issue 挂 handler。`/api` 子树内未命中 → JSON 404。
+- **`/api` 路由树**：集中注册。`GET /api/` 路由索引；`GET /api/healthz` / `readyz`（server 自身探针）；`GET /api/events` SSE 通道（broadcast 基座，jobs/serve 日志复用）；`GET /api/csrf` CSRF token 签发；`GET /api/doctor`（`doctor` 检查矩阵）、`GET /api/serve/status`（组件快照）——两者复用 cmds 同名 core 函数，`?profile=normal|degraded` 可选（缺省读 `MOMO_PROFILE`），检查有 fail 仍 200（fail 是数据非 HTTP 错误，对应 CLI exit 3 语义），其余方法 → 405；`/api/jobs` 已挂真实 handler（见「jobs runner 与 store」）；`serve`/`models`/`config` 其余路由为 501 占位，由各功能 issue 挂 handler。`/api` 子树内未命中 → JSON 404。
 - **DTO 契约**：REST 出入参与 `momoctl --json` 共用 `infra/src/api/dto.rs` 一套 serde 类型（`DoctorReport`/`ServeReport`/`Check`/`Summary` 等），handler 只做「解参 → 调同一 core 函数 → 包 DTO」，不手写 `json!`；JSON 顶层恒 `schema:1`；错误统一 `{schema:1, error:{code,message}}`。`tests/api_contract_test.rs` 对同一操作两侧对跑（tower `oneshot` 免端口），锁定字段名/类型/必选性，防 CLI/Web 漂移（验收：「CLI/Web 对同一操作给出同一 schema 与状态」）。
 - **SPA**：`include_dir!` 编译期内嵌 `infra/web/`（无部署目录依赖）；命中按扩展名给 content-type，未命中回退 `index.html`（前端路由），与 `/api` 404 分流不误判。
 - **输出**：启动打印监听地址与 token 提示（值不落日志）；`--json` 输出 `{schema:1, command:"web", listen, url}`。
@@ -176,6 +184,30 @@ stateDiagram-v2
 ```
 
 重连按 remote job id 与 process identity 查询；未确认前绝不重复 launch。`canceled` 是独立终态，不写成 failed。rollback 只切回 active artifact version，不修改原 job 的 `succeeded` / `promoted` 历史状态。恢复沿用已有 checkpoint 与 training manifest，不新增训练配置或评分门槛。
+
+## jobs runner 与 store
+
+通用 job runner（`infra/src/jobs/`）实装上述状态机的本地执行子集：`queued → preparing → running → succeeded/failed`，`canceling → canceled` 独立终态；`recovering` 留给 SSH runner，`promoted` 与 `failed → preparing` retry 留给后续 issue（枚举保留取值，store/API 可反序列化）。
+
+**store 布局**：复用状态目录 `${XDG_STATE_HOME:-~/.local/state}/momo/jobs/`（不提供 `MOMO_*` 覆盖键，口径同 pidfile）：
+
+- `jobs.jsonl`：每次状态迁移 append 一行 `{id, kind, status, ts, detail?}` 并 fsync——索引是迁移的权威记录，重建时按序回放取最后态；
+- `meta/<id>.json`：`JobRecord` 全量（`id/kind/desc/args/status/created_at/updated_at/remote_id?/pid?/runner_pid?/log_path/exit?/error?`），tmp+rename 原子写；
+- `logs/<id>.log`：payload stdout/stderr 合流追加，log cursor=字节偏移。runner 诊断行以 `[runner]` 前缀写同一文件。
+
+迁移写入顺序固定「先索引后 meta」：crash 只丢 meta 新版本，rescan 以索引最后态回补；反过来会把已生效迁移回滚成旧态。
+
+**exec_local**：`jobs submit`（或 `POST /api/jobs`）建档后 spawn detached helper `momoctl jobs exec <ID>`（内部命令，CLI 不可见）。helper 是状态机的唯一写入方：写 `runner_pid` 认领 → `preparing` → spawn payload 记 `pid`（process identity）→ `running` → stdout/stderr 增量并入 `logs/<id>.log` → 按 exit code 落 `succeeded`/`failed`；cancel 请求（`canceling`）由 helper 的 wait 返回或 cancel 命令自身收尾到 `canceled`。主进程退出后 helper 继续跑，CLI 与 Web 读写同一 store 无内存共享；非 queued 状态下 exec 是 no-op，绝不重复 launch。
+
+**REST**（`/api/jobs`，JSON 顶层恒 `schema:1`）：
+
+| 端点 | 说明 |
+|---|---|
+| `GET /api/jobs` | 全量列表（created_at 升序） |
+| `POST /api/jobs` | 提交：`{kind?, desc?, args:[argv...]}`，同 `jobs submit` |
+| `GET /api/jobs/{id}` | 单条 record；未知 id → JSON 404 |
+| `POST /api/jobs/{id}/cancel` | 同 `jobs cancel`；终态幂等 |
+| `GET /api/jobs/{id}/logs?cursor=N` | SSE tail：`event: log` 携 `{cursor, chunk}`；终态排空后 `event: end` 关流；cursor 越界（截断）从 0 重读 |
 
 ## 模型激活
 
