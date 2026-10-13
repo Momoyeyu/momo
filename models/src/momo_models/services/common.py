@@ -65,9 +65,9 @@ def _error_frame(code: str, message: str, *, ref_id: str | None = None) -> dict:
 class WsContext:
     """已握手连接上下文；envelope/send_error 自动携带单调 event_seq。
 
-    所有发送走 `send`/`send_error` 并经 `_send_lock` 串行：取号与发送
-    原子，避免并发任务（接收循环 vs 业务 worker）造成 event_seq 乱序
-    或 Starlette ws 字节级交错。
+    所有发送走 `send`/`send_error`/`send_binary` 并经 `_send_lock`
+    串行：取号与发送原子，避免并发任务（接收循环 vs 业务 worker）
+    造成 event_seq 乱序或 Starlette ws 字节级交错。
     """
 
     ws: WebSocket
@@ -92,6 +92,11 @@ class WsContext:
         msg_type = payload.pop("type", None)
         async with self._send_lock:
             await self.ws.send_json({"type": msg_type, **self.envelope(), **payload})
+
+    async def send_binary(self, payload: bytes) -> None:
+        """锁内发送二进制帧（与文本发送同锁，防跨任务字节交错）。"""
+        async with self._send_lock:
+            await self.ws.send_bytes(payload)
 
     async def send_error(self, code: str, message: str) -> None:
         async with self._send_lock:

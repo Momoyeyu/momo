@@ -3,6 +3,7 @@
 import asyncio
 import contextlib
 
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from momo_models.audio import DOWNLINK_SAMPLE_RATE
@@ -10,7 +11,7 @@ from momo_models.config import Settings
 from momo_models.proto import DIR_DOWNLINK, AudioHeader, ulid_to_bytes
 from momo_models.providers.base import TTSCaps, TTSProvider, VoiceRef
 from momo_models.services.common import WsContext
-from momo_models.services.tts_service import create_app
+from momo_models.services.tts_service import _TtsLink, create_app
 
 _HELLO = {
     "type": "hello",
@@ -222,3 +223,89 @@ def test_link_contexts_independent() -> None:
     ctx = WsContext(ws=None, app=None, session_id="s")  # type: ignore[arg-type]
     assert ctx.envelope()["event_seq"] == 1
     assert ctx.envelope()["event_seq"] == 2
+
+
+class _RecordingWs:
+    """模拟底层分段写：每次 send 记 begin/data/end 三元组，begin 后
+    让出事件循环；若发送不经 _send_lock，并发任务的三元组会交错。"""
+
+    def __init__(self) -> None:
+        self.writes: list[tuple[str, int]] = []
+        self.jsons: list[dict] = []
+        self.bins: list[bytes] = []
+        self._token = 0
+
+    async def send_json(self, payload: dict) -> None:
+        token = self._token
+        self._token += 1
+        self.writes.append(("begin", token))
+        await asyncio.sleep(0)
+        self.jsons.append(payload)
+        self.writes.append(("data", token))
+        self.writes.append(("end", token))
+
+    async def send_bytes(self, payload: bytes) -> None:
+        token = self._token
+        self._token += 1
+        self.writes.append(("begin", token))
+        await asyncio.sleep(0)
+        self.bins.append(payload)
+        self.writes.append(("data", token))
+        self.writes.append(("end", token))
+
+
+class _YieldingTTS(_FakeTTS):
+    """块间让出事件循环，给并发 send_error 制造交错窗口。"""
+
+    def synth_stream(self, text: str, *, voice: VoiceRef, emotion: str | None):
+        async def gen():
+            for c in self.chunks:
+                yield c
+                await asyncio.sleep(0)
+
+        return gen()
+
+
+def test_synth_worker_and_error_loop_serialized() -> None:
+    """_run_synth（独立 task）发 audio.open/PCM 帧/audio.end 的同时，
+    接收循环路径并发 send_error：经同一把 _send_lock 串行 ⇒
+    event_seq 单调、底层写不交错（#126 回归）。"""
+    n_chunks = 8
+    n_errors = 12
+
+    async def run() -> _RecordingWs:
+        ws = _RecordingWs()
+        app = FastAPI()
+        app.state.settings = Settings()
+        app.state.provider = _YieldingTTS([b"\x01\x00" * 64] * n_chunks)
+        ctx = WsContext(ws=ws, app=app, session_id="sess_x")  # type: ignore[arg-type]
+        link = _TtsLink(ctx)
+        assert await link.handle(_sentence())
+        synth_tasks = list(link._tasks.values())
+        assert len(synth_tasks) == 1
+
+        async def error_loop() -> None:
+            for _ in range(n_errors):
+                await ctx.send_error("INTERNAL", "synthetic error")
+                await asyncio.sleep(0)
+
+        await asyncio.gather(error_loop(), *synth_tasks)
+        return ws
+
+    ws = asyncio.run(run())
+
+    # 文本帧齐：audio.open + audio.end + n_errors 个 error。
+    types = [m["type"] for m in ws.jsons]
+    assert types.count("audio.open") == 1
+    assert types.count("audio.end") == 1
+    assert types.count("error") == n_errors
+    # 锁内取号+发送原子 ⇒ 落地顺序即 1..N 严格单调。
+    assert [m["event_seq"] for m in ws.jsons] == list(range(1, len(ws.jsons) + 1))
+    # 数据帧 + EOS 共 n_chunks+1 个二进制帧。
+    assert len(ws.bins) == n_chunks + 1
+    # 底层写 begin/data/end 三元组连续 ⇒ 无跨任务字节交错。
+    assert len(ws.writes) % 3 == 0
+    for i in range(0, len(ws.writes), 3):
+        kinds, tokens = zip(*ws.writes[i : i + 3], strict=True)
+        assert list(kinds) == ["begin", "data", "end"]
+        assert len(set(tokens)) == 1
