@@ -154,6 +154,32 @@ pub struct ServeReport {
     pub summary: Summary,
 }
 
+/// `GET /api/serve/components` 单组件条目（内置 profile 组件表）。
+#[derive(Debug, Serialize)]
+pub struct ComponentInfo {
+    pub name: String,
+    pub order: u32,
+    /// 外部端点：只探活不拉起。
+    pub external: bool,
+    /// 仅当 MOMO_LLM_ENDPOINT 指 loopback 时才拉起。
+    pub local_endpoint_only: bool,
+}
+
+/// `GET /api/serve/components`：组件表（order 升序）+ profile。
+#[derive(Debug, Serialize)]
+pub struct ServeComponentsReport {
+    pub schema: u8,
+    pub profile: String,
+    pub components: Vec<ComponentInfo>,
+}
+
+/// `POST /api/serve/{up|down|restart}` 请求体；`only` 为空 = 全组件。
+#[derive(Debug, Deserialize)]
+pub struct ServeActionRequest {
+    #[serde(default)]
+    pub only: Vec<String>,
+}
+
 /// `serve logs` 单组件条目。
 #[derive(Debug, Serialize)]
 pub struct LogEntry {
@@ -381,6 +407,13 @@ pub struct JobLogChunk {
 #[derive(Debug, Serialize)]
 pub struct JobLogEnd {
     pub status: String,
+/// `GET /api/serve/logs/{name}/stream` 查询参数：
+/// `profile` 用于组件名校验；`cursor` 为字节偏移（SSE 断线续传，
+/// 前端也可走 `Last-Event-ID` 头）。
+#[derive(Debug, Deserialize)]
+pub struct LogStreamQuery {
+    pub profile: Option<String>,
+    pub cursor: Option<u64>,
 }
 
 /// 统一错误体。

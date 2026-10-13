@@ -271,11 +271,11 @@ async fn error_envelope_contract() {
     assert_error_envelope(&v, "not_implemented");
 
     // 占位路由 mutation：CSRF 通过 → 501（先 403 → 见下）
-    let (status, v) = call(app.clone(), req("POST", "/api/serve/up")).await;
+    let (status, v) = call(app.clone(), req("POST", "/api/jobs")).await;
     assert_eq!(status, 403);
     assert_error_envelope(&v, "csrf");
 
-    let mut r = req("POST", "/api/serve/up");
+    let mut r = req("POST", "/api/jobs");
     r.headers_mut()
         .insert("x-csrf-token", CSRF.parse().unwrap());
     let (status, v) = call(app.clone(), r).await;
@@ -336,7 +336,7 @@ async fn token_mode_contract() {
     assert_eq!(status, 200);
 
     // Bearer + CSRF 双要件：缺一 → 401/403
-    let mut r = req("POST", "/api/serve/up");
+    let mut r = req("POST", "/api/jobs");
     r.headers_mut().insert(
         header::AUTHORIZATION,
         format!("Bearer {TOKEN}").parse().unwrap(),
@@ -345,14 +345,14 @@ async fn token_mode_contract() {
     assert_eq!(status, 403);
     assert_error_envelope(&v, "csrf");
 
-    let mut r = req("POST", "/api/serve/up");
+    let mut r = req("POST", "/api/jobs");
     r.headers_mut()
         .insert("x-csrf-token", CSRF.parse().unwrap());
     let (status, v) = call(app.clone(), r).await;
     assert_eq!(status, 401);
     assert_error_envelope(&v, "unauthorized");
 
-    let mut r = req("POST", "/api/serve/up");
+    let mut r = req("POST", "/api/jobs");
     r.headers_mut().insert(
         header::AUTHORIZATION,
         format!("Bearer {TOKEN}").parse().unwrap(),
@@ -362,4 +362,136 @@ async fn token_mode_contract() {
     let (status, v) = call(app, r).await;
     assert_eq!(status, 501);
     assert_error_envelope(&v, "not_implemented");
+}
+
+// ---------- serve 端点（#55） ----------
+
+/// 带 CSRF 头的 POST 构造。
+fn post(uri: &str, body: Option<&str>) -> Request<Body> {
+    let mut r = req("POST", uri);
+    r.headers_mut()
+        .insert("x-csrf-token", CSRF.parse().unwrap());
+    if let Some(b) = body {
+        r.headers_mut()
+            .insert(header::CONTENT_TYPE, "application/json".parse().unwrap());
+        *r.body_mut() = Body::from(b.to_string());
+    }
+    r
+}
+
+#[tokio::test]
+async fn serve_components_contract() {
+    let app = web::router(state(None));
+
+    let (status, v) = call(
+        app.clone(),
+        req("GET", "/api/serve/components?profile=normal"),
+    )
+    .await;
+    assert_eq!(status, 200);
+    assert_eq!(v["schema"], 1, "{v}");
+    assert_eq!(v["profile"], "normal", "{v}");
+    let comps = v["components"].as_array().expect("components array");
+    assert!(!comps.is_empty());
+    let mut orders = Vec::new();
+    for c in comps {
+        assert!(c["name"].is_string(), "{c}");
+        assert!(c["order"].is_u64(), "{c}");
+        assert!(c["external"].is_boolean(), "{c}");
+        assert!(c["local_endpoint_only"].is_boolean(), "{c}");
+        orders.push(c["order"].as_u64().unwrap());
+    }
+    let mut sorted = orders.clone();
+    sorted.sort_unstable();
+    assert_eq!(orders, sorted, "components must be in start order");
+    // 两个内置 profile 都含 external brain（探活不拉起）。
+    assert!(comps.iter().any(|c| c["external"] == true), "{v}");
+
+    // 只读端点：POST → 405
+    let (status, v) = call(app, post("/api/serve/components", None)).await;
+    assert_eq!(status, 405);
+    assert_error_envelope(&v, "method_not_allowed");
+}
+
+#[tokio::test]
+async fn serve_action_contract() {
+    let app = web::router(state(None));
+
+    // 写端点：GET → 405
+    let (status, v) = call(app.clone(), req("GET", "/api/serve/up")).await;
+    assert_eq!(status, 405);
+    assert_error_envelope(&v, "method_not_allowed");
+
+    // 未知 action → 404
+    let (status, v) = call(app.clone(), post("/api/serve/nope", None)).await;
+    assert_eq!(status, 404);
+    assert_error_envelope(&v, "not_found");
+
+    // 非法 body → 400
+    let (status, v) = call(app.clone(), post("/api/serve/up", Some("{oops"))).await;
+    assert_eq!(status, 400);
+    assert_error_envelope(&v, "bad_request");
+
+    // only 未命中组件 → 400（不触发任何 spawn/信号副作用）
+    let (status, v) = call(
+        app.clone(),
+        post("/api/serve/up", Some(r#"{"only":["__missing__"]}"#)),
+    )
+    .await;
+    assert_eq!(status, 400);
+    assert_error_envelope(&v, "bad_request");
+
+    // 合法 action：down external 组件是安全的 no-op（探活语义，不发信号），
+    // 返回 ServeReport 同 schema（fail 是数据不是 HTTP 错误）。
+    let (status, v) = call(
+        app.clone(),
+        post("/api/serve/down", Some(r#"{"only":["brain"]}"#)),
+    )
+    .await;
+    assert_eq!(status, 200);
+    assert_serve_shape(&v, "serve down");
+
+    // up external：只探活不拉起（不 spawn 任何进程），仍回 ServeReport。
+    let (status, v) = call(
+        app.clone(),
+        post("/api/serve/up", Some(r#"{"only":["brain"]}"#)),
+    )
+    .await;
+    assert_eq!(status, 200);
+    assert_serve_shape(&v, "serve up");
+}
+
+#[tokio::test]
+async fn serve_log_stream_contract() {
+    let app = web::router(state(None));
+
+    // 组件名非法字符 → 400
+    let (status, v) = call(app.clone(), req("GET", "/api/serve/logs/bad%20name/stream")).await;
+    assert_eq!(status, 400);
+    assert_error_envelope(&v, "bad_request");
+
+    // 组件不在 profile → 404
+    let (status, v) = call(
+        app.clone(),
+        req("GET", "/api/serve/logs/__missing__/stream?profile=normal"),
+    )
+    .await;
+    assert_eq!(status, 404);
+    assert_error_envelope(&v, "not_found");
+
+    // 非 GET → 405（JSON 错误形态，非框架空 405）
+    let (status, v) = call(app.clone(), post("/api/serve/logs/brain/stream", None)).await;
+    assert_eq!(status, 405);
+    assert_error_envelope(&v, "method_not_allowed");
+
+    // 合法组件 → SSE 握手（流本身无界，只验头；response drop 后 tail 线程退出）
+    let res = app
+        .oneshot(req("GET", "/api/serve/logs/brain/stream?profile=normal"))
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 200);
+    assert_eq!(
+        res.headers()["content-type"].to_str().unwrap(),
+        "text/event-stream"
+    );
 }

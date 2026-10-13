@@ -169,14 +169,14 @@ fn web_base_routes_and_spa_fallback() {
     assert_error(&v, "not_implemented");
 
     // 占位路由 mutation：无 CSRF → 403；回带签发 token → 到达 handler（501）
-    let r = client.post(format!("{base}/api/serve/up")).send().unwrap();
+    let r = client.post(format!("{base}/api/jobs")).send().unwrap();
     assert_eq!(r.status(), 403);
     let v: serde_json::Value = serde_json::from_str(&r.text().unwrap()).unwrap();
     assert_error(&v, "csrf");
 
     let csrf = fetch_csrf(&client, &base, None);
     let r = client
-        .post(format!("{base}/api/serve/up"))
+        .post(format!("{base}/api/jobs"))
         .header("x-csrf-token", &csrf)
         .send()
         .unwrap();
@@ -184,9 +184,21 @@ fn web_base_routes_and_spa_fallback() {
     let v: serde_json::Value = serde_json::from_str(&r.text().unwrap()).unwrap();
     assert_error(&v, "not_implemented");
 
-    // 跨站 Origin 的 mutation：Origin authority 与 Host 不符 → 403
+    // 实装 mutation：CSRF 通过 → 到达 handler；未命中组件 → 400 bad_request
     let r = client
         .post(format!("{base}/api/serve/up"))
+        .header("x-csrf-token", &csrf)
+        .header("content-type", "application/json")
+        .body(r#"{"only": ["__missing__"]}"#)
+        .send()
+        .unwrap();
+    assert_eq!(r.status(), 400);
+    let v: serde_json::Value = serde_json::from_str(&r.text().unwrap()).unwrap();
+    assert_error(&v, "bad_request");
+
+    // 跨站 Origin 的 mutation：Origin authority 与 Host 不符 → 403
+    let r = client
+        .post(format!("{base}/api/serve/down"))
         .header("x-csrf-token", &csrf)
         .header("Origin", "https://evil.example")
         .send()
@@ -283,7 +295,7 @@ fn web_token_mode_requires_bearer() {
     // mutation：Bearer + CSRF 双要件，缺一不可
     let csrf = fetch_csrf(&client, &base, Some("test-token"));
     let r = client
-        .post(format!("{base}/api/serve/up"))
+        .post(format!("{base}/api/jobs"))
         .bearer_auth("test-token")
         .send()
         .unwrap();
@@ -292,14 +304,14 @@ fn web_token_mode_requires_bearer() {
     assert_error(&v, "csrf");
 
     let r = client
-        .post(format!("{base}/api/serve/up"))
+        .post(format!("{base}/api/jobs"))
         .header("x-csrf-token", &csrf)
         .send()
         .unwrap();
     assert_eq!(r.status(), 401);
 
     let r = client
-        .post(format!("{base}/api/serve/up"))
+        .post(format!("{base}/api/jobs"))
         .bearer_auth("test-token")
         .header("x-csrf-token", &csrf)
         .send()

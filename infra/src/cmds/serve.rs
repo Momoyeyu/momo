@@ -9,7 +9,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::api::dto::{
-    Check, CheckStatus, LogBatch, LogEntry, ServeLogsReport, ServeReport, Summary,
+    Check, CheckStatus, ComponentInfo, LogBatch, LogEntry, ServeComponentsReport, ServeLogsReport,
+    ServeReport, Summary,
 };
 use crate::cli::{LogsArgs, Profile, ServeAction, ServeArgs, ServeCommon};
 use crate::env_cfg::{self, EnvCfg};
@@ -238,6 +239,67 @@ fn status_inner(
     Ok((checks, code))
 }
 
+/// `GET /api/serve/components` core：内置 profile 组件表（order 升序）。
+/// 只解析内嵌 toml，无 IO/网络探测，web 侧可同步调用。
+pub fn components_report(profile_arg: Option<Profile>) -> Result<ServeComponentsReport, AppError> {
+    let profile = EnvCfg.profile(profile_arg);
+    let doc = ServeProfile::load_builtin(profile.as_str())?;
+    Ok(ServeComponentsReport {
+        schema: crate::api::dto::SCHEMA_VERSION,
+        profile: profile.as_str().into(),
+        components: doc
+            .start_order()
+            .into_iter()
+            .map(|c| ComponentInfo {
+                name: c.name.clone(),
+                order: c.order,
+                external: c.external,
+                local_endpoint_only: c.local_endpoint_only,
+            })
+            .collect(),
+    })
+}
+
+/// `POST /api/serve/{up|down|restart}` core：与 CLI 同一 inner 语义
+/// （幂等 spawn + bounded readiness / 逆序 SIGTERM→SIGKILL / down+up）。
+/// 秒级阻塞（readiness 最长 15s/组件），web 侧须 `spawn_blocking` 调用。
+/// `app_bin` 无 REST 对应参数，固定 None（momod 走 PATH 查找）。
+pub fn action_report(
+    action: &str,
+    profile_arg: Option<Profile>,
+    only: Vec<String>,
+) -> Result<(ServeReport, i32), AppError> {
+    let profile = EnvCfg.profile(profile_arg);
+    let doc = ServeProfile::load_builtin(profile.as_str())?;
+    let common = ServeCommon {
+        profile: profile_arg,
+        only,
+        app_bin: None,
+    };
+    let (checks, code) = match action {
+        "up" => up_inner(&doc, &common, profile.as_str())?,
+        "down" => down_inner(&doc, &common, profile.as_str())?,
+        "restart" => {
+            let (mut checks, down_code) = down_inner(&doc, &common, profile.as_str())?;
+            let (up_checks, up_code) = up_inner(&doc, &common, profile.as_str())?;
+            checks.extend(up_checks);
+            (checks, if up_code != 0 { up_code } else { down_code })
+        }
+        // 调用方（web handler）已收敛 action 集合；到这里属内部误用。
+        other => return Err(AppError::Config(format!("unknown serve action '{other}'"))),
+    };
+    Ok((
+        ServeReport {
+            schema: crate::api::dto::SCHEMA_VERSION,
+            command: format!("serve {action}"),
+            profile: profile.as_str().into(),
+            summary: Summary::from_checks(&checks),
+            checks,
+        },
+        code,
+    ))
+}
+
 /// `serve restart` = down + up；合并报告，退出码取 up 优先。
 fn restart(
     doc: &ServeProfile,
@@ -321,7 +383,7 @@ fn logs(
 }
 
 /// 读文件最后 n 行：先只读末尾 1 MiB 窗口，不够再全量重读。
-fn read_last_lines(path: &Path, n: usize) -> Result<Vec<String>, AppError> {
+pub(crate) fn read_last_lines(path: &Path, n: usize) -> Result<Vec<String>, AppError> {
     const WINDOW: u64 = 1 << 20;
     let mut f = std::fs::File::open(path)?;
     let len = f.metadata()?.len();
