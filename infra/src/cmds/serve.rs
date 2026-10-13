@@ -105,7 +105,9 @@ pub(crate) fn down_inner(
         }
         match proc::read_pidfile(&c.name) {
             Err(_) => checks.push(Check::ok(c.name.clone(), "stopped")),
-            Ok(pid) if !proc::is_alive(pid) => {
+            // 组口径判活：wrapper 死后孙进程（uv run 的 python 本体）残留仍算活，
+            // 走停止分支收掉（#149），不会被误判成 stale pidfile。
+            Ok(pid) if !proc::component_alive(&c.name, pid) => {
                 let _ = proc::remove_pidfile(&c.name);
                 checks.push(Check::ok(
                     c.name.clone(),
@@ -113,14 +115,14 @@ pub(crate) fn down_inner(
                 ));
             }
             Ok(pid) => {
-                if proc::stop_pid(pid, TERM_GRACE) {
+                if proc::stop_component(&c.name, pid, TERM_GRACE) {
                     let _ = proc::remove_pidfile(&c.name);
                     checks.push(Check::ok(c.name.clone(), format!("stopped pid {pid}")));
                 } else {
                     failed = true;
                     checks.push(Check::fail(
                         c.name.clone(),
-                        format!("pid {pid} did not exit after TERM+KILL"),
+                        format!("pid {pid} or its process group did not exit after TERM+KILL"),
                         "inspect processes manually, then retry momoctl serve down",
                     ));
                 }
@@ -209,10 +211,16 @@ fn status_inner(
         }
         match proc::read_pidfile(&c.name) {
             Err(_) => checks.push(Check::ok(c.name.clone(), "stopped")),
-            Ok(pid) if !proc::is_alive(pid) => checks.push(Check::fail(
+            Ok(pid) if !proc::component_alive(&c.name, pid) => checks.push(Check::fail(
                 c.name.clone(),
                 format!("pidfile stale: pid {pid} not running"),
                 "run momoctl serve down to clean stale pidfiles",
+            )),
+            // wrapper 已死但孙进程残留（组/Job 仍有成员）：不算 running，是泄漏态。
+            Ok(pid) if !proc::is_alive(pid) => checks.push(Check::warn(
+                c.name.clone(),
+                format!("pid {pid} exited but process group still active"),
+                "run momoctl serve down to stop leftover processes",
             )),
             Ok(pid) => {
                 let up = proc::pidfile_started(&c.name)
@@ -546,6 +554,25 @@ pub(crate) fn up_inner(
                 ));
                 continue;
             }
+            // wrapper 已死但组/Job 仍有成员（历史泄漏的孙进程持端口）→
+            // 先收干净再拉起，否则新 spawn 撞端口再起不来（#149）。
+            if proc::component_alive(&c.name, pid) {
+                if proc::stop_component(&c.name, pid, TERM_GRACE) {
+                    checks.push(Check::warn(
+                        c.name.clone(),
+                        format!("reaped leftover process group of dead pid {pid}"),
+                        "leftover processes from a previous run were stopped before respawn",
+                    ));
+                } else {
+                    checks.push(Check::fail(
+                        c.name.clone(),
+                        format!("leftover process group of dead pid {pid} did not exit"),
+                        "inspect processes manually, then retry momoctl serve up",
+                    ));
+                    aborted = true;
+                    continue;
+                }
+            }
             let _ = proc::remove_pidfile(&c.name);
         }
 
@@ -601,9 +628,11 @@ pub(crate) fn up_inner(
     }
 
     // readiness/spawn 失败 → 停掉本次 owned children，attached providers 保留。
+    // kill_component 按进程组/Job 整树强杀：wrapper（uv run）已退出时也能
+    // 收掉残留的孙进程（#149），child.kill() 对这种情况是 no-op。
     if aborted {
         for (name, mut child) in owned.drain(..) {
-            let _ = child.kill();
+            let _ = proc::kill_component(&name, child.id());
             let _ = child.wait();
             let _ = proc::remove_pidfile(&name);
         }
@@ -670,9 +699,19 @@ fn spawn_component(
         cmd.current_dir(dir);
     }
 
-    cmd.spawn()
-        .map(|child| (child, log_path))
-        .map_err(|e| AppError::Io(std::io::Error::new(e.kind(), format!("{program}: {e}"))))
+    // 进程组隔离（#149）：unix 自成进程组（pgid=pid，pidfile 即组 id）；
+    // windows spawn 后挂具名 Job。uv run 的孙进程随之同生共死。
+    proc::prepare_spawn(&mut cmd);
+    match cmd.spawn() {
+        Ok(child) => {
+            proc::adopt_spawned(&c.name, child.id());
+            Ok((child, log_path))
+        }
+        Err(e) => Err(AppError::Io(std::io::Error::new(
+            e.kind(),
+            format!("{program}: {e}"),
+        ))),
+    }
 }
 
 /// external 组件探活：`probe_env` 端点 + `probe_path` 拼 URL，GET 探 2xx。
@@ -832,6 +871,85 @@ env = {{ MOMO_TEST_SLEEPER = "1" }}
             return;
         }
         thread::sleep(Duration::from_secs(600));
+    }
+
+    /// wrapper stub（复刻 `uv run` 包壳形态，#149）：re-exec 当前测试二进制跑
+    /// `wrapper_entry`——它再 spawn 一个 sleeper 孙进程并把孙 pid 写进
+    /// marker 文件。mode=`sleep` 睡到被 kill；mode=`exit` 随即退出
+    /// （readiness 前退出的 abort 场景）。
+    fn wrapper_component(marker: &std::path::Path, mode: &str, ready: Option<&str>) -> String {
+        let exe = std::env::current_exe().unwrap();
+        let ready = ready
+            .map(|u| format!("ready = \"{u}\"\n"))
+            .unwrap_or_default();
+        format!(
+            r#"[[component]]
+name = "stub"
+order = 10
+cmd = "{}"
+args = ["--exact", "cmds::serve::tests::wrapper_entry"]
+{ready}env = {{ MOMO_TEST_WRAPPER = "{mode}", MOMO_TEST_GC_PID = "{}" }}
+"#,
+            exe.display().to_string().replace('\\', "\\\\"),
+            marker.display().to_string().replace('\\', "\\\\"),
+        )
+    }
+
+    /// wrapper 入口：spawn sleeper 孙进程（孙 pid 写 `MOMO_TEST_GC_PID`
+    /// marker），再按 `MOMO_TEST_WRAPPER` 模式 sleep 或退出；
+    /// 无标记 env → 立即通过。
+    // zombie_processes：孙进程就是要被"父死/组杀"的孤儿，绝不 wait——
+    // wait 了就不是测试目标了。
+    #[allow(clippy::zombie_processes)]
+    #[test]
+    fn wrapper_entry() {
+        let mode = std::env::var("MOMO_TEST_WRAPPER").unwrap_or_default();
+        if mode.is_empty() {
+            return;
+        }
+        // 挂孙进程前稍等：给 spawn 侧 adopt_spawned 的 windows Job 挂接留窗口
+        // ——孙进程须诞生于父已在 Job 内之后才自动入 Job
+        //（unix 进程组随 fork 天然继承，无时序要求）。
+        thread::sleep(Duration::from_millis(300));
+        let exe = std::env::current_exe().unwrap();
+        let gc = Command::new(exe)
+            .args(["--exact", "cmds::serve::tests::sleeper_entry"])
+            .env("MOMO_TEST_SLEEPER", "1")
+            .spawn()
+            .unwrap();
+        if let Ok(path) = std::env::var("MOMO_TEST_GC_PID") {
+            let _ = fs::write(path, gc.id().to_string());
+        }
+        if mode == "exit" {
+            return;
+        }
+        thread::sleep(Duration::from_secs(600));
+    }
+
+    /// 轮询 marker 文件读孙进程 pid（bounded 10s）。
+    fn wait_reported_pid(marker: &std::path::Path) -> u32 {
+        let deadline = Instant::now() + Duration::from_secs(10);
+        loop {
+            if let Ok(text) = fs::read_to_string(marker) {
+                if let Ok(pid) = text.trim().parse::<u32>() {
+                    return pid;
+                }
+            }
+            assert!(
+                Instant::now() < deadline,
+                "wrapper did not report grandchild pid"
+            );
+            thread::sleep(Duration::from_millis(50));
+        }
+    }
+
+    /// 等 pid 死透（bounded 10s；孤儿 reparent 后收尸有延迟，poll 兜住）。
+    fn wait_pid_dead(pid: u32) {
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while proc::is_alive(pid) {
+            assert!(Instant::now() < deadline, "pid {pid} still alive");
+            thread::sleep(Duration::from_millis(50));
+        }
     }
 
     #[test]
@@ -1013,6 +1131,103 @@ cmd = "llama-server-nonexistent-bin"
 
         assert_eq!(down(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
         std::env::remove_var("XDG_STATE_HOME");
+        let _ = fs::remove_dir_all(state.parent().unwrap());
+    }
+
+    /// #149 回归：只杀 pidfile 记的 wrapper（uv run）孙进程成孤儿持端口，
+    /// 但仍在 spawn 时的进程组/Job 内；`serve down` 按组收口连孤儿一起停。
+    #[test]
+    fn down_reaps_orphaned_grandchild() {
+        let _g = LOCK.lock().unwrap();
+        let state = state_dir("group-orphan");
+        let marker = std::env::temp_dir().join(format!("momo-gc-{}", std::process::id()));
+        let _ = fs::remove_file(&marker);
+        let doc =
+            ServeProfile::parse(&profile(&wrapper_component(&marker, "sleep", None))).unwrap();
+        assert_eq!(up(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
+        let pid = proc::read_pidfile("stub").unwrap();
+        let gc = wait_reported_pid(&marker);
+
+        // 只杀 wrapper（旧 down 行为）：孙进程泄漏，但组/Job 仍能定位它。
+        assert!(proc::kill_pid(pid));
+        wait_pid_dead(pid);
+        assert!(proc::is_alive(gc), "orphaned grandchild must still run");
+        assert!(
+            proc::component_alive("stub", pid),
+            "process group/job still active after wrapper exit"
+        );
+
+        assert_eq!(down(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
+        wait_pid_dead(gc);
+        assert!(!proc::component_alive("stub", pid));
+        assert!(proc::read_pidfile("stub").is_err());
+
+        std::env::remove_var("XDG_STATE_HOME");
+        let _ = fs::remove_file(&marker);
+        let _ = fs::remove_dir_all(state.parent().unwrap());
+    }
+
+    /// #149 回归：wrapper 在 readiness 前退出 → abort 清理须连孤儿孙进程
+    /// 一起杀（旧行为 `child.kill()` 对已退出 wrapper 是 no-op，孙进程泄漏）。
+    #[test]
+    fn abort_reaps_group_after_wrapper_exit() {
+        let _g = LOCK.lock().unwrap();
+        let state = state_dir("group-abort");
+        let marker = std::env::temp_dir().join(format!("momo-gc-abort-{}", std::process::id()));
+        let _ = fs::remove_file(&marker);
+        // ready 探针指向无监听端口；wrapper 提前退出 → exited before ready → abort。
+        let toml = profile(&wrapper_component(
+            &marker,
+            "exit",
+            Some("http://127.0.0.1:1/readyz"),
+        ));
+        let doc = ServeProfile::parse(&toml).unwrap();
+        assert_eq!(
+            up(&doc, &common(), "t", &test_ctx()).unwrap(),
+            ExitCode::Runtime as i32
+        );
+
+        let gc = wait_reported_pid(&marker);
+        wait_pid_dead(gc);
+        assert!(
+            proc::read_pidfile("stub").is_err(),
+            "pidfile removed on abort"
+        );
+
+        std::env::remove_var("XDG_STATE_HOME");
+        let _ = fs::remove_file(&marker);
+        let _ = fs::remove_dir_all(state.parent().unwrap());
+    }
+
+    /// #149 回归：pidfile 指向死 wrapper 但进程组/Job 残留（历史泄漏的孤儿
+    /// 持端口）→ 下次 `serve up` 先收孤儿再拉起，而不是 stale 一删了之。
+    #[test]
+    fn up_reaps_orphan_group_before_respawn() {
+        let _g = LOCK.lock().unwrap();
+        let state = state_dir("group-reap");
+        let marker = std::env::temp_dir().join(format!("momo-gc-reap-{}", std::process::id()));
+        let _ = fs::remove_file(&marker);
+        let doc =
+            ServeProfile::parse(&profile(&wrapper_component(&marker, "sleep", None))).unwrap();
+        assert_eq!(up(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
+        let pid = proc::read_pidfile("stub").unwrap();
+        let gc = wait_reported_pid(&marker);
+
+        // 模拟旧版泄漏：只杀 wrapper，孤儿孙进程留在组内。
+        assert!(proc::kill_pid(pid));
+        wait_pid_dead(pid);
+        assert!(proc::is_alive(gc));
+
+        // 再次 up：先收孤儿再拉起新实例。
+        assert_eq!(up(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
+        wait_pid_dead(gc);
+        let new_pid = proc::read_pidfile("stub").unwrap();
+        assert_ne!(new_pid, pid, "respawn writes fresh pidfile");
+        assert!(proc::is_alive(new_pid));
+
+        assert_eq!(down(&doc, &common(), "t", &test_ctx()).unwrap(), 0);
+        std::env::remove_var("XDG_STATE_HOME");
+        let _ = fs::remove_file(&marker);
         let _ = fs::remove_dir_all(state.parent().unwrap());
     }
 

@@ -36,8 +36,15 @@ include_dir = "0.7.4"
 libc = "0.2"
 
 # 进程探活/强杀走 Win32 API（serve/proc.rs），不 spawn tasklist/taskkill。
+# JobObjects：组件挂具名 Job，wrapper 死后 TerminateJobObject 收孙进程（#149）；
+# Win32_Security 是 CreateJobObjectW 的 SECURITY_ATTRIBUTES 参数依赖。
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.52", features = ["Win32_Foundation", "Win32_System_Threading"] }
+windows-sys = { version = "0.52", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Threading",
+    "Win32_System_JobObjects",
+] }
 
 [dev-dependencies]
 wiremock = "0.6"

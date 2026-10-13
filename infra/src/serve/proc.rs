@@ -1,8 +1,13 @@
 //! spawn/kill/pidfile/日志落盘。
 //! 状态目录：`${XDG_STATE_HOME:-~/.local/state}/momo/`（pid/、logs/、active_profile），
 //! 不提供 `MOMO_*` 覆盖键（口径见 momo-infra.md「状态目录与进程管理」）。
-//! 探活/终止走系统调用（unix `waitpid`+`kill(2)`；windows `OpenProcess`/`TerminateProcess`），
-//! 不依赖 PATH 上的外部命令（kill/ps/tasklist 均已移除）。
+//! 探活/终止走系统调用（unix `waitpid`+`kill(2)`；windows `OpenProcess`/`TerminateProcess`/
+//! Job Object），不依赖 PATH 上的外部命令（kill/ps/tasklist 均已移除；
+//! windows 的 taskkill 只做温和请求/兜底，缺失不阻塞升级）。
+//!
+//! serve 组件 spawn 时隔离进程组：`uv run` 这类 wrapper 的孙进程（python 服务
+//! 本体）继承同组/同 Job，终止按组收口——wrapper pid 死掉后残留孙进程也能被
+//! 收掉（#149：曾 abort/down 只杀 wrapper，孙进程持端口致下次 up 端口冲突）。
 
 use std::fs;
 use std::path::PathBuf;
@@ -69,6 +74,33 @@ pub fn log_stdio(component: &str) -> Result<(PathBuf, Stdio, Stdio), AppError> {
     Ok((path, Stdio::from(out), Stdio::from(err)))
 }
 
+/// spawn 前置：unix `process_group(0)` 让 child 自成进程组（pgid == child
+/// pid，即 pidfile 记录的 pid），孙进程继承同组，终止按组收口。
+/// windows 无前置配置——组关系靠 `adopt_spawned` 的具名 Job。
+pub fn prepare_spawn(cmd: &mut std::process::Command) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = cmd;
+    }
+}
+
+/// spawn 后置：windows 把 child 挂进具名 Job Object `momo-serve-<component>`
+/// （up/down 跨进程按名重开；成员的后代自动入 Job）。挂接失败仅失去整树
+/// 强杀，退回单 pid 阶梯。unix 组关系已在 `prepare_spawn` 落定，此处 no-op。
+pub fn adopt_spawned(component: &str, pid: u32) {
+    #[cfg(windows)]
+    assign_to_job(component, pid);
+    #[cfg(not(windows))]
+    {
+        let _ = (component, pid);
+    }
+}
+
 /// 优雅停止：先发 SIGTERM（win: taskkill 温和请求），`grace` 内轮询存活；
 /// 未退出再 SIGKILL（win: TerminateProcess）。返回进程最终已退出。
 pub fn stop_pid(pid: u32, grace: Duration) -> bool {
@@ -81,6 +113,246 @@ pub fn stop_pid(pid: u32, grace: Duration) -> bool {
     }
     force_pid(pid);
     wait_dead(pid, Duration::from_secs(2))
+}
+
+/// 组件级存活：`is_alive(pid)` 之外补查 spawn 时建立的组关系——
+/// unix `kill(-pid, 0)` 进程组仍有成员（wrapper 死后孙进程残留），
+/// windows 具名 Job `ActiveProcesses > 0`。serve down/up/status 用此口径
+/// 收孤儿（#149）；jobs runner 仍用单 pid `is_alive`/`stop_pid`。
+pub fn component_alive(component: &str, pid: u32) -> bool {
+    if is_alive(pid) {
+        return true;
+    }
+    group_alive(component, pid)
+}
+
+/// 组关系存活：pid 本体已死，但其进程组/Job 里还有成员。
+#[cfg(unix)]
+fn group_alive(_component: &str, pid: u32) -> bool {
+    if pid == 0 || pid > i32::MAX as u32 {
+        return false;
+    }
+    // `kill(2)` 负 pid 是进程组语义：送达或 EPERM → 组内仍有活进程。
+    unsafe {
+        if libc::kill(-(pid as i32), 0) == 0 {
+            return true;
+        }
+        std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM)
+    }
+}
+
+#[cfg(windows)]
+fn group_alive(component: &str, _pid: u32) -> bool {
+    job_active(component)
+}
+
+#[cfg(not(any(unix, windows)))]
+fn group_alive(_component: &str, _pid: u32) -> bool {
+    false
+}
+
+/// 组件级优雅停止（serve down / up 孤儿清理）：先温和终止，`grace` 内轮询
+/// 组关系存活；未退出再强杀。pid 本体已死只剩孤儿时跳过温和阶段（温和
+/// 请求无处投递）。返回组件（含孙进程）最终已全部退出。
+///
+/// unix：信号同时发 `pid` 与进程组 `-pid`（`prepare_spawn` 定了 pgid==pid，
+/// pid 被组外进程复用时仍有单 pid 兜底）。
+/// windows：温和段 `taskkill /T`（不带 /F，请求整树）；强杀段
+/// `TerminateJobObject`（wrapper 死后孙进程仍在 Job 内可收）+
+/// `taskkill /F /T` + `TerminateProcess` 兜底。
+pub fn stop_component(component: &str, pid: u32, grace: Duration) -> bool {
+    if !component_alive(component, pid) {
+        return true;
+    }
+    if is_alive(pid) {
+        term_component(component, pid);
+        if wait_component_dead(component, pid, grace) {
+            return true;
+        }
+    }
+    force_component(component, pid);
+    wait_component_dead(component, pid, Duration::from_secs(2))
+}
+
+/// 单次强杀整组/整树（serve up abort 清理 owned children）。
+/// unix `SIGKILL` 进程组+pid；windows `TerminateJobObject` + `taskkill /F /T`
+/// + `TerminateProcess` 兜底。返回是否有信号送达。
+pub fn kill_component(component: &str, pid: u32) -> bool {
+    force_component(component, pid)
+}
+
+fn wait_component_dead(component: &str, pid: u32, timeout: Duration) -> bool {
+    let start = Instant::now();
+    while component_alive(component, pid) {
+        if start.elapsed() >= timeout {
+            return false;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    true
+}
+
+/// 温和终止：unix 对 pid 与进程组 `-pid` 同发 SIGTERM；
+/// windows `taskkill /T`（不带 /F）温和请求整树——Job 无温和终止语义。
+fn term_component(component: &str, pid: u32) -> bool {
+    #[cfg(unix)]
+    {
+        let _ = component;
+        let group = send_signal_group(pid, libc::SIGTERM);
+        let single = send_signal(pid, libc::SIGTERM);
+        group || single
+    }
+    #[cfg(windows)]
+    {
+        let _ = component;
+        taskkill(pid, false)
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        let _ = (component, pid);
+        false
+    }
+}
+
+/// 升级强杀：unix 对进程组 `-pid` 与 pid 同发 SIGKILL；
+/// windows `TerminateJobObject`（收 Job 全部成员含孤儿）→ `taskkill /F /T`
+/// （root 活着时覆盖未挂进 Job 的整树）→ `TerminateProcess` 单 pid 兜底。
+fn force_component(component: &str, pid: u32) -> bool {
+    #[cfg(unix)]
+    {
+        let _ = component;
+        let group = send_signal_group(pid, libc::SIGKILL);
+        let single = send_signal(pid, libc::SIGKILL);
+        group || single
+    }
+    #[cfg(windows)]
+    {
+        let mut ok = terminate_job(component);
+        ok |= taskkill(pid, true);
+        ok |= terminate_process(pid);
+        ok
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        let _ = (component, pid);
+        false
+    }
+}
+
+/// unix `kill(2)` 进程组语义：信号发 `-pgid` 全组（spawn 时 pgid==pidfile pid）。
+#[cfg(unix)]
+fn send_signal_group(pgid: u32, sig: i32) -> bool {
+    if pgid == 0 || pgid > i32::MAX as u32 {
+        return false;
+    }
+    unsafe { libc::kill(-(pgid as i32), sig) == 0 }
+}
+
+/// windows `taskkill /PID <pid> /T [/F]`：树级终止，`force` 追加 `/F`。
+#[cfg(windows)]
+fn taskkill(pid: u32, force: bool) -> bool {
+    let mut args = vec!["/PID".to_string(), pid.to_string(), "/T".to_string()];
+    if force {
+        args.push("/F".to_string());
+    }
+    std::process::Command::new("taskkill")
+        .args(&args)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
+}
+
+/// windows 具名 Job：`momo-serve-<component>`（无反斜杠，会话内唯一）。
+/// Job 在内核侧持有成员进程，创建进程退出后仍可按名 `OpenJobObject`。
+#[cfg(windows)]
+fn job_name(component: &str) -> Vec<u16> {
+    format!("momo-serve-{component}")
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect()
+}
+
+/// Job 访问权限（JOB_OBJECT_TERMINATE / JOB_OBJECT_QUERY，按 MSDN 取值）。
+#[cfg(windows)]
+const JOB_OBJECT_TERMINATE_ACCESS: u32 = 0x0008;
+#[cfg(windows)]
+const JOB_OBJECT_QUERY_ACCESS: u32 = 0x0004;
+
+/// 挂 child 进具名 Job：Job 不存在则创建；同名已存在 = 上次泄漏的孤儿组
+/// 仍在，直接复用——后续 `TerminateJobObject` 一并收掉。
+#[cfg(windows)]
+fn assign_to_job(component: &str, pid: u32) -> bool {
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::JobObjects::{AssignProcessToJobObject, CreateJobObjectW};
+    use windows_sys::Win32::System::Threading::{
+        OpenProcess, PROCESS_SET_QUOTA, PROCESS_TERMINATE,
+    };
+    if pid == 0 {
+        return false;
+    }
+    unsafe {
+        let name = job_name(component);
+        let job = CreateJobObjectW(std::ptr::null(), name.as_ptr());
+        if job == 0 {
+            return false;
+        }
+        let ph = OpenProcess(PROCESS_SET_QUOTA | PROCESS_TERMINATE, 0, pid);
+        let ok = if ph == 0 {
+            false
+        } else {
+            let ok = AssignProcessToJobObject(job, ph) != 0;
+            CloseHandle(ph);
+            ok
+        };
+        CloseHandle(job);
+        ok
+    }
+}
+
+/// Job 仍有活动成员 → 组件算活（wrapper 死后孙进程残留情形）。
+#[cfg(windows)]
+fn job_active(component: &str) -> bool {
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::JobObjects::{
+        JobObjectBasicAccountingInformation, OpenJobObjectW, QueryInformationJobObject,
+        JOBOBJECT_BASIC_ACCOUNTING_INFORMATION,
+    };
+    unsafe {
+        let name = job_name(component);
+        let job = OpenJobObjectW(JOB_OBJECT_QUERY_ACCESS, 0, name.as_ptr());
+        if job == 0 {
+            return false;
+        }
+        let mut info: JOBOBJECT_BASIC_ACCOUNTING_INFORMATION = std::mem::zeroed();
+        let ok = QueryInformationJobObject(
+            job,
+            JobObjectBasicAccountingInformation,
+            &mut info as *mut _ as *mut core::ffi::c_void,
+            std::mem::size_of::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>() as u32,
+            std::ptr::null_mut(),
+        );
+        CloseHandle(job);
+        ok != 0 && info.ActiveProcesses > 0
+    }
+}
+
+/// 收掉具名 Job 全部成员（TerminateJobObject 是强杀语义）。
+#[cfg(windows)]
+fn terminate_job(component: &str) -> bool {
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::JobObjects::{OpenJobObjectW, TerminateJobObject};
+    unsafe {
+        let name = job_name(component);
+        let job = OpenJobObjectW(JOB_OBJECT_TERMINATE_ACCESS, 0, name.as_ptr());
+        if job == 0 {
+            return false;
+        }
+        let ok = TerminateJobObject(job, 1);
+        CloseHandle(job);
+        ok != 0
+    }
 }
 
 /// 单次终止信号：unix SIGTERM；windows `TerminateProcess`；其他平台 no-op。
