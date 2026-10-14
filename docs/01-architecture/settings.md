@@ -56,7 +56,7 @@ flowchart LR
 `{config_dir}/momo/avatars/<包名>/` 每个子目录为一个 Live2D 模型包：包内含一个 `*.model3.json` 入口与其引用的资源（moc3/贴图/动作等）。扫描规则：
 
 - 子目录须含至少一个 `*.model3.json`（多个取文件名排序首个）；无入口的包、隐藏目录、顶层散落文件均不出现在 manifest。
-- `id`/`name` 取目录名，manifest 项按 `id` 排序；内置 Hiyori（web dist 分发）恒为 `{id:"builtin", url:"/live2d/hiyori/Hiyori.model3.json"}` 在首位。
+- `id`/`name` 取目录名，manifest 项按 `id` 排序；内置 Hiyori（`app/web/public/live2d/` 素材由 `scripts/fetch-hiyori.sh` 拉取、不入库，随 web dist 分发）恒为 `{id:"builtin", url:"/live2d/hiyori/Hiyori.model3.json"}` 在首位。
 - momod 将 `{config_dir}/momo/avatars/` 静态托管在 `/avatars/`（目录可后建，不存在的路径即 404；与 UI 静态资源同级，无鉴权），manifest 项 `url` 形如 `/avatars/<包名>/<入口文件>`（段级 percent-encode）。
 
 设置页保存形象前的校验（manifest 项与自定义 URL 同路径）：GET 入口 `.model3.json` 须为合法 JSON 且含非空 `FileReferences.Moc`；将其相对入口 URL 解析后 HEAD 检查须可达。校验失败不落 localStorage、不热替换。

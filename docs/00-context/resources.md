@@ -5,9 +5,9 @@
 ## 网站 demo
 
 - Sample data：[桃濑日和 Hiyori 官方页面](https://www.live2d.com/en/learn/sample/momose-hiyori/)，资源来自 Live2D Cubism Web Samples，固定到 commit `de9eb4bec4326b81fe67a54e84322fdc39bc7446`（official tag4-r.7）。
-- 固定资源源：<https://raw.githubusercontent.com/Live2D/CubismWebSamples/de9eb4bec4326b81fe67a54e84322fdc39bc7446/Samples/Resources/Hiyori/>
-- 本地副本位于 `site/docs/public/live2d/hiyori/`（网站 demo 专属）。保留官方模型、贴图与动作原样；不修改角色设计。此模型没有独立 expression 文件，主页使用其原生 motion 展示动作。
-- app/web 开发期接入使用独立副本 `app/web/public/live2d/hiyori/`（同一固定 commit、原样保留、随附 LICENSE.md/NOTICE.txt），不引用或链接网站 demo 目录；`VITE_MOMO_AVATAR_URL` 可指向其他模型目录。
+- 固定资源源：`scripts/fetch-hiyori.sh` 下载 tarball <https://codeload.github.com/Live2D/CubismWebSamples/tar.gz/de9eb4bec4326b81fe67a54e84322fdc39bc7446>，只取 `Samples/Resources/Hiyori/` 与仓库根 `LICENSE.md`。
+- 素材不随仓库分发：`site/docs/public/live2d/hiyori/`（网站 demo 专属）由脚本按需拉取，gitignored；site CI 与 Pages 部署在构建前自动拉取。保留官方模型、贴图与动作原样；不修改角色设计。此模型没有独立 expression 文件，主页使用其原生 motion 展示动作。
+- app/web 开发期默认形象由同一脚本拉到 `app/web/public/live2d/hiyori/`（同一固定 commit、原样保留、随附上游 LICENSE.md 与本仓维护的 NOTICE.txt），不引用或链接网站 demo 目录；dev 前先跑 `./scripts/fetch-hiyori.sh`，`VITE_MOMO_AVATAR_URL` 可指向其他模型目录，用户模型放 `{config_dir}/momo/avatars/`。
 - Cubism Core 不被 vendored 或改许可证；网站与 app/web 均从 Live2D 官方版本化地址加载 Core（`VITE_MOMO_CUBISM_CORE_URL` 可换镜像）。
 - `pixi-live2d-display` 是 renderer adapter；它的 MIT 许可证不覆盖 Cubism Core 或桃濑日和 Hiyori sample data。
 

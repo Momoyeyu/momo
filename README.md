@@ -1,43 +1,61 @@
+<p align="center">
+  <strong>English</strong> · <a href="./README_ZH.md">简体中文</a>
+</p>
+
 # momo
 
-让桌面多一个，懂得回应的存在。
+**One more presence on your desktop — one that knows how to respond.**
 
-momo 是一个有形象、有性格、有自己记忆的伙伴：她能听你说话，也懂得怎么陪你。本地优先；先在 Web 上把相处体验做透，再长出自己的桌面形态；直播是保留的远方。
+[![ci-app](https://github.com/Momoyeyu/momo/actions/workflows/ci-app.yml/badge.svg)](https://github.com/Momoyeyu/momo/actions/workflows/ci-app.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE.md)
+[![Docs](https://img.shields.io/badge/docs-momoyeyu.github.io%2Fmomo-blue.svg)](https://momoyeyu.github.io/momo/)
 
-主页与设计文档站：<https://momoyeyu.github.io/momo/>
+Most AI software is measured by what it does for you — questions answered, tasks closed, tokens spent. momo starts from a different observation: what people actually miss is rarely another tool. It's presence.
 
-## 现状
+momo is a local-first AI companion: a Live2D presence with a steady personality and a long-term memory she keeps herself. She is not an assistant graded on completed tasks — "like a person" is the bar. She has her own look, her own moods, and a past; conversations have pauses as well as answers; the longer you know her, the more she becomes herself. She lives in the browser today, with a desktop home in the works.
 
-- **Web 交互闭环已跑通**：Live2D 形象（默认 Hiyori，可替换）、人格化对话、文字/按住说话、字幕口型、可打断回合、本地记录。
-- **桌面壳后置**：交互在 Web 定稿后由 Tauri 复刻。
-- 开发进度见 [工程状态](./docs/06-management/github-project.md#工程状态) 与 [任务看板](https://github.com/users/Momoyeyu/projects/2)。
+## Living with her
 
-## 仓库结构
+- **Talk however feels natural.** Type, hold to talk, or open continuous voice — subtitles, lip-sync driven by real playback, and she stops when you cut in.
+- **A character, not a config.** Her persona gives her a stable personality; her mood shows on her face and in how she answers.
+- **She keeps her own memory.** After a conversation she reflects, keeps what mattered, and lets the rest fade. Everything she remembers lives on your machine — you can read it, correct it, or delete it.
+- **Everything about her can change.** Her avatar is any `.model3.json` you drop in through settings; her voice, her hearing, and the mind behind her are each a model service you choose — swap any of them and keep talking.
+- **Yours, locally.** Transcripts, persona, memory, and settings stay on your machine — inspectable, editable, exportable. The microphone only runs when you turn it on.
 
-仓库已按产品边界拆分（ADR-027）：本仓是终端用户产品 `momo`；模型训练/推理与运维基础设施在 [momo-infra](https://github.com/Momoyeyu/momo-infra) 仓。
+## Quickstart
 
-| 目录 | 语言 | 内容 |
-|---|---|---|
-| `docs/` | MD | 产品、协议与操作路径的系统设计（设计权威） |
-| `app/` | Rust + TS | **终端用户产品**：Web 运行时与呈现、回合编排、本地记录；provider（LLM/ASR/TTS）由用户配置 |
-| `site/` | VitePress + Vue | 产品主页、Live2D 互动预览与设计文档站 |
-| `evals/` | YAML | app 产品面评测集（`evals/persona/` 人格回归集） |
+Requires Rust stable (pinned by `rust-toolchain.toml`), Node.js 22+ with pnpm, and one OpenAI-compatible LLM endpoint — a local server (Ollama, vLLM, mlx_lm) or a hosted API both work.
 
-## 产品方向
+```bash
+git clone https://github.com/Momoyeyu/momo.git
+cd momo
 
-- 内核是「像人」：人格、情绪、像人的打断与留白；相处质感是目标，不是助手。
-- momo 自管理的长期记忆 → 自进化；用户可查看/纠正/删除。
-- provider 全部用户可配：OpenAI-compatible LLM、ASR、TTS 各一个 endpoint；Live2D 模型可替换（默认 Hiyori）。
-- 容灾/负载均衡不属于 app，由服务侧或 momo-infra gateway 承担。
-- 直播（streaming adapter）保留扩展接口，当前不交付。
+./scripts/fetch-hiyori.sh   # pull the default Live2D avatar (assets are fetched, not vendored)
 
-## 约定速览
+cd app
+cp .env.example .env      # set MOMO_LLM_ENDPOINT / MOMO_LLM_MODEL / MOMO_LLM_API_KEY
+cargo run --bin momod     # orchestrator on http://127.0.0.1:7800
+```
 
-- **文档先行**：实现与 `docs/` 不一致时，先修正文档与决策。
-- **Commit**：单行 `<type>: <what>`，type ∈ `feat|fix|refactor|docs|chore|test|build`，无 AI trailer。
-- **跨平台**：macOS 开发，Linux + Windows 部署；rustls；`PathBuf`。
-- **env**：`MOMO_*` 前缀；新增键同步 `app/.env.example` + `docs/01-architecture/config.md`；机器可读全集 schema 在 momo-infra 仓。
+Then the frontend, in another terminal:
+
+```bash
+cd app/web
+pnpm install
+pnpm dev                  # → http://localhost:5173
+```
+
+Open <http://localhost:5173> and start talking. To bring your own services, open the settings view and point LLM / ASR / TTS at your endpoints — changes apply on save.
+
+Homepage & design docs: <https://momoyeyu.github.io/momo/>
+
+## Acknowledgements
+
+- [Live2D Hiyori sample data](https://www.live2d.com/en/learn/sample/momose-hiyori/) — the default avatar, fetched on demand under the Live2D Free Material License
+- [Live2D Cubism Core](https://www.live2d.com/) — rendering core, loaded at runtime under its own license
+- [pixi-live2d-display](https://github.com/guansss/pixi-live2d-display) — renderer adapter
+- [momo-infra](https://github.com/Momoyeyu/momo-infra) — companion repo for model training and serving
 
 ## License
 
-代码以 **MIT License** 发布（[LICENSE](./LICENSE.md)）。`site/docs/public/live2d/` 下的 Live2D sample 素材、Cubism Core 与模型权重等第三方资源按各自许可，不受本许可覆盖。
+Code is released under the [MIT License](./LICENSE.md).
