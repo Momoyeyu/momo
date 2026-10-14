@@ -5,9 +5,18 @@
 
 declare global {
   interface Window {
-    __TAURI__?: unknown;
+    /** `withGlobalTauri` 注入的 Tauri API；shell 侧只用 window.startDragging。 */
+    __TAURI__?: {
+      window?: {
+        getCurrentWindow?: () => { startDragging: () => Promise<void> };
+      };
+    };
     /** desktop 启动时经 IPC/注入脚本下发的 per-process UI token（protocol §4）。 */
     __MOMO_UI_TOKEN__?: string;
+    /** desktop 壳按 `MOMO_ORCH_LISTEN` 注入的 ws 地址；缺省回退 127.0.0.1:7800。 */
+    __MOMO_WS_URL__?: string;
+    /** desktop 壳注入的 REST base；缺省回退 http://127.0.0.1:7800。 */
+    __MOMO_API_BASE__?: string;
   }
 }
 
@@ -19,10 +28,21 @@ export function isTauri(): boolean {
 /** UI 链路 ws 地址。 */
 export function wsUrl(): string {
   if (isTauri()) {
-    return "ws://127.0.0.1:7800/ws/ui";
+    return window.__MOMO_WS_URL__ ?? "ws://127.0.0.1:7800/ws/ui";
   }
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${proto}//${window.location.host}/ws/ui`;
+}
+
+/**
+ * `/api/*` REST base：browser 同源（空串走当前 origin）；
+ * Tauri 壳内直连 momod（跨源，momod CORS 白名单含 desktop origins）。
+ */
+export function apiBase(): string {
+  if (isTauri()) {
+    return window.__MOMO_API_BASE__ ?? "http://127.0.0.1:7800";
+  }
+  return "";
 }
 
 /** 资源 base（Live2D 模型、表情映射等）。 */

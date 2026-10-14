@@ -2,7 +2,7 @@
 //
 // provider 单槽位（ADR-028）：每类能力一个 endpoint，app 不做多配置槽/容灾。
 
-import { avatarModelUrl, uiToken } from "../config";
+import { apiBase, avatarModelUrl, uiToken } from "../config";
 import type { Live2DStage } from "../live2d/stage";
 import { showView, type View } from "./views";
 
@@ -24,12 +24,12 @@ function authHeaders(): Record<string, string> {
 }
 
 async function apiGet(): Promise<ApiSettings> {
-  const resp = await fetch("/api/settings", { headers: authHeaders() });
+  const resp = await fetch(`${apiBase()}/api/settings`, { headers: authHeaders() });
   return (await resp.json()) as ApiSettings;
 }
 
 async function apiPut(body: unknown): Promise<ApiSettings> {
-  const resp = await fetch("/api/settings", {
+  const resp = await fetch(`${apiBase()}/api/settings`, {
     method: "PUT",
     headers: { "content-type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),

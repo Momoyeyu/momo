@@ -2,6 +2,7 @@
 
 import "./style.css";
 import { avatarModelUrl, uiToken, wsUrl } from "./config";
+import { initDesktopShell } from "./desktop";
 import { WsClient } from "./net/ws-client";
 import { newId, normalizeEmotion } from "./net/protocol";
 import { AudioPlayer } from "./audio/player";
@@ -23,6 +24,9 @@ const fallbackEl = document.querySelector<HTMLElement>("#avatar-fallback");
 if (!stageEl || !chatEl || !subtitleEl || !statusEl) {
   throw new Error("index.html is missing the #stage/#chat/#subtitle/#status mount points");
 }
+
+// Tauri 壳内：无边框窗口空白区拖拽（browser 态 no-op）。
+initDesktopShell();
 
 const stage = new Live2DStage();
 stage.init(stageEl);
