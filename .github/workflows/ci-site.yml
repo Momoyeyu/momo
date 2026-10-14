@@ -9,11 +9,13 @@ on:
     paths:
       - 'site/**'
       - 'docs/**'
+      - 'scripts/**'
       - '.github/workflows/ci-site.yml'
   pull_request:
     paths:
       - 'site/**'
       - 'docs/**'
+      - 'scripts/**'
       - '.github/workflows/ci-site.yml'
 
 jobs:
@@ -33,5 +35,9 @@ jobs:
           cache: pnpm
           cache-dependency-path: site/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      # Live2D sample 素材不入库：site tests 与 vitepress build 前先拉取。
+      - name: Fetch Hiyori sample assets
+        working-directory: ${{ github.workspace }}
+        run: ./scripts/fetch-hiyori.sh site/docs/public/live2d/hiyori
       - run: pnpm test
       - run: pnpm build

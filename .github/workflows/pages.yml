@@ -6,6 +6,7 @@ on:
     paths:
       - 'site/**'
       - 'docs/**'
+      - 'scripts/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -33,6 +34,9 @@ jobs:
           cache-dependency-path: site/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: site
+      # Live2D sample 素材不入库：vitepress build 与 site tests 前先拉取。
+      - name: Fetch Hiyori sample assets
+        run: ./scripts/fetch-hiyori.sh site/docs/public/live2d/hiyori
       - run: pnpm test
         working-directory: site
       - run: pnpm build
