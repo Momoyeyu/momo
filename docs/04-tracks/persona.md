@@ -25,7 +25,7 @@ flowchart TD
 <summary>历史实验规格与复现记录</summary>
 
 > 目标：momo 说话像「她」而不是通用助手。策略分两步——**先用 character card + system prompt 逼近**，**攒够数据后做 QLoRA 把人格写进权重**。
-> 已知问题：prompt 聊久了会滑回助手腔，LoRA 是解药（见 [../00-context/research.md](../00-context/research.md) 开放问题）。
+> 已知问题：prompt 聊久了会滑回助手腔，LoRA 是解药。
 
 ## 总流程
 
@@ -37,14 +37,14 @@ flowchart LR
     LOG --> EDIT["人工修写<br/>不符人设的回复"]
     EDIT --> DS["SFT 数据集<br/>JSONL 数百条起步"]
     DS --> EVAL["20 题评测集<br/>固定回归"]
-    EVAL -->|"达标"| QLORA["4090D QLoRA<br/>8-14B ≤24h"]
+    EVAL -->|"达标"| QLORA["QLoRA 微调<br/>8-14B ≤24h"]
     EVAL -->|"不达标"| CARD
     QLORA --> MERGE["LoRA 挂载/合并<br/>灰度回归评测"]
 ```
 
 ## Character card 结构
 
-单一事实来源：`persona/momo.yaml`（momo-models 仓，入库，不含密钥）。字段设计：
+单一事实来源：`app/persona/momo.yaml`（入库，不含密钥）。字段设计：
 
 ```yaml
 version: 1                    # schema 版本
@@ -101,7 +101,7 @@ system prompt 由编排器在会话开始时装配一次，逐回合只追加情
 |---|---|---|
 | 用户文本输入 / ASR 转写文本 | 留 | 训练原料 |
 | momo 回复文本 | 留 | 含情感 tag |
-| 原始麦克风音频 | **默认不留** | 仅在显式开 `MOMO_DATA_KEEP_AUDIO=on` 且本人授权时短期保留用于 ASR 排错（登记见 [config.md](../01-architecture/config.md)） |
+| 原始麦克风音频 | **默认不留** | 仅在显式开 `MOMO_DATA_KEEP_AUDIO=on` 且本人授权时短期保留用于 ASR 排错（登记见 `01-architecture/config.md`） |
 | 打分/标记（哪条回复差） | 留 | 评测信号 |
 | 人工修写 diff | 留 | 直接就是 SFT 样本 |
 | 敏感个人信息（地址、账号等） | **不留** | 入库前正则+人工两道脱敏 |
@@ -148,15 +148,15 @@ flowchart TD
 ## QLoRA 计划
 
 - **数据**：JSONL chat 格式，数百条起步、目标 1-3k 条；正例为主，坏回复作 rejected 备 DPO。
-- **基座原则：跟着主脑走**——主脑定谁就微调谁（当前主脑 Qwen3-8B-4bit，待 30B-A3B 实测后可能升级；LoRA 重训成本接受范围内换基座）。
+- **基座原则：跟着主脑走**——主脑定谁就微调谁（跟随服务侧主脑选型，LoRA 重训成本接受范围内换基座）。
 - **算力分配**：
 
 | 规模 | 平台 | 预算 |
 |---|---|---|
-| 8-14B QLoRA（4bit 加载，r=16-32） | 4090D 24GB 单卡 | 单次 24h 会话内完成（吞吐待实测，按 checkpoint 每 2h 保底） |
-| 30B+ | bigstrong 夜间窗口（需中断常驻 vLLM，见 [../05-ops/borrowed-etiquette.md](../05-ops/borrowed-etiquette.md)）或 4090D 拆多 session | 跨 session 续训，产物每段回传 |
+| 8-14B QLoRA（4bit 加载，r=16-32） | 24GB 级单卡 | 单次 24h 窗口内完成（吞吐待实测，按 checkpoint 每 2h 保底） |
+| 30B+ | 服务侧算力窗口，或拆多 session | 跨 session 续训，产物每段回传 |
 
-- 训练前检查：数据集版本号、基座 repo+revision、超参写 `train-manifest.json`；借用机器纪律同上篇 etiquette 文档。
+- 训练前检查：数据集版本号、基座 repo+revision、超参写 `train-manifest.json`；算力借用纪律见 momo-infra 仓。
 - 部署：LoRA 产物回传后以 adapter 方式挂载（MLX `adapter_path` 或推理侧合并），先灰度回归评测再切默认。
 
 ## 验收 / 检查表

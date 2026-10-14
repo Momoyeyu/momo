@@ -58,7 +58,7 @@ momo 自主管理的长期记忆（自动归纳与引用，可审计、可纠正
 
 ### 受控扩展与长期方向
 
-逐次授权的工具与截图、Tauri 桌面宿主（复刻 Web 交互）、momo-infra 训练与 serving 控制台。streaming adapter 作为独立入口适配器，复用同一个 turn core，不把直播业务写进运行时。
+逐次授权的工具与截图、Tauri 桌面宿主（复刻 Web 交互）；自训模型与 serving 能力由独立的 momo-infra 仓承担。streaming adapter 作为独立入口适配器，复用同一个 turn core，不把直播业务写进运行时。
 
 ## 非目标
 

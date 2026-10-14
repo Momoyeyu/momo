@@ -37,19 +37,20 @@ flowchart LR
 6. [通信协议](./01-architecture/protocol.md)
 7. [操作路径图谱](./01-architecture/workflows.md)
 8. [模块边界](./01-architecture/boundaries.md)
-9. [配置](./01-architecture/config.md)
+9. 配置规范：`01-architecture/config.md`（app 面 `MOMO_` env，仓内文档）
 
 ## 目录
 
 | 目录 | 内容 |
 |---|---|
-| `00-context/` | 产品、路线、研究、ADR |
+| `00-context/` | 产品、路线、ADR、素材许可 |
 | `01-architecture/` | 系统、桌面、运行时、协议、操作路径、边界、配置 |
-| `02-repos/` | monorepo 各模块设计 |
+| `02-repos/` | app 模块设计 |
 | `03-features/` | Web 交互闭环、自管理记忆、扩展能力、工具、直播方向入口 |
-| `04-tracks/` | persona 与授权声线轨道 |
-| `05-ops/` | 部署、降级、模型获取、借用机器纪律 |
+| `04-tracks/` | persona 轨道 |
 | `06-management/` | 工程状态与 GitHub Project 协作 |
+
+> `models/` 与 `infra/` 侧文档（部署、降级、模型获取、训练、运维控制台等）随拆分迁往 **momo-infra** 仓，不在本仓维护。
 
 ## 设计不变量
 

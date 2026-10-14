@@ -42,21 +42,15 @@ flowchart LR
 体验与流程：[dialogue.md](../03-features/dialogue.md)。
 
 - 工具与截图逐次请求权限，allow/deny/cancel/result 全路径可见。
-- momo-infra 控制台：配置草稿验证、测试、原子应用与回滚；密钥独立保存。
-- 模型下载校验、激活与回滚；训练 job 本地/SSH 执行及恢复。
 - streaming adapter 只做输入归一化与输出 overlay，复用 turn core——直播方向保留，当前不交付。
 
 ## momo-infra（独立 AI 基础设施）
 
-由 `models/` + `infra/` 演化而来，服务自训练与自部署，**不是** app 的一部分：
-
-- LLM 后训练、ASR/TTS 全训练 pipeline（数据 → 训练 → frozen eval gate → promote）。
-- Serving：复用 vLLM 等开源底座，不自研推理引擎/KV cache；自研部分收敛到**统一对外 gateway**——对内多模型容灾与负载均衡，对外单一接口。
-- ASR/TTS 对外接口形态对齐主流云服务（REST/WS 标准协议），让 app 侧的 provider 配置天然兼容第三方云服务与 momo-infra。
+`models/` + `infra/` 演化为独立的 momo-infra 仓，**不是** app 的一部分：自有训练 pipeline 与 serving 底座，对内可做多模型容灾与负载均衡，对 app 暴露单一接口——LLM 为 OpenAI-compatible，ASR/TTS 接口形态对齐主流云服务，使 app 的 provider 配置天然兼容第三方云与 momo-infra。其内部路线与运维细则在 momo-infra 仓维护。
 
 ## 语言与长期轨道
 
 产品默认中文；中、英、日输入与输出按 ASR/TTS/LLM provider 的 capability 声明启用。
 
-- [声线](../04-tracks/voice-clone.md)：先使用现成语音服务，逐步形成有授权、可替换的个人声线。
+- 声线：先使用现成语音服务，逐步形成有授权、可替换的个人声线（见 [stage.md](../03-features/stage.md)）。
 - [人格](../04-tracks/persona.md)：稳定人设与可纠正上下文优先；微调是可选后续工具。
