@@ -12,7 +12,7 @@ app/
 │   ├── audio/                # AudioPlayer/AudioWorklet capture/playback/ACK
 │   ├── shell/                # CompanionShell web-facing adapter
 │   └── chat/                 # overlay、文字/PTT/VAD、历史/设置
-├── src-tauri/                # 后置：Tauri 桌面壳（窗口/menu/权限/生命周期）
+├── src-tauri/                # Tauri 桌面壳（窗口/tray/momod 生命周期；desktop.md「当前实现状态」）
 └── src/
     ├── session/              # session actor
     ├── turn/                 # TurnCoordinator、取消、playback ledger
@@ -43,7 +43,8 @@ flowchart LR
 - Rust repository 拥有 session、correction、persona、memory 正文与 vector index；Python 只计算 embedding。
 - `AudioPlayer` 以实际播放生成 started/progress ACK，Stop 同步清 buffer 与嘴型。
 - provider 配置是**用户面**：每类能力一个 endpoint（LLM OpenAI-compatible / ASR / TTS），可在设置里更换；app 不做多 provider 容灾编排（ADR-028）。
-- Tauri 壳落地后：Tauri 能力失败时 `CompanionShell` 使用普通可见窗口；menu 不可用时禁用 click-through。
+- Tauri 壳（`src-tauri/`）attach-or-spawn momod：momod 已在跑则 attach，否则按 `MOMO_MOMOD_BIN` → exe 同级 → `PATH` 解析 spawn 为 owned child（desktop.md「当前实现状态」）。
+- Tauri 能力失败时 `CompanionShell` 使用普通可见窗口；menu 不可用时禁用 click-through。
 - 退出只终止 app 自己启动的 owned child，attached remote provider 只断开连接。
 
 ## ws 子系统
