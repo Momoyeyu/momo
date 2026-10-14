@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- webview 内 getUserMedia（PTT 麦克风）触发 TCC 授权弹窗的说明文案 -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>momo uses the microphone for push-to-talk voice input.</string>
+</dict>
+</plist>

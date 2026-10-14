@@ -35,6 +35,7 @@ flowchart LR
 | `MOMO_PERSONA_FILE` | persona card 路径；读不到回退内嵌 card，每回合重读（热加载） | `persona/momo.yaml` | path | app | 否 |
 | `MOMO_WEB_ORIGIN` | 浏览器来源（CORS/WS Origin 白名单） | `http://localhost:5173` | URL | app | 否 |
 | `MOMO_UI_TOKEN` | `/ws/ui` hello 的期望 `auth_token`；desktop 启动时注入，空=standalone dev 不比对（字段仍必填） | 空 | str | app | **是** |
+| `MOMO_MOMOD_BIN` | 桌面壳 spawn momod 的二进制路径覆盖；空 = exe 同级目录 → `PATH` 解析 | 空 | path | app | 否 |
 | `MOMO_LLM_ENDPOINT` | 大脑 OpenAI-compatible base URL | `http://mac-studio.local:7820/v1` | URL | app | 否 |
 | `MOMO_LLM_MODEL` | 传给 LLM endpoint 的 model 字段 | `qwen3-30b-a3b-4bit` | str | app | 否 |
 | `MOMO_LLM_API_KEY` | `MOMO_LLM_ENDPOINT` 所指上游的鉴权 key；本地可空，远端如 DeepSeek 档必填 | 空 | str | app | **是** |

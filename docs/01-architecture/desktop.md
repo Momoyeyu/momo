@@ -4,6 +4,27 @@
 >
 > **形态说明（ADR-011）**：本章描述的是 **Tauri 桌面壳**的目标行为——它不是当前交付形态（当前是 `momod` + Web UI）。Web 上的交互定稿后，桌面壳复刻同一套交互、由本文档描述窗口/权限/生命周期这层壳独有的行为；对话、呈现与回合语义完全复用。
 
+## 当前实现状态
+
+壳的第一档已落地 `app/src-tauri/`（Tauri v2，`src/main.rs` 单文件装配）。本节区分「已交付」与「仍是目标」；实现与本章目标不符的部分以后者为准、逐步补齐。
+
+**已交付**
+
+- 窗口：`main` 无边框（`decorations: false`）、macOS transparent、默认 `always_on_top`；内容打包内嵌 `web/dist`（dev 走 `devUrl` = vite dev server）；关闭按钮 = 隐藏回 tray，真退出只走 tray Quit。
+- momod 拓扑 = **attach-or-spawn**：启动探测 `MOMO_ORCH_LISTEN` 端口，已在跑 → attach（不接管其生命周期）；未在跑 → 按 `MOMO_MOMOD_BIN` → exe 同级 → `PATH` 解析二进制 spawn 为 owned child，退出时回收。spawn 时 shell 生成 per-process `MOMO_UI_TOKEN` 同时传给子进程和 webview（`__MOMO_UI_TOKEN__` 注入脚本）；attach 模式注入空串——要求所 attach 的 momod 是 standalone dev（未配 token）。
+- 窗口拖拽：webview 侧 `desktop.ts` 按本文档阈值口径实现（>4px 移动 → `startDragging`，未超阈值保留 click）；控件与 `#chat-panel` 排除在外。
+- tray：Show / Hide / Always on Top（可切）/ Quit 菜单，左键点图标切换显隐。
+- 窗口位置/尺寸持久化：`tauri-plugin-window-state`（含显示器变更后的恢复）；单实例：`tauri-plugin-single-instance`，重复启动唤起现有窗口。
+- 麦克风权限链路：macOS `NSMicrophoneUsageDescription`（Info.plist）+ `audio-input` entitlement；webview 内 `getUserMedia` 走系统 TCC 授权。
+- webview → momod REST：`/api/settings` 跨源由 momod CORS 白名单放行（desktop origins 与 ws Origin 口径一致，方法放开 PUT、header 放开 Authorization）。
+
+**仍是目标（后续档）**
+
+- 点击穿透 click-through、PTT/VAD 全局快捷键、首次运行权限引导流、sleep/wake 的挂起恢复编排。
+- 透明不可用 / menu 不可用时的窗口降级探测（当前实现假定 transparent 与 tray 可用，失败由 Tauri 报错退出）。
+- 拖拽与 pet tap reaction 的精细分工（当前阈值即第一档语义，avatar 命中判定未做）。
+- Linux/Windows 实机验证与打包产物签名/公证；`tauri build` 产物口径未冻结。
+
 ## 启动、单实例与 readiness
 
 ```mermaid

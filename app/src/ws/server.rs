@@ -188,9 +188,20 @@ pub fn origin_allowed(headers: &HeaderMap, config: &Config) -> bool {
     self_served.iter().any(|o| o == origin)
 }
 
+/// CORS：`MOMO_WEB_ORIGIN` + Tauri desktop origins 白名单（与 ws Origin 口径一致，
+/// webview 内 `/api/settings` GET/PUT 跨源需要）；解析失败退化为放开（dev 兜底）。
 fn cors_layer(config: &Config) -> CorsLayer {
     let layer = CorsLayer::new()
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
+    let mut origins: Vec<HeaderValue> = DESKTOP_ORIGINS
+        .iter()
+        .filter_map(|o| o.parse::<HeaderValue>().ok())
+        .collect();
     match config.web_origin.parse::<HeaderValue>() {
+        Ok(origin) => {
+            origins.push(origin);
+            layer.allow_origin(origins)
+        }
         Err(_) => {
             tracing::warn!(origin = %config.web_origin, "invalid MOMO_WEB_ORIGIN, CORS permissive");
             CorsLayer::permissive()
