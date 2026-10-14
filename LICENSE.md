@@ -5,7 +5,7 @@ momo 项目代码以 MIT License 发布：可自由使用、修改、分发与�
 
 例外：site/docs/public/live2d/ 下的 Live2D sample 素材、Cubism Core
 等第三方资源不适用本许可，分别按其各自许可条款使用（见 docs/00-context/resources.md）。
-模型权重同样按各自上游许可（见 models/models/MANIFEST.toml）。
+模型权重同样按各自上游许可（见 momo-infra 仓 models/models/MANIFEST.toml）。
 
 ---
 # MIT License

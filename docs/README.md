@@ -12,19 +12,16 @@ momo 是一个有形象、有性格、有自己记忆的伙伴：她能听你说
 
 [产品体验](./00-context/product.md) · [操作图谱](./01-architecture/workflows.md) · [开发进度](./06-management/github-project.md#工程状态)
 
-## 仓库地图（协作期 monorepo → 终态拆分）
+## 仓库地图（拆分后）
 
 ```mermaid
 flowchart LR
-    DOCS["docs/<br/>产品与系统设计"] -.-> APP["app/<br/>Web 优先 + Rust runtime<br/>（未来独立为 momo 仓）"]
-    DOCS -.-> MODELS["models/<br/>Python inference adapters<br/>训练/评估"]
-    DOCS -.-> INFRA["infra/<br/>带外运维/训练编排"]
+    DOCS["docs/<br/>产品与系统设计"] -.-> APP["app/<br/>Web 优先 + Rust runtime"]
     DOCS -.-> SITE["site/<br/>静态产品页/指南"]
-    APP <-->|"momo-ws：事件与音频"| MODELS
     APP -->|"OpenAI SSE"| LLM["用户配置的 LLM endpoint"]
-    INFRA -.->|"启停/探测/产物；不经 turn 数据"| APP & MODELS & LLM
+    APP <-->|"ASR/TTS/embed provider 接口"| SERVICES["模型服务<br/>（momo-infra 或第三方云）"]
+    MOINFRA["momo-infra 仓<br/>models/ + infra/<br/>训练 + serving gateway"] -.->|"启停/探测/产物；不经 turn 数据"| APP & SERVICES & LLM
     SITE -.->|"VitePress include"| DOCS
-    MODELS & INFRA -.->|"终态合并"| MOINFRA["momo-infra<br/>训练 + serving gateway"]
 ```
 
 ## 阅读顺序
@@ -50,7 +47,7 @@ flowchart LR
 | `04-tracks/` | persona 轨道 |
 | `06-management/` | 工程状态与 GitHub Project 协作 |
 
-> `models/` 与 `infra/` 侧文档（部署、降级、模型获取、训练、运维控制台等）随拆分迁往 **momo-infra** 仓，不在本仓维护。
+> `models/` 与 `infra/` 侧文档（部署、降级、模型获取、训练、运维控制台等）已随拆分迁往 **momo-infra** 仓，不在本仓维护。
 
 ## 设计不变量
 

@@ -1,8 +1,8 @@
 # 配置规范：`MOMO_` 环境变量
 
 > 一切环境差异与密钥走 `MOMO_` 前缀环境变量（ADR-005）。仓库只提交 `.env.example`（占位无值），本地 `.env` 不入库。
-> 本文档收窄到 **app 产品面**：`models/`、`infra/` 消费的键不在此展开——过渡期机器可读全集仍以根 `config.schema.toml` 与各模块 `.env.example` 为准，随拆分迁往 momo-infra 仓。
-> 机器可读单源 schema：仓库根 `config.schema.toml`（名称/类型/默认值/敏感/读取组件/各 `.env.example` 归属，见 §6）。
+> 本文档收窄到 **app 产品面**：`models/`、`infra/` 消费的键不在此展开——机器可读全集已随拆分迁往 momo-infra 仓，以其 `config.schema.toml` 与各模块 `.env.example` 为准。
+> 机器可读单源 schema：`config.schema.toml` 在 momo-infra 仓根（名称/类型/默认值/敏感/读取组件/各 `.env.example` 归属，见 §6）；本仓只保留 `app/.env.example` 与本文档。
 
 ## 1. 解析优先级
 
@@ -58,7 +58,7 @@ flowchart LR
 
 ### 2.3 服务侧变量（迁出说明）
 
-`models/`（ASR/TTS/embedding/vision 服务监听、后端、模型与设备选择）与 `infra/`（`momoctl` 大脑启停、控制台鉴权）消费的 `MOMO_` 键，以及 `HF_ENDPOINT` 等第三方库直通变量，不在本仓文档面展开；过渡期仍以根 `config.schema.toml` 与对应模块 `.env.example` 为全集，随拆分迁往 momo-infra 仓文档。
+`models/`（ASR/TTS/embedding/vision 服务监听、后端、模型与设备选择）与 `infra/`（`momoctl` 大脑启停、控制台鉴权）消费的 `MOMO_` 键，以及 `HF_ENDPOINT` 等第三方库直通变量，不在本仓文档面展开；已随拆分迁往 momo-infra 仓，全集见其 `config.schema.toml`、对应模块 `.env.example` 与 `docs/01-architecture/config.md`。
 
 ## 3. `.env.example`（提交入库的完整模板）
 
@@ -97,7 +97,7 @@ MOMO_DATA_KEEP_AUDIO=off       # 敏感产物：授权排错时短期保留原�
 MOMO_EMOTION_MAP=config/emotion.map.yaml   # tag → Live2D 表情映射
 ```
 
-> 模板中 `models/`、`infra/` 消费的键段与上游直通变量处于过渡期，仍以 `app/.env.example`、`models/.env.example`、`infra/.env.example` 现状为准，随拆分迁往 momo-infra 仓。
+> 模板中 `models/`、`infra/` 消费的键段与上游直通变量已随拆分迁往 momo-infra 仓，以 `models/.env.example`、`infra/.env.example` 现状为准；本仓只剩 `app/.env.example`。
 
 配置覆盖记忆、语音和视觉服务；具体能力按产品优先级启用。
 
@@ -114,14 +114,14 @@ MOMO_EMOTION_MAP=config/emotion.map.yaml   # tag → Live2D 表情映射
 UI 偏好（窗口位置、scale、置顶、穿透、输入模式、设备、companion mode）保存在本地 settings，不新增或覆盖本页 env 默认值。
 
 - 配置面是**扁平 key=value 环境变量**，无嵌套配置文件——任何支持 env 注入的平台（systemd/Docker/k8s/自研发布平台）都可直接消费。
-- 平台对接约定：以 `config.schema.toml` 的 key 集合为 schema；敏感项由平台密钥管理注入，不写文件。
+- 平台对接约定：以 momo-infra 仓 `config.schema.toml` 的 key 集合为 schema；敏感项由平台密钥管理注入，不写文件。
 - 配置草稿的 validate → test → atomic apply / rollback 属服务侧控制台职责（momo-infra），不在 app 面。
-- 新增变量流程：同一 PR 内更新 `config.schema.toml` + `config.md` 表格 + `.env.example` + 代码默认值，四者不一致视为 bug。
+- 新增变量流程：同一 PR 内更新 `config.md` 表格 + `app/.env.example` + 代码默认值；schema 键集（`config.schema.toml`）在 momo-infra 仓，跨仓变更须另行同步。
 - 配置变更通过改 env + 重启生效。
 
 ## 6. 机器可读 schema：`config.schema.toml`
 
-仓库根 `config.schema.toml` 是 `MOMO_*` 键的权威来源（single source of truth），但**不是生成器**：仓库只有校验器（`momoctl config check`），没有从 schema 产出本文档或 `.env.example` 的代码。§2 表格、§3 模板与各模块 `.env.example` 仍须在同一个 PR 内手工同步；校验器只做**比对**，不一致即失败，但不会替你改。因此字段口径必须写全：
+`config.schema.toml` 是 `MOMO_*` 键的权威来源（single source of truth），已随拆分迁往 **momo-infra 仓根**——校验器 `momoctl config check` 同在该仓（`infra/`），本仓不再持有 schema 文件与校验器，§2/§3 与 `app/.env.example` 的手工同步纪律不变。schema **不是生成器**：没有从 schema 产出本文档或 `.env.example` 的代码；校验器只做**比对**，不一致即失败，但不会替你改。字段口径如下，写全才比对得了：
 
 ```toml
 schema = 1            # 文件格式版本
@@ -139,7 +139,7 @@ passthrough = [ { name, type?, default, files, description } ]   # 非 MOMO_ 前
 | `readers` | 代码中消费该键的模块：`app`/`models`/`infra` |
 | `files` | 该键必须以非注释行出现在哪些 `<mod>/.env.example` |
 | `examples` | 可选：某文件示例值偏离 `default` 时的覆盖；**敏感项不得覆写真实值**（只允许等于 `default`），真实 key/开关取值一律走本地 `.env` |
-| `component` | 配置页分 section：`common`/`app`/`models`/`infra`；本文档只展开 app 面小节，models/infra 键随拆分迁出 |
+| `component` | 配置页分 section：`common`/`app`/`models`/`infra`；本文档只展开 app 面小节，models/infra 键已迁出 |
 | `description` | 含义，与 §2「含义」列保持一致 |
 
 `passthrough.files = []` 表示该变量只允许以注释形式出现在 `.env.example`。
@@ -147,7 +147,7 @@ passthrough = [ { name, type?, default, files, description } ]   # 非 MOMO_ 前
 ## 检查表
 
 - [ ] 每个 app 面变量有：含义/默认值/取值范围/读取组件/敏感标记
-- [ ] `config.schema.toml` 与 §2 表格/§3 模板/各 `.env.example` 一致（`momoctl config check` 通过）
+- [ ] §2 表格/§3 模板与 `app/.env.example` 一致；与 momo-infra 仓 `config.schema.toml` 的 app 面键集对齐（`momoctl config check` 在 momo-infra 仓运行）
 - [ ] 默认值与 protocol.md、runtime.md 中的数字一致（端口、队列、句切阈值、VAD）
 - [ ] 敏感项在日志与诊断输出中打码
 - [ ] models/infra 侧键不在本文档展开，拆出后以 momo-infra 仓文档为准

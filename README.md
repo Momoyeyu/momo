@@ -14,15 +14,14 @@ momo 是一个有形象、有性格、有自己记忆的伙伴：她能听你说
 
 ## 仓库结构
 
-monorepo 是协作期形态，目录边界按终态仓库设计（拆分计划见 `docs/00-context/decisions.md` ADR-027）：
+仓库已按产品边界拆分（ADR-027）：本仓是终端用户产品 `momo`；模型训练/推理与运维基础设施在 [momo-infra](https://github.com/Momoyeyu/momo-infra) 仓。
 
-| 目录 | 语言 | 内容 | 终态归属 |
-|---|---|---|---|
-| `docs/` | MD | 产品、协议与操作路径的系统设计（设计权威） | `momo` |
-| `app/` | Rust + TS | **终端用户产品**：Web 运行时与呈现、回合编排、本地记录；provider（LLM/ASR/TTS）由用户配置 | `momo` |
-| `models/` | Python | ASR/TTS/Embedding inference adapters + 训练/评估 | `momo-infra` |
-| `infra/` | Rust | `momoctl` CLI + Web 运维控制台 + 训练编排；演进为训练 + serving gateway | `momo-infra` |
-| `site/` | VitePress + Vue | 产品主页、Live2D 互动预览与设计文档站 | `momo` |
+| 目录 | 语言 | 内容 |
+|---|---|---|
+| `docs/` | MD | 产品、协议与操作路径的系统设计（设计权威） |
+| `app/` | Rust + TS | **终端用户产品**：Web 运行时与呈现、回合编排、本地记录；provider（LLM/ASR/TTS）由用户配置 |
+| `site/` | VitePress + Vue | 产品主页、Live2D 互动预览与设计文档站 |
+| `evals/` | YAML | app 产品面评测集（`evals/persona/` 人格回归集） |
 
 ## 产品方向
 
@@ -36,8 +35,8 @@ monorepo 是协作期形态，目录边界按终态仓库设计（拆分计划�
 
 - **文档先行**：实现与 `docs/` 不一致时，先修正文档与决策。
 - **Commit**：单行 `<type>: <what>`，type ∈ `feat|fix|refactor|docs|chore|test|build`，无 AI trailer。
-- **跨平台**：macOS 开发，Linux + Windows 部署（models 的 Windows 走 WSL2）；rustls；`PathBuf`。
-- **env**：`MOMO_*` 前缀；新增键同步 `*/.env.example` + `docs/01-architecture/config.md`。
+- **跨平台**：macOS 开发，Linux + Windows 部署；rustls；`PathBuf`。
+- **env**：`MOMO_*` 前缀；新增键同步 `app/.env.example` + `docs/01-architecture/config.md`；机器可读全集 schema 在 momo-infra 仓。
 
 ## License
 
