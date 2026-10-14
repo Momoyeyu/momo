@@ -2,6 +2,7 @@
 
 > 所有已确认设计决策的单点定论。每条：标题 + 决策 + 理由 + 被否选项。其他文档引用结论，不重述理由。
 > 状态均为「已锁定」，除非特别注明。推翻任何一条都需要先改本文档。
+> 本仓只保留 **app 产品面**可见的决策；`models/` 与 `infra/` 的内部决策随拆分迁往 **momo-infra** 仓维护（见文末「已迁出」清单）。
 
 ```mermaid
 flowchart TD
@@ -9,6 +10,7 @@ flowchart TD
     ADR001 --> ADR002["ADR-002 语言分工<br/>Rust/Python/TS"]
     ADR001 --> ADR003["ADR-003 三段式进程<br/>+ momo-ws 协议"]
     ADR002 --> ADR004["ADR-004 编排器在 app<br/>推理在 models"]
+    ADR006["ADR-006 LLM 统一<br/>OpenAI 接口"] --> ADR021["ADR-021 app 直连单端点<br/>gateway 属 infra"]
     ADR028["ADR-028 app 单槽位 provider<br/>容灾在服务侧"] --> ADR029["ADR-029 momo-infra<br/>训练 + serving gateway"]
     ADR011["ADR-011 Web 优先迭代<br/>Tauri 后置复刻"] --> ADR012["ADR-012 Live2D+口型"]
     ADR013["ADR-013 回合语义/<br/>barge-in 三动作"] --> ADR003
@@ -31,6 +33,7 @@ flowchart TD
 
 ### ADR-005 一切环境差异走 `MOMO_` 环境变量
 
+- **决策**：环境差异与密钥全部走 `MOMO_` 前缀环境变量；仓库只提交 `.env.example`（占位无值），本地 `.env` 不入库；兼容后续配置发布平台。规范见 `01-architecture/config.md`。
 - **理由**：密钥不进 git；env 是部署平台最通用的注入面；降级切换=改 env。
 - **被否**：配置文件入库（密钥泄露风险、多机差异难管）；CLI-only（对配置发布平台不友好，且长参数难维护）。
 
@@ -52,13 +55,19 @@ flowchart TD
 - **理由**：把降级编排放进 app 会让轻产品膨胀并与 provider 实现耦合；单一 endpoint 语义使「换服务 = 改配置」对用户和 app 都最简单。
 - **被否**：app 内建多 provider 列表+故障切换（臃肿且与 momo-infra gateway 职责重叠）；app 内嵌推理（同 ADR-004 被否理由）。
 
+### ADR-029 momo-infra：自有训练 + serving，统一对外 gateway
 
+- **决策**：`models/` + `infra/` 合并演化为 **`momo-infra`**——自有训练 pipeline 与 serving 底座；对内可做多模型容灾与负载均衡，对 app 暴露单一接口（LLM 为 OpenAI-compatible；ASR/TTS 接口形态对齐主流云服务），使 app 的 provider 配置同时兼容 momo-infra 与第三方云服务。infra 内部决策细则见 momo-infra 仓。
+- **理由**：app 只需要一个稳定入口；「训练→评测→部署」闭环与统一 gateway 是 infra 的差异化职责。
+- **被否**：把 gateway/容灾编排放进 app（同 ADR-028）；ASR/TTS 用私有协议（抬高 app 对接第三方服务的成本）。
 
 ## 架构与协议
 
 ### ADR-003 三段式进程分离 + 进程间 WebSocket
 
 - **决策**：三层进程分工 + momo-ws 事件与音频协议；LLM 使用 OpenAI-compatible SSE。规范见 [../01-architecture/protocol.md](../01-architecture/protocol.md)。
+- **理由**：三段可部署到不同机器；WS 同时承载双向控制与流式音频，打断语义天然契合。
+- **被否**：gRPC/REST（服务端流式 + 双向打断语义不顺手，且浏览器端音频二进制支持繁琐）；进程内单体式（无法跨机部署）。
 
 ### ADR-004 编排器放 momo-app（Rust），模型推理放 momo-models（Python）
 
@@ -68,6 +77,8 @@ flowchart TD
 
 ### ADR-006 LLM 统一 OpenAI-compatible chat 接口抽象
 
+- **决策**：编排器一律走 OpenAI-compatible `/chat/completions` 流式接口对接大脑，无论上游是本地推理服务还是云端 API；换脑=改 endpoint env。
+- **理由**：主流后端原生同接口，热切换零代码；不重复造 LLM 私有协议。
 - **被否**：把 LLM 也纳入 momo-ws 自定义消息（要为每个后端写适配层，违背"调用现有库"原则）。
 
 ### ADR-013 回合状态机与 barge-in 三动作语义
@@ -94,6 +105,7 @@ flowchart TD
 - **理由**：打断、取消、流式音频、VAD 事件（`input.vad`）语义已在 momo-ws 定义；再立一套 REST 主协议要维护两份语义且打断语义难表达。
 - **被否**：为模型服务另定义 REST `/v1/*` 作为运行时主协议。
 
+## 产品与体验
 
 ### ADR-011 Web 优先迭代，Tauri 后置复刻
 
@@ -125,11 +137,17 @@ flowchart TD
 - **理由**：屏幕内容敏感，授权边界比具体 provider 更稳定。
 - **被否**：后台自动截图；把单一远端 provider 写死为产品能力。
 
+## 已迁出（momo-infra 仓维护）
 
+以下 ADR 属 `models/` / `infra/` 内部决策，随拆分迁往 **momo-infra** 仓，本仓不再展开细则：
 
+- ADR-007 / ADR-024（主脑选型与定案）、ADR-009（ASR/VAD 选型）、ADR-010（TTS 梯队）——模型选型。
+- ADR-008（normal/degraded 档位切换）、ADR-023 / ADR-025 / ADR-026（`momoctl` CLI、Web 控制台、config check 校验）——infra 运维面。
+- ADR-017 / ADR-018（机器网络/权限约束、torch 版本对齐）——训练与部署环境约束。
 
 ## 检查表
 
 - [ ] 每条 ADR 含：决策、理由、被否选项
 - [ ] 实测数据均标注「实测 + 日期」，未达标量标「预估/待实测」
+- [ ] models/infra 内部决策不在本仓展开，指向 momo-infra 仓
 - [ ] 其他文档只引用本文档结论，不重述理由

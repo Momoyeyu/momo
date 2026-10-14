@@ -19,6 +19,7 @@ flowchart TB
     TURN -->|"确认播出的内容"| DATA
 ```
 
+当前交付形态是 **`momod` + Web UI**（Web 是交互主迭代面，ADR-011）；Tauri 桌面壳在交互定稿后复刻同一交互。infra 是独立控制面，只负责启停、探测和产物管理，不承载 conversation 数据；模块职责详见 [模块边界](./boundaries.md)，infra 控制面细则随拆分迁往 momo-infra 仓。
 
 ## 呈现的内部协作
 
@@ -73,6 +74,7 @@ ASR/TTS 不就绪不阻止 LLM 文字回复；LLM 不就绪时只保留 draft、
 
 ## 可用性与容灾边界
 
+部署拓扑差异（本机起停哪些服务、连哪个上游）由服务侧/运维面切换，对 app 只是 endpoint 配置变化，不在 app 内编排容灾。app 侧每类 provider 只配一个 endpoint（ADR-028）：provider 故障时 app 只做 UI 呈现降级（TTS 挂→文字兜底、ASR 挂→禁语音输入），多模型容灾/负载均衡由服务侧或 momo-infra gateway 承担（ADR-029）。应用退出只终止自己启动并记录为 owned 的 child process，绝不关闭 attached remote provider。provider 切换先 warmup/probe，成功后原子激活；活动回合存在时先显式取消。
 
 ## 核心不变量
 

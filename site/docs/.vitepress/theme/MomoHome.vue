@@ -91,6 +91,7 @@ const blueprintLinks = [
       <ol>
         <li><span>当前</span><strong>Web 交互闭环</strong><p>真实形象、人格化对话、文字与语音、随时可打断。</p></li>
         <li><span>随后</span><strong>像人深化</strong><p>momo 自管理的长期记忆、可纠正的人格与有授权的声线。</p></li>
+        <li><span>之后</span><strong>形态与扩展</strong><p>Tauri 桌面壳复刻同一交互；工具与截图等受控扩展。</p></li>
       </ol>
       <div class="road-end">
         <a :href="withBase('/guide/roadmap')">阅读完整路线 <span aria-hidden="true">→</span></a>

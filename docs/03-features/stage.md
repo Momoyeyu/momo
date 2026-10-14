@@ -36,3 +36,4 @@ flowchart TD
 - [ ] 编辑后检索使用新内容；删除后正文与索引均不可检索。
 - [ ] quiet/focus/companion 不会隐式改变麦克风设置，mute 也不会隐式改变 companion mode。
 - [ ] proactive 默认关闭；所有阻断条件和 dismiss 冷却可观察。
+- [ ] 声线只使用有授权记录的材料，promotion 与 rollback 复用统一 frozen evaluation gate（训练侧细则随语音管线迁往 momo-infra）。

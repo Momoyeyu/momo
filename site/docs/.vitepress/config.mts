@@ -51,6 +51,7 @@ export default defineConfig({
         ],
       },
       {
+        text: '模块',
         collapsed: true,
         items: [
           { text: '模块边界', link: '/guide/repos' },

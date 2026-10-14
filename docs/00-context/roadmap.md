@@ -46,9 +46,11 @@ flowchart LR
 
 ## momo-infra（独立 AI 基础设施）
 
+`models/` + `infra/` 演化为独立的 momo-infra 仓，**不是** app 的一部分：自有训练 pipeline 与 serving 底座，对内可做多模型容灾与负载均衡，对 app 暴露单一接口——LLM 为 OpenAI-compatible，ASR/TTS 接口形态对齐主流云服务，使 app 的 provider 配置天然兼容第三方云与 momo-infra。其内部路线与运维细则在 momo-infra 仓维护。
 
 ## 语言与长期轨道
 
 产品默认中文；中、英、日输入与输出按 ASR/TTS/LLM provider 的 capability 声明启用。
 
+- 声线：先使用现成语音服务，逐步形成有授权、可替换的个人声线（见 [stage.md](../03-features/stage.md)）。
 - [人格](../04-tracks/persona.md)：稳定人设与可纠正上下文优先；微调是可选后续工具。
