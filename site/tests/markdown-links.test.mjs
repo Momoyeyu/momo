@@ -5,7 +5,7 @@ import { remapCanonicalLink } from '../docs/.vitepress/markdown-links.mjs'
 test('remaps canonical relative markdown links', () => {
   assert.equal(remapCanonicalLink('../01-architecture/system.md'), '/guide/architecture')
   assert.equal(remapCanonicalLink('./desktop.md'), '/guide/desktop')
-  assert.equal(remapCanonicalLink('../02-repos/momo-infra.md'), '/guide/infra-console')
+  assert.equal(remapCanonicalLink('../02-repos/momo-app.md'), '/guide/momo-app')
 })
 
 test('preserves hash and query suffixes', () => {

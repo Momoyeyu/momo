@@ -46,24 +46,16 @@ export default defineConfig({
         text: '体验与运行',
         items: [
           { text: '运行时与打断', link: '/guide/runtime' },
-          { text: '部署与降级', link: '/guide/deployment' },
-          { text: '配置', link: '/guide/config' },
           { text: '人格与上下文', link: '/guide/persona' },
-          { text: '声线个性化', link: '/guide/voice-clone' },
           { text: '素材与许可', link: '/guide/credits' },
         ],
       },
       {
-        text: '模块与运维',
+        text: '模块',
         collapsed: true,
         items: [
           { text: '模块边界', link: '/guide/repos' },
           { text: 'app 模块', link: '/guide/momo-app' },
-          { text: 'models 模块', link: '/guide/momo-models' },
-          { text: 'infra 控制面', link: '/guide/infra-console' },
-          { text: '模型获取', link: '/guide/model-fetch' },
-          { text: '降级手册', link: '/guide/degradation' },
-          { text: '借用机器规则', link: '/guide/borrowed-etiquette' },
         ],
       },
       {
@@ -71,7 +63,6 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: '文档索引', link: '/guide/docs-index' },
-          { text: '技术研究', link: '/guide/research' },
           { text: '架构决策', link: '/guide/decisions' },
           { text: '记忆与人格', link: '/guide/soul' },
           { text: '工具与感知', link: '/guide/capabilities' },
