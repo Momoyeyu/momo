@@ -9,6 +9,7 @@ flowchart LR
     CHAT --> VOICE["有授权的个人声线"]
 ```
 
+- [长期记忆实装（ADR-014）](./memory.md)
 - [像人深化](./stage.md)
 - [人格与可纠正上下文](../04-tracks/persona.md)
 - [操作路径图谱](../01-architecture/workflows.md)

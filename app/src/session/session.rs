@@ -20,6 +20,7 @@ use crate::{
     audio::sink::AudioSink,
     config::Config,
     error::AppError,
+    memory::{self, MemoryStore},
     persona::Persona,
     pipeline::{
         llm::{ChatRequest, LlmClient, OpenAiCompatLlm},
@@ -127,6 +128,8 @@ pub struct SessionDeps {
     pub resume_ttl: Duration,
     /// persona card 源（`MOMO_PERSONA_FILE`）；渲染 system prompt 注入 `llm_prompt`。
     pub persona: Persona,
+    /// 长期记忆库；`None` 时退化为纯 persona（L0-only，不崩）。
+    pub memory: Option<Arc<MemoryStore>>,
 }
 
 impl SessionDeps {
@@ -140,6 +143,7 @@ impl SessionDeps {
             barge_in_min: config.barge_in_min,
             resume_ttl: config.session_resume_ttl,
             persona: Persona::new(config.persona_file.clone()),
+            memory: memory::store::open_default(),
         }
     }
 
@@ -159,6 +163,7 @@ impl SessionDeps {
             barge_in_min: config.barge_in_min,
             resume_ttl: config.session_resume_ttl,
             persona: Persona::new(config.persona_file.clone()),
+            memory: None,
         }
     }
 }
@@ -202,6 +207,8 @@ pub struct Session {
     history: History,
     /// persona card 源；`llm_prompt` 每回合重渲染（hot reload）。
     persona: Persona,
+    /// 长期记忆库；`None` 时 `llm_prompt` 退化为纯 persona（L0-only）。
+    memory: Option<Arc<MemoryStore>>,
     llm: Option<Arc<dyn LlmClient>>,
     asr: Option<Arc<dyn AsrClient>>,
     tts: Option<Arc<dyn TtsClient>>,
@@ -286,6 +293,7 @@ impl Session {
             sink: None,
             history: History::new(deps.history_turns),
             persona: deps.persona.clone(),
+            memory: deps.memory.clone(),
             llm: deps.llm,
             asr: deps.asr,
             tts: deps.tts,
@@ -1295,6 +1303,7 @@ impl Session {
                 TurnOutcome::Failed => ReceiptStatus::Failed,
             },
         );
+        self.spawn_memory_extraction(&turn, outcome);
         if let Some(o) = turn.finish(outcome) {
             self.send(Msg::TurnFinished(TurnFinishedMsg {
                 env: self.env.next(),
@@ -1303,6 +1312,43 @@ impl Session {
             }))
             .await;
         }
+    }
+
+    /// turn.finished 后异步抽取记忆（mem0 式 ADD-only + invalidate）：
+    /// 不阻塞回合、失败只记 warn。transcript = user 原文 + 已记账 assistant
+    /// 文本（completed=emitted 全量，interrupted=committed 已播前缀）；
+    /// failed/空输入不抽取。
+    fn spawn_memory_extraction(&self, turn: &Turn, outcome: TurnOutcome) {
+        let (Some(store), Some(llm)) = (self.memory.clone(), self.llm.clone()) else {
+            return;
+        };
+        if matches!(outcome, TurnOutcome::Failed) || turn.user_text.trim().is_empty() {
+            return;
+        }
+        let source = if outcome == TurnOutcome::Completed {
+            &turn.emitted
+        } else {
+            &turn.committed
+        };
+        let mut sentences: Vec<&Sentence> = source.iter().collect();
+        sentences.sort_by_key(|s| s.index);
+        let assistant_text: String = sentences.iter().map(|s| s.text.as_str()).collect();
+        let turn_id = turn.id.clone();
+        let user_text = turn.user_text.clone();
+        tokio::spawn(async move {
+            match memory::extract::run_extraction(
+                &store,
+                &llm,
+                &turn_id,
+                &user_text,
+                &assistant_text,
+            )
+            .await
+            {
+                Ok(stats) => debug!(%turn_id, ?stats, "memory extraction applied"),
+                Err(e) => warn!(%turn_id, %e, "memory extraction failed"),
+            }
+        });
     }
 
     /// VAD 防抖定时器：speech_start 持续 `MOMO_BARGEIN_MIN_MS` 后回传确认；
@@ -1409,7 +1455,20 @@ impl Session {
         });
     }
 
+    /// 注入 persona + 记忆 + 历史的 LLM prompt：system(card 渲染，每回合重读
+    /// 热加载 + `[长期记忆]` 段) + `history.messages()` + 本轮 user 文本。
+    /// 记忆召回段由 store 按 human block + recent semantic/procedural +
+    /// 关键词重叠 episodic 拼成（memory.md §读路径）；store 不可用/无命中
+    /// 时无该段，退化为纯 persona。
     fn llm_prompt(&self, user_text: &str) -> Vec<ChatMessage> {
+        let mut system = self.persona.system_prompt();
+        if let Some(block) = self.memory.as_ref().and_then(|m| m.prompt_block(user_text)) {
+            if system.is_empty() {
+                system = block.trim_start().to_string();
+            } else {
+                system.push_str(&block);
+            }
+        }
         let mut messages = self.history.messages().to_vec();
         if !system.is_empty() {
             messages.insert(

@@ -222,6 +222,8 @@ fn view(s: &ProviderSettings) -> Value {
 }
 
 /// `MOMO_UI_TOKEN` 已设 → Bearer 校验；未设放行（与 ws hello 的 standalone 语义一致）。
+/// `pub(crate)`：memory 等相邻 REST 面复用同一鉴权口径。
+pub(crate) fn check_auth(state: &AppState, headers: &HeaderMap) -> Option<Response> {
     let expected = state.config.ui_token.as_ref()?;
     let ok = headers
         .get(header::AUTHORIZATION)
@@ -241,12 +243,14 @@ fn view(s: &ProviderSettings) -> Value {
     }
 }
 
+pub(crate) fn err_body(code: &str, message: &str) -> Value {
     json!({
         "schema": 1,
         "error": { "code": code, "message": message }
     })
 }
 
+pub(crate) fn invalid(message: String, field: &str) -> Response {
     let mut err = err_body("invalid", &message);
     err["error"]["fields"] = json!([field]);
     (StatusCode::BAD_REQUEST, Json(err)).into_response()

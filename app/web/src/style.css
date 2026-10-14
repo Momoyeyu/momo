@@ -833,3 +833,233 @@ body.view-scene #status {
 #chat-settings:hover {
   color: var(--pink-deep);
 }
+
+/* ---------- 记忆层 ---------- */
+
+/* 与设置层同口径：记忆视图隐藏场景交互件、人物全安全区落位 */
+body.view-memory #chat-panel,
+body.view-memory #chat-toggle,
+body.view-memory #subtitle,
+body.view-memory #status,
+body.view-memory #menu-btn {
+  display: none;
+}
+
+body.view-memory {
+  --stage-safe-right: 0px;
+  --dialog-zone-h: 0px;
+}
+
+#memory {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+body.view-memory #memory {
+  display: flex;
+}
+
+#memory-panel {
+  width: min(560px, 92vw);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 28px 32px 24px;
+  background: var(--panel);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 22px;
+  box-shadow: var(--shadow-soft);
+}
+
+#memory-panel > h2 {
+  margin: 0 0 18px;
+  font-size: 20px;
+  letter-spacing: 0.24em;
+  color: var(--pink-deep);
+}
+
+#memory-human {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border: 1.5px solid rgba(226, 85, 143, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  resize: vertical;
+}
+
+#memory-human:focus {
+  border-color: var(--pink);
+}
+
+#memory-human-save {
+  margin-top: 8px;
+  padding: 6px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--pink);
+  color: #fff;
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+
+#memory-human-save:hover {
+  background: var(--pink-deep);
+}
+
+#memory-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+#memory-kind {
+  padding: 5px 10px;
+  border: 1.5px solid rgba(226, 85, 143, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 12.5px;
+  color: var(--ink);
+  outline: none;
+}
+
+#memory-all-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+#memory-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.memory-empty {
+  padding: 18px 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.memory-item {
+  padding: 10px 2px;
+  border-bottom: 1px solid rgba(226, 85, 143, 0.14);
+}
+
+.memory-item:last-child {
+  border-bottom: none;
+}
+
+.memory-item.invalid {
+  opacity: 0.55;
+}
+
+.memory-item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.memory-kind {
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: var(--pink-soft);
+  color: var(--pink-deep);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.memory-status {
+  font-size: 11px;
+  color: #c2445f;
+}
+
+.memory-meta {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.memory-content {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.memory-edit-area {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+  padding: 8px 12px;
+  border: 1.5px solid rgba(226, 85, 143, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  resize: vertical;
+}
+
+.memory-edit-area:focus {
+  border-color: var(--pink);
+}
+
+.memory-item-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.memory-item-actions button {
+  padding: 3px 14px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(226, 85, 143, 0.1);
+  color: var(--ink);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.memory-item-actions button:hover {
+  background: var(--pink-soft);
+  color: var(--pink-deep);
+}
+
+.memory-item-actions button.danger:hover {
+  background: rgba(194, 68, 95, 0.15);
+  color: #c2445f;
+}
+
+#memory-msg {
+  min-height: 18px;
+  margin: 6px 0 10px;
+  font-size: 12.5px;
+  color: #34c98e;
+}
+
+#memory-msg.error {
+  color: #c2445f;
+}

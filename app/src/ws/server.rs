@@ -17,6 +17,7 @@ use crate::{
     api,
     config::Config,
     error::AppError,
+    memory::{self, MemoryStore},
     session::{SessionDeps, manager::SessionManager},
     settings::{self, ProviderSettings},
     ws::conn,
@@ -29,6 +30,9 @@ pub struct AppState {
     /// 生效 provider 配置（settings.json 覆盖 env；设置面 PUT 更新）。
     pub settings: tokio::sync::RwLock<ProviderSettings>,
     pub llm: Arc<OpenAiCompatLlm>,
+    /// 长期记忆库（`{config_dir}/momo/memory.db`）；打开失败 = None，
+    /// session 退化为纯 persona、记忆 API 回 503。
+    pub memory: Option<Arc<MemoryStore>>,
     /// settings.json 落盘路径。
     pub settings_path: std::path::PathBuf,
     /// 进程启动时刻，供 `/healthz` 报 uptime。
@@ -38,14 +42,23 @@ pub struct AppState {
 impl AppState {
     pub fn new(config: Arc<Config>) -> Result<Self, AppError> {
         let settings = ProviderSettings::load(&config)?;
+        Ok(Self::build(
+            config,
+            settings,
+            settings::settings_path(),
+            memory::store::open_default(),
+        ))
     }
 
+    /// 测试用：settings 只取 env，不读用户机 settings.json（端点可复现）；
+    /// 记忆库走进程内 sqlite，不碰用户磁盘。
     pub fn env_only(config: Arc<Config>) -> Self {
         let settings = ProviderSettings::from_config(&config);
         Self::build(
             config,
             settings,
             std::path::PathBuf::from("momo-test-settings.json"),
+            MemoryStore::in_memory().ok().map(Arc::new),
         )
     }
 
@@ -53,6 +66,7 @@ impl AppState {
         config: Arc<Config>,
         settings: ProviderSettings,
         settings_path: std::path::PathBuf,
+        memory: Option<Arc<MemoryStore>>,
     ) -> Self {
         let llm = Arc::new(OpenAiCompatLlm::new(
             settings.llm_endpoint.clone(),
@@ -60,12 +74,15 @@ impl AppState {
             settings.llm_api_key.clone(),
             config.llm_timeout,
         ));
+        let mut deps = SessionDeps::with_clients(&config, llm.clone(), asr.clone(), tts.clone());
+        deps.memory = memory.clone();
         Self {
             sessions: SessionManager::new(deps),
             settings: tokio::sync::RwLock::new(settings),
             llm,
             asr,
             tts,
+            memory,
             settings_path,
             config,
             started_at: Instant::now(),
@@ -83,12 +100,14 @@ impl AppState {
             settings.llm_api_key.clone(),
             config.llm_timeout,
         ));
+        let memory = MemoryStore::in_memory().ok().map(Arc::new);
         Ok(Self {
             sessions: SessionManager::new(deps),
             settings: tokio::sync::RwLock::new(settings),
             llm,
             asr,
             tts,
+            memory,
             settings_path: std::path::PathBuf::from("momo-test-settings.json"),
             config,
             started_at: Instant::now(),
@@ -116,6 +135,15 @@ pub fn router_from_state(state: Arc<AppState>) -> Router {
         .route("/api/settings", get(api::get_settings))
         .route("/api/settings", put(api::put_settings))
         .route("/api/avatars", get(api::get_avatars))
+        .route("/api/memories", get(memory::api::get_memories))
+        .route(
+            "/api/memories/{id}",
+            put(memory::api::put_memory).delete(memory::api::delete_memory),
+        )
+        .route(
+            "/api/memory/human-block",
+            get(memory::api::get_human_block).put(memory::api::put_human_block),
+        )
         // TODO(P4): /ws/action upgrade（action 链路注册/调用）
         .with_state(state.clone())
         .layer(cors_layer(&state.config));
@@ -192,6 +220,7 @@ pub fn origin_allowed(headers: &HeaderMap, config: &Config) -> bool {
 /// webview 内 `/api/settings` GET/PUT 跨源需要）；解析失败退化为放开（dev 兜底）。
 fn cors_layer(config: &Config) -> CorsLayer {
     let layer = CorsLayer::new()
+        .allow_methods([Method::GET, Method::PUT, Method::DELETE])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
     let mut origins: Vec<HeaderValue> = DESKTOP_ORIGINS
         .iter()

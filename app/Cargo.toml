@@ -49,6 +49,8 @@ tokio-tungstenite = { version = "0.29", features = ["rustls-tls-webpki-roots"] }
 rodio = { version = "0.19", default-features = false, optional = true }
 serde_yaml = "0.9.34"
 dirs = "6"
+# 长期记忆存储：bundled sqlite 编译进二进制，无系统依赖/openssl（docs/03-features/memory.md）
+rusqlite = { version = "0.32", features = ["bundled"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

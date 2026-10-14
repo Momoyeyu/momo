@@ -10,6 +10,7 @@ import { MicCapture } from "./audio/capture";
 import type { MicCaptureSink } from "./audio/capture";
 import { Live2DStage } from "./live2d/stage";
 import { initChat } from "./ui/chat";
+import { initMemory } from "./ui/memory";
 import { initSettings } from "./ui/settings";
 import { initSubtitle } from "./ui/subtitle";
 import { StatusIndicator } from "./ui/status";
@@ -182,16 +183,20 @@ if (micBtn) {
 }
 window.addEventListener("blur", () => cancelPtt());
 
+// ---------- 视图路由：menu（主页）/ scene（场景）/ settings（设置）/ memory（记忆） ----------
 // 进 scene 才连 ws——「开始」即进入她的房间；回主页不断线（session 保活 TTL 内可续）。
 
 const settings = initSettings({ stage });
+const memory = initMemory();
 const menuStartBtn = document.querySelector<HTMLButtonElement>("#menu-start");
+const menuMemoryBtn = document.querySelector<HTMLButtonElement>("#menu-memory");
 const menuSettingsBtn = document.querySelector<HTMLButtonElement>("#menu-settings");
 const menuBackBtn = document.querySelector<HTMLButtonElement>("#menu-btn");
 const chatSettingsBtn = document.querySelector<HTMLButtonElement>("#chat-settings");
 
 let entered = false;
 
+function toView(view: "menu" | "scene" | "settings" | "memory"): void {
   showView(view);
   stage.refit();
 }
@@ -204,6 +209,7 @@ menuStartBtn?.addEventListener("click", () => {
     if (menuStartBtn) menuStartBtn.textContent = "继续";
   }
 });
+menuMemoryBtn?.addEventListener("click", () => void memory.open("menu"));
 menuSettingsBtn?.addEventListener("click", () => void settings.open("menu"));
 chatSettingsBtn?.addEventListener("click", () => void settings.open("scene"));
 menuBackBtn?.addEventListener("click", () => toView("menu"));

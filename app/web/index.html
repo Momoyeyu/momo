@@ -28,6 +28,7 @@
           <p id="menu-tagline">让桌面多一个，懂得回应的存在</p>
           <nav id="menu-items">
             <button id="menu-start" type="button">开始</button>
+            <button id="menu-memory" type="button">记忆</button>
             <button id="menu-settings" type="button">设置</button>
           </nav>
         </div>
@@ -62,6 +63,41 @@
             <button type="button" id="settings-back">返回</button>
           </div>
         </form>
+      </div>
+
+      <!-- 记忆：用户画像 + 条目审计面（docs/03-features/memory.md）；编辑=supersede、删除=软删 -->
+      <div id="memory">
+        <div id="memory-panel">
+          <h2>记忆</h2>
+          <section class="settings-group">
+            <h3>用户画像</h3>
+            <textarea
+              id="memory-human"
+              rows="4"
+              maxlength="2000"
+              spellcheck="false"
+              placeholder="momo 长期记住的关于你的要点…"
+            ></textarea>
+            <button type="button" id="memory-human-save">保存画像</button>
+          </section>
+          <section class="settings-group">
+            <h3>记忆条目</h3>
+            <div id="memory-toolbar">
+              <select id="memory-kind" aria-label="按类型过滤">
+                <option value="">全部</option>
+                <option value="semantic">事实</option>
+                <option value="episodic">经历</option>
+                <option value="procedural">习惯</option>
+              </select>
+              <label id="memory-all-row"><input type="checkbox" id="memory-all" />含已失效</label>
+            </div>
+            <ul id="memory-list"></ul>
+          </section>
+          <p id="memory-msg" role="status"></p>
+          <div class="settings-actions">
+            <button type="button" id="memory-back">返回</button>
+          </div>
+        </div>
       </div>
 
       <!-- 对话框：字幕控制器驱动（#147），名牌 + 逐字文本 + 续行提示 -->

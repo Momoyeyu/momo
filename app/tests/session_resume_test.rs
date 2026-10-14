@@ -82,6 +82,7 @@ fn test_state(llm: Option<Arc<MockLlm>>, resume_ttl: Duration) -> Arc<AppState> 
         barge_in_min: Duration::from_millis(250),
         resume_ttl,
         persona: Persona::new(std::path::PathBuf::from("persona/momo.yaml")),
+        memory: None,
     };
     Arc::new(
         AppState::from_deps(

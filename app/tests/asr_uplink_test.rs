@@ -229,6 +229,7 @@ fn test_state(
         barge_in_min,
         resume_ttl: Duration::from_secs(60),
         persona: Persona::new(std::path::PathBuf::from("persona/momo.yaml")),
+        memory: None,
     };
     Arc::new(
         AppState::from_deps(

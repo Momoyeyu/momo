@@ -16,6 +16,8 @@ export const canonicalRoutes = Object.freeze({
   'stage.md': '/guide/stage',
   'dialogue.md': '/guide/dialogue',
   'soul.md': '/guide/soul',
+  'memory.md': '/guide/memory',
+  'soul-memory-notes.md': '/guide/soul-memory-notes',
   'capabilities.md': '/guide/capabilities',
   'streaming.md': '/guide/streaming',
   'persona.md': '/guide/persona',

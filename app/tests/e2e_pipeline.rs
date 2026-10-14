@@ -299,7 +299,26 @@ fn sse_response(feed_rx: mpsc::Receiver<String>) -> Response {
         .unwrap()
 }
 
+/// 取下一个「对话回合」LLM 调用。记忆抽取（turn.finished 异步副作用，
+/// system 含「长期记忆整理器」）会与回合请求共用同一 mock 端点——
+/// 喂 `[]` 收尾并跳过，不计入回合请求序。
 async fn recv_llm_call(rx: &mut mpsc::Receiver<LlmCall>) -> LlmCall {
+    loop {
+        let call = tokio::time::timeout(RECV_TIMEOUT, rx.recv())
+            .await
+            .expect("llm call timeout")
+            .expect("llm call channel closed");
+        let is_extract = call.body["messages"]
+            .as_array()
+            .and_then(|ms| ms.first())
+            .and_then(|m| m["content"].as_str())
+            .is_some_and(|s| s.contains("长期记忆整理器"));
+        if !is_extract {
+            return call;
+        }
+        let _ = call.feed.send("[]".into()).await;
+        drop(call.feed);
+    }
 }
 
 async fn recv_report(rx: &mut mpsc::Receiver<Item>) -> Item {
