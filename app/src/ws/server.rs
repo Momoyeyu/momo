@@ -115,9 +115,14 @@ pub fn router_from_state(state: Arc<AppState>) -> Router {
         .route("/ws/ui", get(ws_ui))
         .route("/api/settings", get(api::get_settings))
         .route("/api/settings", put(api::put_settings))
+        .route("/api/avatars", get(api::get_avatars))
         // TODO(P4): /ws/action upgrade（action 链路注册/调用）
         .with_state(state.clone())
         .layer(cors_layer(&state.config));
+
+    // /avatars/ → {config_dir}/momo/avatars（用户模型包，settings.md §形象
+    // manifest）。目录可后建，无需存在；命不中即 404。
+    app = app.nest_service("/avatars", ServeDir::new(api::avatars_dir()));
 
     if let Some(dir) = state.config.ui_dir.as_ref().filter(|d| d.is_dir()) {
         // MOMO_UI_DIR 存在 → ServeDir 托管 web/dist（生产单源部署）。

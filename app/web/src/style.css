@@ -713,6 +713,13 @@ body.view-settings #settings {
   color: var(--ink);
 }
 
+/* label 的 display:block 会压过 UA 的 [hidden]{display:none}，显式补回。 */
+.settings-group label[hidden] {
+  display: none;
+}
+
+.settings-group input,
+.settings-group select {
   display: block;
   width: 100%;
   box-sizing: border-box;
@@ -727,6 +734,8 @@ body.view-settings #settings {
   transition: border-color 0.15s;
 }
 
+.settings-group input:focus,
+.settings-group select:focus {
   border-color: var(--pink);
 }
 

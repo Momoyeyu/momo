@@ -9,6 +9,9 @@ export default defineConfig({
       // dev server 代理 /ws → momod（momo-app.md §模块结构）。
       "/ws": { target: `ws://${MOMOD}`, ws: true },
       "/healthz": { target: `http://${MOMOD}` },
+      // 设置面 REST 与用户模型包静态目录同走 momod。
+      "/api": { target: `http://${MOMOD}` },
+      "/avatars": { target: `http://${MOMOD}` },
     },
   },
 });

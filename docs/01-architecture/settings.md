@@ -12,6 +12,7 @@
 | LLM Endpoint | `llm.endpoint` | OpenAI-compatible base URL（http/https） |
 | LLM Model | `llm.model` | 传给大脑的 model 字段 |
 | LLM API Key | `llm.api_key` | 上游鉴权；留空不变，显式清空可删 |
+| 形象 | 前端 localStorage | 下拉选择 `/api/avatars` manifest 项，末位「自定义 URL」回退手输；保存前校验 `.model3.json` 可达且 `FileReferences.Moc` 存在（详见下文形象 manifest），空=默认 Hiyori，保存即热替换 |
 
 保存即生效：LLM 下一请求走新 endpoint/model/key；ASR/TTS 下一次连接落到新地址（当前链路作废）。形象字段不发给服务端，本地保存并即时重载模型。
 
@@ -32,6 +33,7 @@ flowchart LR
 |---|---|---|
 | GET | `/api/settings` | 生效配置；`api_key` 只回 `api_key_set` 布尔不回显 |
 | PUT | `/api/settings` | 按节更新；校验失败 422 级 400 + `error.fields` 归因；成功回生效视图 |
+| GET | `/api/avatars` | 形象 manifest：`{schema, avatars:[{id,name,url}]}`；内置 Hiyori（`id=builtin`）在首位，其后为 `{config_dir}/momo/avatars/*/` 扫描项 |
 
 ```json
 {
@@ -43,6 +45,17 @@ flowchart LR
 
 - 字段缺省 = 不修改；`api_key: null` = 显式清除。
 - 写序：先落盘（tmp+rename 原子写）再热应用——持久化失败不出现「生效了但没记住」的半状态。
+- 鉴权：`MOMO_UI_TOKEN` 已设时须 `Authorization: Bearer <token>`；未设（standalone dev）放行，与 `/ws/ui` hello 口径一致。`/api/avatars` 同此口径。
+
+## 形象 manifest
+
+`{config_dir}/momo/avatars/<包名>/` 每个子目录为一个 Live2D 模型包：包内含一个 `*.model3.json` 入口与其引用的资源（moc3/贴图/动作等）。扫描规则：
+
+- 子目录须含至少一个 `*.model3.json`（多个取文件名排序首个）；无入口的包、隐藏目录、顶层散落文件均不出现在 manifest。
+- `id`/`name` 取目录名，manifest 项按 `id` 排序；内置 Hiyori（web dist 分发）恒为 `{id:"builtin", url:"/live2d/hiyori/Hiyori.model3.json"}` 在首位。
+- momod 将 `{config_dir}/momo/avatars/` 静态托管在 `/avatars/`（目录可后建，不存在的路径即 404；与 UI 静态资源同级，无鉴权），manifest 项 `url` 形如 `/avatars/<包名>/<入口文件>`（段级 percent-encode）。
+
+设置页保存形象前的校验（manifest 项与自定义 URL 同路径）：GET 入口 `.model3.json` 须为合法 JSON 且含非空 `FileReferences.Moc`；将其相对入口 URL 解析后 HEAD 检查须可达。校验失败不落 localStorage、不热替换。
 
 ## 与 env 的关系
 
