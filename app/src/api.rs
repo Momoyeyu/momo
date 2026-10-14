@@ -18,6 +18,8 @@ use crate::{
 };
 
 /// `GET /api/settings`：生效配置（敏感字段只报 set 状态）。
+pub async fn get_settings(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Response {
+    if let Some(resp) = check_auth(&state, &headers) {
         return resp;
     }
     let s = state.settings.read().await;
@@ -51,6 +53,7 @@ pub async fn put_settings(
     headers: HeaderMap,
     Json(body): Json<PutBody>,
 ) -> Response {
+    if let Some(resp) = check_auth(&state, &headers) {
         return resp;
     }
 
@@ -120,13 +123,21 @@ fn view(s: &ProviderSettings) -> Value {
 }
 
 /// `MOMO_UI_TOKEN` 已设 → Bearer 校验；未设放行（与 ws hello 的 standalone 语义一致）。
+    let expected = state.config.ui_token.as_ref()?;
     let ok = headers
         .get(header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
         .and_then(|v| v.strip_prefix("Bearer "))
         .is_some_and(|t| t == expected.expose());
     if ok {
+        None
     } else {
+        Some(
+            (
+                StatusCode::UNAUTHORIZED,
+                Json(err_body("unauthorized", "bearer token required")),
+            )
+                .into_response(),
         )
     }
 }

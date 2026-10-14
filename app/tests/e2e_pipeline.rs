@@ -35,6 +35,7 @@ use momo_app::{
             TurnState, new_id,
         },
     },
+    ws::server::{self, AppState},
 };
 use serde_json::{Value, json};
 use tokio::{net::TcpListener, sync::mpsc};
@@ -327,7 +328,11 @@ fn e2e_config(llm: &str, asr: &url::Url, tts: &url::Url) -> Config {
     Config::load(|k| overrides.get(k).cloned()).expect("e2e config")
 }
 
+/// 真 TCP listener + `ws::server::router_from_state`（内含真 SessionDeps：
+/// OpenAiCompatLlm / MomoWsAsr / MomoWsTts）。`AppState::env_only` 不读
+/// 用户机 settings.json，保证 mock 端点生效。
 async fn serve_app(config: Config) -> SocketAddr {
+    let app = server::router_from_state(Arc::new(AppState::env_only(Arc::new(config))));
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     tokio::spawn(async move {
@@ -713,8 +718,16 @@ fn assert_stream_frames(seen: &Seen, stream_id: &str, sentence_seq: u32) {
 
 // ---------- 骨架冒烟（router 装配） ----------
 
+/// env-only 路由：不读用户机 settings.json，冒烟断言不依赖机器状态。
+fn env_router() -> Router {
+    server::router_from_state(Arc::new(AppState::env_only(Arc::new(
+        Config::load(|_| None).expect("default config"),
+    ))))
+}
+
 #[tokio::test]
 async fn healthz_returns_200() {
+    let app = env_router();
     let resp = app
         .oneshot(
             Request::builder()
@@ -730,6 +743,7 @@ async fn healthz_returns_200() {
 #[tokio::test]
 async fn readyz_returns_200() {
     // profiles/*.toml 的 momod 探活统一走 /readyz，路由缺失会让 serve up 卡死。
+    let app = env_router();
     let resp = app
         .oneshot(
             Request::builder()
@@ -744,6 +758,7 @@ async fn readyz_returns_200() {
 
 #[tokio::test]
 async fn ws_ui_requires_upgrade() {
+    let app = env_router();
     let resp = app
         .oneshot(
             Request::builder()

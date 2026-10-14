@@ -30,6 +30,8 @@ fn test_state(env: &[(&str, &str)]) -> Arc<server::AppState> {
             .map(|(_, v)| v.to_string())
     })
     .expect("test config");
+    // env_only：不读用户机 settings.json，测试端点可复现。
+    Arc::new(server::AppState::env_only(Arc::new(config)))
 }
 
 struct TestConn {

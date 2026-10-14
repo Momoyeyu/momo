@@ -141,6 +141,9 @@ impl ProviderSettings {
 /// URL 校验：解析 + scheme 白名单。
 pub fn parse_url(raw: &str, schemes: &[&str], field: &str) -> Result<Url, AppError> {
     let url = Url::parse(raw.trim()).map_err(|e| {
+        AppError::Config(ConfigError::Invalid(vec![format!(
+            "{field}: invalid url: {e}"
+        )]))
     })?;
     if !schemes.contains(&url.scheme()) {
         return Err(AppError::Config(ConfigError::Invalid(vec![format!(

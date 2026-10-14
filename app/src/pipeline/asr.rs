@@ -100,6 +100,10 @@ impl MomoWsAsr {
         let (tx, rx) = mpsc::channel(1);
         drop(rx);
         Self {
+            slot: Mutex::new(AsrSlot {
+                endpoint,
+                link: None,
+            }),
             events: Arc::new(Mutex::new(tx)),
         }
     }
