@@ -8,6 +8,7 @@
 ## 文档先行
 
 - 设计以 docs 目录 为准；实现与文档不一致视为 bug，先改文档再改代码。
+- 新增/修改 `MOMO_` env 键必须同步更新本仓 `.env.example` 与 `docs/01-architecture/config.md`；`config.schema.toml` 全集 schema 在 momo-infra 仓，跨仓键集变更须另行同步。
 
 ## 跨平台
 
