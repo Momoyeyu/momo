@@ -12,6 +12,8 @@
 | LLM Endpoint | `llm.endpoint` | OpenAI-compatible base URL（http/https） |
 | LLM Model | `llm.model` | 传给大脑的 model 字段 |
 | LLM API Key | `llm.api_key` | 上游鉴权；留空不变，显式清空可删 |
+| ASR Endpoint | `asr.endpoint` | 语音转写服务端点（ws/wss）：path=`/ws` 为 momo-ws 内部链路，其余路径为 Deepgram 对齐 `/v1/listen`（protocol.md §11） |
+| TTS Endpoint | `tts.endpoint` | 语音合成服务端点：http(s) 为 OpenAI 对齐 `/v1/audio/speech`，ws/wss 为 momo-ws 内部链路（protocol.md §11） |
 | 形象 | 前端 localStorage | 下拉选择 `/api/avatars` manifest 项，末位「自定义 URL」回退手输；保存前校验 `.model3.json` 可达且 `FileReferences.Moc` 存在（详见下文形象 manifest），空=默认 Hiyori，保存即热替换 |
 
 保存即生效：LLM 下一请求走新 endpoint/model/key；ASR/TTS 下一次连接落到新地址（当前链路作废）。形象字段不发给服务端，本地保存并即时重载模型。
@@ -44,8 +46,10 @@ flowchart LR
 ```
 
 - 字段缺省 = 不修改；`api_key: null` = 显式清除。
+- 校验：llm endpoint 须 http/https；asr endpoint 须 ws/wss；tts endpoint 须 http/https 或 ws/wss（形态分发见 protocol.md §11.1）；非法值不落盘不生效。
 - 写序：先落盘（tmp+rename 原子写）再热应用——持久化失败不出现「生效了但没记住」的半状态。
 - 鉴权：`MOMO_UI_TOKEN` 已设时须 `Authorization: Bearer <token>`；未设（standalone dev）放行，与 `/ws/ui` hello 口径一致。`/api/avatars` 同此口径。
+- 热应用：LLM `set_conf` 换连接面（在途请求用旧快照）；ASR/TTS `set_endpoint` 写新端点并丢活链，下一次建连/请求落到新版——endpoint 形态跨协议切换（如 tts 由 ws 改 http）时 client 实装同步重建。接入面鉴权 key（`MOMO_ASR_API_KEY`/`MOMO_TTS_API_KEY`）走 env 不进设置面，改 key 需重启。
 
 ## 形象 manifest
 

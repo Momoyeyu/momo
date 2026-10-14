@@ -21,7 +21,9 @@ use ulid::Ulid;
 use url::Url;
 
 use crate::{
+    config::SecretString,
     error::AppError,
+    pipeline::{splitter::Sentence, tts_speech::OpenAiSpeechTts},
     proto::{
         codec::{AudioHeader, Direction},
         message::{CancelTarget, EmotionTag, Msg, ServerRole},
@@ -633,4 +635,156 @@ fn now_ms() -> u64 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)
         .unwrap_or(0)
+}
+
+// ---------- provider 接入面分发（protocol.md §11.1） ----------
+
+/// TTS endpoint 形态：`http(s)` = `/v1/audio/speech`；`ws(s)` = momo-ws 内部链路。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TtsImplKind {
+    MomoWs,
+    Speech,
+}
+
+fn tts_impl_kind(endpoint: &Url) -> TtsImplKind {
+    match endpoint.scheme() {
+        "http" | "https" => TtsImplKind::Speech,
+        _ => TtsImplKind::MomoWs,
+    }
+}
+
+/// 槽位实装（枚举分发而非 dyn：保留 `connect` 等实装固有方法入口）。
+#[derive(Clone)]
+enum TtsImpl {
+    Ws(Arc<MomoWsTts>),
+    Speech(Arc<OpenAiSpeechTts>),
+}
+
+impl TtsImpl {
+    fn build(endpoint: &Url, api_key: Option<SecretString>) -> Self {
+        match tts_impl_kind(endpoint) {
+            TtsImplKind::MomoWs => Self::Ws(Arc::new(MomoWsTts::new(endpoint.clone()))),
+            TtsImplKind::Speech => {
+                Self::Speech(Arc::new(OpenAiSpeechTts::new(endpoint.clone(), api_key)))
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl TtsClient for TtsImpl {
+    async fn synth_stream(
+        &self,
+        req: SynthRequest,
+        cancel: CancellationToken,
+    ) -> Result<AudioStream, AppError> {
+        match self {
+            Self::Ws(c) => c.synth_stream(req, cancel).await,
+            Self::Speech(c) => c.synth_stream(req, cancel).await,
+        }
+    }
+    async fn cancel_turn(&self, turn_id: &str) -> Result<(), AppError> {
+        match self {
+            Self::Ws(c) => c.cancel_turn(turn_id).await,
+            // HTTP 形态无跨请求控制通道；各句随自身取消令牌断开。
+            Self::Speech(_) => Ok(()),
+        }
+    }
+}
+
+/// TTS client 分发器：按 endpoint 形态选实装（protocol.md §11.1），
+/// `set_endpoint` 跨形态热切换重建；对外仍是单一 `TtsClient`。
+///
+/// 合成是无连接的逐请求操作（HTTP）或链式多路复用（WS）；无订阅面要保活。
+pub struct TtsProvider {
+    /// `/v1/audio/speech` 鉴权 key（`MOMO_TTS_API_KEY`，env 级；实装重建沿用）。
+    api_key: Option<SecretString>,
+    slot: Mutex<TtsProviderSlot>,
+}
+
+struct TtsProviderSlot {
+    endpoint: Url,
+    imp: TtsImpl,
+}
+
+impl fmt::Debug for TtsProvider {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TtsProvider").finish_non_exhaustive()
+    }
+}
+
+impl TtsProvider {
+    pub fn new(endpoint: Url, api_key: Option<SecretString>) -> Self {
+        Self {
+            api_key: api_key.clone(),
+            slot: Mutex::new(TtsProviderSlot {
+                imp: TtsImpl::build(&endpoint, api_key),
+                endpoint,
+            }),
+        }
+    }
+
+    /// 设置面热更新端点：重建实装（WS 旧链随实装 drop 收尾；HTTP 无连接态）。
+    pub async fn set_endpoint(&self, endpoint: Url) {
+        let imp = TtsImpl::build(&endpoint, self.api_key.clone());
+        let mut guard = self.slot.lock().await;
+        guard.imp = imp;
+        guard.endpoint = endpoint;
+    }
+
+    /// bring-up 连通性检查：WS 实装做握手；HTTP 无连接态可探（首次请求见真章）。
+    pub async fn connect(&self) -> Result<(), AppError> {
+        match &self.slot.lock().await.imp {
+            TtsImpl::Ws(c) => c.connect().await,
+            TtsImpl::Speech(_) => Ok(()),
+        }
+    }
+
+    /// 当前实装快照（`Arc` clone 出锁外用，不持锁跨 await）。
+    async fn imp(&self) -> TtsImpl {
+        self.slot.lock().await.imp.clone()
+    }
+}
+
+#[async_trait]
+impl TtsClient for TtsProvider {
+    async fn synth_stream(
+        &self,
+        req: SynthRequest,
+        cancel: CancellationToken,
+    ) -> Result<AudioStream, AppError> {
+        self.imp().await.synth_stream(req, cancel).await
+    }
+    async fn cancel_turn(&self, turn_id: &str) -> Result<(), AppError> {
+        self.imp().await.cancel_turn(turn_id).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tts_endpoint_shape_dispatch() {
+        assert_eq!(
+            tts_impl_kind(&Url::parse("http://127.0.0.1:7811").unwrap()),
+            TtsImplKind::Speech
+        );
+        assert_eq!(
+            tts_impl_kind(&Url::parse("http://127.0.0.1:7811/v1/audio/speech").unwrap()),
+            TtsImplKind::Speech
+        );
+        assert_eq!(
+            tts_impl_kind(&Url::parse("https://api.openai.com/v1").unwrap()),
+            TtsImplKind::Speech
+        );
+        assert_eq!(
+            tts_impl_kind(&Url::parse("ws://127.0.0.1:7811/ws").unwrap()),
+            TtsImplKind::MomoWs
+        );
+        assert_eq!(
+            tts_impl_kind(&Url::parse("wss://tts.internal/ws").unwrap()),
+            TtsImplKind::MomoWs
+        );
+    }
 }

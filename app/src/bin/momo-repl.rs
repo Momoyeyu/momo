@@ -15,6 +15,7 @@ use momo_app::{
     error::AppError,
     pipeline::{
         splitter::SentenceSplitter,
+        tts::{SynthRequest, TtsClient, TtsProvider},
     },
     proto::message::new_id,
 };
@@ -34,6 +35,8 @@ struct Opts {
 }
 
 fn usage() -> &'static str {
+    "usage: momo-repl [--endpoint ws://host:port/ws | http://host:port] [--out FILE.wav] [--no-play]\n\
+     reads MOMO_TTS_ENDPOINT / MOMO_TTS_API_KEY / MOMO_SENT_SOFT_CHARS / MOMO_SENT_MAX_CHARS from env"
 }
 
 fn parse_args() -> Result<Opts, String> {
@@ -83,6 +86,8 @@ async fn run() -> Result<(), AppError> {
     let config = Config::from_env()?;
     let endpoint = opts.endpoint.unwrap_or_else(|| config.tts_endpoint.clone());
 
+    let tts = TtsProvider::new(endpoint.clone(), config.tts_api_key.clone());
+    // 先握手暴露连通性/角色错误（http 形态无连接态，首句才见真章），避免混进首句耗时。
     tts.connect().await?;
     eprintln!(
         "momo-repl: connected to {endpoint} (playback {})",
@@ -149,6 +154,7 @@ fn prompt() {
 /// 一行 = 一回合：切句 → 逐句 synth_stream → 逐 chunk 送扬声器/WAV 缓冲。
 async fn speak_line(
     line: &str,
+    tts: &TtsProvider,
     player: Option<&Player>,
     captured: &mut Vec<u8>,
     cancel: &CancellationToken,

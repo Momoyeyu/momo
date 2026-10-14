@@ -23,8 +23,10 @@ use crate::{
     memory::{self, MemoryStore},
     persona::Persona,
     pipeline::{
+        asr::{AsrClient, AsrEvent, AsrProvider, UPLINK_SAMPLE_RATE, stream_key},
         llm::{ChatRequest, LlmClient, OpenAiCompatLlm},
         splitter::{Sentence, SentenceSplitter},
+        tts::{SynthRequest, TtsClient, TtsProvider},
     },
     proto::{
         codec::{AudioHeader, Direction},
@@ -139,6 +141,14 @@ impl SessionDeps {
             sent_soft_chars: config.sent_soft_chars,
             sent_max_chars: config.sent_max_chars,
             llm: Some(Arc::new(OpenAiCompatLlm::from_config(config))),
+            asr: Some(Arc::new(AsrProvider::new(
+                config.asr_endpoint.clone(),
+                config.asr_api_key.clone(),
+            ))),
+            tts: Some(Arc::new(TtsProvider::new(
+                config.tts_endpoint.clone(),
+                config.tts_api_key.clone(),
+            ))),
             barge_in_enabled: config.barge_in_enabled,
             barge_in_min: config.barge_in_min,
             resume_ttl: config.session_resume_ttl,
@@ -151,6 +161,8 @@ impl SessionDeps {
     pub fn with_clients(
         config: &Config,
         llm: Arc<OpenAiCompatLlm>,
+        asr: Arc<AsrProvider>,
+        tts: Arc<TtsProvider>,
     ) -> Self {
         Self {
             history_turns: config.history_turns,

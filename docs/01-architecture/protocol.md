@@ -189,3 +189,68 @@ UI 侧 text-only 判定：`output.sentence.audio=false` 即该句确定无配音
 ## 10. close code
 
 `1000` 正常；`4001` 版本不匹配；`4400` hello timeout / malformed / 协议违反；`4401` unauthorized；`1011` 服务端错误。未知 message type 可回 non-fatal `error`；无法恢复的状态分叉关闭连接。控制消息不得静默丢弃。500ms 仅是 interruption settlement；LLM/synthesis stall 使用 `MOMO_LLM_TIMEOUT_MS` 或 turn provider timeout。
+
+## 11. Provider 接入面：ASR `/v1/listen` 与 TTS `/v1/audio/speech`
+
+app ↔ 语音服务除内部 momo-ws `/ws` 外，支持主流云服务对齐形态（ADR-029；
+momo-svc-asr / momo-svc-tts 同一进程同时暴露两套端点）。线格式权威定义见
+momo-infra `docs/01-architecture/provider-protocol.md`，本节只定 app 侧接法。
+
+### 11.1 endpoint 形态识别
+
+同一 endpoint 槽位按 URL scheme/path 自动分发，用户不感知协议差异：
+
+| 槽位 | endpoint 形态 | 协议 |
+|---|---|---|
+| `MOMO_ASR_ENDPOINT` | `ws(s)://…/ws` | 本页 momo-ws v2（内部链路） |
+| `MOMO_ASR_ENDPOINT` | `ws(s)://…` 其他路径（约定 `/v1/listen`） | Deepgram 对齐流式（§11.2） |
+| `MOMO_TTS_ENDPOINT` | `http(s)://…` | OpenAI 对齐 `POST /v1/audio/speech`（§11.3） |
+| `MOMO_TTS_ENDPOINT` | `ws(s)://…` | 本页 momo-ws v2（内部链路） |
+
+鉴权凭据：`MOMO_ASR_API_KEY` 已配置时 `/v1/listen` 升级请求带
+`Authorization: Token <key>`；`MOMO_TTS_API_KEY` 已配置时 `/v1/audio/speech`
+带 `Authorization: Bearer <key>`。空 = 不带凭据（本地开发语义）。浏览器等
+不能设头的第三方接入方可在 ASR endpoint query 带 `?token=`/`?access_token=`
+（TTS HTTP 侧无 query 兜底，只能 Bearer 头）。设置面只改 endpoint 槽位，
+key 仍走 env。
+
+### 11.2 ASR：`GET /v1/listen`（WebSocket，Deepgram 对齐）
+
+一连接 = 一条音频流（capture 生命周期 = 连接生命周期），无应用层握手帧。
+app 建连时缺省补齐 query：`encoding=linear16&sample_rate=16000&channels=1&vad_events=true`
+（endpoint URL 自带的同名参数不覆盖，`?token=` 等鉴权参数原样透传）。
+
+- 上行：binary 裸 PCM `s16le` 16kHz mono 块（无帧头/序号）；空 payload 帧不上行。
+- 控制文本帧：`{"type":"Finalize"}` 强制断句；`{"type":"CloseStream"}` =
+  Finalize + 服务端回声 `CloseStream` 后 close `1000`（app 在 `audio.end`
+  时机发出）；`{"type":"KeepAlive"}` 保活。
+- 下行 JSON 事件 → app 内部映射：`Metadata`（首事件，记日志）；
+  `SpeechStarted`/`UtteranceEnd` → `input.vad{speech_start|speech_end}`；
+  `Results`（`is_final`/`speech_final` 恒 true，`channel.alternatives[0].transcript`
+  取文本）→ `input.audio.segment{final:true}`；`Error` → `error` 帧透传。
+- 断句由服务端 VAD 内建；capture 取消 = 直接断连（无应用层 cancel 消息）。
+- close code：`1000` 正常 / `4400` 音频参数非法 / `4401` 鉴权失败（升级前
+  拒绝表现为 HTTP 403）/ `1011` 服务端内部错误。
+
+### 11.3 TTS：`POST /v1/audio/speech`（OpenAI 对齐）
+
+请求-响应式逐句合成，chunked transfer 流式返回音频字节。
+
+- 请求 JSON：`{input, model?, voice?, response_format?, speed?, lang?, emotion?}`。
+  app 发送 `{input, response_format:"pcm", lang, emotion}`（`lang`/`emotion`
+  为 momo 扩展字段，对应 `output.sentence` 同名字段）；`voice`/`speed` 不发，
+  走服务端默认。endpoint path 为空或 `/` 时 app 自动补 `/v1/audio/speech`。
+- 响应：`200` + `Content-Type: audio/pcm` + `Transfer-Encoding: chunked`，
+  流式 `s16le` 24kHz mono；末块即 EOS（无独立结束帧）。
+- 错误一律 OpenAI 信封 `{"error":{message,type,param,code}}`：`400` 字段非法 /
+  `401` 鉴权失败 / `503` provider 未 ready / `500` 合成失败。
+- 取消：断连即取消——turn 取消令牌触发即 abort 在途 HTTP 请求，无
+  `control.cancel` 等价物；`sentence_q` 限流（容量 8）沿用。
+
+| | §11 接入面 | `/ws`（§1–§10 momo-ws） |
+|---|---|---|
+| 定位 | 对外 provider 接入面 | 内部/遗留链路 |
+| 流模型 | 一连接一流 / 单请求单合成 | 一连接多路 stream 复用 |
+| 鉴权 | `Authorization` 头 / token query | hello 帧 `auth_token` |
+| 断句/取消 | 服务端内建 VAD；断连即取消 | `control.cancel` 应用层消息 |
+| 状态 | 新接入一律走本节形态 | 冻结——保留兼容，不新增能力 |

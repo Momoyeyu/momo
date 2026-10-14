@@ -40,6 +40,10 @@ flowchart LR
 | `MOMO_LLM_MODEL` | 传给 LLM endpoint 的 model 字段 | `qwen3-30b-a3b-4bit` | str | app | 否 |
 | `MOMO_LLM_API_KEY` | `MOMO_LLM_ENDPOINT` 所指上游的鉴权 key；本地可空，远端如 DeepSeek 档必填 | 空 | str | app | **是** |
 | `MOMO_LLM_TIMEOUT_MS` | LLM 请求总超时 | `30000` | ms | app | 否 |
+| `MOMO_ASR_ENDPOINT` | ASR 服务端点；`ws(s)://…/ws`=momo-ws 内部链路，其他 ws(s) 路径=Deepgram 对齐 `/v1/listen` 流式（protocol.md §11） | `ws://127.0.0.1:7810/ws` | ws(s):// | app | 否 |
+| `MOMO_ASR_API_KEY` | `/v1/listen` 鉴权 key（app 发 `Authorization: Token`；服务端同名校验，见 momo-infra config.md）；空=不带凭据 | 空 | str | app（校验侧 models） | **是** |
+| `MOMO_TTS_ENDPOINT` | TTS 服务端点；`http(s)://…`=OpenAI `POST /v1/audio/speech`，`ws(s)://…`=momo-ws 内部链路（protocol.md §11） | `ws://127.0.0.1:7811/ws` | http(s):// 或 ws(s):// | app | 否 |
+| `MOMO_TTS_API_KEY` | `/v1/audio/speech` 鉴权 key（app 发 `Authorization: Bearer`；服务端同名校验）；空=不带凭据 | 空 | str | app（校验侧 models） | **是** |
 | `MOMO_EMBED_ENDPOINT`（记忆） | embed 服务 WS 连接地址 | `ws://127.0.0.1:7812/ws` | ws:// | app | 否 |
 | `MOMO_BARGEIN_ENABLED` | 允许打断 | `true` | bool | app | 否 |
 | `MOMO_BARGEIN_MIN_MS` | 打断防抖：`input.vad{speech_start}` 须持续该时长才触发 barge-in | `250` | ms | app | 否 |
@@ -53,6 +57,7 @@ flowchart LR
 | `MOMO_DATA_KEEP_AUDIO` | 原始麦音频短期保留（仅显式开启且授权时，供 ASR 排错） | `off` | `on`/`off` | app | **是** |
 | `MOMO_EMOTION_MAP` | emotion tag → Live2D 表情映射文件路径 | `config/emotion.map.yaml` | path | app | 否 |
 
+上游凭据只有一套，按**端点**而非厂商划分：`MOMO_LLM_API_KEY` 就是 `MOMO_LLM_ENDPOINT` 所指上游的 key——把 endpoint 改成 `https://api.deepseek.com/v1` 即切到 DeepSeek，不需要新键（ADR-006 统一 OpenAI 兼容接口；ADR-016 已否掉「把单一远端 provider 写死为产品能力」）。ASR/TTS 同理：`MOMO_ASR_API_KEY`/`MOMO_TTS_API_KEY` 只对 `/v1/listen`、`/v1/audio/speech` 接入面生效，momo-ws 内部链路不消费（其凭据模型见 protocol.md §4）。
 
 ### 2.3 服务侧变量（迁出说明）
 
@@ -79,6 +84,10 @@ MOMO_LLM_ENDPOINT=http://mac-studio.local:7820/v1
 MOMO_LLM_MODEL=qwen3-30b-a3b-4bit
 MOMO_LLM_API_KEY=              # 敏感：本地可空；远端上游（如 DeepSeek）时填 sk-...
 MOMO_LLM_TIMEOUT_MS=30000
+MOMO_ASR_ENDPOINT=ws://127.0.0.1:7810/ws   # ws(s)/ws=momo-ws；其他 ws(s) 路径=/v1/listen
+MOMO_ASR_API_KEY=              # 敏感：/v1/listen 鉴权（Authorization: Token）；空=不带凭据
+MOMO_TTS_ENDPOINT=ws://127.0.0.1:7811/ws   # ws(s)=momo-ws；http(s)=/v1/audio/speech
+MOMO_TTS_API_KEY=              # 敏感：/v1/audio/speech 鉴权（Authorization: Bearer）；空=不带凭据
 MOMO_EMBED_ENDPOINT=ws://127.0.0.1:7812/ws   # 记忆：编排器→embed 服务
 MOMO_BARGEIN_ENABLED=true
 MOMO_BARGEIN_MIN_MS=250        # speech_start 持续该时长才触发打断
@@ -99,6 +108,7 @@ MOMO_EMOTION_MAP=config/emotion.map.yaml   # tag → Live2D 表情映射
 
 ## 4. 敏感项与安全
 
+- **敏感清单（app 面）**：`MOMO_LLM_API_KEY`、`MOMO_UI_TOKEN`、`MOMO_DATA_KEEP_AUDIO`、`MOMO_ASR_API_KEY`、`MOMO_TTS_API_KEY`（后续新增一律按"值即密钥/隐私开关"判断；服务侧敏感项随拆分由 momo-infra 仓登记）。
 - **敏感数据（非 key）**：`MOMO_DATA_KEEP_AUDIO=on` 时落盘的原始麦音频属隐私数据——key 本身只是开关，但其产物按敏感数据同等纪律处理（短期保留、仅 ASR 排错用途、到期清理、不外传）。
 - `.env` 已在各仓 `.gitignore`；`.env.example` 中敏感项**只留空值占位**，禁止提交真实 key。
 - 日志/诊断输出对敏感值打码（显示前 4 位 + `…`）；诊断工具只做"是否设置"检查，不回显。

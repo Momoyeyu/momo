@@ -15,12 +15,15 @@ use async_trait::async_trait;
 use bytes::Bytes;
 use serde::Serialize;
 use tokio::sync::{Mutex, mpsc};
+use tokio::task::JoinHandle;
 use tracing::{debug, warn};
 use ulid::Ulid;
 use url::Url;
 
 use crate::{
+    config::SecretString,
     error::AppError,
+    pipeline::asr_listen::DeepgramListenAsr,
     proto::{
         codec::{AudioHeader, Direction},
         message::{
@@ -38,6 +41,7 @@ use crate::{
 pub(crate) const UPLINK_SAMPLE_RATE: u32 = 16000;
 
 /// 回流事件队列容量（VAD/segment/error 是低频控制消息）。
+pub(crate) const ASR_EVENT_CAP: usize = 64;
 
 /// svc-asr → Session 的回流事件（`input.vad`/`input.audio.segment` 镜像 UI）。
 #[derive(Debug)]
@@ -365,8 +369,203 @@ fn wire_cancel(session_id: &str, target: CancelTarget, id: &str) -> String {
     .expect("wire cancel serialize")
 }
 
+pub(crate) fn now_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)
         .unwrap_or(0)
+}
+
+// ---------- provider 接入面分发（protocol.md §11.1） ----------
+
+/// ASR endpoint 形态：`…/ws` = momo-ws 内部链路；其余 ws(s) 路径 = `/v1/listen`。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AsrImplKind {
+    MomoWs,
+    Listen,
+}
+
+fn asr_impl_kind(endpoint: &Url) -> AsrImplKind {
+    match endpoint.scheme() {
+        "ws" | "wss" if endpoint.path() == "/ws" => AsrImplKind::MomoWs,
+        _ => AsrImplKind::Listen,
+    }
+}
+
+/// 槽位实装（枚举分发而非 dyn：保留 `connect` 等实装固有方法入口）。
+#[derive(Clone)]
+enum AsrImpl {
+    Ws(Arc<MomoWsAsr>),
+    Listen(Arc<DeepgramListenAsr>),
+}
+
+impl AsrImpl {
+    fn build(endpoint: &Url, api_key: Option<SecretString>) -> Self {
+        match asr_impl_kind(endpoint) {
+            AsrImplKind::MomoWs => Self::Ws(Arc::new(MomoWsAsr::new(endpoint.clone()))),
+            AsrImplKind::Listen => {
+                Self::Listen(Arc::new(DeepgramListenAsr::new(endpoint.clone(), api_key)))
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl AsrClient for AsrImpl {
+    async fn open_uplink(&self, open: &AudioOpenMsg) -> Result<(), AppError> {
+        match self {
+            Self::Ws(c) => c.open_uplink(open).await,
+            Self::Listen(c) => c.open_uplink(open).await,
+        }
+    }
+    async fn send_frame(&self, header: AudioHeader, payload: Bytes) -> Result<(), AppError> {
+        match self {
+            Self::Ws(c) => c.send_frame(header, payload).await,
+            Self::Listen(c) => c.send_frame(header, payload).await,
+        }
+    }
+    async fn end_uplink(&self, stream_id: &str, last_chunk_seq: u32) -> Result<(), AppError> {
+        match self {
+            Self::Ws(c) => c.end_uplink(stream_id, last_chunk_seq).await,
+            Self::Listen(c) => c.end_uplink(stream_id, last_chunk_seq).await,
+        }
+    }
+    async fn cancel(&self, target: CancelTarget, id: &str) -> Result<(), AppError> {
+        match self {
+            Self::Ws(c) => c.cancel(target, id).await,
+            Self::Listen(c) => c.cancel(target, id).await,
+        }
+    }
+    async fn subscribe(&self) -> mpsc::Receiver<AsrEvent> {
+        match self {
+            Self::Ws(c) => c.subscribe().await,
+            Self::Listen(c) => c.subscribe().await,
+        }
+    }
+}
+
+/// 实装事件 → 稳定订阅面的转发泵（实装切换时随旧实装 abort 重建）。
+fn spawn_event_pump(imp: AsrImpl, events: Arc<Mutex<mpsc::Sender<AsrEvent>>>) -> JoinHandle<()> {
+    tokio::spawn(async move {
+        let mut rx = imp.subscribe().await;
+        // send 失败 = 当前无订阅者：丢事件继续等（新 subscribe 会换入新发送端）；
+        // rx 耗尽 = 实装被丢，泵退出。
+        while let Some(ev) = rx.recv().await {
+            let _ = events.lock().await.send(ev).await;
+        }
+    })
+}
+
+/// ASR client 分发器：按 endpoint 形态选实装（protocol.md §11.1），
+/// `set_endpoint` 跨形态热切换重建；对外仍是单一 `AsrClient`。
+///
+/// 订阅面稳定：实装被 `set_endpoint` 整体替换时外部订阅者不掉线
+/// （实装事件经 [`spawn_event_pump`] 汇入共享 `events` 槽位）。
+pub struct AsrProvider {
+    /// `/v1/listen` 鉴权 key（`MOMO_ASR_API_KEY`，env 级；实装重建时沿用，
+    /// 不经设置面）。
+    api_key: Option<SecretString>,
+    slot: Mutex<AsrProviderSlot>,
+    events: Arc<Mutex<mpsc::Sender<AsrEvent>>>,
+}
+
+struct AsrProviderSlot {
+    endpoint: Url,
+    imp: AsrImpl,
+    pump: JoinHandle<()>,
+}
+
+impl fmt::Debug for AsrProvider {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AsrProvider").finish_non_exhaustive()
+    }
+}
+
+impl AsrProvider {
+    pub fn new(endpoint: Url, api_key: Option<SecretString>) -> Self {
+        // 订阅前事件无处可去：先建一个立即丢弃的接收端。
+        let (tx, rx) = mpsc::channel(1);
+        drop(rx);
+        let events = Arc::new(Mutex::new(tx));
+        let imp = AsrImpl::build(&endpoint, api_key.clone());
+        let pump = spawn_event_pump(imp.clone(), events.clone());
+        Self {
+            api_key,
+            slot: Mutex::new(AsrProviderSlot {
+                endpoint,
+                imp,
+                pump,
+            }),
+            events,
+        }
+    }
+
+    /// 设置面热更新端点：重建实装 + 换泵（旧泵 abort，旧实装的链路随其
+    /// 自身 drop 收尾——「当前链路作废」语义与 MomoWsAsr::set_endpoint 一致）。
+    pub async fn set_endpoint(&self, endpoint: Url) {
+        let imp = AsrImpl::build(&endpoint, self.api_key.clone());
+        let pump = spawn_event_pump(imp.clone(), self.events.clone());
+        let mut guard = self.slot.lock().await;
+        guard.pump.abort();
+        guard.imp = imp;
+        guard.pump = pump;
+        guard.endpoint = endpoint;
+    }
+
+    /// 当前实装快照（`Arc` clone 出锁外用，不持锁跨 await）。
+    async fn imp(&self) -> AsrImpl {
+        self.slot.lock().await.imp.clone()
+    }
+}
+
+#[async_trait]
+impl AsrClient for AsrProvider {
+    async fn open_uplink(&self, open: &AudioOpenMsg) -> Result<(), AppError> {
+        self.imp().await.open_uplink(open).await
+    }
+    async fn send_frame(&self, header: AudioHeader, payload: Bytes) -> Result<(), AppError> {
+        self.imp().await.send_frame(header, payload).await
+    }
+    async fn end_uplink(&self, stream_id: &str, last_chunk_seq: u32) -> Result<(), AppError> {
+        self.imp().await.end_uplink(stream_id, last_chunk_seq).await
+    }
+    async fn cancel(&self, target: CancelTarget, id: &str) -> Result<(), AppError> {
+        self.imp().await.cancel(target, id).await
+    }
+    async fn subscribe(&self) -> mpsc::Receiver<AsrEvent> {
+        let (tx, rx) = mpsc::channel(ASR_EVENT_CAP);
+        // 替换发送端：旧 channel 关闭，旧订阅者 recv 得 None 退出。
+        *self.events.lock().await = tx;
+        rx
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn asr_endpoint_shape_dispatch() {
+        assert_eq!(
+            asr_impl_kind(&Url::parse("ws://127.0.0.1:7810/ws").unwrap()),
+            AsrImplKind::MomoWs
+        );
+        assert_eq!(
+            asr_impl_kind(&Url::parse("wss://asr.internal/ws").unwrap()),
+            AsrImplKind::MomoWs
+        );
+        assert_eq!(
+            asr_impl_kind(&Url::parse("ws://127.0.0.1:7810/v1/listen").unwrap()),
+            AsrImplKind::Listen
+        );
+        assert_eq!(
+            asr_impl_kind(&Url::parse("wss://api.deepgram.com/v1/listen").unwrap()),
+            AsrImplKind::Listen
+        );
+        // 约定外形态落到新实装（建连时报错，不静默走旧链路）。
+        assert_eq!(
+            asr_impl_kind(&Url::parse("http://127.0.0.1:7810/v1/listen").unwrap()),
+            AsrImplKind::Listen
+        );
+    }
 }

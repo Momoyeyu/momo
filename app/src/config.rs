@@ -24,8 +24,16 @@ pub struct Config {
     pub llm_api_key: Option<SecretString>,
     /// `MOMO_LLM_TIMEOUT_MS`，LLM 请求总超时。
     pub llm_timeout: Duration,
+    /// `MOMO_TTS_ENDPOINT`，momo-svc-tts 或兼容端点；http(s)=`/v1/audio/speech`，
+    /// ws(s)=momo-ws（形态分发见 protocol.md §11.1）。
     pub tts_endpoint: Url,
+    /// `MOMO_TTS_API_KEY`，`/v1/audio/speech` 鉴权 Bearer key；敏感，空=不带凭据。
+    pub tts_api_key: Option<SecretString>,
+    /// `MOMO_ASR_ENDPOINT`，momo-svc-asr 或兼容端点；`…/ws`=momo-ws，
+    /// 其他 ws(s) 路径=`/v1/listen`。
     pub asr_endpoint: Url,
+    /// `MOMO_ASR_API_KEY`，`/v1/listen` 鉴权 Token key；敏感，空=不带凭据。
+    pub asr_api_key: Option<SecretString>,
     /// `MOMO_UI_DIR`，设了且存在则 ServeDir 托管 `web/dist`。
     pub ui_dir: Option<PathBuf>,
     /// `MOMO_PERSONA_FILE`，persona card 路径；读不到回退内嵌 card。
@@ -116,6 +124,12 @@ impl Config {
             "ws://127.0.0.1:7810/ws",
             &mut errors,
         );
+        let tts_api_key = get("MOMO_TTS_API_KEY")
+            .filter(|v| !v.is_empty())
+            .map(SecretString::new);
+        let asr_api_key = get("MOMO_ASR_API_KEY")
+            .filter(|v| !v.is_empty())
+            .map(SecretString::new);
         let ui_dir = get("MOMO_UI_DIR")
             .filter(|v| !v.is_empty())
             .map(PathBuf::from);
@@ -153,7 +167,9 @@ impl Config {
             llm_api_key,
             llm_timeout: Duration::from_millis(llm_timeout_ms.unwrap()),
             tts_endpoint: tts_endpoint.unwrap(),
+            tts_api_key,
             asr_endpoint: asr_endpoint.unwrap(),
+            asr_api_key,
             ui_dir,
             persona_file,
             log_level,

@@ -18,6 +18,7 @@ use crate::{
     config::Config,
     error::AppError,
     memory::{self, MemoryStore},
+    pipeline::{asr::AsrProvider, llm::OpenAiCompatLlm, tts::TtsProvider},
     session::{SessionDeps, manager::SessionManager},
     settings::{self, ProviderSettings},
     ws::conn,
@@ -29,7 +30,11 @@ pub struct AppState {
     pub sessions: SessionManager,
     /// 生效 provider 配置（settings.json 覆盖 env；设置面 PUT 更新）。
     pub settings: tokio::sync::RwLock<ProviderSettings>,
+    /// 具体 client 句柄：设置面热改需要直接调 set_conf/set_endpoint；
+    /// asr/tts 为形态分发 wrapper（endpoint 跨协议切换时内部重建实装）。
     pub llm: Arc<OpenAiCompatLlm>,
+    pub asr: Arc<AsrProvider>,
+    pub tts: Arc<TtsProvider>,
     /// 长期记忆库（`{config_dir}/momo/memory.db`）；打开失败 = None，
     /// session 退化为纯 persona、记忆 API 回 503。
     pub memory: Option<Arc<MemoryStore>>,
@@ -74,6 +79,14 @@ impl AppState {
             settings.llm_api_key.clone(),
             config.llm_timeout,
         ));
+        let asr = Arc::new(AsrProvider::new(
+            settings.asr_endpoint.clone(),
+            config.asr_api_key.clone(),
+        ));
+        let tts = Arc::new(TtsProvider::new(
+            settings.tts_endpoint.clone(),
+            config.tts_api_key.clone(),
+        ));
         let mut deps = SessionDeps::with_clients(&config, llm.clone(), asr.clone(), tts.clone());
         deps.memory = memory.clone();
         Self {
@@ -99,6 +112,14 @@ impl AppState {
             settings.llm_model.clone(),
             settings.llm_api_key.clone(),
             config.llm_timeout,
+        ));
+        let asr = Arc::new(AsrProvider::new(
+            settings.asr_endpoint.clone(),
+            config.asr_api_key.clone(),
+        ));
+        let tts = Arc::new(TtsProvider::new(
+            settings.tts_endpoint.clone(),
+            config.tts_api_key.clone(),
         ));
         let memory = MemoryStore::in_memory().ok().map(Arc::new);
         Ok(Self {

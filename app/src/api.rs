@@ -94,6 +94,8 @@ pub async fn put_settings(
         }
     }
     if let Some(tts) = body.tts.and_then(|t| t.endpoint) {
+        // tts 槽位允许 http(s)（/v1/audio/speech 形态）与 ws(s)（momo-ws）。
+        match parse_url(&tts, &["ws", "wss", "http", "https"], "tts.endpoint") {
             Ok(u) => s.tts_endpoint = u,
             Err(e) => return invalid(e.to_string(), "tts.endpoint"),
         }

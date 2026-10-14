@@ -26,7 +26,10 @@ pub struct ProviderSettings {
     pub llm_model: String,
     /// LLM 上游鉴权 key（本地可空）。
     pub llm_api_key: Option<SecretString>,
+    /// ASR 服务端点（ws/wss）：path=`/ws` 为 momo-ws，其余路径为 `/v1/listen`
+    /// 形态（protocol.md §11.1 形态分发）。
     pub asr_endpoint: Url,
+    /// TTS 服务端点：http(s)=`/v1/audio/speech`，ws/wss=momo-ws。
     pub tts_endpoint: Url,
 }
 
@@ -100,6 +103,12 @@ impl ProviderSettings {
             self.asr_endpoint = parse_url(&asr.endpoint, &["ws", "wss"], "asr.endpoint")?;
         }
         if let Some(tts) = file.tts {
+            // TTS 槽位双形态：http(s)=/v1/audio/speech，ws(s)=momo-ws（protocol §11.1）。
+            self.tts_endpoint = parse_url(
+                &tts.endpoint,
+                &["ws", "wss", "http", "https"],
+                "tts.endpoint",
+            )?;
         }
         Ok(())
     }
