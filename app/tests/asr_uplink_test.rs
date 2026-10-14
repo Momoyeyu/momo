@@ -231,8 +231,11 @@ fn test_state(
         persona: Persona::new(std::path::PathBuf::from("persona/momo.yaml")),
     };
     Arc::new(
-        AppState::from_deps(Arc::new(Config::load(|_| None).expect("default config")), deps)
-            .expect("app state"),
+        AppState::from_deps(
+            Arc::new(Config::load(|_| None).expect("default config")),
+            deps,
+        )
+        .expect("app state"),
     )
 }
 

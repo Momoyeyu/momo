@@ -25,7 +25,8 @@ use tokio::task::JoinHandle;
 
 fn test_state() -> Arc<AppState> {
     let config = Config::load(|_| None).expect("default config");
-    Arc::new(AppState::new(Arc::new(config)).expect("app state"))
+    // env_only：不读用户机 settings.json，测试端点可复现。
+    Arc::new(AppState::env_only(Arc::new(config)))
 }
 
 /// 测试侧连接：inbound 注入客户端帧，outbound 收服务端帧。

@@ -102,7 +102,10 @@ impl fmt::Debug for MomoWsTts {
 impl MomoWsTts {
     pub fn new(endpoint: Url) -> Self {
         Self {
-            slot: Mutex::new(TtsSlot { endpoint, link: None }),
+            slot: Mutex::new(TtsSlot {
+                endpoint,
+                link: None,
+            }),
         }
     }
 
@@ -213,7 +216,11 @@ impl TtsClient for MomoWsTts {
     /// barge-in 扇出：活链路上发 `control.cancel{target:turn}`；尽力而为。
     async fn cancel_turn(&self, turn_id: &str) -> Result<(), AppError> {
         let guard = self.slot.lock().await;
-        let Some(link) = guard.link.as_ref().filter(|l| l.alive.load(Ordering::Acquire)) else {
+        let Some(link) = guard
+            .link
+            .as_ref()
+            .filter(|l| l.alive.load(Ordering::Acquire))
+        else {
             return Ok(());
         };
         let _ = link

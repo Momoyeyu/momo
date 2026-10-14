@@ -14,7 +14,9 @@ use axum::{
 use tower_http::{cors::CorsLayer, services::ServeDir};
 
 use crate::{
-    api, config::Config, error::AppError,
+    api,
+    config::Config,
+    error::AppError,
     pipeline::{asr::MomoWsAsr, llm::OpenAiCompatLlm, tts::MomoWsTts},
     session::{SessionDeps, manager::SessionManager},
     settings::{self, ProviderSettings},
@@ -40,6 +42,24 @@ pub struct AppState {
 impl AppState {
     pub fn new(config: Arc<Config>) -> Result<Self, AppError> {
         let settings = ProviderSettings::load(&config)?;
+        Ok(Self::build(config, settings, settings::settings_path()))
+    }
+
+    /// 测试用：settings 只取 env，不读用户机 settings.json（端点可复现）。
+    pub fn env_only(config: Arc<Config>) -> Self {
+        let settings = ProviderSettings::from_config(&config);
+        Self::build(
+            config,
+            settings,
+            std::path::PathBuf::from("momo-test-settings.json"),
+        )
+    }
+
+    fn build(
+        config: Arc<Config>,
+        settings: ProviderSettings,
+        settings_path: std::path::PathBuf,
+    ) -> Self {
         let llm = Arc::new(OpenAiCompatLlm::new(
             settings.llm_endpoint.clone(),
             settings.llm_model.clone(),
@@ -48,22 +68,17 @@ impl AppState {
         ));
         let asr = Arc::new(MomoWsAsr::new(settings.asr_endpoint.clone()));
         let tts = Arc::new(MomoWsTts::new(settings.tts_endpoint.clone()));
-        let deps = SessionDeps::with_clients(
-            &config,
-            llm.clone(),
-            asr.clone(),
-            tts.clone(),
-        );
-        Ok(Self {
+        let deps = SessionDeps::with_clients(&config, llm.clone(), asr.clone(), tts.clone());
+        Self {
             sessions: SessionManager::new(deps),
             settings: tokio::sync::RwLock::new(settings),
             llm,
             asr,
             tts,
-            settings_path: settings::settings_path(),
+            settings_path,
             config,
             started_at: Instant::now(),
-        })
+        }
     }
 
     /// 测试用：注入自定义 deps（mock client）；settings 句柄独立构造，
@@ -98,8 +113,11 @@ impl AppState {
 
 /// 构建 momod 的 HTTP/WS 路由。
 pub fn router(config: Arc<Config>) -> Result<Router, AppError> {
-    let state = Arc::new(AppState::new(config)?);
+    Ok(router_from_state(Arc::new(AppState::new(config)?)))
+}
 
+/// 以预构造 state 建路由（e2e 注入 `AppState::env_only`，隔离用户 settings.json）。
+pub fn router_from_state(state: Arc<AppState>) -> Router {
     let mut app = Router::new()
         .route("/healthz", get(healthz))
         // 组件探活口径统一走 /readyz（profiles/*.toml）；momod 暂无
@@ -117,7 +135,7 @@ pub fn router(config: Arc<Config>) -> Result<Router, AppError> {
         app = app.fallback_service(ServeDir::new(dir));
     }
 
-    Ok(app)
+    app
 }
 
 /// momo-infra `momoctl serve status` 探活端点。
