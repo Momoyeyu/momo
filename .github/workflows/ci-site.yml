@@ -1,7 +1,6 @@
 name: ci-site
 
-# site 门禁：pnpm test + pnpm build。docs/** 纳入触发面——guide 页经 include
-# 消费 canonical docs，docs 变更同样可能打坏 build（口径见 momo-docs.md「站点 CI」）。
+# Product website uses local fonts and a static scene; no runtime Live2D CDN.
 
 on:
   push:
@@ -9,13 +8,11 @@ on:
     paths:
       - 'site/**'
       - 'docs/**'
-      - 'scripts/**'
       - '.github/workflows/ci-site.yml'
   pull_request:
     paths:
       - 'site/**'
       - 'docs/**'
-      - 'scripts/**'
       - '.github/workflows/ci-site.yml'
 
 jobs:
@@ -35,9 +32,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: site/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      # Live2D sample 素材不入库：site tests 与 vitepress build 前先拉取。
-      - name: Fetch Hiyori sample assets
-        working-directory: ${{ github.workspace }}
-        run: ./scripts/fetch-hiyori.sh site/docs/public/live2d/hiyori
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:browser
