@@ -1,14 +1,3 @@
-Required Notice: Copyright (c) 2026 Momoyeyu (https://github.com/Momoyeyu)
-
-momo 项目代码以 MIT License 发布：可自由使用、修改、分发与商用，
-只需在副本中保留上述版权声明。
-
-注：本仓库不附带第三方素材。构建/运行时按需拉取的 Live2D sample 素材、
-Cubism Core，以及 momo-infra 仓的模型权重等第三方资源不适用本许可，
-分别按其各自许可条款使用（见 docs/00-context/resources.md 与
-momo-infra 仓 models/models/MANIFEST.toml）。
-
----
 # MIT License
 
 Copyright (c) 2026 Momoyeyu

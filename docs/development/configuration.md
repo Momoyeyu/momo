@@ -1,6 +1,6 @@
 # 运行配置
 
-玩家只配置 LLM 和可选 TTS；语音识别与 embedding 内置。thinking 默认关闭，按已支持供应商协议启用。配置由应用数据目录中的 momo.yaml 管理，不使用旧 infra schema 或 momoctl。
+玩家只配置 LLM 和可选 TTS；语音识别与 embedding 内置。thinking 默认关闭，按已支持供应商协议启用。配置由应用数据目录中的 momo.yaml 管理，配置契约与示例在本仓库维护。
 
 | 变量 | 用途 |
 | --- | --- |

@@ -2,9 +2,9 @@
 
 ## 当前实现与文档
 
-- 产品基线是迁入的 momo-web：React 前端、Python/FastAPI 后端、Tauri 桌面壳。旧 Rust 编排、旧 app/web 与通用 infra 不再作为活跃需求。
+- 当前产品使用 React 前端、Python/FastAPI 后端和 Tauri 桌面壳；保持单一实现与本仓库内的配置、资源和部署契约。
 - 使用文档在 docs/usage/，开发与运行配置在 docs/development/；官网只作产品宣发。设计与实现冲突时先更新相关文档，不复制旧架构文档。
-- 新增或修改 MOMO_ 配置同步 app/.env.example 和 docs/development/configuration.md；不依赖外仓 schema 或 momoctl。
+- 新增或修改 MOMO_ 配置同步 app/.env.example 和 docs/development/configuration.md；配置契约以本仓库实现为准。
 - 界面保留中 / 英 / 日，日志、CLI 与错误诊断用英文，源码注释及开发文档可用中文。
 
 ## 数据与资源
@@ -19,7 +19,7 @@
 - 先在 macOS 完成体验并由用户验收，再推进 Windows；Linux 次要且可选，不做手机 / 平板应用。不为每次体验迭代重复跨平台构建。保持平台边界清楚，Rust TLS 用 rustls。
 - 原生包必须自带运行依赖；浏览器 E2E 和 tauri dev 不算安装产物通过。测试驱动只进测试构建。
 - 单实例只聚焦已有窗口，退出回收本应用自己的后端与 MCP 子进程，不杀占用端口的外部服务。
-- 不发布未测试的平台能力。仓库删除、网站切换与 momo-web archive 遵守用户验收边界。
+- 不发布未测试的平台能力。仓库删除和网站切换遵守用户明确授权；已完成的早期实验清退不替代当前产品的平台体验验收。
 
 - 远程测试完成后先收回产物与必要证据，再清理本轮自建目录、进程、容器与专用镜像；不删除原有服务、共享缓存或其他项目。
 
