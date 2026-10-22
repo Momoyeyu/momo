@@ -12,7 +12,8 @@ def valid(data):
 if target.is_file() and valid(target.read_bytes()):
     print('Pinned Cubism Core already verified')
 else:
-    with urllib.request.urlopen(manifest['url'], timeout=60) as response:
+    request = urllib.request.Request(manifest['url'], headers={'User-Agent': 'momo-resource-builder/1'})
+    with urllib.request.urlopen(request, timeout=60) as response:
         data = response.read()
     if not valid(data):
         raise ValueError('Cubism Core checksum mismatch; build input was not replaced')
