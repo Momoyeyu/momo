@@ -45,3 +45,10 @@ site/playwright-report/
 # Site help pages are generated from canonical usage documents.
 site/docs/help/
 site/.playwright-evidence/
+
+# Preserve local leftovers from the retired implementation without staging them.
+app/web/
+app/data/
+site/docs/public/live2d/
+site/docs/.vitepress/cache/
+.archify/
