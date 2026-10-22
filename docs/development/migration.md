@@ -21,7 +21,7 @@ React 游戏界面和 Python/FastAPI 业务保持原行为。Tauri 只承担窗�
 
 ## 验收口径
 
-浏览器测试、tauri dev、冻结后端 smoke、原生桌面 E2E 与安装产物验证分别报告。当前先以 macOS arm64 完成体验和用户验收，再单独推进 Windows x64；Linux 次要且可选，不做手机 / 平板应用。不为每次体验迭代重建整个历史平台矩阵；未运行的平台不标通过。momo-web archive 由夜羽决定；momo-infra 清退在 TTS 部署迁移验收和备份恢复验证后执行。
+浏览器测试、tauri dev、冻结后端 smoke、原生桌面 E2E 与安装产物验证分别报告。当前先以 macOS arm64 完成体验和用户验收，再单独推进 Windows x64；Linux 次要且可选，不做手机 / 平板应用。不为每次体验迭代重建整个历史平台矩阵；未运行的平台不标通过。momo-web 为早期实验 MVP，已按夜羽确认公开归档，当前产品统一在本仓库维护；momo-infra 清退在 TTS 部署迁移验收和备份恢复验证后执行。
 
 ## 从干净源码构建
 
@@ -66,3 +66,11 @@ MOMO_WEB_API_UPSTREAM=http://127.0.0.1:7822 pnpm --dir app/frontend dev --host 1
 `frontend/index.html` 的本地 HTML / SVG / `public/startup.css` 在 React 初始化前直接显示。`src/startup/presence.ts` 只在运行时连接、恢复记录、就绪 / 失败时更新状态；CSS 承担动画，不计算虚构进度，不等待远端服务或额外预热模型。React 首次提交后释放 root 的 inert / aria-hidden，再短淡出移除启动层；减少动态时直接移除。错误界面使用固定三语文案，不渲染原始异常，重试重新加载当前窗口。
 
 `e2e/18-startup-presence.spec.ts` 在隔离来源中控制启动延迟与故障，验证阶段、动作、语言、错误重试和去遮挡；`scripts/startup.e2e.mjs` 检查实际安装资源和正常 / 刷新后的可交互状态。当前只验收 macOS。
+
+## 早期 MVP 的开发档迁移
+
+此段仅供维护者处理 momo-web 实验数据，不属于面向玩家的使用指南。
+
+旧版 momo-web 没有新的整包导出入口。先停止旧后端并复制它的完整用户数据目录（包含配置、参考音和 SQLite / WAL）；保留原目录作为回退。使用新仓库的浏览器开发模式，以复制目录作为 MOMO_DATA_DIR 启动后端，并在原来的浏览器来源（包括端口）打开新前端。这样导出入口才能同时读取复制的后端数据和该来源 IndexedDB 中的形象。
+
+在设置中导出归档，退出临时开发服务，然后在桌面版导入。两边都先保留备份；确认对话、记忆、形象、参考音和存档完整后再处理旧目录。不要同时用两个后端写同一个数据目录，也不要把原目录直接交给迁移测试。
