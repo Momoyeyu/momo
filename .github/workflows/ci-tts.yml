@@ -1,0 +1,18 @@
+name: TTS deployment contracts
+on:
+  push:
+    branches: [master]
+    paths: ['deploy/tts/**', '.github/workflows/ci-tts.yml']
+  pull_request:
+    paths: ['deploy/tts/**', '.github/workflows/ci-tts.yml']
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose configuration
+        run: docker compose -f deploy/tts/compose.yaml config --quiet
+      - name: Test HTTP boundary and deployment contracts without GPU
+        run: docker build --target contract-test -t momo-tts-contract deploy/tts

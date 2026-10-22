@@ -1,0 +1,14 @@
+.data-transfer-busy {
+  color: var(--text);
+  width: min(360px, 92vw);
+}
+.data-transfer-busy:not([open]) {
+  display: none;
+}
+.data-transfer-busy::backdrop {
+  background: rgba(24, 21, 31, 0.6);
+  backdrop-filter: blur(6px);
+}
+.data-transfer-busy p {
+  margin: 0;
+}

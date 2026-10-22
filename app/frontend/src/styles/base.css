@@ -1,0 +1,377 @@
+@import url("/fonts/fonts.css");
+
+/* 全局基线：深紫灰舞台 + 暖白正文 + 柔金重点。
+   设计语言两条硬约束：
+   1. 面板使用下方圆角 token；圆形仅用于即时动作等明确的语义例外；
+   2. 颜色只许引用 --* token——分散的 rgba 字面量已全部收敛，
+      新增颜色请先在 :root 登记。 */
+
+:root {
+  /* —— 曲度（圆角矩形体系）—— */
+  --r-xs: 3px; /* 饰标、菱形、tag */
+  --r-sm: 6px; /* 小控件：chip、badge、复选框、下拉项、工具条钮 */
+  --r-md: 10px; /* 标准控件：按钮、输入框、下拉、记忆卡、状态条 */
+  --r-lg: 14px; /* 大面板：对话框、modal、panel */
+
+  /* —— 底色与描边 —— */
+  --bg: #18151f;
+  --panel-rgb: 40, 35, 46;
+  --panel: rgba(var(--panel-rgb), 0.9);
+  --panel-solid: #28232e;
+  --panel-hover: rgba(40, 33, 50, 0.78);
+  --chrome: rgba(16, 12, 20, 0.62); /* 顶/底横条 */
+  --input-bg: rgba(0, 0, 0, 0.28);
+  --backdrop: rgba(12, 9, 16, 0.62);
+  --line: #49414d;
+  --line-strong: #716676;
+  --line-soft: rgba(183, 174, 189, 0.16);
+  --line-faint: rgba(183, 174, 189, 0.07);
+
+  /* —— 文字 —— */
+  --text: #f3ecdf;
+  --text-dim: #b7aebd;
+  --text-faint: #918695;
+
+  /* —— 唯一强调色：柠檬金 —— */
+  --accent: #e7be77;
+  --accent-strong: #f6d488;
+  --accent-hover: #f6d488;
+  --accent-soft: rgba(234, 182, 84, 0.14);
+  --accent-glow: rgba(234, 182, 84, 0.35);
+  --accent-ring: rgba(234, 182, 84, 0.18);
+  --on-accent: #241a08;
+
+  /* —— 语义色 —— */
+  --ok: #93d39e;
+  --warn: #f0c46c;
+  --danger: #e2828a;
+  --danger-soft: rgba(226, 130, 138, 0.12);
+  --danger-line: rgba(226, 130, 138, 0.4);
+  --danger-bg: rgba(140, 44, 54, 0.85);
+  --danger-text: #ffd9de;
+  --info: #8fd0ff;
+
+  --font-ui: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-brand: "Nunito", sans-serif;
+  --content-width: min(1040px, calc(100cqw - 64px));
+
+  font-size: 15px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  font-family: var(--font-ui);
+  overflow: hidden;
+}
+
+:lang(ja) {
+  --font-ui: "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif;
+}
+
+/* 画面比例锁 16:9：舞台永远等比居中，窗口多余部分留黑边（letterbox）。
+   - 舞台即“视口”：内部一律用 cqh/cqw（容器查询单位）代替 vh/vw；
+   - transform 让内部的 position:fixed（页面层、立绘画布、模态）以舞台为包含块；
+   - overflow:hidden 保证任何内容都不越出舞台。 */
+html,
+body {
+  background: #000;
+  color: var(--text);
+}
+
+.app-stage {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  container-type: size;
+  transform: translateZ(0);
+}
+
+/* 页面层：换场时只做透明度（化开），不缩放、不滤镜——
+   整页 transform 会让带 backdrop-filter 的层每帧重采样（实测掉到 7~10fps）。 */
+.page-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+/* 新画面沿不规则"洞"的边缘漫开（形状见 lib/blobMask）。
+   向下钻一层（title → chat/settings/checkpoint/backlog）：洞由小到大长开；
+   往回走（返回）：洞由大收到无，新画面从四周合拢、旧画面被挤回中心。 */
+.page-wrap.is-front {
+  z-index: 2;
+  pointer-events: none;
+  -webkit-mask-image: var(--blob-forward);
+  mask-image: var(--blob-forward);
+  -webkit-mask-size: 2% 2%;
+  mask-size: 2% 2%;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  animation: page-bloom var(--tx-fade-ms, 560ms)
+    cubic-bezier(0.33, 0.06, 0.36, 1) forwards;
+}
+
+@keyframes page-bloom {
+  from {
+    -webkit-mask-size: 2% 2%;
+    mask-size: 2% 2%;
+  }
+  to {
+    -webkit-mask-size: 300% 300%;
+    mask-size: 300% 300%;
+  }
+}
+
+/* 返回：满幅遮罩减去一个"洞"，洞由大收到无——新页从四周合拢 */
+.page-wrap.is-front.is-rev {
+  mask-image: linear-gradient(#000, #000), var(--blob-forward);
+  mask-composite: subtract;
+  mask-size: 100% 100%, 320% 320%;
+  animation-name: page-bloom-rev;
+}
+
+@keyframes page-bloom-rev {
+  from {
+    mask-size: 100% 100%, 320% 320%;
+  }
+  to {
+    mask-size: 100% 100%, 0% 0%;
+  }
+}
+
+/* 正在化开的旧页（进入 chat 的「入戏」）：先等水滴落下（120ms 延迟），
+   再整体淡出——房间从下面透出来。淡出期间关掉本层 backdrop-filter，
+   否则每帧重采样会掉帧；画面正在消失，看不出来。 */
+.page-wrap.is-leaving {
+  z-index: 2;
+  pointer-events: none;
+  animation: page-leave 520ms ease-in-out 120ms forwards;
+  will-change: opacity;
+}
+
+.page-wrap.is-leaving,
+.page-wrap.is-leaving * {
+  backdrop-filter: none !important;
+}
+
+@keyframes page-leave {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* 旧页在下面：不参与动画，只等着被漫开的新画面盖住 */
+.page-wrap.is-back {
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 对话房间底图 + Live2D：不随路由重挂载 */
+.chat-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* —— 换场特效层：一滴水落进画面 ——
+   落点一闪 → 三圈涟漪荡开 → 涟漪带着画面化开。全程只有 transform/opacity。 */
+.tx-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.tx-fx > i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+  opacity: 0; /* 静止态：整层不画；动画只在 .tx-active 下挂上 */
+}
+
+/* 水面的那点隆起：一圈极淡的暖白，随涟漪一起铺开，给"水面"一点体积 */
+.tx-sheen {
+  width: 74cqw;
+  height: 74cqw;
+  margin: -37cqw 0 0 -37cqw;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(253, 243, 216, 0.14),
+    rgba(234, 182, 84, 0.06) 38%,
+    transparent 62%
+  );
+}
+
+.app-stage.tx-active .tx-sheen {
+  animation: tx-sheen 620ms cubic-bezier(0.2, 0.6, 0.25, 1) both;
+}
+
+@keyframes tx-sheen {
+  0% {
+    transform: scale(0.04);
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+/* 落点：一滴水砸下时那一下微亮 */
+.tx-drop {
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(253, 243, 216, 0.95),
+    rgba(234, 182, 84, 0.35) 42%,
+    transparent 68%
+  );
+}
+
+.app-stage.tx-active .tx-drop {
+  animation: tx-drop 420ms ease-out both;
+}
+
+@keyframes tx-drop {
+  0% {
+    transform: scale(0.15);
+    opacity: 0;
+  }
+  16% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--r-md);
+  padding: 0.55em 1.5em;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 500;
+  letter-spacing: 0;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+button:hover {
+  background: var(--accent-hover);
+  box-shadow: none;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* 禁用态：内置 ASR 模式下 url/key 变暗示意"不需要填" */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+  font-weight: 500;
+}
+
+button.ghost:hover {
+  background: var(--accent-soft);
+  border-color: var(--line-strong);
+  color: var(--text);
+  box-shadow: none;
+}
+
+input,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 0.5em 0.8em;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(14px);
+  padding: 20px;
+}
+
+/* RoPE 旋转网格背景（GridBackdrop）：设置页与存档页共用，纯装饰。 */
+.grid-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.muted {
+  color: var(--text-dim);
+}

@@ -1,0 +1,56 @@
+name: momo-tts
+services:
+  tts:
+    platform: linux/amd64
+    image: ${TTS_IMAGE:-momo-gpt-sovits:007-v2}
+    build:
+      context: .
+      target: inference
+      args:
+        BASE_IMAGE: ${TTS_BASE_IMAGE:-debian:bookworm-slim@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+    init: true
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ports:
+      - '${TTS_BIND:-127.0.0.1}:${TTS_PORT:-9880}:9880'
+    environment:
+      TTS_API_KEY: ${TTS_API_KEY:-}
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      TORCH_HOME: /cache/torch
+      TORCHINDUCTOR_CACHE_DIR: /cache/inductor
+      TRITON_CACHE_DIR: /cache/triton
+    volumes:
+      - models:/models:ro
+      - cache:/cache
+    tmpfs:
+      - /tmp:rw,nosuid,noexec,size=128m,mode=1777
+    shm_size: 1gb
+    stop_grace_period: 120s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+  models:
+    platform: linux/amd64
+    profiles: [setup]
+    image: ${TTS_IMAGE:-momo-gpt-sovits:007-v2}
+    entrypoint: [python, /opt/momo/resources.py]
+    command: [download, --root, /models]
+    environment:
+      TTS_HF_ENDPOINT: ${TTS_HF_ENDPOINT:-https://huggingface.co}
+    volumes:
+      - models:/models
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+volumes:
+  models:
+  cache:

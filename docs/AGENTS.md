@@ -1,8 +1,5 @@
-# AGENTS.md
+# docs/AGENTS.md
 
-## Git
-
-- conventional commit：`<type>: <what changed>`，`type` in `feat|fix|refactor|docs|chore|test|build`，一行说完一件事。
-- 提交信息只写改动本身，不含任何 AI 署名或 trailer。
-- 新增/修改 env 键必须同 PR 更新 `01-architecture/config.md` 表格与 `.env.example`；`config.schema.toml` 全集 schema 在 momo-infra 仓，跨仓键集变更须另行同步。
-- 改协议/状态机先改 `01-architecture/`，再改引用它的文档，同一 PR 内完成同步。
+- docs/usage/ 面向玩家，docs/development/ 面向开发者；官网只链接使用帮助，不重新渲染技术文档站。
+- 记录已实现机制和可复现步骤，平台未验证要明确标注。旧架构以 Git 历史保留，不恢复通用 infra 需求。
+- MOMO_ 环境变量与 app/.env.example、docs/development/configuration.md 同步。

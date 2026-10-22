@@ -1,0 +1,5 @@
+# Small upstream API and lazy audio dependencies, kept above the CUDA layer.
+# Keep numerical packages at the already validated core versions.
+-c requirements-inference.lock
+python-multipart==0.0.20
+resampy==0.4.3

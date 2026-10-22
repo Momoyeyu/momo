@@ -1,0 +1,110 @@
+/* Backlog 回顾页：遮罩式 overlay + 居中阅读栏（VN backlog 风格）。 */
+
+.backlog-page {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: var(--backdrop);
+  backdrop-filter: blur(10px);
+  padding: 6cqh 16px;
+}
+
+/* Backlog 是阅读流，不跟存档页的宽幅面板走：保持瘦长阅读栏，
+   只比原先（680px）略宽一点。 */
+.backlog-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(760px, 92cqw);
+  min-height: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+
+.backlog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.backlog-head h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.backlog-head button {
+  padding: 0.35em 1.1em;
+  font-size: 13px;
+}
+
+.backlog-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 22px 26px;
+}
+
+.backlog-empty {
+  padding: 40px 0;
+  text-align: center;
+}
+
+.bl-item {
+  margin: 0 0 18px;
+}
+
+.bl-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+/* 语音重播：小文本钮，回合进行中禁用。 */
+.bl-replay {
+  padding: 1px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+.bl-replay:hover:not(:disabled) {
+  color: var(--accent-strong);
+  border-color: var(--line-strong);
+  background: var(--accent-soft);
+  box-shadow: none;
+}
+
+.bl-replay:disabled {
+  opacity: 0.45;
+}
+
+.bl-item.user .bl-name {
+  color: var(--text-dim);
+}
+
+.bl-text {
+  padding-left: 12px;
+  border-left: 2px solid var(--line);
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

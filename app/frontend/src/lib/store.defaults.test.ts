@@ -1,0 +1,30 @@
+// 出厂配置的回归保护：新用户从 GitHub clone 下来、首次启动时，
+// 项目里不该带任何「开发者的环境信息」或示例数据 —— 全部由用户自己填。
+//
+// 历史教训：这里曾经预填过 LLM 地址（api.deepseek.com）、本机 asr/tts 端口、
+// 一台内网 embedding 服务器地址（10.106.130.222）以及示例信息。
+// 那些是开发者的环境，随仓库发给每个 clone 的人既误导也不安全。
+import { describe, expect, it } from "vitest";
+
+import { getSettings, getState, speakerName } from "./store";
+
+describe("出厂配置不含任何预填信息", () => {
+  it("服务地址与模型一律为空（输入框的灰色提示负责引导）", () => {
+    const s = getSettings();
+    expect(s.llm.url).toBe("");
+    expect(s.llm.key).toBe("");
+    expect(s.llm.model).toBe("");
+    expect(s.tts.url).toBe("");
+    expect(s.tts.key).toBe("");
+    expect(s.tts.voice).toBe("");
+    expect(s.extensions).toEqual([]);
+    expect(s.llm.thinking).toBe(false);
+    expect(s).not.toHaveProperty("asr");
+    expect(s).not.toHaveProperty("embedding");
+  });
+
+  it("配置里没有人设：人设写死在 backend，前端只留展示名", () => {
+    expect(getState()).not.toHaveProperty("persona");
+    expect(speakerName()).toBe("momo");
+  });
+});

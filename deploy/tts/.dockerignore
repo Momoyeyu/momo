@@ -1,0 +1,11 @@
+*
+!Dockerfile
+!requirements-*.lock
+!check.py
+!server.py
+!runtime.py
+!resources.py
+!resources.lock.json
+!pytest.ini
+!tests/
+!tests/**

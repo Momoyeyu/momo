@@ -1,0 +1,7 @@
+# The desktop build tools form their own project; frontend keeps its own lockfile.
+packages:
+  - .
+allowBuilds:
+  esbuild: true
+  edgedriver: false
+  geckodriver: false

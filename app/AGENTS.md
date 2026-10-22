@@ -1,17 +1,7 @@
-# AGENTS.md
+# app/AGENTS.md
 
-## Git
-
-- conventional commit：`<type>: <what changed>`，`type` in `feat|fix|refactor|docs|chore|test|build`，一行说完一件事。
-- 提交信息只写改动本身，不含任何 AI 署名或 trailer。
-
-## 文档先行
-
-- 设计以 docs 目录 为准；实现与文档不一致视为 bug，先改文档再改代码。
-- 新增/修改 `MOMO_` env 键必须同步更新本仓 `.env.example` 与 `docs/01-architecture/config.md`；`config.schema.toml` 全集 schema 在 momo-infra 仓，跨仓键集变更须另行同步。
-
-## 跨平台
-
-- 开发环境 macOS；部署目标 Linux + Windows（momo-models 的 Windows 走 WSL2）。
-- 禁止无条件使用 unix-only API/路径（kill -0、/tmp、shell 路径分隔）；需要时用 `cfg(unix)`/`cfg(windows)` 或 `sys.platform` 分支。
-- TLS 一律 rustls（禁 openssl 依赖）；路径一律 PathBuf/path.join 拼接。
+- frontend/ 是 React 游戏界面；backend/ 是唯一业务编排；src-tauri/ 负责窗口、单实例、受控 sidecar 与发布打包。
+- 以迁入的已验收行为和测试为基线，不恢复 app/web 或旧 Rust API。
+- 新增 MOMO_ 配置同步 app/.env.example、docs/development/configuration.md。
+- runtime API 必须覆盖 REST、SSE、WS、上传、探测和资源访问；桌面令牌不进入 URL、普通日志或用户配置。
+- 开发数据、冻结构建输入与安装资源分别存放，不复用用户真实数据库做测试。

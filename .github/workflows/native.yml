@@ -1,0 +1,86 @@
+name: Native installers
+# Build candidate artifacts without publishing a release or signing credentials.
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Candidate platform (macOS first; other PC targets require separate validation)'
+        type: choice
+        default: macos-14
+        options:
+          - macos-14
+          - windows-2022
+          - ubuntu-24.04
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ${{ inputs.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux WebView dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: app/backend/uv.lock
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            app/pnpm-lock.yaml
+            app/frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: app
+      - run: pnpm install --frozen-lockfile --ignore-workspace
+        working-directory: app/frontend
+      - run: uv sync --frozen
+        working-directory: app/backend
+      - name: Prepare fixed offline resources
+        shell: bash
+        run: |
+          uv run --project app/backend --frozen python app/backend/scripts/download_asr_models.py
+          uv run --project app/backend --frozen --with huggingface-hub==2.2.0 python app/backend/scripts/prepare_embedding.py
+          uv run --project app/backend --frozen python app/backend/scripts/package_resources.py --output app/dist/momo-resources.zip
+          uv run --project app/backend --frozen python app/scripts/prepare-models.py app/dist/momo-resources.zip
+          uv run --project app/backend --frozen python app/scripts/prepare-core.py
+      - name: Freeze backend
+        shell: bash
+        run: |
+          uv pip install --python app/backend/.venv pyinstaller==6.20.0
+          uv run --project app/backend --frozen python app/scripts/freeze-backend.py
+      - name: Exercise packaged offline backend
+        shell: bash
+        run: uv run --project app/backend --frozen python app/scripts/smoke-frozen.py app/resources
+      - run: pnpm test:shell
+        working-directory: app
+      - name: Check Rust formatting
+        run: cargo fmt --manifest-path app/src-tauri/Cargo.toml -- --check
+      - name: Build macOS installer without Finder automation
+        if: runner.os == 'macOS'
+        run: pnpm build:macos
+        working-directory: app
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        run: pnpm exec tauri build --bundles nsis
+        working-directory: app
+      - name: Build Linux installer
+        if: runner.os == 'Linux'
+        run: pnpm exec tauri build --bundles deb
+        working-directory: app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: momo-${{ inputs.platform }}-candidate
+          path: |
+            app/src-tauri/target/release/bundle/
+          if-no-files-found: error

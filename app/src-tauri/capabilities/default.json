@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "main companion window capabilities（desktop.md 第一档：拖拽窗口）",
+  "description": "Local main application window only",
   "windows": ["main"],
-  "permissions": ["core:default", "core:window:allow-start-dragging"]
+  "permissions": ["core:default"]
 }

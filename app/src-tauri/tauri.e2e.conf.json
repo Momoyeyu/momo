@@ -1,0 +1,12 @@
+{
+  "identifier": "dev.momo.app.e2e",
+  "app": {
+    "security": {
+      "capabilities": ["default", {
+        "identifier": "native-e2e-driver",
+        "windows": ["main"],
+        "permissions": ["wdio-webdriver:default"]
+      }]
+    }
+  }
+}

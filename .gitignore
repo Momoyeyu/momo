@@ -3,6 +3,45 @@ dist/
 target/
 __pycache__/
 .venv/
+.pytest_cache/
+*.pyc
 *.tsbuildinfo
 .env
+.env.*
+!.env.example
+!.env.*.example
 .idea/
+.DS_Store
+.workbuddy/
+.superpowers/
+app/backend/data/
+app/backend/models/
+app/backend/resources/embedding/**/*.onnx
+app/backend/resources/embedding/**/tokenizer.json
+app/backend/resources/embedding/**/.cache/
+app/resources/
+app/src-tauri/binaries/
+app/frontend/test-results/
+app/frontend/playwright-report/
+app/frontend/.playwright/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Proprietary Core build input; prepare from official source, bundle only with application.
+app/frontend/public/live2d/live2dcubismcore.min.js
+
+# Native E2E artifacts and local browser reports.
+app/src-tauri/target-e2e/
+site/test-results/
+site/playwright-report/
+
+# Site help pages are generated from canonical usage documents.
+site/docs/help/
+site/.playwright-evidence/

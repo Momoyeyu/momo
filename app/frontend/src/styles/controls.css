@@ -1,0 +1,537 @@
+/* ===== 自绘控件（统一设计语言：深底 + 香槟描边 + 暖白字）===== */
+
+.check-control { position: relative; display: inline-flex; flex: none; width: 20px; height: 20px; cursor: pointer; }
+.check-control input { position: absolute; inset: 0; margin: 0; width: 100%; height: 100%; opacity: 0; cursor: inherit; }
+.check-control > span { display: grid; place-items: center; width: 100%; height: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-xs); background: var(--input-bg); color: transparent; pointer-events: none; }
+.check-control input:checked + span { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.check-control input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 3px; }
+.check-control input:disabled + span { opacity: 0.45; }
+
+
+/* --- 下拉选择 --- */
+
+.sel {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: 320px;
+}
+
+.sel-face {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 0.5em 0.9em;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--input-bg);
+  color: var(--text);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.sel-face:hover {
+  background: var(--input-bg);
+  border-color: var(--line-strong);
+  box-shadow: none;
+}
+
+.sel.open .sel-face,
+.sel-face:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+/* 三角箭头：描边小菱形向下，open 时翻转。 */
+.sel-arrow {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 1.6px solid var(--text-dim);
+  border-bottom: 1.6px solid var(--text-dim);
+  transform: rotate(45deg) translateY(-2px);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.sel.open .sel-arrow {
+  transform: rotate(225deg) translateY(-2px);
+  border-color: var(--accent);
+}
+
+.sel-list {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--panel-solid);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  animation: sel-pop 0.16s ease both;
+}
+
+@keyframes sel-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sel-opt {
+  display: block;
+  width: 100%;
+  padding: 8px 12px 8px 16px;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-align: left;
+  transition:
+    color 0.12s ease,
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.sel-opt.hl,
+.sel-opt:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.sel-opt.on {
+  color: var(--accent-strong);
+  border-left-color: var(--accent);
+}
+
+/* ===== FieldRow：行式表单项（左标签 + 右控件 + *必填 + 尾注） ===== */
+
+.opt-row {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 15px 4px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.opt-row:last-child {
+  border-bottom: none;
+}
+
+.opt-row.top {
+  align-items: flex-start;
+}
+
+.opt-row.top .opt-label {
+  padding-top: 9px;
+}
+
+.opt-label {
+  flex: none;
+  width: 180px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.req {
+  margin-left: 4px;
+  color: var(--danger);
+}
+
+.opt-ctl {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.opt-ctl input[type="text"],
+.opt-ctl input[type="number"],
+.opt-ctl input[type="url"],
+.opt-ctl input[type="password"],
+.opt-ctl input:not([type]) {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 非法值红描边（URL 校验等行内校验态）。 */
+.opt-ctl input.invalid {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger-line);
+}
+
+.opt-extra {
+  flex: none;
+  margin-left: 6px;
+  color: var(--accent-strong);
+  font-size: 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Switch：圆角矩形槽 + 方块钮 ===== */
+
+.switch {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 25px;
+  padding: 0;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--line-soft);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.switch .knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 17px;
+  height: 17px;
+  border-radius: var(--r-sm);
+  background: var(--text-dim);
+  transition:
+    left 0.18s ease,
+    background 0.18s ease;
+}
+
+.switch:hover {
+  box-shadow: none;
+}
+
+.switch.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.switch.on .knob {
+  left: 24px;
+  background: var(--accent);
+}
+
+.switch:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ===== Slider：左金右灰轨道 + 菱形 thumb + 右端数值 ===== */
+
+.ux-range {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-sm);
+  background: var(--line);
+  outline: none;
+  cursor: pointer;
+}
+
+.ux-range:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ux-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  margin-top: 0;
+  border-radius: var(--r-xs);
+  background: var(--accent);
+  border: none;
+  transform: rotate(45deg);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.ux-range::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: var(--r-xs);
+  background: var(--accent);
+  border: none;
+  transform: rotate(45deg);
+}
+
+.slider-val {
+  flex: none;
+  margin-left: 6px;
+  color: var(--accent-strong);
+  font-size: 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== IconButton：方形纯图标钮（[+]/图钉等） ===== */
+
+.icon-btn {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.icon-btn svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent);
+  border-color: var(--line-strong);
+}
+
+/* hover 描边加粗（与翻页箭头同理，不铺底色）。 */
+.icon-btn:hover:not(:disabled) svg path {
+  stroke-width: 2.6;
+}
+
+.icon-btn.danger:hover:not(:disabled) {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Tooltips are portaled to body, measured against the stage, and flipped at edges. */
+.tip { position: relative; }
+.tooltip-bubble {
+  position: fixed;
+  z-index: 100;
+  width: max-content;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+  color: var(--text);
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+  pointer-events: none;
+}
+
+/* 圈内问号（ui/Hint）：悬停/聚焦时给出解释。
+   图标自带圆环与问号（Lucide circle-help），所以这里不画 border/background；
+   尺寸按 em，比相邻文字略小一丢丢，且跟随所在位置的字号。 */
+.hint {
+  flex: none;
+  width: 0.95em;
+  height: 0.95em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 内联场景：下移 0.12em 让图标圆心落在文字的中轴上（纯 baseline 对齐会偏高） */
+  vertical-align: -0.12em;
+  margin-left: 0.35em;
+  color: var(--text-dim);
+  cursor: help;
+}
+
+.hint > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hint:hover,
+.hint:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
+
+/* ===== EditableItem：可编辑列表卡片 ===== */
+
+.list-item {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  /* 左侧正文 + 右侧图标操作列；正文因此垂直居中 */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* 等高：不同卡片内容行数不同，统一高度后左右两栏的行才能对齐 */
+  min-height: 70px;
+}
+
+/* 卡片列表容器：条目自带 margin-bottom，故这里不再加 gap（间距统一 8px）。
+   无论实际几条都按一页预留满高度，两侧面板因此始终等高、翻页器也停在同一线上。 */
+.list-body {
+  display: flex;
+  flex-direction: column;
+  /* 按一页 5 条预留高度：5 × (卡片 70 + 间距 8) = 390。
+     配套常量见 lib/paging.ts 的 CARD_PAGE_SIZE —— 改一处必须改另一处。 */
+  min-height: 390px;
+}
+
+/* 编辑态回到纵向：输入框在上、保存/取消在下 */
+.list-item.list-editing {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+/* 左侧正文（头部行 + 截断正文） */
+.list-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 可点开详情弹窗的卡片（非编辑态）。 */
+.list-item.list-open {
+  cursor: pointer;
+}
+
+.list-item.list-open:hover {
+  border-color: var(--line-strong);
+}
+
+.list-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+/* 卡片正文统一单行截断；全文走详情弹窗。 */
+.list-content {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 右侧操作列：纯图标，与正文垂直居中。 */
+.list-ops {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 行内图标尺寸（对应 IconButton 的 size="sm"）：显式声明，
+   不再靠「谁在里面」的祖先选择器限定 —— 换一处容器就漏一次。 */
+.icon-btn-sm {
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+}
+
+/* 图钉等自带样式的操作项，在操作列里对齐图标尺寸 */
+.list-ops .mem-pinicon {
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  margin-left: 0;
+}
+
+/* 已采用/已开启：常驻显示，只换外观（用「消失」表达会让同列后面的按钮位移） */
+.icon-btn.on {
+  color: var(--accent);
+  border-color: var(--line-strong);
+}
+
+.list-edit textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* ===== Pager：一体式翻页胶囊 ‹ n/N › =====
+   外框一体、无内部分隔线；hover 加粗箭头（不铺底色）；单页时箭头置灰。 */
+
+.list-pager {
+  flex: none;
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.pager-btn {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.pager-btn:hover:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.pager-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.pager-text {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  padding: 4px 12px;
+}

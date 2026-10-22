@@ -1,0 +1,94 @@
+/* ===== 通用聚焦弹层：遮罩轻调暗 + 虚化 + 降饱和，弹窗居中 ===== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  container-type: size;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(24, 21, 31, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.modal-box {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(520px, 92cqw);
+  max-height: 70cqh;
+  padding: 24px;
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+/* --- 弹窗内容常用部件（meta 行 / 可滚动正文 / 底部按钮行） --- */
+
+.modal-meta {
+  font-size: 12px;
+}
+
+.modal-body {
+  overflow: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* 「+ 添加条目」弹窗（ui/AddItemModal）：比通用弹窗窄一些，
+   输入框统一占满一行。原来记忆页自己写的 .mem-add-text 已并入 .add-field。 */
+.add-modal {
+  width: min(440px, 92cqw);
+}
+
+.add-field {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* --- 确认弹窗（ui/Confirm） --- */
+
+.confirm-box {
+  width: min(420px, 92cqw);
+}
+
+.confirm-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+.confirm-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text-dim);
+  word-break: break-word;
+}
+
+/* 危险操作主按钮：删除类确认用它，红色系取语义 token。 */
+.btn-danger {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger-line);
+}
+
+.btn-danger:hover {
+  background: var(--danger-bg);
+  filter: brightness(1.12);
+}

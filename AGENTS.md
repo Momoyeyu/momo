@@ -1,40 +1,30 @@
 # AGENTS.md
 
-## Git
+## 当前实现与文档
 
-- conventional commit：`<type>: <what changed>`，`type` in `feat|fix|refactor|docs|chore|test|build`，一行说完一件事。
-- 提交信息只写改动本身，不含任何 AI 署名或 trailer。
-- 栈式 PR（base 非 master）在整条链全部 merge 前，禁止删除链上任何分支的远端引用——删 head 会 close 该 PR，删 base 会 close 其全部下游 PR，且重建分支后不可 reopen。本地 worktree/分支清理不受此限。
+- 产品基线是迁入的 momo-web：React 前端、Python/FastAPI 后端、Tauri 桌面壳。旧 Rust 编排、旧 app/web 与通用 infra 不再作为活跃需求。
+- 使用文档在 docs/usage/，开发与运行配置在 docs/development/；官网只作产品宣发。设计与实现冲突时先更新相关文档，不复制旧架构文档。
+- 新增或修改 MOMO_ 配置同步 app/.env.example 和 docs/development/configuration.md；不依赖外仓 schema 或 momoctl。
+- 界面保留中 / 英 / 日，日志、CLI 与错误诊断用英文，源码注释及开发文档可用中文。
 
-## Review 纪律
+## 数据与资源
 
-- PR comment 只放结果与证据；禁止把验证动作甩给 reviewer（"请手动验证连通性"类评论）。
-- 被资源卡住（API key、算力、账号权限、可达网络）→ 直接在会话中向用户索要，不在 PR/issue comment 里索要或绕开。
-- PR 正文的「手动验证」小节是给 reviewer 的复现路径，前提是"已自测通过"；不能用它替代自己应跑的验证。
+- 用户配置、密钥、记忆、会话、存档、录音、导入模型与测试产物不得提交或混入安装包。
+- 当前不提供默认角色参考音频；个人挑选的音色样本只在用户本机管理，不进入仓库、安装包或 TTS 镜像。
+- 默认 Hiyori、字体、Cubism Core 及 ASR / embedding 资源按许可随初始安装交付；固定来源与校验值，运行时不下载模型。
+- 开发、测试、正式应用使用不同数据目录；旧版本数据先备份，禁止直接覆盖。迁移须验证 SQLite 一致性与 IndexedDB 导出。
 
-## 输出与日志
+## 跨平台与验证
 
-- 面向用户的输出一律英文：CLI 日志、错误提示、hint、报告文本（测试断言同样适用）。源码注释与 `docs/` 文档保持中文。
+- 先在 macOS 完成体验并由用户验收，再推进 Windows；Linux 次要且可选，不做手机 / 平板应用。不为每次体验迭代重复跨平台构建。保持平台边界清楚，Rust TLS 用 rustls。
+- 原生包必须自带运行依赖；浏览器 E2E 和 tauri dev 不算安装产物通过。测试驱动只进测试构建。
+- 单实例只聚焦已有窗口，退出回收本应用自己的后端与 MCP 子进程，不杀占用端口的外部服务。
+- 不发布未测试的平台能力。仓库删除、网站切换与 momo-web archive 遵守用户验收边界。
 
-## 文档先行
+- 远程测试完成后先收回产物与必要证据，再清理本轮自建目录、进程、容器与专用镜像；不删除原有服务、共享缓存或其他项目。
 
-- 设计以 `docs/` 为准；实现与文档不一致视为 bug，先改文档再改代码。
-- 新增/修改 `MOMO_` env 键必须同步 `app/.env.example` 与 `docs/01-architecture/config.md`；机器可读全集 schema（`config.schema.toml`）与 `momoctl config check` 校验器在 momo-infra 仓。
+## Git 与审查
 
-## 跨平台
-
-- 开发环境 macOS；部署目标 Linux + Windows。
-- 禁止无条件使用 unix-only API/路径（kill -0、/tmp、shell 路径分隔）；需要时用 `cfg(unix)`/`cfg(windows)` 或 `sys.platform` 分支。
-- TLS 一律 rustls（禁 openssl 依赖）；路径一律 PathBuf/path.join 拼接。
-
-## 仓库边界
-
-- 仓库已拆分（ADR-027）：本仓含 `app/`（交互+编排）、`site/`（页面）、`docs/`（设计）、`evals/persona`（人格回归集）；`models/` 与 `infra/` 已迁往 momo-infra 仓。模块边界口径见 `docs/01-architecture/boundaries.md`。
-- 各子目录 `AGENTS.md` 有模块级约定，冲突时以更具体的为准。
-
-## Site verification
-
-- `cd site && pnpm test`
-- `cd site && pnpm build`
-- 文档正文以 `docs/` 为准，`site/docs/guide/` 通过 include 消费 canonical docs。
-- browser smoke 覆盖 Live2D + Mermaid 的 light/dark/mobile。
+- Conventional commit：feat|fix|refactor|docs|chore|test|build，一行描述改动，不添加 AI 署名或 trailer。
+- 创建提交前使用 consistent-commit；不覆盖用户未提交改动。栈式 PR 链未合并前不删除远端分支。
+- PR 只报告实际结果与证据，不将自测责任交给 reviewer；缺资源直接在会话沟通。

@@ -1,70 +1,36 @@
-name: ci-app
-
+name: Application checks
 on:
   push:
     branches: [master]
-    paths: ['app/**']
+    paths: ['app/**', '.github/workflows/ci-app.yml']
   pull_request:
-    paths: ['app/**']
-
+    paths: ['app/**', '.github/workflows/ci-app.yml']
+permissions:
+  contents: read
 jobs:
-  rust:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: app
+  runtime:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: astral-sh/setup-uv@v6
         with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: app
-      - run: cargo fmt --all -- --check
-      - run: cargo clippy --all-targets -- -D warnings
-      - run: cargo test
-
-  web:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app/web
-    steps:
-      - uses: actions/checkout@v4
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: app/backend/uv.lock
+      - run: uv sync --frozen
+        working-directory: app/backend
+      - run: uv run --frozen pytest -q
+        working-directory: app/backend
       - uses: pnpm/action-setup@v4
         with:
-          package_json_file: app/web/package.json
+          package_json_file: app/frontend/package.json
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
-          cache-dependency-path: app/web/pnpm-lock.yaml
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: app
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm lint
-      # ws-e2e 对拍真实 momod：build → 后台起服务 → healthz 就绪后 pnpm test 注入 URL。
-      - name: start momod for ws e2e
-        working-directory: app
-        run: |
-          cargo build --bin momod
-          MOMO_ORCH_LISTEN=127.0.0.1:7800 ./target/debug/momod &
-          for i in $(seq 1 30); do
-            curl -sf http://127.0.0.1:7800/healthz >/dev/null && exit 0
-            sleep 1
-          done
-          echo "momod failed to become healthy" >&2 && exit 1
-      - run: pnpm test
-        env:
-          MOMO_WS_E2E_URL: ws://127.0.0.1:7800/ws/ui
-      - name: stop momod
-        if: always()
-        run: pkill -x momod || true
-      - run: pnpm build
+          cache-dependency-path: app/frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile --ignore-workspace
+        working-directory: app/frontend
+      - run: python3 app/scripts/prepare-core.py
+      - run: pnpm typecheck && pnpm test && pnpm build
+        working-directory: app/frontend

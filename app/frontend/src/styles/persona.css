@@ -1,0 +1,118 @@
+/* 颜色与控件基线全部走 base.css 变量，这里只管排版。 */
+
+/* 面板纵向版式：标题行 / 工具条 / 列表 / 翻页器 之间的间距一致。
+   左 Live2D 与右 MCP 共用它，两栏才会真正对齐。 */
+.panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px 24px;
+}
+
+/* 面板小标题统一用 settings.css 的 .opt-group（金色小字），
+   与「模型」等 tab 一致；这里不再单独定义 h2 样式。 */
+
+.panel-stack p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* 「基本信息」是通栏面板、内部再分两列（每列约 630px），标签列沿用
+   controls.css 里 .opt-label 的默认宽度 —— 与设置页其它 tab 完全一致，
+   不给本页单独开宽度档。行距由 .opt-row 自身的 padding 与分隔线提供，
+   故列内 gap 归零（原来是竖排字段之间的 18px）。 */
+
+/* 注：原来的 .field / .field-label（标签在上的竖排字段）已随「基本信息」
+   改用 ui/FieldRow 而移除 —— 全站表单项统一为「左标签 + 右控件」。 */
+
+.panel-stack textarea,
+.list-search {
+  width: 100%;
+}
+
+button.small {
+  padding: 0.35em 0.9em;
+  font-size: 13px;
+}
+
+button.danger {
+  color: var(--danger);
+  border-color: var(--danger-line);
+}
+
+button.danger:hover {
+  background: var(--danger-soft);
+}
+
+/* ---- 记忆区 ---- */
+
+/* 记忆 tab：单栏面板铺满内容区高度。 */
+.mem-panel {
+  min-height: min(560px, 72cqh);
+}
+
+/* 卡片右上角图钉钮：pinned=实心金 / unpinned=金色描边；hover 出说明浮窗。 */
+.mem-pinicon {
+  position: relative;
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-sm);
+  color: var(--accent);
+  opacity: 0.55;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.mem-pinicon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mem-pinicon:hover {
+  opacity: 0.9;
+}
+
+.mem-pinicon.on {
+  opacity: 1;
+}
+
+/* 底行：翻页器居中。 */
+.list-foot {
+  display: flex;
+  justify-content: center;
+}
+
+/* 添加记忆弹窗内的 PIN 选项：卡片同款图钉 + 标签。 */
+.mem-pinopt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+  user-select: none;
+}
+
+/* 弹窗内图钉：去掉卡片上的 auto 右推。 */
+.mem-pinopt .mem-pinicon {
+  margin-left: 0;
+}
+
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.list-search {
+  flex: 1;
+  min-width: 140px;
+}
