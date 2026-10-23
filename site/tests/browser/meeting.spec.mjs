@@ -12,6 +12,7 @@ test('desktop: a compact review pane keeps the silhouette particle opening and a
   const runway=page.getByTestId('meeting-runway'),canvas=page.getByTestId('meeting-pixels'),scene=page.getByTestId('meeting-scene')
   await expect(runway).toHaveClass(/has-motion/)
   await expect(canvas).toHaveAttribute('data-ready','true')
+  expect((await page.locator('.presence-figure').boundingBox()).height).toBeGreaterThan(807)
   await expect(page.getByTestId('skip-meeting')).toBeInViewport()
   await page.screenshot({path:`${evidence}/meeting-compact-intro.png`})
   await progress(page,.36)

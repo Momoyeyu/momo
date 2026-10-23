@@ -66,6 +66,7 @@
 @media(min-width:601px) and (max-width:800px) and (min-height:621px){
   .has-motion .first-meeting{display:flex;justify-content:center;padding:20px 0 48px;gap:0}
   .has-motion .intro{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%)}
+  .has-motion .presence-figure{width:155%;left:-3%}
   .has-motion .conversation-chapter{position:absolute;left:0;right:0;top:20px;max-width:none}
   .has-motion .conversation-chapter h2{font-size:24px}
   .has-motion .conversation-chapter p{max-width:none;margin-top:10px}
