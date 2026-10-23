@@ -30,3 +30,40 @@
 @media(max-width:520px){.site-header{gap:12px;padding-top:22px;padding-bottom:22px}.site-header .wordmark{gap:8px}.site-header .brand-mark{width:29px;height:29px}.site-header .brand-wordmark{width:84px}.header-thread,.primary-nav{display:none}.header-utilities{margin-left:auto;gap:10px}.language-menu{font-size:11px}.language-menu summary{gap:6px}.header-utilities .github-link{padding-left:10px;min-height:30px}.github-link svg{width:19px;height:19px}.locale-en .intro h1{font-size:34px;line-height:1.35}.locale-ja .intro h1{font-size:30px}.locale-en .intro .intro-note{position:static;max-width:none}.locale-en .handwritten-note{font-size:23px}.locale-en .paper-content{padding-left:30px;padding-right:19px}.locale-en .memory-lines{font-size:9px;gap:7px;margin:14px 0 12px}.locale-en .paper-description{font-size:10px;line-height:1.85}.locale-ja .handwritten-note{font-size:23px}.locale-ja .paper-content{padding-left:29px;padding-right:20px}.locale-ja .memory-lines{gap:7px;font-size:10px}.locale-en .choice-list{font-size:10px}.locale-en .choice-list li{gap:10px}.locale-en .choice-list span{font-size:9px}.deck-status{font-size:10px}.locale-en .keepsake-note{font-size:9px}.product-section .section-heading>.section-lead{font-size:14px}.memory-ledger h3{font-size:18px}.horizon-section{padding:25px 23px}.horizon-section>h2{font-size:22px}.horizon-columns h3{font-size:16px}.today ul{font-size:12px;line-height:2.15}.faq-list summary{font-size:14px}.faq-list details>p{font-size:12px}.soul-keepsake{padding:30px;min-height:310px}.soul-note{max-width:220px}.locale-en .paper-stamp{font-size:8px}.locale-en .photo-caption{font-size:9px}}
 
 @media(min-width:901px){.primary-nav,.language-menu{font-size:13px}}
+
+/* A silhouette becomes glyphs, then a room, then the actual conversation card. */
+.meeting-runway{position:relative;isolation:isolate}.meeting-anchor{position:absolute;top:0;left:0;width:1px;height:1px}.meeting-scroll,.meeting-pixels,.scene-skip,.conversation-chapter{display:none}
+.meeting-presence{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;opacity:.8;mask-image:linear-gradient(90deg,transparent,#000 45%,#000 88%,transparent)}
+.presence-figure{position:absolute;top:-24%;left:32%;width:84%;height:auto;max-width:none;opacity:.15;mask-image:linear-gradient(#000 55%,transparent 95%)}
+@media(min-width:801px) and (min-height:621px){
+  .has-motion{height:230svh;margin-bottom:55px}
+  .has-motion .meeting-anchor{top:130svh}
+  .has-motion .meeting-scene{position:sticky;top:0;height:100svh;--scene-reveal:0;--scene-presence:1;--scene-intro:1;--scene-chapter:0;--scene-landing:0;--scene-x:0;--scene-y:0;--scene-scale:1;--scene-rotation:0;isolation:isolate}
+  .has-motion .first-meeting{height:100%;padding-top:50px;padding-bottom:80px;overflow:visible}
+  .has-motion .intro,.has-motion .conversation-chapter{grid-column:1;grid-row:1;z-index:5}
+  .has-motion .intro{opacity:var(--scene-intro)}
+  .has-motion .intro[aria-hidden=true],.has-motion .conversation-chapter[aria-hidden=true]{visibility:hidden}
+  .has-motion .conversation-chapter{display:block;position:relative;opacity:var(--scene-chapter);max-width:340px}
+  .conversation-chapter h2{font-size:clamp(24px,2.05vw,29px);font-weight:500;line-height:1.7;letter-spacing:.015em}
+  .conversation-chapter p{max-width:300px;font-size:13px;line-height:2;color:var(--secondary);margin-top:23px}
+  .conversation-chapter .text-link{margin-top:26px}
+  .has-motion .keepsakes{grid-column:2;grid-row:1;z-index:3}
+  .has-motion .scene-skip{display:flex;align-items:center;gap:16px;width:max-content;font-size:12px;color:var(--secondary);margin-top:22px;padding:5px 0;border-bottom:1px solid #e7be7733}
+  .scene-skip span{color:var(--accent)}.scene-skip:hover{color:var(--text)}
+  .has-motion .intro .intro-note{margin-top:21px}
+  .has-motion .meeting-presence{inset:0;z-index:0;opacity:var(--scene-presence);mask-image:linear-gradient(90deg,transparent,#000 28%,#000 82%,transparent)}
+  .has-motion .presence-figure{width:91%;left:24%;top:-30%;opacity:.17}
+  .has-motion .meeting-pixels{display:block;position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:4;contain:strict}
+  .has-motion .room-card[data-position=active]{z-index:5;transform:translate(calc(var(--scene-x)*1px),calc(var(--scene-y)*1px)) scale(var(--scene-scale)) rotate(calc(var(--scene-rotation)*1deg));opacity:var(--scene-reveal);transition:none;will-change:transform}
+  .has-motion .room-card[data-position=active] .photo-corner,.has-motion .room-card[data-position=active] .video-toggle,.has-motion .room-card[data-position=active] .photo-caption{opacity:var(--scene-landing)}
+  .has-motion .keepsake-card:not(.room-card),.has-motion .deck-controls,.has-motion .keepsake-note{opacity:var(--scene-landing)}
+  .has-motion .meeting-scene:not([data-landed=true]) .moment-deck{pointer-events:none}
+  .has-motion .meeting-scene[data-landed=true] .keepsake-card[data-position=active]{opacity:1}
+  .has-motion .meeting-scroll{position:absolute;display:flex;align-items:center;gap:12px;bottom:28px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:.08em;color:var(--secondary);opacity:calc(1 - var(--scene-landing));white-space:nowrap}
+  .meeting-scroll span{width:1px;height:26px;background:linear-gradient(transparent,var(--accent))}
+}
+@media(prefers-reduced-motion:reduce){.meeting-runway.has-motion{height:auto;margin:0}.has-motion .meeting-scene{position:relative;height:auto}.has-motion .first-meeting{height:auto}.has-motion .meeting-pixels,.has-motion .meeting-scroll{display:none}}
+@media(max-width:800px){.meeting-presence{inset:0;mask-image:linear-gradient(#000,transparent 58%)}.presence-figure{left:25%;top:-6%;width:110%;opacity:.1}}
+/* A menu diamond becomes a short line, as it does on the title screen. */
+.primary-nav a{position:relative}.primary-nav a::before{content:'';position:absolute;left:50%;bottom:1px;width:4px;height:4px;border:1px solid var(--accent);transform:translateX(-50%) rotate(45deg);opacity:0;transition:width .22s,height .22s,transform .22s,opacity .22s}.primary-nav a:hover::before,.primary-nav a:focus-visible::before{opacity:1;width:17px;height:1px;transform:translateX(-50%) rotate(0);border-width:0;background:var(--accent)}
+@media(prefers-reduced-motion:reduce){.meeting-runway.has-motion{height:auto;margin:0}.has-motion .meeting-scene{position:relative;height:auto}.has-motion .first-meeting{height:auto}.has-motion .meeting-presence,.has-motion .meeting-scroll{display:none}}

@@ -4,6 +4,8 @@ import SiteHeader from './SiteHeader.vue'
 import { copy, localePath } from './product-copy.mjs'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { helpLinks, releaseUrl } from './product-content.mjs'
+import { clamp, meetingFrame } from './meeting-motion.mjs'
+import { createMeetingPixels } from './meeting-pixels.mjs'
 
 const creditsOpen = ref(false)
 const skipLink = ref<HTMLAnchorElement>()
@@ -14,6 +16,87 @@ const t = computed(() => copy[locale.value])
 const themes = computed(() => t.value.themes)
 const helpHref = (key: keyof typeof helpLinks) => withBase(helpLinks[key]) + (locale.value === 'zh' ? '' : `?lang=${locale.value}`)
 const deck = ref<HTMLElement>()
+const runway = ref<HTMLElement>()
+const scene = ref<HTMLElement>()
+const pixelCanvas = ref<HTMLCanvasElement>()
+const presenceFigure = ref<HTMLImageElement>()
+let pixels: Awaited<ReturnType<typeof createMeetingPixels>> | undefined
+let sceneLoading = false
+let sceneFailed = false
+let initialization = 0
+const animated = ref(false)
+const sceneVisible = ref(true)
+const pageHidden = ref(false)
+const sceneProgress = ref(0)
+const sceneCopy = computed(() => ({
+  zh: { skip: '直接看真实对话', scroll: '向下，走近一点', title: '先从一句「你好」开始。', body: '打字，或打开麦克风。她用表情和动作回应，聊过的小事，也可以留到下次。' },
+  en: { skip: 'Go to the conversation', scroll: 'Scroll a little closer', title: 'Start with a simple hello.', body: 'Type, or speak into your microphone. See her respond through expressions and motion. Keep little things for your next conversation.' },
+  ja: { skip: '会話を見る', scroll: 'スクロールして、もう少し近くへ', title: 'まずは、「こんにちは」から。', body: '文字でも、マイクでも。表情や動きで返事が届き、話した小さなことを、次の会話へ残せます。' },
+}[locale.value]))
+let sceneObserver: IntersectionObserver | undefined
+let resizeObserver: ResizeObserver | undefined
+let frameRequest = 0
+function updateScene() {
+  frameRequest = 0
+  if (!scene.value || !runway.value || !deck.value || !animated.value) return
+  const rect = runway.value.getBoundingClientRect()
+  const progress = clamp(-rect.top / Math.max(1, runway.value.offsetHeight - scene.value.offsetHeight))
+  const wasRevealed = sceneProgress.value >= .7
+  sceneProgress.value = progress
+  if (progress < .97 && active.value !== 0) active.value = 0
+  if (wasRevealed !== (progress >= .7)) void syncPlayback()
+  const frame = meetingFrame(progress, deck.value.getBoundingClientRect(), { width: innerWidth, height: innerHeight })
+  const style = scene.value.style
+  for (const [key, value] of Object.entries(frame)) style.setProperty(`--scene-${key}`, String(value))
+  scene.value.dataset.progress = progress.toFixed(4)
+  scene.value.dataset.landed = String(progress >= .97)
+  if (pixels && pixelCanvas.value && presenceFigure.value && video.value) {
+    const origin = scene.value.getBoundingClientRect()
+    const relative = (rect: DOMRect) => ({ left: rect.left - origin.left, top: rect.top - origin.top, width: rect.width, height: rect.height })
+    pixels.draw(progress, { width: origin.width, height: origin.height }, relative(presenceFigure.value.getBoundingClientRect()), relative(video.value.getBoundingClientRect()))
+  }
+}
+function requestScene() {
+  if (!frameRequest && animated.value && sceneVisible.value && !document.hidden) frameRequest = requestAnimationFrame(updateScene)
+}
+function jumpToConversation(event?: Event) {
+  if (!animated.value || !runway.value || !scene.value) return
+  event?.preventDefault()
+  const top = scrollY + runway.value.getBoundingClientRect().top + runway.value.offsetHeight - scene.value.offsetHeight
+  window.scrollTo({ top, behavior: 'instant' as ScrollBehavior })
+  if (location.hash !== '#moments') location.hash = 'moments'
+  updateScene()
+  deck.value?.focus({ preventScroll: true })
+}
+function hashScene() { if (location.hash === '#moments') jumpToConversation() }
+async function preparePixels() {
+  if (sceneLoading || pixels || !pixelCanvas.value || !presenceFigure.value) return
+  sceneLoading = true
+  const attempt = ++initialization
+  try {
+    const renderer = await createMeetingPixels(pixelCanvas.value, presenceFigure.value, withBase('/media/first-meeting.png'))
+    if (!mounted || attempt !== initialization) { renderer.dispose(); return }
+    pixels = renderer
+    pixelCanvas.value.dataset.ready = 'true'
+    requestScene()
+  } catch {
+    if (mounted && attempt === initialization) {
+      sceneFailed = true
+      animated.value = false
+      pixelCanvas.value?.setAttribute('data-ready', 'fallback')
+      void syncPlayback()
+    }
+  } finally { if (attempt === initialization) sceneLoading = false }
+}
+function scenePreferences() {
+  animated.value = !sceneFailed && !motion?.matches && !connection?.saveData && innerWidth > 800 && innerHeight > 620
+  if (animated.value) void preparePixels()
+  else { initialization++; sceneLoading = false; pixels?.dispose(); pixels = undefined }
+  requestAnimationFrame(updateScene)
+}
+function sceneVisibility() { pageHidden.value = document.hidden; requestScene(); void syncPlayback() }
+function ensureConversationFocus(event: FocusEvent) { if ((event.target as HTMLElement).matches(':focus-visible') && animated.value && sceneProgress.value < .97) jumpToConversation() }
+function ensureIntroFocus() { if (animated.value && sceneProgress.value > .08 && sceneProgress.value < .95) jumpToConversation() }
 const video = ref<HTMLVideoElement>()
 const dragging = ref(false)
 const playing = ref(false)
@@ -31,7 +114,7 @@ let pointerStart: { x: number; y: number; id: number } | undefined
 function position(index: number) {
   return index === active.value ? 'active' : (index - active.value + 3) % 3 === 1 ? 'next' : 'previous'
 }
-function select(index: number) { active.value = (index + 3) % 3 }
+function select(index: number) { if (animated.value && sceneProgress.value < .97) jumpToConversation(); active.value = (index + 3) % 3 }
 function keyboard(event: KeyboardEvent) {
   if ((event.target as HTMLElement).closest('a,button')) return
   const actions: Record<string, () => void> = {
@@ -59,7 +142,7 @@ async function syncPlayback() {
   const attempt = ++playbackAttempt
   const element = video.value
   if (!mounted || !element) return
-  if (!wantsPlayback.value || !visible || document.hidden || active.value !== 0) {
+  if (!wantsPlayback.value || !visible || document.hidden || active.value !== 0 || (animated.value && sceneProgress.value < .7)) {
     element.pause()
     return
   }
@@ -81,6 +164,7 @@ function clearSkipFocus(event: PointerEvent) {
 }
 function respectPreferences() {
   if (motion?.matches || connection?.saveData) wantsPlayback.value = false
+  scenePreferences()
   void syncPlayback()
 }
 watch(active, () => { void syncPlayback() })
@@ -93,17 +177,36 @@ onMounted(() => {
     visible = entry.isIntersecting
     void syncPlayback()
   }, { threshold: .2 })
-  if (deck.value) observer.observe(deck.value)
-  document.addEventListener('visibilitychange', syncPlayback)
+  if (video.value) observer.observe(video.value)
+  scenePreferences()
+  // Initial hash navigation waits for Vue to apply the motion layout. Later resizes only repaint.
+  requestAnimationFrame(hashScene)
+  sceneObserver = new IntersectionObserver(([entry]) => { sceneVisible.value = entry.isIntersecting; requestScene() })
+  if (runway.value) sceneObserver.observe(runway.value)
+  resizeObserver = new ResizeObserver(() => { scenePreferences(); requestScene() })
+  if (deck.value) resizeObserver.observe(deck.value)
+  window.addEventListener('scroll', requestScene, { passive: true })
+  window.addEventListener('resize', scenePreferences)
+  window.addEventListener('hashchange', hashScene)
+  document.addEventListener('visibilitychange', sceneVisibility)
   document.addEventListener('pointerdown', clearSkipFocus, true)
   motion.addEventListener('change', respectPreferences)
   connection?.addEventListener('change', respectPreferences)
 })
 onBeforeUnmount(() => {
   mounted = false
+  initialization++
+  pixels?.dispose()
+  pixels = undefined
   video.value?.pause()
   observer?.disconnect()
-  document.removeEventListener('visibilitychange', syncPlayback)
+  sceneObserver?.disconnect()
+  resizeObserver?.disconnect()
+  cancelAnimationFrame(frameRequest)
+  window.removeEventListener('scroll', requestScene)
+  window.removeEventListener('resize', scenePreferences)
+  window.removeEventListener('hashchange', hashScene)
+  document.removeEventListener('visibilitychange', sceneVisibility)
   document.removeEventListener('pointerdown', clearSkipFocus, true)
   motion?.removeEventListener('change', respectPreferences)
   connection?.removeEventListener('change', respectPreferences)
@@ -114,10 +217,17 @@ onBeforeUnmount(() => {
   <a ref="skipLink" class="skip-link" href="#main">{{ t.skip }}</a>
   <SiteHeader :locale="locale" />
   <main id="main" :class="`locale-${locale}`">
+    <div ref="runway" class="meeting-runway" :class="{ 'has-motion': animated }" data-testid="meeting-runway">
+    <span id="moments" class="meeting-anchor" aria-hidden="true"></span>
+    <div ref="scene" class="meeting-scene" :class="{ 'scene-resting': !sceneVisible || pageHidden }" data-testid="meeting-scene">
     <section class="first-meeting" aria-labelledby="intro-title">
-      <div class="star-orbit" aria-hidden="true"><span>✦</span><i></i><b>✧</b></div>
-      <div class="intro"><div class="intro-flourish" aria-hidden="true"><span></span>✧<span></span></div><h1 id="intro-title"><template v-for="(line, index) in t.hero" :key="line">{{ line }}<br v-if="index === 0"></template></h1><p><template v-for="(line, index) in t.intro" :key="line">{{ line }}<br v-if="index < 2"></template></p><a class="button primary" href="#start">{{ t.meet }}<span aria-hidden="true">✦</span></a><p class="intro-note"><template v-for="(line, index) in t.note" :key="line">{{ line }}<br v-if="index === 0"></template></p></div>
-      <div class="keepsakes">
+      <div class="meeting-presence" aria-hidden="true">
+        <img ref="presenceFigure" class="presence-figure" :src="withBase('/brand/momo-presence-v2.webp')" alt="" decoding="async">
+      </div>
+      <canvas ref="pixelCanvas" class="meeting-pixels" data-testid="meeting-pixels" aria-hidden="true"></canvas>
+      <div class="intro" :aria-hidden="animated && sceneProgress > .16 ? true : undefined" :inert="animated && sceneProgress > .16" @focusin="ensureIntroFocus"><div class="intro-flourish" aria-hidden="true"><span></span>✧<span></span></div><h1 id="intro-title"><template v-for="(line, index) in t.hero" :key="line">{{ line }}<br v-if="index === 0"></template></h1><p><template v-for="(line, index) in t.intro" :key="line">{{ line }}<br v-if="index < 2"></template></p><a class="button primary" href="#start">{{ t.meet }}<span aria-hidden="true">✦</span></a><a class="scene-skip" href="#moments" data-testid="skip-meeting" @click="jumpToConversation">{{ sceneCopy.skip }}<span aria-hidden="true">↓</span></a><p class="intro-note"><template v-for="(line, index) in t.note" :key="line">{{ line }}<br v-if="index === 0"></template></p></div>
+      <div class="conversation-chapter" :aria-hidden="!animated || sceneProgress < .75 ? true : undefined" :inert="!animated || sceneProgress < .75" @focusin="ensureConversationFocus"><h2>{{ sceneCopy.title }}</h2><p>{{ sceneCopy.body }}</p><a class="text-link" href="#start">{{ t.meet }}</a></div>
+      <div class="keepsakes" @focusin="ensureConversationFocus">
         <div ref="deck" :class="{ 'is-dragging': dragging }" class="moment-deck" data-testid="moment-deck" role="region" :aria-roledescription="t.carouselRole" :aria-label="t.carousel" aria-describedby="deck-instructions" tabindex="0" @keydown="keyboard" @pointerdown="pointerDown" @pointerup="pointerUp" @pointercancel="cancelPointer" @lostpointercapture="cancelPointer">
           <article class="keepsake-card room-card" data-testid="moment-card" :data-position="position(0)" :aria-hidden="active !== 0" :inert="active !== 0" :aria-label="themes[0]"><div class="photo-mount"><video ref="video" data-testid="hero-video" :poster="withBase('/media/first-meeting.png')" preload="none" muted loop playsinline :aria-label="t.video" @play="playing = true" @pause="playing = false" @error="wantsPlayback = false; playing = false"></video><span class="photo-corner top-left" aria-hidden="true"></span><span class="photo-corner bottom-right" aria-hidden="true"></span><button class="video-toggle" data-testid="video-toggle" type="button" :aria-label="playing ? t.pause : t.play" @click="toggleVideo"><span aria-hidden="true">{{ playing ? 'Ⅱ' : '▷' }}</span>{{ playing ? t.paused : t.play }}</button></div><div class="photo-caption"><span>{{ t.caption }}</span><span class="caption-star" aria-hidden="true">✧</span></div></article>
           <article class="keepsake-card memory-card" data-testid="moment-card" :data-position="position(1)" :aria-hidden="active !== 1" :inert="active !== 1" :aria-label="themes[1]"><div class="binding" aria-hidden="true"></div><div class="paper-content"><span class="paper-motif" aria-hidden="true">✧</span><p class="handwritten-note">{{ t.memoryCard[0] }}<br>{{ t.memoryCard[1] }}</p><div class="memory-lines"><span v-for="label in t.memoryLabels" :key="label">{{ label }}</span></div><p class="paper-description">{{ t.memoryDescription[0] }}<br>{{ t.memoryDescription[1] }}</p><a class="text-link" :href="helpHref('data')">{{ t.memoryLink }}</a></div><span class="paper-stamp" aria-hidden="true">momo<br>✧</span></article>
@@ -127,6 +237,9 @@ onBeforeUnmount(() => {
         <p id="deck-instructions" class="sr-only">{{ t.instructions }}</p><p class="keepsake-note"><span aria-hidden="true">✧</span>{{ t.keepsakeNote }}</p>
       </div>
     </section>
+    <p class="meeting-scroll" aria-hidden="true"><span></span>{{ sceneCopy.scroll }}</p>
+    </div>
+    </div>
     <section id="together" class="relationship product-section" aria-labelledby="relationship-title"><div class="section-heading"><span class="small-momo" aria-hidden="true">momo</span><h2 id="relationship-title">{{ t.relationship.title[0] }}<br>{{ t.relationship.title[1] }}</h2><p class="section-lead">{{ t.relationship.lead }}</p><p>{{ t.relationship.body }}</p><p>{{ t.relationship.closing }}</p></div><div class="soul-keepsake"><div class="soul-rings" aria-hidden="true"><i></i><i></i><span>✧</span></div><img :src="withBase('/brand/momo-mark.svg')" alt="" width="76" height="80" loading="lazy"><div class="soul-lines"><p v-for="line in t.relationship.paper" :key="line">{{ line }}</p></div><p class="soul-note">{{ t.relationship.aside }}</p></div></section>
     <section id="memory" class="memory-section product-section" aria-labelledby="memory-title"><div class="section-heading"><span class="section-flower" aria-hidden="true">✧</span><h2 id="memory-title">{{ t.memory.title[0] }}<br>{{ t.memory.title[1] }}</h2><p class="section-lead">{{ t.memory.lead }}</p><a class="text-link" :href="helpHref('data')">{{ t.memory.link }}</a></div><div class="memory-ledger"><article v-for="item in t.memory.items" :key="item[0]"><span aria-hidden="true">◇</span><div><h3>{{ item[0] }}</h3><p>{{ item[1] }}</p></div></article><p class="privacy-note">{{ t.memory.note }}</p></div></section>
     <section id="voice" class="together voice-section" aria-labelledby="voice-title"><div class="section-heading"><span class="small-momo" aria-hidden="true">momo</span><h2 id="voice-title">{{ t.voice.title[0] }}<br>{{ t.voice.title[1] }}</h2></div><div class="conversation-note"><span class="quote-mark" aria-hidden="true">“</span><h3>{{ t.voice.heading }}</h3><p>{{ t.voice.body }}</p><p>{{ t.voice.detail }}</p><a class="text-link" :href="helpHref('voice')">{{ t.voice.link }}</a><p class="fine-note">{{ t.voice.note }}</p><span class="note-tail" aria-hidden="true">✧</span></div></section>

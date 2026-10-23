@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-23",
+  "status": "candidate-awaiting-user-review",
+  "tool": "OpenAI built-in image_gen; tool-managed model version not exposed",
+  "source": "momo-presence-v2.png",
+  "dimensions": [
+    1024,
+    1536
+  ],
+  "alpha": true,
+  "sha256": "c100531583a35ba253c00cb124d85c0a7518bb0a4c8c948aaf5f4351200be310",
+  "derivatives": [
+    {
+      "file": "site/docs/public/brand/momo-presence-v2.webp",
+      "sha256": "38ab93ada714de4982115ee8d2f322da576f01a90781af4bc03d40e8ad3ff3aa",
+      "bytes": 867754
+    }
+  ],
+  "transform": "Lossless WebP encoding; alpha and visible composites identical on ink/ivory. Fully transparent RGB may be normalized by the encoder.",
+  "scope": "Website background iteration only; README and app still contain the previous unapproved candidate pending art direction review.",
+  "previous_candidates": [
+    {
+      "source": "momo-presence-v1.png",
+      "sha256": "3a7a34179dc9d723935d73867549a4eafa9697af71fcac162387fba51bdd4ca9",
+      "status": "direction-rejected-by-user",
+      "remaining_derivatives": [
+        "app/frontend/public/brand/momo-presence-v1.webp"
+      ]
+    },
+    {
+      "file": "momo-memory-alternative.png",
+      "sha256": "4fb791e1237aa936bfd718fb8b0f0a680ceee170dc1a581828a238ac6c6582db",
+      "status": "direction-rejected-by-user"
+    }
+  ],
+  "references": {
+    "character_design": "https://www.pixiv.net/artworks/148186519",
+    "film": "https://www.bilibili.com/video/BV186pc65E68/",
+    "film_code": "https://github.com/Nyankomintsu/world-execute-me-lyric-mv",
+    "film_commit": "93ac63775ee58b33ff102167514f2603a48940cc",
+    "third_party_image_inputs": false,
+    "third_party_assets_distributed": false
+  }
+}

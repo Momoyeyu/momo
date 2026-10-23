@@ -48,6 +48,9 @@ test('desktop: stacked cards, actual video, keyboard, help pages and every inter
   await page.getByRole('link',{name:'与 momo 相遇'}).click()
   await expect(page).toHaveURL(/\/momo\/#start$/)
   await deck.scrollIntoViewIfNeeded()
+  // Enter the conversation through its keyboard action after scrolling the sticky deck into view.
+  await deck.press('Home')
+  await expect(page.getByTestId('meeting-scene')).toHaveAttribute('data-landed','true')
   await expect(video).toHaveJSProperty('paused',true)
   await page.getByTestId('video-toggle').click()
   await expect.poll(()=>video.evaluate(v=>!v.paused)).toBe(true)

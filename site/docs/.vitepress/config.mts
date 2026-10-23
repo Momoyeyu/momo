@@ -6,6 +6,7 @@ const origin = 'https://momoyeyu.github.io/momo'
 export default defineConfig({
   title: copy.zh.title,
   description: copy.zh.description,
+  scrollOffset: 0, // Our header scrolls with the page; the default theme’s fixed-header offset does not apply.
   base: '/momo/', lang: 'zh-CN', cleanUrls: true, appearance: false,
   locales: {
     root: { label: '简体中文', lang: 'zh-CN', title: copy.zh.title, description: copy.zh.description },
