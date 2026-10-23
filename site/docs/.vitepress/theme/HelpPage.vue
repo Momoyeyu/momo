@@ -2,10 +2,10 @@
 import { Content, useData, useRouter, withBase } from 'vitepress'
 import { helpLinks } from './product-content.mjs'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import SiteHeader from './SiteHeader.vue'
 import { copy, localePath } from './product-copy.mjs'
 const { page } = useData()
 const locale = ref<'zh' | 'en' | 'ja'>('zh')
+const emit = defineEmits<{ 'locale-change': [locale: 'zh' | 'en' | 'ja'] }>()
 const t = computed(() => copy[locale.value])
 const labels = computed(() => ({
   zh: { home: '首页', guides: '使用帮助', breadcrumb: '当前位置', index: '从这里开始', part: '指南' },
@@ -25,6 +25,7 @@ const previousAfterRoute = router.onAfterRouteChange
 function syncGuideLanguage(address = window.location.href) {
   const selected = new URL(address, window.location.href).searchParams.get('lang')
   locale.value = selected === 'en' || selected === 'ja' ? selected : 'zh'
+  emit('locale-change', locale.value)
   for (const link of document.querySelectorAll<HTMLAnchorElement>('.help-page article a[href]')) {
     const url = new URL(link.href)
     if (url.origin !== window.location.origin || !url.pathname.startsWith(withBase('/help/'))) continue
@@ -50,8 +51,6 @@ onBeforeUnmount(() => {
 })
 </script>
 <template>
-  <a class="skip-link" href="#help-content">{{ t.skip }}</a>
-  <SiteHeader :locale="locale" help />
   <main id="help-content" class="help-page" tabindex="-1">
     <div class="help-atmosphere" aria-hidden="true"><img :src="withBase('/brand/momo-presence-v2.webp')" alt=""></div>
     <div class="help-shell">

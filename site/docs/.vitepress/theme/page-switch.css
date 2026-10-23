@@ -1,0 +1,20 @@
+/* Match the game's settings rail: one cursor, one direction, one 350ms rhythm. */
+:root{--page-switch-time:350ms;--page-switch-ease:cubic-bezier(.65,0,.35,1);view-transition-name:none}
+.site-view-clip{overflow-x:clip}
+.site-route-view{view-transition-name:site-page}
+.site-header.global-header .primary-nav{position:relative}
+.site-header.global-header .primary-nav a::before{display:none}
+.nav-indicator{position:absolute;left:0;bottom:1px;height:1px;background:var(--accent);pointer-events:none}
+.nav-indicator[data-ready]{transition:transform var(--page-switch-time) var(--page-switch-ease),width var(--page-switch-time) var(--page-switch-ease)}
+::view-transition{pointer-events:none}
+::view-transition-group(site-page){animation:none}
+::view-transition-old(site-page),::view-transition-new(site-page){height:auto;mix-blend-mode:normal;animation-duration:var(--page-switch-time);animation-timing-function:var(--page-switch-ease);animation-fill-mode:both}
+[data-page-switch=forward]::view-transition-old(site-page){animation-name:page-leave-left}
+[data-page-switch=forward]::view-transition-new(site-page){animation-name:page-enter-right}
+[data-page-switch=backward]::view-transition-old(site-page){animation-name:page-leave-right}
+[data-page-switch=backward]::view-transition-new(site-page){animation-name:page-enter-left}
+@keyframes page-leave-left{to{transform:translateX(-100vw)}}
+@keyframes page-enter-right{from{transform:translateX(100vw)}}
+@keyframes page-leave-right{to{transform:translateX(100vw)}}
+@keyframes page-enter-left{from{transform:translateX(-100vw)}}
+@media(prefers-reduced-motion:reduce){.nav-indicator[data-ready]{transition:none}::view-transition-old(site-page),::view-transition-new(site-page){animation:none}}

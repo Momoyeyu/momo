@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useData, withBase } from 'vitepress'
-import SiteHeader from './SiteHeader.vue'
 import ProductChapters from './ProductChapters.vue'
 import { copy, localePath } from './product-copy.mjs'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -10,7 +9,6 @@ import { createMeetingPixels } from './meeting-pixels.mjs'
 import { createScrollFollow } from './scroll-follow.mjs'
 
 const creditsOpen = ref(false)
-const skipLink = ref<HTMLAnchorElement>()
 const active = ref(0)
 const { page } = useData()
 const locale = computed<'zh' | 'en' | 'ja'>(() => page.value.relativePath.startsWith('en/') ? 'en' : page.value.relativePath.startsWith('ja/') ? 'ja' : 'zh')
@@ -188,9 +186,6 @@ function toggleVideo() {
   wantsPlayback.value = shouldPlay
   void syncPlayback()
 }
-function clearSkipFocus(event: PointerEvent) {
-  if (document.activeElement === skipLink.value && event.target !== skipLink.value) skipLink.value?.blur()
-}
 function respectPreferences() {
   if (motion?.matches || connection?.saveData) wantsPlayback.value = false
   scenePreferences()
@@ -223,7 +218,6 @@ onMounted(() => {
   window.addEventListener('resize', scenePreferences)
   window.addEventListener('hashchange', hashScene)
   document.addEventListener('visibilitychange', sceneVisibility)
-  document.addEventListener('pointerdown', clearSkipFocus, true)
   motion.addEventListener('change', respectPreferences)
   connection?.addEventListener('change', respectPreferences)
 })
@@ -243,15 +237,12 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', scenePreferences)
   window.removeEventListener('hashchange', hashScene)
   document.removeEventListener('visibilitychange', sceneVisibility)
-  document.removeEventListener('pointerdown', clearSkipFocus, true)
   motion?.removeEventListener('change', respectPreferences)
   connection?.removeEventListener('change', respectPreferences)
 })
 </script>
 
 <template>
-  <a ref="skipLink" class="skip-link" href="#main">{{ t.skip }}</a>
-  <SiteHeader :locale="locale" />
   <main id="main" :class="`locale-${locale}`">
     <div ref="runway" class="meeting-runway" :class="{ 'has-motion': animated }" data-testid="meeting-runway">
     <span id="moments" class="meeting-anchor" aria-hidden="true"></span>

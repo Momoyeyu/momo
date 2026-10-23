@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useData, withBase } from 'vitepress'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { copy, languages, localePath } from './product-copy.mjs'
 import { helpLinks } from './product-content.mjs'
 import './header-help.css'
@@ -8,6 +8,17 @@ const props = defineProps<{ locale: 'zh' | 'en' | 'ja'; help?: boolean }>()
 const { page, hash: currentHash } = useData()
 const menu = ref<HTMLDetailsElement>()
 const summary = ref<HTMLElement>()
+const nav = ref<HTMLElement>()
+const indicator = ref<HTMLElement>()
+let observer: ResizeObserver | undefined
+let indicatorFrame = 0
+function measureIndicator() {
+  const selected = nav.value?.querySelector<HTMLElement>('a[aria-current]')
+  if (!selected || !indicator.value) return
+  indicator.value.style.width = `${selected.offsetWidth}px`
+  indicator.value.style.transform = `translateX(${selected.offsetLeft}px)`
+}
+watch(() => [props.help, props.locale], () => { void nextTick(measureIndicator) })
 const t = computed(() => copy[props.locale])
 const navigation = computed(() => ({
   zh: { home: '首页', label: '主导航' },
@@ -35,9 +46,15 @@ function menuKey(event: KeyboardEvent) {
   }
 }
 onMounted(() => {
+  measureIndicator()
+  indicatorFrame = requestAnimationFrame(() => { indicator.value?.setAttribute('data-ready', 'true') })
+  observer = new ResizeObserver(measureIndicator)
+  if (nav.value) observer.observe(nav.value)
   document.addEventListener('pointerdown', closeOutside)
 })
 onBeforeUnmount(() => {
+  observer?.disconnect()
+  cancelAnimationFrame(indicatorFrame)
   document.removeEventListener('pointerdown', closeOutside)
 })
 </script>
@@ -45,7 +62,8 @@ onBeforeUnmount(() => {
   <header class="site-header global-header">
     <a class="wordmark" :href="withBase(localePath(locale))" :aria-label="t.home"><img class="brand-mark" :src="withBase('/brand/momo-mark.svg')" alt=""><img class="brand-wordmark" :src="withBase('/brand/momo-wordmark.svg')" alt="momo"></a>
     <span class="header-thread" aria-hidden="true"><i></i></span>
-    <nav class="primary-nav" :aria-label="navigation.label" data-testid="global-navigation">
+    <nav ref="nav" class="primary-nav" :aria-label="navigation.label" data-testid="global-navigation">
+      <span ref="indicator" class="nav-indicator" data-testid="nav-indicator" aria-hidden="true"></span>
       <a :href="withBase(localePath(locale))" :aria-current="!help ? 'page' : undefined">{{ navigation.home }}</a>
       <a :href="guideHref(locale)" :aria-current="help ? (guidePath === helpLinks.start ? 'page' : 'true') : undefined">{{ t.nav[3] }}</a>
     </nav>
