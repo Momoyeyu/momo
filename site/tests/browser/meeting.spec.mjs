@@ -6,6 +6,22 @@ async function progress(page,p){
   await page.evaluate(p=>{const el=document.querySelector('.meeting-runway'),scene=document.querySelector('.meeting-scene');window.scrollTo({top:scrollY+el.getBoundingClientRect().top+(el.offsetHeight-scene.offsetHeight)*p,behavior:'instant'})},p)
   await expect.poll(async()=>Number(await page.getByTestId('meeting-scene').getAttribute('data-progress'))).toBeCloseTo(p,3)
 }
+test('desktop: explicit play brings a partly visible video fully into view and preserves button focus',async({page})=>{
+  await page.setViewportSize({width:1440,height:1000})
+  await page.goto('./#moments')
+  const video=page.getByTestId('hero-video'),button=page.getByTestId('video-toggle')
+  await expect(page.getByTestId('meeting-scene')).toHaveAttribute('data-landed','true')
+  await expect.poll(()=>video.evaluate(v=>!v.paused)).toBe(true)
+  await button.click()
+  await expect(video).toHaveJSProperty('paused',true)
+  await button.evaluate(el=>scrollTo({top:scrollY+el.getBoundingClientRect().top-8,behavior:'instant'}))
+  await expect(button).toBeInViewport()
+  expect((await video.boundingBox()).y).toBeLessThan(0)
+  await button.click()
+  await expect.poll(()=>video.evaluate(v=>!v.paused)).toBe(true)
+  expect((await video.boundingBox()).y).toBeGreaterThan(0)
+  await expect(button).toBeFocused()
+})
 test('desktop: one real conversation moves into the deck, reverses, skips and releases offscreen',async({page})=>{
   await page.setViewportSize({width:1440,height:1000})
   await page.addInitScript(()=>{window.meetingReadbacks=0;const read=CanvasRenderingContext2D.prototype.getImageData;CanvasRenderingContext2D.prototype.getImageData=function(...args){window.meetingReadbacks++;return read.apply(this,args)}})

@@ -58,7 +58,7 @@ for (const code of ['zh','en','ja']) {
     // A native details element works before hydration; prove Vue handled a card first.
     await page.getByTestId('deck-next').click()
     await expect(page.getByTestId('deck-status')).toHaveText(t.themes[1])
-    await page.locator('.primary-nav a[href="#memory"]').click()
+    await page.locator('.chapter-index a[href="#memory"]').click()
     await expect(page).toHaveURL(new RegExp(`${path}#memory$`))
     await menu.locator('summary').click()
     const next=code==='zh'?'en':code==='en'?'ja':'zh'

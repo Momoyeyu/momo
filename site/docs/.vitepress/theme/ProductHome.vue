@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useData, withBase } from 'vitepress'
 import SiteHeader from './SiteHeader.vue'
+import ProductChapters from './ProductChapters.vue'
 import { copy, localePath } from './product-copy.mjs'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { helpLinks, releaseUrl } from './product-content.mjs'
 import { clamp, meetingFrame } from './meeting-motion.mjs'
 import { createMeetingPixels } from './meeting-pixels.mjs'
+import { createScrollFollow } from './scroll-follow.mjs'
 
 const creditsOpen = ref(false)
 const skipLink = ref<HTMLAnchorElement>()
@@ -35,16 +37,18 @@ const sceneCopy = computed(() => ({
 }[locale.value]))
 let sceneObserver: IntersectionObserver | undefined
 let resizeObserver: ResizeObserver | undefined
-let frameRequest = 0
-function updateScene() {
-  frameRequest = 0
-  if (!scene.value || !runway.value || !deck.value || !animated.value) return
+let layoutRequest = 0
+let hashRequest = 0
+function readSceneProgress() {
+  if (!scene.value || !runway.value) return sceneProgress.value
   const rect = runway.value.getBoundingClientRect()
-  const progress = clamp(-rect.top / Math.max(1, runway.value.offsetHeight - scene.value.offsetHeight))
+  return clamp(-rect.top / Math.max(1, runway.value.offsetHeight - scene.value.offsetHeight))
+}
+function paintScene(progress: number) {
+  if (!scene.value || !deck.value || !animated.value) return
   const wasRevealed = sceneProgress.value >= .7
   sceneProgress.value = progress
   if (progress < .97 && active.value !== 0) active.value = 0
-  if (wasRevealed !== (progress >= .7)) void syncPlayback()
   const frame = meetingFrame(progress, deck.value.getBoundingClientRect(), { width: innerWidth, height: innerHeight })
   const style = scene.value.style
   for (const [key, value] of Object.entries(frame)) style.setProperty(`--scene-${key}`, String(value))
@@ -55,20 +59,35 @@ function updateScene() {
     const relative = (rect: DOMRect) => ({ left: rect.left - origin.left, top: rect.top - origin.top, width: rect.width, height: rect.height })
     pixels.draw(progress, { width: origin.width, height: origin.height }, relative(presenceFigure.value.getBoundingClientRect()), relative(video.value.getBoundingClientRect()))
   }
+  // The displayed phase owns playback too: clear the canvas before starting the live surface.
+  if (wasRevealed !== (progress >= .7)) void syncPlayback()
 }
+const sceneFollow = createScrollFollow({ read: readSceneProgress, write: paintScene })
 function requestScene() {
-  if (!frameRequest && animated.value && sceneVisible.value && !document.hidden) frameRequest = requestAnimationFrame(updateScene)
+  if (animated.value && sceneVisible.value && !document.hidden) sceneFollow.request()
 }
-function jumpToConversation(event?: Event) {
+function refreshScene() {
+  if (animated.value && sceneVisible.value && !document.hidden) sceneFollow.request({ immediate: true })
+  else sceneFollow.stop()
+}
+function scheduleSceneRefresh() {
+  sceneFollow.stop()
+  if (layoutRequest) cancelAnimationFrame(layoutRequest)
+  layoutRequest = requestAnimationFrame(() => { layoutRequest = 0; refreshScene() })
+}
+function jumpToConversation(event?: Event, focusDeck = true) {
   if (!animated.value || !runway.value || !scene.value) return
   event?.preventDefault()
   const top = scrollY + runway.value.getBoundingClientRect().top + runway.value.offsetHeight - scene.value.offsetHeight
   window.scrollTo({ top, behavior: 'instant' as ScrollBehavior })
   if (location.hash !== '#moments') location.hash = 'moments'
-  updateScene()
-  deck.value?.focus({ preventScroll: true })
+  refreshScene()
+  if (focusDeck) deck.value?.focus({ preventScroll: true })
 }
-function hashScene() { if (location.hash === '#moments') jumpToConversation() }
+function hashScene() {
+  if (location.hash === '#moments') jumpToConversation(undefined, false)
+  else refreshScene()
+}
 async function preparePixels() {
   if (sceneLoading || pixels || !pixelCanvas.value || !presenceFigure.value) return
   sceneLoading = true
@@ -83,6 +102,7 @@ async function preparePixels() {
     if (mounted && attempt === initialization) {
       sceneFailed = true
       animated.value = false
+      sceneFollow.stop()
       pixelCanvas.value?.setAttribute('data-ready', 'fallback')
       void syncPlayback()
     }
@@ -92,9 +112,14 @@ function scenePreferences() {
   animated.value = !sceneFailed && !motion?.matches && !connection?.saveData && innerWidth > 800 && innerHeight > 620
   if (animated.value) void preparePixels()
   else { initialization++; sceneLoading = false; pixels?.dispose(); pixels = undefined }
-  requestAnimationFrame(updateScene)
+  scheduleSceneRefresh()
 }
-function sceneVisibility() { pageHidden.value = document.hidden; requestScene(); void syncPlayback() }
+function sceneVisibility() {
+  pageHidden.value = document.hidden
+  if (document.hidden) sceneFollow.stop()
+  else refreshScene()
+  void syncPlayback()
+}
 function ensureConversationFocus(event: FocusEvent) { if ((event.target as HTMLElement).matches(':focus-visible') && animated.value && sceneProgress.value < .97) jumpToConversation() }
 function ensureIntroFocus() { if (animated.value && sceneProgress.value > .08 && sceneProgress.value < .95) jumpToConversation() }
 const video = ref<HTMLVideoElement>()
@@ -156,7 +181,11 @@ async function syncPlayback() {
   }
 }
 function toggleVideo() {
-  wantsPlayback.value = !playing.value
+  const shouldPlay = !playing.value
+  // An explicit play request brings the real surface fully into view. A sliver
+  // of the controls can be clickable while the visibility gate still pauses it.
+  if (shouldPlay && animated.value) jumpToConversation(undefined, false)
+  wantsPlayback.value = shouldPlay
   void syncPlayback()
 }
 function clearSkipFocus(event: PointerEvent) {
@@ -170,6 +199,7 @@ function respectPreferences() {
 watch(active, () => { void syncPlayback() })
 onMounted(() => {
   mounted = true
+  pageHidden.value = document.hidden
   motion = window.matchMedia('(prefers-reduced-motion: reduce)')
   connection = (navigator as Navigator & { connection?: typeof connection }).connection
   wantsPlayback.value = !motion.matches && !connection?.saveData
@@ -180,8 +210,12 @@ onMounted(() => {
   if (video.value) observer.observe(video.value)
   scenePreferences()
   // Initial hash navigation waits for Vue to apply the motion layout. Later resizes only repaint.
-  requestAnimationFrame(hashScene)
-  sceneObserver = new IntersectionObserver(([entry]) => { sceneVisible.value = entry.isIntersecting; requestScene() })
+  hashRequest = requestAnimationFrame(() => { hashRequest = 0; hashScene() })
+  sceneObserver = new IntersectionObserver(([entry]) => {
+    sceneVisible.value = entry.isIntersecting
+    if (entry.isIntersecting) refreshScene()
+    else sceneFollow.stop()
+  })
   if (runway.value) sceneObserver.observe(runway.value)
   resizeObserver = new ResizeObserver(() => { scenePreferences(); requestScene() })
   if (deck.value) resizeObserver.observe(deck.value)
@@ -202,7 +236,9 @@ onBeforeUnmount(() => {
   observer?.disconnect()
   sceneObserver?.disconnect()
   resizeObserver?.disconnect()
-  cancelAnimationFrame(frameRequest)
+  sceneFollow.dispose()
+  cancelAnimationFrame(layoutRequest)
+  cancelAnimationFrame(hashRequest)
   window.removeEventListener('scroll', requestScene)
   window.removeEventListener('resize', scenePreferences)
   window.removeEventListener('hashchange', hashScene)
@@ -240,10 +276,7 @@ onBeforeUnmount(() => {
     <p class="meeting-scroll" aria-hidden="true"><span></span>{{ sceneCopy.scroll }}</p>
     </div>
     </div>
-    <section id="together" class="relationship product-section" aria-labelledby="relationship-title"><div class="section-heading"><span class="small-momo" aria-hidden="true">momo</span><h2 id="relationship-title">{{ t.relationship.title[0] }}<br>{{ t.relationship.title[1] }}</h2><p class="section-lead">{{ t.relationship.lead }}</p><p>{{ t.relationship.body }}</p><p>{{ t.relationship.closing }}</p></div><div class="soul-keepsake"><div class="soul-rings" aria-hidden="true"><i></i><i></i><span>✧</span></div><img :src="withBase('/brand/momo-mark.svg')" alt="" width="76" height="80" loading="lazy"><div class="soul-lines"><p v-for="line in t.relationship.paper" :key="line">{{ line }}</p></div><p class="soul-note">{{ t.relationship.aside }}</p></div></section>
-    <section id="memory" class="memory-section product-section" aria-labelledby="memory-title"><div class="section-heading"><span class="section-flower" aria-hidden="true">✧</span><h2 id="memory-title">{{ t.memory.title[0] }}<br>{{ t.memory.title[1] }}</h2><p class="section-lead">{{ t.memory.lead }}</p><a class="text-link" :href="helpHref('data')">{{ t.memory.link }}</a></div><div class="memory-ledger"><article v-for="item in t.memory.items" :key="item[0]"><span aria-hidden="true">◇</span><div><h3>{{ item[0] }}</h3><p>{{ item[1] }}</p></div></article><p class="privacy-note">{{ t.memory.note }}</p></div></section>
-    <section id="voice" class="together voice-section" aria-labelledby="voice-title"><div class="section-heading"><span class="small-momo" aria-hidden="true">momo</span><h2 id="voice-title">{{ t.voice.title[0] }}<br>{{ t.voice.title[1] }}</h2></div><div class="conversation-note"><span class="quote-mark" aria-hidden="true">“</span><h3>{{ t.voice.heading }}</h3><p>{{ t.voice.body }}</p><p>{{ t.voice.detail }}</p><a class="text-link" :href="helpHref('voice')">{{ t.voice.link }}</a><p class="fine-note">{{ t.voice.note }}</p><span class="note-tail" aria-hidden="true">✧</span></div></section>
-    <section id="extensions" class="extension-section product-section" aria-labelledby="extensions-title"><div class="section-heading"><span class="section-flower" aria-hidden="true">✧</span><h2 id="extensions-title">{{ t.extensions.title[0] }}<br>{{ t.extensions.title[1] }}</h2></div><div class="extension-copy"><p class="section-lead">{{ t.extensions.body }}</p><div class="extension-ribbon"><span v-for="label in t.extensions.labels" :key="label">{{ label }}</span></div><p>{{ t.extensions.detail }}</p><a class="text-link" :href="helpHref('start')">{{ t.extensions.link }}</a></div></section>
+    <ProductChapters :locale="locale" />
     <section class="horizon-section" aria-labelledby="horizon-title"><h2 id="horizon-title">{{ t.horizon.title }}</h2><div class="horizon-columns"><article class="today"><h3><span aria-hidden="true">✦</span>{{ t.horizon.now }}</h3><ul><li v-for="item in t.horizon.nowItems" :key="item">{{ item }}</li></ul></article><article class="tomorrow"><h3>{{ t.horizon.vision }}</h3><p>{{ t.horizon.visionBody }}</p><p class="fine-note">{{ t.horizon.boundary }}</p></article></div></section>
     <section id="faq" class="faq-section product-section" aria-labelledby="faq-title"><div class="section-heading"><span class="section-flower" aria-hidden="true">✧</span><h2 id="faq-title">{{ t.faqTitle }}</h2></div><div class="faq-list"><details v-for="item in t.faqs" :key="item[0]"><summary>{{ item[0] }}<span aria-hidden="true">＋</span></summary><p>{{ item[1] }}</p></details></div></section>
     <section id="start" class="start" aria-labelledby="start-title"><span class="start-corner" aria-hidden="true">✧</span><div><h2 id="start-title">{{ t.startTitle[0] }}<br>{{ t.startTitle[1] }}</h2><p>{{ t.startBody[0] }}<br>{{ t.startBody[1] }}</p></div><div class="start-actions"><a class="button primary" :href="releaseUrl">{{ t.releases }}</a><a class="button secondary" :href="helpHref('start')">{{ t.guide }}</a><p class="release-note">{{ t.releaseNote[0] }}<br>{{ t.releaseNote[1] }}</p></div></section>
