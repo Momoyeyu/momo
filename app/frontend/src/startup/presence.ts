@@ -47,6 +47,9 @@ export function startupPresence() {
     clearTimeout(removeTimer);
     screen?.removeEventListener("transitionend", transitionEnd);
     screen?.remove();
+    root?.removeAttribute("inert");
+    root?.removeAttribute("aria-hidden");
+    root?.removeAttribute("aria-busy");
     release();
   };
   const transitionEnd = (event: TransitionEvent) => {
@@ -68,15 +71,14 @@ export function startupPresence() {
       phase = "ready";
       update();
       completed = true;
-      root?.removeAttribute("inert");
-      root?.removeAttribute("aria-hidden");
-      root?.removeAttribute("aria-busy");
       if (!screen) { remove(); return; }
       if (matchMedia("(prefers-reduced-motion: reduce)").matches) { remove(); return; }
-      screen.dataset.state = "leaving";
+      // Establish the opaque style even on a very fast first mount.
+      void getComputedStyle(screen).opacity;
       screen.addEventListener("transitionend", transitionEnd);
+      screen.dataset.state = "leaving";
       // A bounded fallback handles a hidden window or a transition that never emits an event.
-      removeTimer = setTimeout(remove, 220);
+      removeTimer = setTimeout(remove, 900);
     },
   };
 }

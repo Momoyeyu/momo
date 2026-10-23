@@ -1,5 +1,5 @@
 import TooltipLayer from "./ui/TooltipLayer";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import StageCanvas from "./live2d/StageCanvas";
 import Title from "./pages/Title";
 import Chat from "./pages/Chat";
@@ -49,8 +49,18 @@ function renderPage(route: Route, active: boolean) {
   }
 }
 
-export default function App({ready}: {ready: boolean}) {
+export default function App({ready, onPrepared}: {ready: boolean; onPrepared: () => void}) {
   const route = useRoute();
+  const [sceneReady, setSceneReady] = useState(false);
+  const scenePrepared = useCallback(() => setSceneReady(true), []);
+  useEffect(() => {
+    if (ready || (route === 'chat' && !sceneReady)) return;
+    // Commit and paint the incoming scene under the opaque startup layer first.
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => { secondFrame = requestAnimationFrame(onPrepared); });
+    const deadline = window.setTimeout(onPrepared, 120); // Background windows may pause RAF.
+    return () => { cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame); clearTimeout(deadline); };
+  }, [ready, route, sceneReady, onPrepared]);
   // 页面栈：换页时旧页不立即卸载，而是留在栈里淡出后再移除——
   // 这样"化开"的是真正的旧页实例（状态也还在），不是重挂一份复制品。
   const [stack, setStack] = useState<PageEntry[]>([{ id: 0, route }]);
@@ -162,7 +172,7 @@ export default function App({ready}: {ready: boolean}) {
 
       {/* 对话场景的房间底图 + Live2D：不随路由重挂载 */}
       <div className="chat-layer">
-        <StageCanvas visible={route === "chat"} />
+        <StageCanvas visible={route === "chat"} onReady={scenePrepared} />
       </div>
 
       {stack.map((p, i) => {

@@ -25,14 +25,14 @@
   text-align: center;
   isolation: isolate;
   opacity: 1;
-  transition: opacity 180ms ease-out;
+  transition: opacity 700ms cubic-bezier(.4, 0, .2, 1);
 }
 
 .startup-screen,
 .startup-screen * { box-sizing: border-box; }
 .startup-screen[hidden],
 .startup-screen [hidden] { display: none !important; }
-.startup-screen[data-state='leaving'] { opacity: 0; pointer-events: none; }
+.startup-screen[data-state='leaving'] { opacity: 0; }
 
 .startup-vignette {
   position: fixed;

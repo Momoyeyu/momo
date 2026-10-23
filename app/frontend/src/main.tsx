@@ -15,11 +15,10 @@ function Game() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    startup.finish();
     void startup.ready.then(() => { if (!cancelled) setReady(true); });
     return () => { cancelled = true; };
   }, []);
-  return <App ready={ready} />;
+  return <App ready={ready} onPrepared={startup.finish} />;
 }
 
 // 先从 backend 恢复配置（momo.yaml 权威，含 key），失败也照常启动（localStorage 兜底）。

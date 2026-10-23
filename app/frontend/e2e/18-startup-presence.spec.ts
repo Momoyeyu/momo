@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 
-async function fixture(page: Page, waitForState: Promise<void> = Promise.resolve(), language = 'zh') {
+async function fixture(page: Page, waitForState: Promise<void> = Promise.resolve(), language = 'zh', firstLaunch = false) {
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
     let body: unknown = {};
@@ -9,11 +9,70 @@ async function fixture(page: Page, waitForState: Promise<void> = Promise.resolve
       body = {settings:{general:{lang:language,voiceInput:false},llm:{url:'',model:'',key:''},tts:{url:'',key:'',voice:'',prompt:''}}};
     }
     if (url.pathname === '/api/checkpoints/live') body = {summary:'',messages:[]};
-    if (url.pathname === '/api/onboarding') body = {stage:'completed',busy:false,generation:0,configured:false};
+    if (url.pathname === '/api/onboarding') body = {stage:firstLaunch?'new':'completed',busy:false,generation:0,configured:false};
     if (url.pathname === '/api/checkpoints' || url.pathname === '/api/memories') body = [];
     await route.fulfill({json:body});
   });
 }
+
+for (const asset of ['/stage/stage-room.jpg', '/live2d/hiyori/Hiyori.model3.json']) {
+test(`first launch prepares ${asset} before a visible crossfade, then opens configuration`, async ({page}, info) => {
+  await fixture(page, Promise.resolve(), 'zh', true);
+  let releaseRoom!:()=>void;
+  const room = new Promise<void>(resolve=>{releaseRoom=resolve;});
+  let requested = false;
+  await page.route(`**${asset}`, async route=>{requested=true;await room;await route.continue();});
+  await page.addInitScript(()=>{
+    const scope=window as unknown as {__startupFrames:{time:number;opacity:number;inert:boolean;setup:boolean}[]};
+    scope.__startupFrames=[];
+    const sample=()=>{
+      const screen=document.getElementById('startup');
+      if(screen)scope.__startupFrames.push({time:performance.now(),opacity:Number(getComputedStyle(screen).opacity),
+        inert:!!document.getElementById('root')?.hasAttribute('inert'),setup:!!document.querySelector('.first-meeting-setup')});
+      requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+  await page.goto('/', {waitUntil:'domcontentloaded'});
+  await expect(page.locator('.chat-page')).toBeAttached();
+  await expect.poll(()=>requested).toBe(true);
+  // A slow local image must not be revealed as an empty / abruptly changing room.
+  await page.waitForTimeout(500);
+  await expect(page.locator('#startup')).toHaveCSS('opacity','1');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  releaseRoom();
+  await expect(page.locator('#startup')).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toBeVisible();
+  const frames=await page.evaluate(()=>(window as unknown as {__startupFrames:{time:number;opacity:number;inert:boolean;setup:boolean}[]}).__startupFrames);
+  const fading=frames.filter(frame=>frame.opacity>.01&&frame.opacity<.99);
+  expect(fading.length).toBeGreaterThan(12);
+  expect(fading.at(-1)!.time-fading[0].time).toBeGreaterThan(400);
+  expect(fading.every(frame=>frame.inert&&!frame.setup)).toBe(true);
+  await info.attach('startup-crossfade-frames',{body:JSON.stringify(frames),contentType:'application/json'});
+  await page.screenshot({path:info.outputPath('first-launch-ready.png')});
+});
+}
+
+test('unavailable first-launch artwork falls back without trapping the configuration', async ({page}) => {
+  await fixture(page, Promise.resolve(), 'zh', true);
+  await page.route('**/live2d/hiyori/Hiyori.model3.json', route=>route.abort());
+  await page.route('**/stage/stage-room.jpg', route=>route.abort());
+  await page.goto('/');
+  await expect(page.locator('#startup')).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toBeVisible();
+});
+
+test('a stalled model has a bounded startup wait', async ({page}) => {
+  await fixture(page, Promise.resolve(), 'zh', true);
+  let release!:()=>void;
+  const stalled = new Promise<void>(resolve=>{release=resolve;});
+  await page.route('**/live2d/hiyori/Hiyori.model3.json', async route=>{await stalled;await route.abort();});
+  try {
+    await page.goto('/', {waitUntil:'domcontentloaded'});
+    await expect(page.locator('#startup')).toHaveCount(0, {timeout:6000});
+    await expect(page.getByRole('dialog')).toBeVisible();
+  } finally { release(); }
+});
 
 test('static presence precedes React; real startup stages animate then release the game', async ({page,request}, info) => {
   const html=await (await request.get('/')).text();

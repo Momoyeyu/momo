@@ -14,6 +14,8 @@ describe('installed macOS startup presence', () => {
     await browser.saveScreenshot('dist/native-e2e/startup-installed-failure.png');
   });
   it('ships the early local scene and releases the actual game after startup and reload', async () => {
+    await browser.waitUntil(async () => browser.execute(() => document.visibilityState === 'visible'),
+      {timeout:60000,timeoutMsg:'Bring the native test window forward to measure visual startup'});
     const ready = async () => browser.waitUntil(async () => browser.execute(() =>
       !!document.querySelector('.app-stage') && !document.querySelector('#startup') &&
       !document.querySelector('#root')?.hasAttribute('inert') &&
@@ -35,14 +37,34 @@ describe('installed macOS startup presence', () => {
     await $('.title-screen').waitForDisplayed();
     const previous = await browser.execute(() => performance.timeOrigin);
     await browser.refresh();
-    await browser.waitUntil(async () => browser.execute(previous => performance.timeOrigin !== previous && document.readyState === 'complete', previous));
+    await browser.waitUntil(async () => browser.execute(previous => performance.timeOrigin !== previous && !!document.querySelector('#startup'), previous));
+    await browser.execute(() => {
+      const audit = window.__startupFade = {frames:[],done:false};
+      const sample = () => {
+        const screen = document.querySelector('#startup');
+        if (!screen) { audit.done=true; return; }
+        audit.frames.push({time:performance.now(),opacity:Number(getComputedStyle(screen).opacity),
+          locked:document.querySelector('#root')?.hasAttribute('inert'),
+          setup:!!document.querySelector('.first-meeting-setup')});
+        requestAnimationFrame(sample);
+      };
+      sample();
+    });
+    await browser.waitUntil(async () => browser.execute(() => window.__startupFade.done), {timeout:10000});
+    const fade = await browser.execute(() => window.__startupFade.frames);
+    await fs.mkdir('dist/native-e2e',{recursive:true});
+    await fs.writeFile('dist/native-e2e/startup-fade-frames.json',JSON.stringify(fade,null,2));
+    const intermediate = fade.filter(frame => frame.opacity > .01 && frame.opacity < .99);
+    assert.ok(intermediate.length > 6, 'Installed startup must visibly crossfade');
+    assert.ok(intermediate.at(-1).time - intermediate[0].time > 250, 'Crossfade must not be a brief cut');
+    assert.ok(fade.every(frame => frame.locked && !frame.setup), 'Do not unlock configuration through the fading cover');
     await ready();
     await browser.waitUntil(async () => {
       for (const target of await $$('.input-row input, .title-menu .menu-item')) if (await target.isDisplayed()) return true;
       return false;
     }, {timeout:30000,timeoutMsg:'Ready document did not show interactive game content'});
     await fs.mkdir('dist/native-e2e',{recursive:true});
-    await fs.writeFile('dist/native-e2e/startup-installed-evidence.json',JSON.stringify({...result,reloadReady:true},null,2));
+    await fs.writeFile('dist/native-e2e/startup-installed-evidence.json',JSON.stringify({...result,reloadReady:true,fade},null,2));
     await browser.saveScreenshot('dist/native-e2e/startup-installed-ready.png');
   });
 });
