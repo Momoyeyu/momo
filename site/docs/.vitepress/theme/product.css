@@ -35,7 +35,7 @@
 .meeting-runway{position:relative;isolation:isolate}.meeting-anchor{position:absolute;top:0;left:0;width:1px;height:1px}.meeting-scroll,.meeting-pixels,.scene-skip,.conversation-chapter{display:none}
 .meeting-presence{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;opacity:.8;mask-image:linear-gradient(90deg,transparent,#000 45%,#000 88%,transparent)}
 .presence-figure{position:absolute;top:-24%;left:32%;width:84%;height:auto;max-width:none;opacity:.15;mask-image:linear-gradient(#000 55%,transparent 95%)}
-@media(min-width:801px) and (min-height:621px){
+@media(min-width:601px) and (min-height:621px){
   .has-motion{height:230svh;margin-bottom:55px}
   .has-motion .meeting-anchor{top:130svh}
   .has-motion .meeting-scene{position:sticky;top:0;height:100svh;--scene-reveal:0;--scene-presence:1;--scene-intro:1;--scene-chapter:0;--scene-landing:0;--scene-x:0;--scene-y:0;--scene-scale:1;--scene-rotation:0;isolation:isolate}
@@ -61,6 +61,16 @@
   .has-motion .meeting-scene[data-landed=true] .keepsake-card[data-position=active]{opacity:1}
   .has-motion .meeting-scroll{position:absolute;display:flex;align-items:center;gap:12px;bottom:28px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:.08em;color:var(--secondary);opacity:calc(1 - var(--scene-landing));white-space:nowrap}
   .meeting-scroll span{width:1px;height:26px;background:linear-gradient(transparent,var(--accent))}
+}
+/* A narrow desktop preview keeps the same scene, with the caption above its card. */
+@media(min-width:601px) and (max-width:800px) and (min-height:621px){
+  .has-motion .first-meeting{display:flex;justify-content:center;padding:20px 0 48px;gap:0}
+  .has-motion .intro{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%)}
+  .has-motion .conversation-chapter{position:absolute;left:0;right:0;top:20px;max-width:none}
+  .has-motion .conversation-chapter h2{font-size:24px}
+  .has-motion .conversation-chapter p{max-width:none;margin-top:10px}
+  .has-motion .conversation-chapter .text-link{margin-top:10px}
+  .has-motion .keepsakes{width:min(100%,560px,calc((100svh - 330px)*1.48 + 30px));margin:140px 0 0;padding:0 15px}
 }
 @media(prefers-reduced-motion:reduce){.meeting-runway.has-motion{height:auto;margin:0}.has-motion .meeting-scene{position:relative;height:auto}.has-motion .first-meeting{height:auto}.has-motion .meeting-pixels,.has-motion .meeting-scroll{display:none}}
 @media(max-width:800px){.meeting-presence{inset:0;mask-image:linear-gradient(#000,transparent 58%)}.presence-figure{left:25%;top:-6%;width:110%;opacity:.1}}

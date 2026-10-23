@@ -107,7 +107,7 @@ async function preparePixels() {
   } finally { if (attempt === initialization) sceneLoading = false }
 }
 function scenePreferences() {
-  animated.value = !sceneFailed && !motion?.matches && !connection?.saveData && innerWidth > 800 && innerHeight > 620
+  animated.value = !sceneFailed && !motion?.matches && !connection?.saveData && innerWidth > 600 && innerHeight > 620
   if (animated.value) void preparePixels()
   else { initialization++; sceneLoading = false; pixels?.dispose(); pixels = undefined }
   scheduleSceneRefresh()
