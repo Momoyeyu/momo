@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import {waitForRouteReady} from './ui-ready.mjs';
+import {waitForRouteReady, reloadNativeApp} from './ui-ready.mjs';
 import {createServer} from 'node:http';
 
 // Real GPU synthesis and real WebView audio; the language provider only supplies
@@ -48,7 +48,7 @@ async function api(path, method = 'GET', value) {
       tts:{url:fixture.url,key:fixture.key ?? '',voice:uploaded.name,prompt:fixture.prompt ?? ''},
       general:{...previous.settings?.general,lang:'zh',chatLang:'zh',voiceInput:false,voiceVolume:15,textSpeed:100,sentenceSpeed:100}}});
     assert.equal((await api('/api/tts/status')).reachable,true);
-    await browser.refresh();
+    await reloadNativeApp();
     await browser.execute(() => {location.hash='/chat';});
     await $('.input-row input').waitForDisplayed();
     await waitForRouteReady('chat');

@@ -7,3 +7,14 @@ export async function waitForRouteReady(route) {
     return current===target && !!shell && !document.querySelector('#startup') && !shell.closest('[inert]');
   },route),{timeout:30000,timeoutMsg:`Native ${route} did not become interactive`});
 }
+
+// WebKit may acknowledge refresh while the previous document is still usable.
+// Wait for a new, hydrated document before accepting its route-ready gate.
+export async function reloadNativeApp() {
+  await browser.execute(() => { window.__momoE2eReloadPending = true; });
+  await browser.refresh();
+  await browser.waitUntil(async () => browser.execute(() =>
+    !window.__momoE2eReloadPending && !!document.querySelector('.app-stage') &&
+    !document.querySelector('#startup')),
+  {timeout:30000, timeoutMsg:'Reloaded native document did not become ready'});
+}

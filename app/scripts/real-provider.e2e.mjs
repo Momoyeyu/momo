@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import {waitForRouteReady} from './ui-ready.mjs';
+import {waitForRouteReady, reloadNativeApp} from './ui-ready.mjs';
 
 // Credentials are supplied through a private ignored fixture, never source or
 // test output. This is an opt-in real provider check, separate from fixtures.
@@ -22,7 +22,7 @@ async function api(path, method = 'GET', body = null) {
     const previous = await api('/api/state');
     try {
       await api('/api/state','PUT',{...previous,settings:{...previous.settings,llm}});
-      await browser.refresh();
+      await reloadNativeApp();
       await browser.execute(()=>{location.hash='/chat';});
       await $('.input-row input').waitForDisplayed();
       await waitForRouteReady('chat');
