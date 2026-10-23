@@ -4,9 +4,10 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { copy } from './product-copy.mjs'
 import { helpLinks } from './product-content.mjs'
 import { clamp } from './meeting-motion.mjs'
-import { archiveGlyph, phase, responseBar } from './chapter-motion.mjs'
+import { archiveGlyph, phase } from './chapter-motion.mjs'
 import { createScrollFollow } from './scroll-follow.mjs'
 import './chapters.css'
+import EchoScene from './EchoScene.vue'
 
 const props = defineProps<{ locale: 'zh' | 'en' | 'ja' }>()
 const t = computed(() => copy[props.locale])
@@ -18,10 +19,11 @@ const labels = computed(() => ({
 const ids = ['together', 'memory', 'voice', 'extensions']
 const container = ref<HTMLElement>()
 const enhanced = ref(false)
+const echoEnhanced = ref(false)
+const echoAvailable = ref(true)
 const progress = ref([1, 1, 1, 1])
 const helpHref = (key: keyof typeof helpLinks) => withBase(helpLinks[key]) + (props.locale === 'zh' ? '' : `?lang=${props.locale}`)
 const glyphs = computed(() => Array.from(t.value.memoryLabels.join('　')).map((char, index, all) => ({ char, ...archiveGlyph(index, all.length, progress.value[1]) })))
-const bars = computed(() => Array.from({ length: 72 }, (_, index) => responseBar(index, progress.value[2])))
 const soul = computed(() => phase(progress.value[0], .05, .82))
 const stitch = computed(() => phase(progress.value[3], .08, .83))
 let media: MediaQueryList | undefined
@@ -35,7 +37,7 @@ const visible = new Set<number>()
 function measure(index: number) {
   const section = sections[index]
   const stage = section?.querySelector<HTMLElement>('.chapter-stage')
-  if (!section || !stage || !enhanced.value) return 1
+  if (!section || !stage || !(index === 2 ? echoEnhanced.value : enhanced.value)) return 1
   if (index === 3) return clamp((innerHeight - section.getBoundingClientRect().top) / (innerHeight + section.offsetHeight) * 1.4)
   return clamp(-section.getBoundingClientRect().top / Math.max(1, section.offsetHeight - stage.offsetHeight))
 }
@@ -45,13 +47,14 @@ function write(index: number, value: number) {
   if (section) section.dataset.progress = value.toFixed(4)
 }
 function request() {
-  if (!enhanced.value || document.hidden) return
+  if ((!enhanced.value && !echoEnhanced.value) || document.hidden) return
   for (const index of visible) clocks[index]?.request()
 }
 function preferences() {
+  echoEnhanced.value = echoAvailable.value && !media?.matches && !connection?.saveData && innerHeight > 600
   enhanced.value = !media?.matches && !connection?.saveData && innerWidth > 1000 && innerHeight > 740
   for (let index = 0; index < clocks.length; index++) {
-    if (enhanced.value && !document.hidden) clocks[index].request({ immediate: true })
+    if ((index === 2 ? echoEnhanced.value : enhanced.value) && !document.hidden) clocks[index].request({ immediate: true })
     else { clocks[index].stop(); write(index, 1) }
   }
 }
@@ -69,7 +72,7 @@ onMounted(() => {
   observer = new IntersectionObserver(entries => {
     for (const entry of entries) {
       const index = sections.indexOf(entry.target as HTMLElement)
-      if (entry.isIntersecting) { visible.add(index); if (enhanced.value && !document.hidden) clocks[index]?.request({ immediate: true }) }
+      if (entry.isIntersecting) { visible.add(index); if ((index === 2 ? echoEnhanced.value : enhanced.value) && !document.hidden) clocks[index]?.request({ immediate: true }) }
       else { visible.delete(index); clocks[index]?.stop() }
     }
   })
@@ -96,7 +99,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="container" class="product-chapters" :class="{ 'chapters-enhanced': enhanced }">
+  <div ref="container" class="product-chapters" :class="{ 'chapters-enhanced': enhanced, 'echo-enhanced': echoEnhanced }">
     <nav class="chapter-index" :aria-label="labels.index" data-testid="chapter-index"><span>{{ labels.index }}</span><div><a v-for="(label, index) in labels.sections" :key="label" :href="`#${ids[index]}`">{{ label }}<span aria-hidden="true">✧</span></a></div></nav>
 
     <section id="together" class="story-chapter soul-chapter" data-testid="soul-chapter" aria-labelledby="relationship-title" :style="{ '--soul-lock': soul, '--soul-drift': 1 - soul }">
@@ -124,7 +127,7 @@ onBeforeUnmount(() => {
     <section id="voice" class="story-chapter response-chapter" data-testid="response-chapter" aria-labelledby="voice-title" :style="{ '--response-scan': phase(progress[2], .02, .9) }">
       <div class="chapter-stage">
         <div class="chapter-copy"><h2 id="voice-title">{{ t.voice.title[0] }}<br>{{ t.voice.title[1] }}</h2><p class="chapter-lead">{{ t.voice.heading }}</p><p>{{ t.voice.body }}</p><p class="chapter-aside">{{ t.voice.detail }}</p><a class="text-link" :href="helpHref('voice')">{{ t.voice.link }}</a></div>
-        <div class="response-score" aria-hidden="true"><p class="score-caption">{{ labels.score }}</p><p class="spoken-line">{{ labels.hello }}</p><div class="score-wave"><svg viewBox="0 0 640 190" fill="none"><path class="wave-axis" d="M0 95H640"/><line v-for="(height,index) in bars" :key="index" :x1="index*8+32" :x2="index*8+32" :y1="95-height/2" :y2="95+height/2" :class="index%7===0?'wave-white':''"/><path class="reply-arc" pathLength="1" :stroke-dashoffset="1-phase(progress[2],.25,.95)" d="M35 95C162 7 256 193 347 95S503 20 606 95"/></svg><span class="score-playhead"></span></div><p class="reply-line"><span v-for="(char,index) in Array.from(labels.reply)" :key="index" :style="{opacity:.16+.84*phase(progress[2],.26+index*.035,.46+index*.035),transform:`translateY(${(1-phase(progress[2],.26+index*.035,.46+index*.035))*12}px)`}">{{ char }}</span><i>✧</i></p><div class="score-tracks"><div v-for="(track,index) in labels.tracks" :key="track"><span>{{ track }}</span><svg viewBox="0 0 300 20" fill="none"><path class="track-axis" d="M0 10H300"/><path :class="`cue cue-${index}`" pathLength="1" :stroke-dashoffset="1-phase(progress[2],.1+index*.15,.55+index*.12)" :d="['M0 10H66L73 4H111L118 10H177L184 4H242L249 10H300','M0 10H80L90 3H142L152 10H190L200 3H248L258 10H300','M0 10H55L61 3L68 16L75 5L83 14L90 3L98 16L106 10H166L173 3L181 16L189 4L197 15L205 10H300'][index]"/></svg></div></div></div>
+        <EchoScene @unavailable="echoAvailable = false; preferences()" :progress="progress[2]" :enhanced="echoEnhanced" />
         <p class="chapter-footnote response-footnote">{{ t.voice.note }}</p>
       </div>
     </section>

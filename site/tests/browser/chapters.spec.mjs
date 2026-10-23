@@ -16,7 +16,7 @@ test('desktop: content-specific chapters reverse, settle, and keep text above mo
   await page.setViewportSize({ width: 1440, height: 1000 })
   await page.goto('./')
   await expect(page.locator('.product-chapters')).toHaveClass(/chapters-enhanced/)
-  for (const [id, effect] of [['together','.signature-echo.echo-a'], ['memory','.archive-fragments'], ['voice','.score-wave']]) {
+  for (const [id, effect] of [['together','.signature-echo.echo-a'], ['memory','.archive-fragments'], ['voice','.echo-canvas']]) {
     await atChapter(page, id, .2)
     const early = await page.locator(`#${id} ${effect}`).evaluate(el => el.outerHTML + getComputedStyle(el).transform + getComputedStyle(el).opacity)
     await atChapter(page, id, .65)
@@ -74,6 +74,5 @@ test('reduced motion: all chapter content remains complete without long sticky s
   await page.goto('./en/#voice')
   await expect(page.locator('#voice h2')).toHaveText('More than words.A face that responds.')
   await expect(page.locator('#voice h2')).toBeInViewport()
-  const spaceWidth = await page.locator('.reply-line>span').evaluateAll(letters => letters.find(letter => letter.textContent === ' ').getBoundingClientRect().width)
-  expect(spaceWidth).toBeGreaterThan(1)
+  await expect(page.locator('.echo-question')).toHaveText('Can you feel my heart?')
 })
