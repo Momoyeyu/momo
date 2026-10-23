@@ -689,6 +689,16 @@ export interface components {
              * @default
              */
             key: string;
+            /**
+             * Model
+             * @default
+             */
+            model: string;
+            /**
+             * Thinking
+             * @default false
+             */
+            thinking: boolean;
             /** Url */
             url: string;
         };

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { presentation } from './helpers/runtime';
+import {waitForChatReady} from './helpers';
 
 async function runtime(page: Page, action: string): Promise<any> {
   return page.evaluate(async (action) => {
@@ -93,6 +94,7 @@ test('configured real TTS drives mouth opening and releases the channel after dr
       if(stage.speechMouth.sample(performance.now()).weight===1) (window as any).__audioPeak=Math.max((window as any).__audioPeak,stage.model.internalModel.coreModel.getParameterValueById('ParamMouthOpenY'));
     });
   });
+  await waitForChatReady(page);
   await page.locator('.input-row input').fill('口型联调');await page.getByRole('button',{name:'发送',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>(window as any).__audioPeak),{timeout:90_000}).toBeGreaterThan(0.05);
   await expect(page.getByRole('button',{name:'发送',exact:true})).toBeVisible({timeout:90_000});

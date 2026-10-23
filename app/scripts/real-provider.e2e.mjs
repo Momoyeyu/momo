@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import {waitForRouteReady} from './ui-ready.mjs';
 
 // Credentials are supplied through a private ignored fixture, never source or
 // test output. This is an opt-in real provider check, separate from fixtures.
@@ -24,6 +25,7 @@ async function api(path, method = 'GET', body = null) {
       await browser.refresh();
       await browser.execute(()=>{location.hash='/chat';});
       await $('.input-row input').waitForDisplayed();
+      await waitForRouteReady('chat');
       await $('.input-row input').setValue('你好 momo，今天想和你打个招呼。简单回应一句就好。');
       await browser.keys('Enter');
       await browser.waitUntil(async()=>{

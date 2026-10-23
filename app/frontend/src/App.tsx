@@ -7,22 +7,14 @@ import Settings from "./pages/Settings";
 import Backlog from "./pages/Backlog";
 import Checkpoint from "./pages/Checkpoint";
 import GridBackdrop from "./components/GridBackdrop";
+import ChatEntryTransition from "./components/ChatEntryTransition";
 import { blobForward } from "./lib/blobMask";
 import { setRopeFrom } from "./lib/ropeAngle";
 import { useRoute, type Route } from "./router";
 import { getSettings, subscribe } from "./lib/store";
 
-// —— 转场：一滴水落进画面 ——
-//   1) 中心落一滴（亮点一闪）；
-//   2) 涟漪荡开的同时，旧页在上层"化开"（透明度渐变），新页在下层已经就位
-//      ——换页不是硬切，是上层慢慢变透明露出下层。
-//   3) 进入 chat 是特例（「入戏」）：chat 背景是房间+Live2D 而非 RoPE，
-//      作为核心页面不参与"洞"的隐喻——改为旧页化开、整个场景从下面浮现。
-// 关键取舍：页面层只做**透明度**，不缩放、不滤镜。整页 transform 会让带
-// backdrop-filter 的层每帧重采样（实测掉到 7~10fps）；透明度是可合成的，
-// 化开期间临时关掉该层的 backdrop-filter（画面在消失，看不出来）。
+// Only title → chat uses the ink/ASCII entry. All other navigation keeps RoPE.
 const BLOOM_MS = 560; // RoPE 页之间的边缘漫开
-const LEAVE_MS = 640; // 进 chat：旧页化开
 const RIPPLE_MS = 1000; // 涟漪散尽（特效层生命周期）
 // 每个页面一个坐标系角度（RoPE）。**按层级单调递增**：
 //   title(根, 0) < chat(15) < settings(40) < checkpoint(75) < backlog(110)
@@ -42,12 +34,12 @@ interface PageEntry {
   leaving?: boolean;
 }
 
-function renderPage(route: Route) {
+function renderPage(route: Route, active: boolean) {
   switch (route) {
     case "title":
       return <Title />;
     case "chat":
-      return <Chat />;
+      return <Chat active={active} />;
     case "settings":
       return <Settings />;
     case "backlog":
@@ -57,7 +49,7 @@ function renderPage(route: Route) {
   }
 }
 
-export default function App() {
+export default function App({ready}: {ready: boolean}) {
   const route = useRoute();
   // 页面栈：换页时旧页不立即卸载，而是留在栈里淡出后再移除——
   // 这样"化开"的是真正的旧页实例（状态也还在），不是重挂一份复制品。
@@ -66,9 +58,10 @@ export default function App() {
   const [front, setFront] = useState(false);
   // rev = 往回走（层级向上）：洞口收拢、涟漪向内
   const [rev, setRev] = useState(false);
-  // booting = 进入 chat 的化开还在进行（压住 chat 内部的入场动画）
+  // booting = 进入 chat 的场景转场尚未完成（ASCII 或 RoPE）。
   const [booting, setBooting] = useState(false);
   const [fx, setFx] = useState(false);
+  const [entry, setEntry] = useState<number | null>(null);
   const curRef = useRef<Route>(route);
   const seq = useRef(1);
   // 访问历史：判断"这一次是往里走还是往回走"。返回目标若正好是上一页，
@@ -109,12 +102,14 @@ export default function App() {
       setRev(false);
       setBooting(false);
       setFx(false);
+      setEntry(null);
       return;
     }
+    const titleEntry = prevRoute === "title" && route === "chat";
     setRev(back);
-    setFx(true);
+    setFx(!titleEntry);
 
-    let t1: number;
+    let t1: number | undefined;
     const t2 = window.setTimeout(() => setFx(false), RIPPLE_MS);
 
     // 同一路由只保留最新实例：来回切换时旧的那份直接丢弃，
@@ -122,18 +117,18 @@ export default function App() {
     const withoutSame = (prev: PageEntry[]): PageEntry[] =>
       prev.filter((p) => p.route !== route);
 
-    if (route === "chat") {
-      // 「入戏」：旧页化开（带一小拍延迟，让水滴先落下），chat 在下面就位
+    if (titleEntry) {
+      // The ink plate releases the real scene; other routes keep their RoPE.
       setStack((prev) => [
         ...withoutSame(prev).map((p) => ({ ...p, leaving: true })),
         { id: seq.current++, route },
       ]);
       setBooting(true);
-      t1 = window.setTimeout(() => {
-        setStack((prev) => prev.filter((p) => !p.leaving));
-        setBooting(false);
-      }, LEAVE_MS);
+      setFront(false);
+      setEntry(seq.current++);
     } else {
+      setEntry(null);
+      setBooting(route === "chat");
       // RoPE 页之间：新页压栈顶，盖上不规则遮罩漫开；旧页在下面等着被盖住
       setStack((prev) => [
         ...withoutSame(prev),
@@ -142,6 +137,7 @@ export default function App() {
       setFront(true);
       t1 = window.setTimeout(() => {
         setFront(false);
+        setBooting(false);
         setStack((prev) => prev.slice(-1));
       }, BLOOM_MS);
     }
@@ -153,7 +149,6 @@ export default function App() {
 
   const stageStyle = {
     "--tx-bloom-ms": `${BLOOM_MS}ms`,
-    "--tx-leave-ms": `${LEAVE_MS}ms`,
     "--tx-ms": `${RIPPLE_MS}ms`,
     "--blob-forward": blobForward,
   } as CSSProperties;
@@ -183,17 +178,23 @@ export default function App() {
           cls = "";
         }
         // 进入 chat 的化开还没结束时，压住 chat 内部的入场动画（对话框抢跑）
-        if (top && booting) cls += " is-booting";
+        if (top && p.route === "chat" && (booting || !ready)) cls += " is-booting";
         return (
           <div
             key={p.id}
             className={`page-wrap${p.route === "chat" ? " is-chat" : ""}${cls}`}
             aria-hidden={top ? undefined : true}
+            inert={!top || p.route !== route || front || booting || !ready}
           >
-            {renderPage(p.route)}
+            {renderPage(p.route, top && p.route === route && !front && !booting && ready)}
           </div>
         );
       })}
+
+      {entry !== null && <ChatEntryTransition key={entry} onComplete={() => {
+        if(curRef.current !== "chat")return;
+        setEntry(null);setBooting(false);setStack(previous => previous.slice(-1));
+      }} />}
 
       <TooltipLayer />
 

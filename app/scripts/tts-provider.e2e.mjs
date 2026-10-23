@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import {waitForRouteReady} from './ui-ready.mjs';
 import {createServer} from 'node:http';
 
 // Real GPU synthesis and real WebView audio; the language provider only supplies
@@ -50,6 +51,7 @@ async function api(path, method = 'GET', value) {
     await browser.refresh();
     await browser.execute(() => {location.hash='/chat';});
     await $('.input-row input').waitForDisplayed();
+    await waitForRouteReady('chat');
     await browser.execute(() => {
       const stats = window.__momoAudioEvidence = {samples:0,clears:0,peak:0,lastRms:0,drains:0,rates:[],responses:[]};
       const originalFetch = window.fetch.bind(window);

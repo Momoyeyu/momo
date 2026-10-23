@@ -1,5 +1,5 @@
 import { runtime } from "./services/runtime";
-import { StrictMode, useEffect } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { bootPersist, getSettings } from "./lib/store";
@@ -11,9 +11,15 @@ import { firstMeetingStatus } from "./services/onboardingClient";
 
 const startup = startupPresence();
 startup.language(getSettings().general.lang);
-function StartupReady() {
-  useEffect(() => { startup.finish(); }, []);
-  return null;
+function Game() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    startup.finish();
+    void startup.ready.then(() => { if (!cancelled) setReady(true); });
+    return () => { cancelled = true; };
+  }, []);
+  return <App ready={ready} />;
 }
 
 // 先从 backend 恢复配置（momo.yaml 权威，含 key），失败也照常启动（localStorage 兜底）。
@@ -39,8 +45,7 @@ void runtime()
   .then(() => {
     createRoot(document.getElementById("root")!).render(
       <StrictMode>
-        <App />
-        <StartupReady />
+        <Game />
       </StrictMode>,
     );
   }).catch(() => { startup.fail(); });

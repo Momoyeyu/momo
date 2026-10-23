@@ -27,6 +27,8 @@ export function startupPresence() {
   let phase: Stage = "connecting";
   let completed = false;
   let removeTimer: ReturnType<typeof setTimeout> | undefined;
+  let release!: () => void;
+  const ready = new Promise<void>(resolve => { release = resolve; });
   const update = () => {
     if (!screen || completed) return;
     document.documentElement.lang = language === "zh" ? "zh-CN" : language;
@@ -45,11 +47,13 @@ export function startupPresence() {
     clearTimeout(removeTimer);
     screen?.removeEventListener("transitionend", transitionEnd);
     screen?.remove();
+    release();
   };
   const transitionEnd = (event: TransitionEvent) => {
     if (event.target === screen && event.propertyName === "opacity") remove();
   };
   return {
+    ready,
     language(value: string) { language = value === "en" || value === "ja" ? value : "zh"; update(); },
     stage(value: Exclude<Stage, "ready" | "error">) { if (phase !== "error") { phase = value; update(); } },
     fail() {
@@ -67,7 +71,7 @@ export function startupPresence() {
       root?.removeAttribute("inert");
       root?.removeAttribute("aria-hidden");
       root?.removeAttribute("aria-busy");
-      if (!screen) return;
+      if (!screen) { remove(); return; }
       if (matchMedia("(prefers-reduced-motion: reduce)").matches) { remove(); return; }
       screen.dataset.state = "leaving";
       screen.addEventListener("transitionend", transitionEnd);

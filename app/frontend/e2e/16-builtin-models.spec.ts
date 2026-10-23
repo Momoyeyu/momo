@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
+import {waitForChatReady} from './helpers';
 
 const backend = resolve(process.cwd(), '../backend');
 type Result = {status:number; body:string; contentType:string; headers?:Record<string,string>};
@@ -155,6 +156,7 @@ for (const thinking of [false, true]) {
     await page.goto('/#/chat');
     const input=page.locator('.input-row input');
     await expect(input).toBeVisible();
+    await waitForChatReady(page);
     await input.fill('momo，我回来啦！今天路过甜品店，特意给你带了一块草莓蛋糕。');
     await input.press('Enter');
     await expect.poll(async()=>{

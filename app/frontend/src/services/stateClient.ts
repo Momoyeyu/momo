@@ -22,9 +22,9 @@ export async function fetchState(): Promise<Partial<PersistedState> | null> {
 }
 
 /** 整体写入远端 state；成功 true，失败 false。 */
-export async function putState(state: Record<string, unknown>): Promise<boolean> {
+export async function putState(state: Record<string, unknown>, signal?: AbortSignal): Promise<boolean> {
   try {
-    await apiFetch(STATE_API, jsonInit("PUT", state));
+    await apiFetch(STATE_API, {...jsonInit("PUT", state), signal});
     return true;
   } catch {
     return false;

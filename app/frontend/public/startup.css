@@ -174,3 +174,19 @@
   .startup-art::after { opacity: .4; }
   .startup-track-light { width: 32px; left: 26px; opacity: .65; }
 }
+
+/* Optional local artwork: decorative only, never part of startup readiness. */
+.startup-presence-figure {
+  position: fixed;
+  right: 3vw;
+  bottom: -7vh;
+  width: min(50vw, 540px);
+  height: 91vh;
+  z-index: -1;
+  pointer-events: none;
+  background: url('/brand/momo-presence-v2.webp') center top / contain no-repeat;
+  opacity: .12;
+}
+@media (max-width: 700px) {
+  .startup-presence-figure { right: -12vw; opacity: .025; }
+}

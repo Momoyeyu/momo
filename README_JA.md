@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/momo-readme-banner.svg" width="100%" alt="momo：墨紫の夜に浮かぶ切り紙と星の軌跡">
+  <img src="docs/assets/mascot/momo-presence-v2.png" width="220" alt="インターフェースの奥にいる、momo オリジナルの三色シルエット">
 </p>
 
 <h1 align="center">momo</h1>
@@ -48,7 +48,9 @@ momoには一貫した核となる性格があり、一緒に過ごした経験�
 
 ## はじめて会うには
 
-**macOSの候補版では、インストーラーと実際の音声連携の検証が完了しています。公開済みのインストーラーはまだありません。** 配布状況は[リリースページ](https://github.com/Momoyeyu/momo/releases)、ソースから動かす場合は[開発ガイド](docs/development/migration.md)をご覧ください。
+**[momo v0.2.0 をダウンロード](https://github.com/Momoyeyu/momo/releases/tag/v0.2.0)** · [macOS Apple Silicon](https://github.com/Momoyeyu/momo/releases/download/v0.2.0/momo_0.2.0_macos_arm64.dmg) · [Windows x64](https://github.com/Momoyeyu/momo/releases/download/v0.2.0/momo_0.2.0_windows_x64_setup.exe)
+
+macOS 14+（Apple Silicon）と Windows 11 x64 で検証済みです。開発者署名・公証はありません。インストール手順、チェックサム、制限はリリース説明をご覧ください。ソースからの実行は[開発ガイド](docs/development/migration.md)へ。
 
 体験版を入手したら、まずは三つの小さなことから。
 
@@ -67,7 +69,7 @@ momoには一貫した核となる性格があり、一緒に過ごした経験�
 
 詳しいガイド本文は現在、中国語の原文です。ウェブサイトとアプリは、中国語・英語・日本語に対応しています。
 
-現在は **macOS** の体験を優先しています。**Windows** は今後別途進め、**Linux** は二次的・任意の方向としています。パソコン向けで、スマートフォン・タブレット版は提供していません。
+本版は **macOS Apple Silicon / Windows x64** のインストーラーを提供します。検証範囲・制限はリリース説明をご確認ください。**Linux** は未提供です。パソコン向けで、スマートフォン・タブレット版は提供していません。
 
 ## ここを、一緒に育てる
 

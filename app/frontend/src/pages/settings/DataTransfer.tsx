@@ -36,14 +36,16 @@ export default function DataTransfer() {
       setBusy(false);
     }
   }
-  return <section className="panel settings-col">
-    <h3 className="opt-group">{text[0]}</h3><p>{text[3]}</p>
-    <Button disabled={busy} onClick={() => void run(async () => {
+  return <section className="panel data-transfer-panel">
+    <div className="data-transfer-copy"><h3 className="opt-group">{text[0]}</h3><p>{text[3]}</p></div>
+    <div className="data-transfer-actions">
+    <Button variant="ghost" size="sm" disabled={busy} onClick={() => void run(async () => {
       const blob = await exportData(); const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = 'momo-backup.zip'; a.click();
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     })}>{text[1]}</Button>
-    <Button variant="ghost" disabled={busy} onClick={() => input.current?.click()}>{text[2]}</Button>
+    <Button variant="ghost" size="sm" disabled={busy} onClick={() => input.current?.click()}>{text[2]}</Button>
+    </div>
     <input ref={input} hidden type="file" accept=".zip" onChange={event => {
       const file = event.target.files?.[0]; event.target.value = '';
       if (file && confirm(text[4])) void run(() => importData(file), true);
@@ -52,6 +54,6 @@ export default function DataTransfer() {
       onCancel={event => event.preventDefault()}>
       <p role="status" aria-live="polite">{text[6]}</p>
     </dialog>
-    {error && <p role="alert">{text[5]}</p>}
+    {error && <p className="data-transfer-error" role="alert">{text[5]}</p>}
   </section>;
 }

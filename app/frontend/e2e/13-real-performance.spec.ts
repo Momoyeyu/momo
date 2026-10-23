@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { readFileSync, writeFileSync } from 'node:fs';
 const cases: {id:string; prompt:string; faces:string[]; avoidJoy:boolean; guided?:boolean}[] = JSON.parse(readFileSync(new URL('./fixtures/performance-prompts.json', import.meta.url), 'utf8'));
 import { presentation } from './helpers/runtime';
+import {waitForChatReady} from './helpers';
 
 const backend = fileURLToPath(new URL('../../backend/', import.meta.url));
 function realTurn(body: unknown): Promise<{status: number; body: string}> {
@@ -55,6 +56,7 @@ test('real provider chooses calibrated controls and the stage executes them', as
       });
     });
     events = [];
+    await waitForChatReady(page);
     await page.locator('.input-row input').fill(c.prompt);
     await page.getByRole('button', {name:'发送', exact:true}).click();
     await expect.poll(() => events.some(e => e.t === 'done' || e.t === 'error'), {timeout: 110_000}).toBe(true);

@@ -90,3 +90,13 @@ test('reduced motion and saved language apply without waiting for optional servi
   await expect(page.locator('#startup')).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('lang','ja');
 });
+
+test('optional mascot artwork cannot block startup or the title controls', async ({page}) => {
+  await fixture(page);
+  await page.route('**/brand/momo-presence-v2.webp', route => route.abort());
+  await page.goto('/');
+  await expect(page.locator('#startup')).toHaveCount(0);
+  await expect(page.locator('.title-screen')).toBeVisible();
+  await page.locator('.menu-item').filter({hasText:'设置'}).click();
+  await expect(page.locator('.settings-page')).toBeVisible();
+});

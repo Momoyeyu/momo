@@ -1,4 +1,4 @@
-// 主页：纯色背景 + 左上品牌 + 右侧视觉小说式菜单（胶囊按钮、悬停饰标、错峰入场）。
+// 主页：左侧品牌与菜单、右侧剪影（悬停饰标、错峰入场）。
 // 菜单：开始（开新会话：live 快照进 auto 槽后清空）/ 继续（读最新档进对话页，
 // 无存档置灰）/ 读档 / 设置。
 // 存档入口只在对话页——标题页没有可保存的现场。
@@ -16,6 +16,7 @@ import { loadTranscript } from "../chat/engineInstance";
 import EcgCanvas from "../components/EcgCanvas";
 import Button from "../ui/Button";
 import type { CheckpointMeta } from "../lib/types";
+import {PRESENCE_URL,TITLE_PRESENCE} from "../lib/presenceTransition";
 import "../styles/title.css";
 
 export default function Title() {
@@ -100,6 +101,7 @@ export default function Title() {
   return (
     <div className="title-screen">
       <EcgCanvas />
+      <img className="title-presence" src={PRESENCE_URL} style={{left:`${TITLE_PRESENCE.left*100}%`,top:`${TITLE_PRESENCE.top*100}%`,width:`${TITLE_PRESENCE.width*100}%`}} width="1024" height="1536" alt="" aria-hidden="true" decoding="async" />
       <header className="title-brand">
         <h1 className="title-logo" aria-label="momo"><img className="title-brand-mark" src="/brand/momo-mark.svg" alt="" /><img className="title-brand-wordmark" src="/brand/momo-wordmark.svg" alt="momo" /></h1>
         <div className="title-rule" />

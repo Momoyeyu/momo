@@ -32,7 +32,7 @@ const STATUS_LABEL_KEYS: Record<ChatStatus, string> = {
   speaking: "chat.speaking",
 };
 
-export default function Chat() {
+export default function Chat({active}: {active: boolean}) {
   const t = useT();
   // 角色名/通用设置跟随 store（切换语言、改名、状态开关即时生效）。
   useSyncExternalStore(subscribe, getState);
@@ -51,6 +51,22 @@ export default function Chat() {
   const [modelError, setModelError] = useState(false);
   const [input, setInput] = useState("");
   const [closeUp, setCloseUp] = useState(() => getStage().getCloseUp());
+  const dialog = useRef<HTMLDivElement>(null);
+  const [entered, setEntered] = useState(false);
+  // Follow the actual CSS animation rather than a second, competing timer.
+  // No animations (reduced motion) resolves immediately; cancelled entries
+  // cannot unlock a newer page or start the first meeting behind its cover.
+  useEffect(() => {
+    setEntered(false);
+    if (!active) return;
+    let cancelled = false;
+    const animations = dialog.current?.getAnimations() ?? [];
+    void Promise.allSettled(animations.map(animation => animation.finished)).then(() => {
+      if (!cancelled) setEntered(true);
+    });
+    return () => { cancelled = true; };
+  }, [active]);
+  const interactive = active && entered;
   const errTimer = useRef<number | null>(null);
   // 引擎侧消息变化（含跨页产生的新消息）时刷新本页引用。
   useSyncExternalStore(subscribeTranscript, transcriptVersion);
@@ -89,8 +105,6 @@ export default function Chat() {
       onError: (e) => showErr(e),
     };
     attachEngine(h);
-    // 回到 chat 页：恢复离开前挂起的麦克风监听。
-    engine.resumeMic();
     // 挂载即同步当前相位与字幕（可能已有回合在跑）。
     setStatus(engine.status);
     setMicOn(engine.listening);
@@ -98,11 +112,16 @@ export default function Chat() {
     setStreamText(engine.display);
     return () => {
       detachEngine(h);
-      // 离开 chat 页：暂停麦克风/ASR（避免在别的页面还在听）。
-      engine.suspendMic();
       if (errTimer.current !== null) window.clearTimeout(errTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!interactive) return;
+    const engine = getChatEngine();
+    engine.resumeMic();
+    return () => engine.suspendMic();
+  }, [interactive]);
 
   const send = (): void => {
     const text = input.trim();
@@ -139,11 +158,11 @@ export default function Chat() {
   const busy = status === "thinking" || status === "speaking";
 
   return (
-    <div className="chat-page">
-      <FirstMeeting connectionFailed={modelError} />
+    <div className="chat-page" inert={!interactive}>
+      {interactive && <FirstMeeting connectionFailed={modelError} />}
       {error && <div className="chat-error">{error}</div>}
 
-      <div className="dialog-zone">
+      <div className="dialog-zone" ref={dialog}>
         <DialogBox
           lang={resolveChatLang(getState().settings.general)}
           name={name}

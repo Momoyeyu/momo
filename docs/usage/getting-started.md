@@ -12,4 +12,4 @@
 
 记忆可以在设置中查看、修改或删除。对话回顾和存读档保留各自入口；跨安装迁移请先阅读 [备份与迁移](data.md)。
 
-当前优先交付 macOS 体验版，Windows 随后单独推进；Linux 尚非承诺平台，不提供手机 / 平板应用。公开安装包和验证状态以版本页面为准。
+[下载 momo v0.2.0](https://github.com/Momoyeyu/momo/releases/tag/v0.2.0)：提供 macOS 14+ Apple Silicon 与 Windows x64 安装包，Windows 11 实机已验证。安装包未获开发者签名 / 公证，首次安装步骤与 SHA-256 见版本说明。Linux、手机 / 平板暂不提供。

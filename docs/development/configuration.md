@@ -16,4 +16,6 @@
 
 测试专用变量：`MOMO_E2E_BASE_URL` 必须显式指向隔离浏览器实例；`MOMO_E2E_APP` 可覆盖测试构建可执行路径；`MOMO_E2E_LLM_CONFIG` 指向仅供真实模型 opt-in 原生 E2E 的私有 JSON 配置，`MOMO_BROWSER_LLM_CONFIG` 为浏览器真实模型用例提供私有 YAML。
 
+`MOMO_E2E_SETUP=1` 启用 `setup.e2e.mjs` 的首次连接验证，需单独选择该 spec，并使用全新的测试 identifier / 数据目录；不能接入已有玩家档。先验证错误模型不保存、不进入对话，再用上述私有 LLM 配置验证真实健康检查与后续对话。
+
 `MOMO_E2E_TTS_CONFIG` 可单独启用原生真实 GPU 语音测试，JSON 字段为 `url`、可选 `key` / `prompt`、本地参考音绝对路径 `reference` 与可选文件名 `referenceName`。它使用固定对话供应商，观测实际 PCM 播放、采样率、播放完成和打断恢复，并将受控合成语音送入打包后的 SenseVoice 验证识别；不需要调用付费 LLM。运行时只使用隔离测试档。这些文件不属于玩家配置，不随安装包或测试报告交付。

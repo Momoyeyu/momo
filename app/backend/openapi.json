@@ -513,6 +513,16 @@
             "title": "Key",
             "type": "string"
           },
+          "model": {
+            "default": "",
+            "title": "Model",
+            "type": "string"
+          },
+          "thinking": {
+            "default": false,
+            "title": "Thinking",
+            "type": "boolean"
+          },
           "url": {
             "title": "Url",
             "type": "string"

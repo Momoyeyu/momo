@@ -127,9 +127,8 @@ test("通用 tab：语言/语音是与对话框设置同级的两个面板，语
 
   // 左栏是两个**独立面板**（不再是套在一个面板里的子框）：第一列 2 项
   const stack = page.locator(":is(.settings-pane:not([aria-hidden])) .settings-cols > .settings-stack > .panel");
-  await expect(stack).toHaveCount(3);
+  await expect(stack).toHaveCount(2);
   expect(await stack.locator(".opt-group").allTextContents()).toEqual([
-    "数据备份",
     "语言设置",
     "语音设置",
   ]);
@@ -142,6 +141,14 @@ test("通用 tab：语言/语音是与对话框设置同级的两个面板，语
     page.locator(":is(.settings-pane:not([aria-hidden])) .settings-cols > .panel").boundingBox(),
   ]);
   expect(Math.abs((left?.height ?? 0) - (right?.height ?? 0))).toBeLessThan(2);
+
+  const backup = await page.locator('.data-transfer-panel').boundingBox();
+  expect(backup!.y).toBeGreaterThanOrEqual(left!.y + left!.height);
+  const actions = await page.locator('.data-transfer-actions button').evaluateAll(buttons => buttons.map(button=>{
+    const box=button.getBoundingClientRect();return {top:box.top,left:box.left,right:box.right};
+  }));
+  expect(Math.abs(actions[0].top-actions[1].top)).toBeLessThan(1);
+  expect(actions[1].left-actions[0].right).toBeGreaterThanOrEqual(8);
 
   // 语义检索不再有开关（改为按 embedding 是否配置自动判定，后端有单测钉住）
   await expect(page.getByText("语义检索", { exact: true })).toHaveCount(0);

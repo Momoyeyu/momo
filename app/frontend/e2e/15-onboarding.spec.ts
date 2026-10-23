@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import {waitForChatReady} from './helpers';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -35,6 +36,7 @@ function call(directory: string, path: string, method = 'GET', body?: unknown, o
 async function bridge(page: Page, directory: string, options = {}) {
   await page.route('**/api/**', async route => {
     const req = route.request(), path = new URL(req.url()).pathname;
+    if (path === '/api/probe/llm') return route.fulfill({json: {ok: true, detail: '1ms'}});
     if (!['/api/onboarding', '/api/onboarding/opening', '/api/state', '/api/chat', '/api/chat/interrupt'].includes(path) && !path.startsWith('/api/checkpoints') && !path.startsWith('/api/memories')) return route.continue();
     const result = await call(directory, path, req.method(), req.postData() ? req.postDataJSON() : undefined, options);
     if (!page.isClosed()) await route.fulfill({status: result.status, headers: result.headers, contentType: result.contentType, body: result.body});
@@ -62,6 +64,7 @@ test('first launch speaks first, remembers the name, and does not repeat after r
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
   let live = JSON.parse((await call(directory, '/api/checkpoints/live')).body);
   expect(live.messages.map((m: {role:string}) => m.role)).toEqual(['assistant', 'assistant']);
+  await waitForChatReady(page);
   await page.locator('.input-row input').fill('叫我小星');
   await page.locator('.input-row input').press('Enter');
   await expect(page.locator('.subtitle')).toHaveText('你现在想聊什么？');
@@ -81,6 +84,7 @@ test('refusal ends the first meeting without inventing a memory', async ({page})
   await bridge(page, directory);
   await page.goto('/');
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
+  await waitForChatReady(page);
   await page.locator('.input-row input').fill('暂时不想说，聊聊游戏吧');
   await page.locator('.input-row input').press('Enter');
   await expect(page.locator('.subtitle')).toHaveText('没关系，我们先聊聊吧。');
@@ -94,12 +98,14 @@ test('refresh resumes the current question and model failure can be retried', as
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
   await page.reload();
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
+  await waitForChatReady(page);
   await page.locator('.input-row input').fill('模拟失败');
   await page.locator('.input-row input').press('Enter');
   await expect(page.locator('.chat-error')).toBeVisible();
   expect(JSON.parse((await call(directory, '/api/onboarding')).body).stage).toBe('asking');
   const live = JSON.parse((await call(directory, '/api/checkpoints/live')).body);
   expect(live.messages.some((m:{text:string}) => m.text === '模拟失败')).toBe(false);
+  await waitForChatReady(page);
   await page.locator('.input-row input').fill('叫我小星');
   await page.locator('.input-row input').press('Enter');
   await expect(page.locator('.subtitle')).toHaveText('你现在想聊什么？');
@@ -110,12 +116,65 @@ test('unconfigured player sees a small connection gate and can continue', async 
   await page.goto('/');
   const dialog = page.getByRole('dialog', {name:'让 momo 与你相遇'});
   await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('link', {name:'DeepSeek 开放平台'})).not.toBeVisible();
+  await expect(dialog.getByText('兼容 OpenAI 格式', {exact: false})).not.toBeVisible();
+  await expect(dialog.locator('label[for="first-meeting-key"]')).toHaveText('API 密钥');
+  await dialog.getByRole('button', {name:'关于模型连接', exact: true}).click();
+  await expect(dialog).toContainText('兼容 OpenAI 格式');
+  await expect(dialog.getByRole('link', {name:'DeepSeek 开放平台'})).toHaveAttribute('href', 'https://platform.deepseek.com/');
+  await dialog.getByRole('button', {name:'关于模型连接', exact: true}).click();
+  await dialog.locator('label[for="first-meeting-key"]').locator('..').locator('.hint').hover();
+  await expect(page.getByRole('tooltip')).toContainText('可留空');
+  await page.mouse.move(0, 0);
   await page.screenshot({path:'/tmp/momo-005-connect.png'});
-  await dialog.getByLabel('服务地址').fill('https://preview.test');
-  await dialog.getByLabel('模型名称').fill('test-model');
+  await dialog.getByRole('textbox', {name:'模型 API 地址', exact:true}).fill('https://preview.test');
+  await dialog.getByRole('textbox', {name:'模型名称', exact:true}).fill('test-model');
   await dialog.getByRole('button', {name:'开始相遇'}).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
+});
+
+test('a rejected model leaves setup and its draft intact without saving or starting the meeting', async ({page}) => {
+  await bridge(page, directory, {configured: false});
+  await page.route('**/api/probe/llm', route => route.fulfill({json: {ok: false, detail: 'HTTP 400'}}));
+  await page.goto('/');
+  const dialog = page.getByRole('dialog', {name:'让 momo 与你相遇'});
+  await dialog.getByRole('textbox', {name:'模型 API 地址', exact:true}).fill('https://preview.test');
+  await dialog.getByRole('textbox', {name:'模型名称', exact:true}).fill('Deepseek-chat');
+  await dialog.getByRole('button', {name:'开始相遇'}).click();
+  await expect(dialog.getByRole('alert')).toContainText('HTTP 400');
+  await expect(dialog.getByRole('alert')).toContainText('大小写');
+  await expect(dialog.locator('#first-meeting-model')).toHaveValue('Deepseek-chat');
+  expect(JSON.parse((await call(directory, '/api/onboarding')).body).configured).toBe(false);
+  expect(JSON.parse((await call(directory, '/api/checkpoints/live')).body).messages).toHaveLength(0);
+  await page.route('**/api/probe/llm', route => route.fulfill({json: {ok: true, detail: '1ms'}}));
+  await dialog.locator('#first-meeting-model').fill('deepseek-chat');
+  await dialog.getByRole('button', {name:'开始相遇'}).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
+});
+
+test('leaving setup during health checking cannot save an obsolete draft', async ({page}) => {
+  await bridge(page, directory, {configured:false});
+  let release!:()=>void;
+  const held = new Promise<void>(resolve=>{release=resolve;});
+  await page.route('**/api/probe/llm', async route => {
+    await held;
+    await route.fulfill({json:{ok:true,detail:'1ms'}}).catch(()=>{});
+  });
+  await page.goto('/');
+  await page.locator('#first-meeting-url').fill('https://preview.test');
+  await page.locator('#first-meeting-model').fill('obsolete-model');
+  const checking=page.waitForRequest('**/api/probe/llm');
+  await page.getByRole('button',{name:'开始相遇',exact:true}).click();
+  await checking;
+  await page.evaluate(()=>{location.hash='/title';});
+  // Complete the old request before the outgoing page has unmounted.
+  release();
+  await expect(page.locator('.title-screen')).toBeVisible();
+  await expect(page.locator('.first-meeting-setup')).toHaveCount(0);
+  expect(JSON.parse((await call(directory,'/api/onboarding')).body).configured).toBe(false);
+  expect(JSON.parse((await call(directory,'/api/checkpoints/live')).body).messages).toHaveLength(0);
 });
 
 test('existing player is not redirected into a first meeting', async ({page}) => {
@@ -131,6 +190,7 @@ test('real LLM first meeting forms a real editable memory', async ({page}) => {
   await bridge(page, directory, {real: true});
   await page.goto('/');
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
+  await waitForChatReady(page);
   await page.locator('.input-row input').fill('你好 momo，叫我小星就好。');
   const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/chat');
   await page.locator('.input-row input').press('Enter');
@@ -153,6 +213,7 @@ test('typing before the model loads resolves the name without a late scripted in
     await route.continue();
   });
   await page.goto('/');
+  await waitForChatReady(page);
   await page.locator('.input-row input').fill('叫我小星');
   await page.locator('.input-row input').press('Enter');
   await expect(page.locator('.subtitle')).toHaveText('你现在想聊什么？');
@@ -186,8 +247,8 @@ test('brand-new installation can save its very first model configuration', async
   await page.goto('/');
   const dialog = page.getByRole('dialog', {name:'让 momo 与你相遇'});
   await expect(dialog).toBeVisible();
-  await dialog.getByLabel('服务地址').fill('https://preview.test');
-  await dialog.getByLabel('模型名称').fill('test-model');
+  await dialog.getByRole('textbox', {name:'模型 API 地址', exact:true}).fill('https://preview.test');
+  await dialog.getByRole('textbox', {name:'模型名称', exact:true}).fill('test-model');
   await dialog.getByRole('button', {name:'开始相遇'}).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');

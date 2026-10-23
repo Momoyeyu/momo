@@ -30,6 +30,9 @@ describe('installed macOS startup presence', () => {
         removed:!document.querySelector('#startup'),interactive:!document.querySelector('#root').hasAttribute('inert')};
     });
     for(const [name,value] of Object.entries(result))assert.equal(value,true,name);
+    // This spec may follow a settings/backup check in the same isolated profile.
+    await browser.execute(() => {location.hash='/title';});
+    await $('.title-screen').waitForDisplayed();
     const previous = await browser.execute(() => performance.timeOrigin);
     await browser.refresh();
     await browser.waitUntil(async () => browser.execute(previous => performance.timeOrigin !== previous && document.readyState === 'complete', previous));

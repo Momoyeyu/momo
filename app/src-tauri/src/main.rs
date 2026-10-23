@@ -1,6 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #[cfg(any(target_os = "linux", test))]
 mod downloads;
+#[cfg(any(target_os = "macos", test))]
+mod external_links;
 mod runtime;
 use runtime::{Runtime, ShellState};
 use std::sync::Arc;
@@ -59,6 +61,11 @@ fn main() {
                 .find(|window| window.label == "main")
                 .ok_or_else(|| std::io::Error::other("Main window configuration missing"))?;
             let window = tauri::WebviewWindowBuilder::from_config(app, config)?;
+            #[cfg(target_os = "macos")]
+            let window = window.on_new_window(|url, _| {
+                external_links::open(url.as_str());
+                tauri::webview::NewWindowResponse::Deny
+            });
             #[cfg(target_os = "linux")]
             let window = window.on_download(|webview, event| match event {
                 tauri::webview::DownloadEvent::Requested { url, destination } => {

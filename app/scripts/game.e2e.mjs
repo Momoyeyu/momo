@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {createServer} from 'node:http';
+import {waitForRouteReady} from './ui-ready.mjs';
 
 // The provider is deterministic; requests still traverse native IPC, the packaged
 // backend and real SQLite. No WebView network interception or source backend.
@@ -25,9 +26,12 @@ async function reloadReady() {
     !!document.querySelector('.app-stage') && !document.querySelector('#startup') &&
     !document.querySelector('#root')?.hasAttribute('inert'), previous),
     {timeout:60000,timeoutMsg:'New document did not finish startup before navigation'});
+  const current=await browser.execute(()=>location.hash.replace(/^#\/?/, '')||'title');
+  await waitForRouteReady(current);
 }
 async function route(name) {
   await browser.execute(name => { location.hash = '/' + name; }, name);
+  await waitForRouteReady(name);
 }
 async function clickText(selector, label) {
   for (const element of await $$(selector)) {
@@ -88,6 +92,10 @@ describe('native player flows', () => {
       animations:document.getAnimations().map(animation=>({name:animation.animationName,state:animation.playState,current:animation.currentTime})),
       core:!!window.Live2DCubismCore,canvases:document.querySelectorAll('canvas').length}));
     console.log('Native player diagnostic', JSON.stringify(diagnostic));
+    console.log('Native onboarding diagnostic', (await api('/api/onboarding')).text);
+    console.log('Native transcript diagnostic', (await api('/api/checkpoints/live')).text);
+    const saved = JSON.parse((await api('/api/state')).text);
+    console.log('Native fixture still configured', saved.settings?.llm?.url === providerUrl);
   });
 
   it('opens the first meeting, saves a name, streams clean dialogue and resumes it', async () => {
@@ -96,14 +104,31 @@ describe('native player flows', () => {
     const state = {...existing, settings:{...existing.settings,
       llm:{url:providerUrl, model:'native-fixture', key:'', thinking:false},
       general:{...existing.settings?.general,lang:'zh',voiceInput:false,textSpeed:100,sentenceSpeed:100}}};
-    assert.equal((await api('/api/state', 'PUT', state)).status,204);
-    await reloadReady();
+    // Configure only after bootstrap, using the same gate as a player.
+    const current = await browser.execute(() => location.hash.replace(/^#\/?/, '') || 'title');
+    await waitForRouteReady(current);
     await route('chat');
+    if (await $('.first-meeting-setup').isExisting()) {
+      assert.equal((await api('/api/state', 'PUT', state)).status,204);
+      await $('#first-meeting-url').setValue(providerUrl);
+      await $('#first-meeting-key').setValue('');
+      await $('#first-meeting-model').setValue('native-fixture');
+      await $('.first-meeting-setup button[type="submit"]').click();
+      await $('.first-meeting-setup').waitForExist({reverse:true});
+    } else {
+      assert.equal((await api('/api/state', 'PUT', state)).status,204);
+      await reloadReady();
+      await route('chat');
+    }
     await $('.input-row input').waitForDisplayed();
     // An existing E2E profile can be reused; a clean profile additionally checks
     // the scripted opening. Every run still checks the real provider roundtrip.
     const stage = JSON.parse((await api('/api/onboarding')).text).stage;
-    if (stage === 'new' || stage === 'asking') {
+    const opening = JSON.parse((await api('/api/checkpoints/live')).text);
+    // The preceding native auth smoke intentionally calls /chat/interrupt.
+    // On a fresh profile that cancels the queued opening, by contract; the
+    // player can still supply a name. Do not wait for a cancelled sentence.
+    if (stage === 'new' || (stage === 'asking' && opening.messages.length > 0)) {
       await browser.waitUntil(async () => (await $('.subtitle').getText()).includes('怎么称呼'), {timeout:30000});
     }
     await $('.input-row input').setValue('你好，叫我小星就好。');

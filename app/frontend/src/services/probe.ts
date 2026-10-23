@@ -13,10 +13,10 @@ export interface ProbeResult {
   detail: string;
 }
 
-export async function probeLlm(cfg: LlmConfig): Promise<ProbeResult> {
+export async function probeLlm(cfg: LlmConfig, signal?: AbortSignal): Promise<ProbeResult> {
   if (!cfg.url) return {ok: false, detail: "unconfigured"};
   try { return await apiJson<ProbeResult>("/api/probe/llm", {
-    method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(cfg),
+    method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(cfg), signal,
   }); } catch { return {ok: false, detail: "backend unreachable"}; }
 }
 

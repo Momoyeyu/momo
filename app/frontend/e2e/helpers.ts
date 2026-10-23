@@ -16,10 +16,18 @@ const SHELL = ".title-screen, .chat-page, .settings-page, .backlog-page, .checkp
 export async function gotoRoute(page: Page, route = "title"): Promise<void> {
   await page.goto(`/#/${route}`);
   await expect(page.locator(SHELL).first()).toBeVisible();
+  // A mounted shell can still be behind startup or a scene/dialogue entrance.
+  // Functional tests type only once real players can interact with that shell.
+  await expect.poll(() => page.locator(SHELL).first().evaluate(element => !element.closest('[inert]'))).toBe(true);
 }
 
 /** 兼容旧名。 */
 export const openApp = gotoRoute;
+
+/** Chat mounts before its scene/dialogue entry releases keyboard input. */
+export async function waitForChatReady(page: Page): Promise<void> {
+  await expect.poll(() => page.locator('.chat-page').evaluate(element => !element.closest('[inert]'))).toBe(true);
+}
 
 /** 进设置页的某个 tab（tab 名按当前界面语言取，调用方给 zh 字面量即可）。 */
 export async function openTab(page: Page, label: string): Promise<void> {

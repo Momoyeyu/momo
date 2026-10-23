@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/momo-readme-banner.svg" width="100%" alt="momo：墨紫夜色里的纸影与星轨">
+  <img src="docs/assets/mascot/momo-presence-v2.png" width="220" alt="momo 原创三色剪影：藏在界面后的她">
 </p>
 
 <h1 align="center">momo</h1>
@@ -48,7 +48,9 @@ momo 有一份稳定的核心人格，也为共同经历留出空间。我们希
 
 ## 开始相遇
 
-**macOS 候选已完成安装产物与真实语音联调验证，目前尚无公开发布的安装包。** 查看 [版本页面](https://github.com/Momoyeyu/momo/releases) 了解后续交付；从源码运行请读 [开发指南](docs/development/migration.md)。
+**[下载 momo v0.2.0](https://github.com/Momoyeyu/momo/releases/tag/v0.2.0)** · [macOS Apple Silicon](https://github.com/Momoyeyu/momo/releases/download/v0.2.0/momo_0.2.0_macos_arm64.dmg) · [Windows x64](https://github.com/Momoyeyu/momo/releases/download/v0.2.0/momo_0.2.0_windows_x64_setup.exe)
+
+macOS 14+（Apple Silicon）与 Windows 11 x64 已验证。当前安装包未获开发者签名 / 公证，首次打开可能出现系统安全提示；安装步骤、校验值与限制见版本说明。从源码运行请读 [开发指南](docs/development/migration.md)。
 
 取得体验版后，从三件小事开始：
 
@@ -65,7 +67,7 @@ momo 有一份稳定的核心人格，也为共同经历留出空间。我们希
 | 记录在哪里，怎样备份与迁移 | [备份与迁移](docs/usage/data.md) |
 | 从源码开发、运行与构建 | [开发指南](docs/development/migration.md) · [运行配置](docs/development/configuration.md) |
 
-目前优先完成 **macOS** 体验；**Windows** 后续单独推进，**Linux** 为次要可选方向。momo 面向电脑，不提供手机 / 平板应用。
+本版提供 **macOS Apple Silicon / Windows x64** 安装包，验证范围与限制见版本说明；**Linux** 暂不提供。momo 面向电脑，不提供手机 / 平板应用。
 
 ## 一起把这里变得更好
 

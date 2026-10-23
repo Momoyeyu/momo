@@ -1,6 +1,6 @@
 {
   "date": "2026-10-23",
-  "status": "candidate-awaiting-user-review",
+  "status": "website-approved-app-adaptation-awaiting-review",
   "tool": "OpenAI built-in image_gen; tool-managed model version not exposed",
   "source": "momo-presence-v2.png",
   "dimensions": [
@@ -14,18 +14,21 @@
       "file": "site/docs/public/brand/momo-presence-v2.webp",
       "sha256": "38ab93ada714de4982115ee8d2f322da576f01a90781af4bc03d40e8ad3ff3aa",
       "bytes": 867754
+    },
+    {
+      "file": "app/frontend/public/brand/momo-presence-v2.webp",
+      "sha256": "38ab93ada714de4982115ee8d2f322da576f01a90781af4bc03d40e8ad3ff3aa",
+      "bytes": 867754
     }
   ],
   "transform": "Lossless WebP encoding; alpha and visible composites identical on ink/ivory. Fully transparent RGB may be normalized by the encoder.",
-  "scope": "Website background iteration only; README and app still contain the previous unapproved candidate pending art direction review.",
+  "scope": "Approved C silhouette shared by website, README and macOS title/startup; app ASCII chat entry awaits joint 010/013 review.",
   "previous_candidates": [
     {
       "source": "momo-presence-v1.png",
       "sha256": "3a7a34179dc9d723935d73867549a4eafa9697af71fcac162387fba51bdd4ca9",
       "status": "direction-rejected-by-user",
-      "remaining_derivatives": [
-        "app/frontend/public/brand/momo-presence-v1.webp"
-      ]
+      "remaining_derivatives": []
     },
     {
       "file": "momo-memory-alternative.png",

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/momo-readme-banner.svg" width="100%" alt="momo: paper-cut shapes and star trails in an ink-purple night">
+  <img src="docs/assets/mascot/momo-presence-v2.png" width="220" alt="momo’s original three-ink silhouette, behind the interface">
 </p>
 
 <h1 align="center">momo</h1>
@@ -48,7 +48,9 @@ More natural long-term companionship, with shared experiences making a finer dif
 
 ## Your first meeting
 
-**The macOS candidate has passed installer and real voice integration checks. No public installer has been released yet.** Follow the [releases page](https://github.com/Momoyeyu/momo/releases) for delivery updates, or read the [development guide](docs/development/migration.md) to run from source.
+**[Download momo v0.2.0](https://github.com/Momoyeyu/momo/releases/tag/v0.2.0)** · [macOS Apple Silicon](https://github.com/Momoyeyu/momo/releases/download/v0.2.0/momo_0.2.0_macos_arm64.dmg) · [Windows x64](https://github.com/Momoyeyu/momo/releases/download/v0.2.0/momo_0.2.0_windows_x64_setup.exe)
+
+Verified on macOS 14+ (Apple Silicon) and Windows 11 x64. Builds are not developer-signed or notarized; see release notes for installation, checksums and limitations. To run from source, read the [development guide](docs/development/migration.md).
 
 Once you have a preview build, start with three small things:
 
@@ -67,7 +69,7 @@ Conversations are sent to the model provider you choose. When speech synthesis i
 
 The detailed guides currently contain the Chinese originals. The website and application offer Chinese, English, and Japanese.
 
-The current priority is the **macOS** experience. **Windows** will follow as separate work; **Linux** is a secondary, optional direction. momo is for computers, with no phone or tablet app.
+This release provides **macOS Apple Silicon / Windows x64** installers; see release notes for validation and limitations. **Linux** is not offered. momo is for computers, with no phone or tablet app.
 
 ## Help make this place better
 
