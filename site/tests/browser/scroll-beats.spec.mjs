@@ -41,3 +41,25 @@ test('desktop: the echo is pixel-stable through its landing hold, including a co
   }
   expect((await page.locator('#voice .chapter-stage').boundingBox()).y).toBeCloseTo(0,0)
 })
+
+for(const lang of ['zh','en','ja']) test(`desktop: held compositions fit resized windows in ${lang}`,async({page})=>{
+  await page.goto(lang==='zh'?'./':`./${lang}/`)
+  for(const [width,height] of [[1440,900],[1024,768],[667,807],[667,650],[601,621]]){
+    await page.setViewportSize({width,height})
+    for(const selector of ['.meeting-runway','#together','#memory','#voice','#extensions']){
+      const opening=selector==='.meeting-runway'
+      const stage=page.locator(opening?'.meeting-scene':`${selector} .chapter-stage`)
+      if(await stage.evaluate(el=>getComputedStyle(el).position)!=='sticky')continue
+      await seek(page,selector,.95,opening)
+      const parts=stage.locator(opening?'.conversation-chapter,.keepsakes':'.chapter-copy,.chapter-footnote,.echo-scene,.soul-impression,.archive-papers,.possibility-map')
+      for(const part of await parts.all()){
+        if(!await part.isVisible())continue
+        const box=await part.boundingBox(),label=`${lang} ${width}x${height} ${selector} ${await part.getAttribute('class')}`
+        expect(box.y,label).toBeGreaterThanOrEqual(0)
+        expect(box.y+box.height,label).toBeLessThanOrEqual(height+1)
+        expect(box.x,label).toBeGreaterThanOrEqual(0)
+        expect(box.x+box.width,label).toBeLessThanOrEqual(width+1)
+      }
+    }
+  }
+})

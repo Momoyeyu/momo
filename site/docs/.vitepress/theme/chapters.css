@@ -27,6 +27,8 @@
 .echo-question{margin-top:10px;padding-left:14%;font-size:clamp(14px,1.3vw,18px);font-weight:400;letter-spacing:.045em;color:var(--secondary);opacity:calc(var(--echo-question)*.8);transform:translateY(calc((1 - var(--echo-question))*6px))}.echo-question span{color:var(--accent)}.echo-static .echo-canvas{opacity:.8}
 .echo-enhanced .response-chapter{height:240svh}.echo-enhanced .response-chapter .chapter-stage{position:sticky;top:0;height:100svh;min-height:600px;padding-top:45px;padding-bottom:65px}
 @media(max-width:800px){.echo-enhanced .response-chapter{height:260svh}.echo-enhanced .response-chapter .chapter-stage{grid-template-columns:1fr;gap:12px;align-content:center;padding-top:28px;padding-bottom:28px}.response-chapter .chapter-copy h2{font-size:25px;line-height:1.4}.response-chapter .chapter-copy>p{margin-top:10px;font-size:12px;line-height:1.7}.response-chapter .chapter-copy>.text-link{margin-top:10px}.response-chapter .chapter-footnote{display:block;margin-top:12px;font-size:10px;line-height:1.7}.echo-scene{padding:0 0 15px}.echo-canvas{height:330px}.echo-question{margin-top:0;font-size:14px;padding-left:10%}}
+/* Fit the held composition to short, narrow desktop windows, including translated copy. */
+@media(max-width:800px) and (min-height:601px) and (max-height:740px){.echo-enhanced .echo-canvas{height:clamp(160px,calc(100svh - 440px),300px)}}
 @media(max-height:600px){.echo-enhanced .response-chapter{height:auto}.echo-enhanced .response-chapter .chapter-stage{position:relative;height:auto}.echo-canvas{height:290px}}
 @media(prefers-reduced-motion:reduce){.echo-question{transform:none}}
 .product-chapters:not(.echo-enhanced) .response-chapter{height:auto}
