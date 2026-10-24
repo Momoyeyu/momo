@@ -4,7 +4,8 @@ const evidence=process.env.MOMO_SITE_EVIDENCE||'.playwright-evidence'
 mkdirSync(evidence,{recursive:true})
 async function seek(page,p) {
   await page.evaluate(p=>{const s=document.querySelector('#voice');const stage=s.querySelector('.chapter-stage');scrollTo({top:scrollY+s.getBoundingClientRect().top+(s.offsetHeight-stage.offsetHeight)*p,behavior:'instant'})},p)
-  await expect.poll(async()=>Math.abs(Number(await page.locator('.echo-canvas').getAttribute('data-frame'))-p)).toBeLessThan(.004)
+  await expect.poll(async()=>Math.abs(Number(await page.locator('#voice').getAttribute('data-progress'))-p)).toBeLessThan(.004)
+  await expect.poll(async()=>Math.abs(Number(await page.locator('.echo-canvas').getAttribute('data-frame'))-Number(await page.locator('#voice').getAttribute('data-animation-progress')))).toBeLessThan(.004)
 }
 for (const [width,height] of [[1938,1280],[1440,1000],[667,807]]) test(`desktop: echo exchange reverses and holds at ${width}x${height}`,async({page})=>{
   await page.setViewportSize({width,height});await page.goto('./')

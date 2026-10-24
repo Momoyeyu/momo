@@ -6,6 +6,7 @@ import { helpLinks } from './product-content.mjs'
 import { clamp } from './meeting-motion.mjs'
 import { archiveGlyph, phase } from './chapter-motion.mjs'
 import { createScrollFollow } from './scroll-follow.mjs'
+import { sceneProgress } from './scroll-beats.mjs'
 import './chapters.css'
 import EchoScene from './EchoScene.vue'
 
@@ -17,6 +18,7 @@ const labels = computed(() => ({
   ja: { index: 'ここから、少しずつ', sections: ['いつもの彼女', '記憶とセーブ', '言葉と返事', 'あなたらしく'], imprint: '思い出が増えても、彼女らしく。', memory: ['記憶', 'セーブ', 'バックアップ'], hello: 'こんにちは、momo。', reply: 'おかえり！', score: 'ひとつの返事のリズム', tracks: ['言葉', '表情', '声'], constellation: 'あなたが選ぶ、新しい可能性。' },
 }[props.locale]))
 const ids = ['together', 'memory', 'voice', 'extensions']
+const beats = ['soul', 'memory', 'echo', 'paths']
 const container = ref<HTMLElement>()
 const enhanced = ref(false)
 const echoEnhanced = ref(false)
@@ -38,13 +40,16 @@ function measure(index: number) {
   const section = sections[index]
   const stage = section?.querySelector<HTMLElement>('.chapter-stage')
   if (!section || !stage || !(index === 2 ? echoEnhanced.value : enhanced.value)) return 1
-  if (index === 3) return clamp((innerHeight - section.getBoundingClientRect().top) / (innerHeight + section.offsetHeight) * 1.4)
   return clamp(-section.getBoundingClientRect().top / Math.max(1, section.offsetHeight - stage.offsetHeight))
 }
 function write(index: number, value: number) {
-  progress.value[index] = value
+  const motion = (index === 2 ? echoEnhanced.value : enhanced.value) ? sceneProgress(value, beats[index]) : 1
+  progress.value[index] = motion
   const section = sections[index]
-  if (section) section.dataset.progress = value.toFixed(4)
+  if (section) {
+    section.dataset.progress = value.toFixed(4)
+    section.dataset.animationProgress = motion.toFixed(4)
+  }
 }
 function request() {
   if ((!enhanced.value && !echoEnhanced.value) || document.hidden) return

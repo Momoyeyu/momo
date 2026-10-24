@@ -7,6 +7,7 @@ import { helpLinks, releaseUrl } from './product-content.mjs'
 import { clamp, meetingFrame } from './meeting-motion.mjs'
 import { createMeetingPixels } from './meeting-pixels.mjs'
 import { createScrollFollow } from './scroll-follow.mjs'
+import { sceneProgress as sceneBeat } from './scroll-beats.mjs'
 
 const creditsOpen = ref(false)
 const active = ref(0)
@@ -42,15 +43,17 @@ function readSceneProgress() {
   const rect = runway.value.getBoundingClientRect()
   return clamp(-rect.top / Math.max(1, runway.value.offsetHeight - scene.value.offsetHeight))
 }
-function paintScene(progress: number) {
+function paintScene(scroll: number) {
   if (!scene.value || !deck.value || !animated.value) return
+  const progress = sceneBeat(scroll, 'meeting')
   const wasRevealed = sceneProgress.value >= .7
   sceneProgress.value = progress
   if (progress < .97 && active.value !== 0) active.value = 0
   const frame = meetingFrame(progress, deck.value.getBoundingClientRect(), { width: innerWidth, height: innerHeight })
   const style = scene.value.style
   for (const [key, value] of Object.entries(frame)) style.setProperty(`--scene-${key}`, String(value))
-  scene.value.dataset.progress = progress.toFixed(4)
+  scene.value.dataset.progress = scroll.toFixed(4)
+  scene.value.dataset.animationProgress = progress.toFixed(4)
   scene.value.dataset.landed = String(progress >= .97)
   if (pixels && pixelCanvas.value && presenceFigure.value && video.value) {
     const origin = scene.value.getBoundingClientRect()

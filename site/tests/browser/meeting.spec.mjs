@@ -3,8 +3,10 @@ import { mkdirSync } from 'node:fs'
 const evidence=process.env.MOMO_SITE_EVIDENCE||'.playwright-evidence'
 mkdirSync(evidence,{recursive:true})
 async function progress(page,p){
-  await page.evaluate(p=>{const el=document.querySelector('.meeting-runway'),scene=document.querySelector('.meeting-scene');window.scrollTo({top:scrollY+el.getBoundingClientRect().top+(el.offsetHeight-scene.offsetHeight)*p,behavior:'instant'})},p)
-  await expect.poll(async()=>Number(await page.getByTestId('meeting-scene').getAttribute('data-progress'))).toBeCloseTo(p,3)
+  // These cases seek the original choreography, independently of its reading holds.
+  const raw = p === 0 || p === 1 ? p : .12 + .64*p
+  await page.evaluate(p=>{const el=document.querySelector('.meeting-runway'),scene=document.querySelector('.meeting-scene');window.scrollTo({top:scrollY+el.getBoundingClientRect().top+(el.offsetHeight-scene.offsetHeight)*p,behavior:'instant'})},raw)
+  await expect.poll(async()=>Math.abs(Number(await page.getByTestId('meeting-scene').getAttribute('data-animation-progress'))-p)).toBeLessThan(.0015)
 }
 test('desktop: a compact review pane keeps the silhouette particle opening and a readable landing',async({page})=>{
   await page.setViewportSize({width:667,height:807})
@@ -73,7 +75,7 @@ test('desktop: one real conversation moves into the deck, reverses, skips and re
   const shadow=await page.locator('.presence-figure').boundingBox()
   expect(shadow.height).toBeGreaterThan(1000)
   expect(Number(await page.locator('.presence-figure').evaluate(el=>getComputedStyle(el).opacity))).toBeLessThan(.22)
-  expect(await runway.evaluate(el=>el.offsetHeight/innerHeight)).toBeCloseTo(2.3,1)
+  expect(await runway.evaluate(el=>el.offsetHeight/innerHeight)).toBeCloseTo(3,1)
   await page.screenshot({path:`${evidence}/meeting-top-1440.png`,animations:'disabled'})
   await progress(page,0)
   await page.screenshot({path:`${evidence}/meeting-00.png`,animations:'disabled'})

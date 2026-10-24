@@ -36,8 +36,8 @@
 .meeting-presence{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;opacity:.8;mask-image:linear-gradient(90deg,transparent,#000 45%,#000 88%,transparent)}
 .presence-figure{position:absolute;top:-24%;left:32%;width:84%;height:auto;max-width:none;opacity:.15;mask-image:linear-gradient(#000 55%,transparent 95%)}
 @media(min-width:601px) and (min-height:621px){
-  .has-motion{height:230svh;margin-bottom:55px}
-  .has-motion .meeting-anchor{top:130svh}
+  .has-motion{height:300svh;margin-bottom:55px}
+  .has-motion .meeting-anchor{top:200svh}
   .has-motion .meeting-scene{position:sticky;top:0;height:100svh;--scene-reveal:0;--scene-presence:1;--scene-intro:1;--scene-chapter:0;--scene-landing:0;--scene-x:0;--scene-y:0;--scene-scale:1;--scene-rotation:0;isolation:isolate}
   .has-motion .first-meeting{height:100%;padding-top:50px;padding-bottom:80px;overflow:visible}
   .has-motion .intro,.has-motion .conversation-chapter{grid-column:1;grid-row:1;z-index:5}
