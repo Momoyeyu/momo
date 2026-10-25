@@ -43,7 +43,13 @@ async function navigate(href: string, scrollPosition?: number) {
     bypass = true
     await router.go(href)
     await nextTick()
-    if (scrollPosition !== undefined && id === navigation) window.scrollTo({ top: scrollPosition, behavior: 'instant' as ScrollBehavior })
+    if (scrollPosition !== undefined) {
+      // VitePress defers hash navigation to the next frame. History owns the
+      // reading position on a back/forward visit, so restore after that work.
+      requestAnimationFrame(() => {
+        if (mounted && id === navigation) window.scrollTo({ top: scrollPosition, behavior: 'instant' as ScrollBehavior })
+      })
+    }
   }
   if (target !== currentTab && document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const current = transition = document.startViewTransition(update)

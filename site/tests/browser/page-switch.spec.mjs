@@ -57,10 +57,21 @@ test('desktop: browser back and forward slide in the right direction and restore
   await settled(page)
   await page.goBack()
   await expect(page).toHaveURL(/#memory$/)
+  await expect(page.locator('#memory')).toBeVisible()
   await settled(page)
   const saved = await page.evaluate(() => history.state.scrollPosition)
   expect(saved).toBeGreaterThan(1000)
-  await expect.poll(() => page.evaluate(() => scrollY)).toBe(saved)
+  // A transient match can precede the router's deferred hash scroll. The reading
+  // position must remain exact after the restored page has finished sliding in.
+  const restored = await page.evaluate(async () => {
+    const samples = []
+    for (let frame = 0; frame < 12; frame++) {
+      await new Promise(resolve => requestAnimationFrame(resolve))
+      samples.push(scrollY)
+    }
+    return samples
+  })
+  expect(restored).toEqual(Array(12).fill(saved))
   await page.goForward()
   await expect(page).toHaveURL(/help\/data$/)
   await settled(page)
