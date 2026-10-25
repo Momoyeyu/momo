@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../services/chatClient", () => ({
   chat: vi.fn(),
   interrupt: vi.fn(() => Promise.resolve()),
+  acknowledgeDisplay: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("../services/ttsClient", () => ({
   streamSpeech: vi.fn(() => Promise.resolve()),
@@ -52,7 +53,7 @@ vi.mock("../live2d/stage", () => ({
 
 import { MicStreamer } from "../audio/capture";
 import { createAsr } from "../services/asrClient";
-import { chat, interrupt } from "../services/chatClient";
+import { chat, interrupt, acknowledgeDisplay } from "../services/chatClient";
 import { ChatEngine } from "./chatEngine";
 import { getSettings, update } from "../lib/store";
 import type { ChatMessage } from "../lib/types";
@@ -73,6 +74,7 @@ const setVoiceInput = (v: boolean): void => {
 };
 
 interface EngineInternals {
+  displayTick(turn: NonNullable<EngineInternals["turn"]>): void;
   turn: {
     sentences: { text: string; cues: import("../live2d/performanceTypes").PerformanceCue[] }[];
     disp: { idx: number; reveal: number };
@@ -135,8 +137,8 @@ describe("打断落账一致性（seenText）", () => {
     await tick();
     eng.dispose();
 
-    const roles = eng.history.map((m) => `${m.role}:${m.text}`);
-    expect(roles).toEqual(["user:你好", "assistant:第一句。第二"]);
+    expect(eng.history[0]).toMatchObject({role:"user",text:"你好"});
+    expect(eng.history.filter(message=>message.role==="assistant").map(message=>message.text).join("")).toBe("第一句。第二");
     expect(interruptMock).toHaveBeenCalledWith("你好", "第一句。第二");
   });
 
@@ -151,9 +153,10 @@ describe("打断落账一致性（seenText）", () => {
     expect(internals(eng).turn).toBeTruthy();
 
     eng.interrupt();
+    await tick();
     eng.dispose();
 
-    expect(eng.history.map((m) => m.role)).toEqual(["user"]);
+    expect(eng.history.map((m) => m.role)).toEqual([]);
     expect(done).toEqual([]);
     expect(interruptMock).toHaveBeenCalledWith("你好", "");
   });
@@ -299,7 +302,7 @@ describe("解析层资源清单过滤", () => {
     eng.dispose();
   });
 
-  it("句到即进 backlog：不等回合结束就能看到已到的句子", async () => {
+  it("已展示的句子即时进入 backlog，未展示的队列不进入记录", async () => {
     let release: () => void = () => {};
     const gate = new Promise<void>((r) => {
       release = r;
@@ -314,11 +317,15 @@ describe("解析层资源清单过滤", () => {
     eng.sendText("hi");
     await tick();
 
-    // 回合尚未结束，第一句已经在转写里（这正是改造前做不到的事）
+    const turn = internals(eng).turn!;clearInterval(turn.timer);
+    expect(eng.history).toEqual([]);
+    turn.disp.reveal=4;internals(eng).displayTick(turn);
     expect(eng.history.map((m) => m.text)).toEqual(["hi", "第一句。"]);
 
     release();
     await tick();
+    expect(eng.history.map((m) => m.text)).toEqual(["hi", "第一句。"]);
+    turn.disp.idx=1;turn.disp.reveal=4;internals(eng).displayTick(turn);
     expect(eng.history.map((m) => m.text)).toEqual(["hi", "第一句。", "第二句。"]);
     eng.dispose();
   });
@@ -346,6 +353,7 @@ describe('unanswered request failures', () => {
     const { eng } = makeEngine();
     eng.sendText('question');
     await tick();
+    const turn=internals(eng).turn!;clearInterval(turn.timer);turn.disp.reveal=13;internals(eng).displayTick(turn);
     expect(eng.history.map(m => m.text)).toEqual(['question', 'A real reply.']);
     eng.dispose();
   });
@@ -362,8 +370,44 @@ describe('scripted first meeting', () => {
     eng.beginFirstMeeting();
     await tick();
     expect(chatMock).toHaveBeenCalledTimes(1);
+    const turn=internals(eng).turn!;clearInterval(turn.timer);turn.disp.reveal=8;internals(eng).displayTick(turn);
     expect(eng.history.map(m => [m.role, m.text])).toEqual([['assistant', '我叫 momo。']]);
     expect(chatMock.mock.calls[0][3]).toBe(true);
     eng.dispose();
   });
+});
+
+
+describe("durable displayed transcript", () => {
+  it("does not publish unseen generated sentences and acknowledges only the shown prefix", async () => {
+    chatMock.mockImplementation(async function* () {
+      yield {t:"sentence" as const,no:0,text:"第一句还很长。",cues:[],at:"t",runId:"server-run",eventId:"server-event",seq:2,generation:7,userEventId:"server-user",userSeq:1};
+      yield {t:"sentence" as const,no:1,text:"未展示的第二句。",cues:[],at:"t",runId:"server-run",eventId:"server-event-2",seq:3,generation:7};
+      await new Promise(() => {});
+    });
+    const {eng} = makeEngine();eng.sendText("你好");await tick();
+    const turn = internals(eng).turn!;clearInterval(turn.timer);
+    expect(eng.history).toEqual([]);
+    turn.disp.reveal=2;
+    eng.interrupt();await tick();
+    expect(eng.history.map(message => ({role:message.role,text:message.text,runId:message.runId}))).toEqual([{role:"user",text:"你好",runId:"server-run"},{role:"assistant",text:"第一",runId:"server-run"}]);
+    expect(acknowledgeDisplay).toHaveBeenCalledWith("server-run",7,"第一");
+    eng.dispose();
+  });
+});
+
+it('pauses displayed text and ACK behind subpages, then resumes the same reply',async()=>{
+  update({settings:{...getSettings(),general:{...getSettings().general,textSpeed:100}}});
+  chatMock.mockImplementation(async function*(){
+    yield {t:'sentence' as const,no:0,text:'这一句等你回来。',cues:[],at:'t',runId:'held-run',eventId:'held-event',generation:8};
+    await new Promise(()=>{});
+  });
+  const {eng}=makeEngine();eng.sendText('hello');eng.setSceneActive(false);await tick();
+  const turn=internals(eng).turn!;clearInterval(turn.timer);
+  for(let index=0;index<4;index++)internals(eng).displayTick(turn);
+  expect(eng.history).toEqual([]);expect(acknowledgeDisplay).not.toHaveBeenCalled();
+  eng.setSceneActive(true);internals(eng).displayTick(turn);await tick();
+  expect(eng.history.at(-1)).toMatchObject({eventId:'held-event',text:'这一句等你回来。'});
+  expect(acknowledgeDisplay).toHaveBeenCalledWith('held-run',8,'这一句等你回来。');
+  eng.dispose();
 });

@@ -1,6 +1,55 @@
 {
   "components": {
     "schemas": {
+      "AckIn": {
+        "properties": {
+          "clientId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clientid"
+          },
+          "generation": {
+            "minimum": 0.0,
+            "title": "Generation",
+            "type": "integer"
+          },
+          "leaseId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leaseid"
+          },
+          "runId": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Runid",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 128000,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "runId",
+          "generation",
+          "text"
+        ],
+        "title": "AckIn",
+        "type": "object"
+      },
       "Body_upload_ref_api_tts_ref_post": {
         "properties": {
           "file": {
@@ -17,10 +66,46 @@
       },
       "ChatIn": {
         "properties": {
+          "clientId": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clientid"
+          },
           "firstMeeting": {
             "default": false,
             "title": "Firstmeeting",
             "type": "boolean"
+          },
+          "leaseId": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leaseid"
+          },
+          "messageId": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messageid"
           },
           "presentation": {
             "anyOf": [
@@ -312,6 +397,17 @@
             "title": "Assistant",
             "type": "string"
           },
+          "clientId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clientid"
+          },
           "generation": {
             "anyOf": [
               {
@@ -324,6 +420,28 @@
             ],
             "title": "Generation"
           },
+          "leaseId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leaseid"
+          },
+          "runId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runid"
+          },
           "user": {
             "default": "",
             "title": "User",
@@ -331,6 +449,33 @@
           }
         },
         "title": "InterruptIn",
+        "type": "object"
+      },
+      "LeaseIn": {
+        "properties": {
+          "clientId": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Clientid",
+            "type": "string"
+          },
+          "leaseId": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leaseid"
+          }
+        },
+        "required": [
+          "clientId"
+        ],
+        "title": "LeaseIn",
         "type": "object"
       },
       "LiveTranscript": {
@@ -450,6 +595,28 @@
       },
       "OpeningIn": {
         "properties": {
+          "clientId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clientid"
+          },
+          "leaseId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leaseid"
+          },
           "presentation": {
             "anyOf": [
               {
@@ -588,12 +755,39 @@
             "title": "At",
             "type": "string"
           },
+          "eventId": {
+            "title": "Eventid",
+            "type": "string"
+          },
+          "externalMessageId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Externalmessageid"
+          },
           "role": {
             "enum": [
               "user",
               "assistant"
             ],
             "title": "Role",
+            "type": "string"
+          },
+          "runId": {
+            "title": "Runid",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "source": {
+            "title": "Source",
             "type": "string"
           },
           "text": {
@@ -1126,6 +1320,112 @@
         "summary": "Health"
       }
     },
+    "/api/life/ack": {
+      "post": {
+        "operationId": "acknowledge_api_life_ack_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AckIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Acknowledge"
+      }
+    },
+    "/api/life/history": {
+      "get": {
+        "operationId": "continuous_history_api_life_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Continuous History"
+      }
+    },
+    "/api/life/live": {
+      "get": {
+        "operationId": "continuous_transcript_api_life_live_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Continuous Transcript"
+      }
+    },
     "/api/live2d/core": {
       "get": {
         "operationId": "cubism_core_api_live2d_core_get",
@@ -1140,6 +1440,130 @@
           }
         },
         "summary": "Cubism Core"
+      }
+    },
+    "/api/meeting": {
+      "get": {
+        "operationId": "status_api_meeting_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Status"
+      }
+    },
+    "/api/meeting/enter": {
+      "post": {
+        "operationId": "enter_api_meeting_enter_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enter"
+      }
+    },
+    "/api/meeting/heartbeat": {
+      "post": {
+        "operationId": "heartbeat_api_meeting_heartbeat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Heartbeat"
+      }
+    },
+    "/api/meeting/leave": {
+      "post": {
+        "operationId": "leave_api_meeting_leave_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Leave"
       }
     },
     "/api/memories": {

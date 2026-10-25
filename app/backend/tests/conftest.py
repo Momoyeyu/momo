@@ -1,4 +1,5 @@
 """测试公共 fixture：把数据文件重定向到 tmp_path，隔离真实 backend/data。"""
+
 from __future__ import annotations
 
 import pytest
@@ -27,3 +28,5 @@ def add_turn(user: str, assistant: str, at: str = "2025-01-01T00:00:00+00:00"):
     gen = checkpoint.generation()
     checkpoint.begin_turn(user, gen, at)
     checkpoint.append_sentence(assistant, gen, at)
+    checkpoint.acknowledge(checkpoint.current_run(gen, at), assistant, gen)
+    checkpoint.finish_turn(gen, at)

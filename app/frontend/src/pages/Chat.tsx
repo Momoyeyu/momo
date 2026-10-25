@@ -13,7 +13,6 @@ import {
 import type { EngineHandlers } from "../chat/engineInstance";
 import type { ChatStatus } from "../lib/types";
 import { navigate } from "../router";
-import { saveAutoCheckpoint } from "../services/checkpointClient";
 import { useT, resolveChatLang } from "../i18n";
 import { getStage } from "../live2d/stage";
 import { ServiceError } from "../lib/errors";
@@ -117,10 +116,10 @@ export default function Chat({active}: {active: boolean}) {
   }, []);
 
   useEffect(() => {
-    if (!interactive) return;
     const engine = getChatEngine();
-    engine.resumeMic();
-    return () => engine.suspendMic();
+    engine.setSceneActive(interactive);
+    if(interactive)engine.resumeMic();
+    return () => {engine.setSceneActive(false);engine.suspendMic();};
   }, [interactive]);
 
   const send = (): void => {
@@ -235,23 +234,6 @@ export default function Chat({active}: {active: boolean}) {
             <Icon name="backlog" />
           </Button>
           <Button
-            className="tb"
-            disabled={busy}
-            title={busy ? t("checkpoint.busySave") : t("checkpoint.save")}
-            aria-label={t("checkpoint.save")}
-            onClick={() => navigate("checkpoint", { checkpointMode: "save" })}
-          >
-            <Icon name="save" />
-          </Button>
-          <Button
-            className="tb"
-            aria-label={t("checkpoint.load")}
-            title={t("checkpoint.load")}
-            onClick={() => navigate("checkpoint", { checkpointMode: "load" })}
-          >
-            <Icon name="load" />
-          </Button>
-          <Button
             className={`tb${muted || !ttsReady ? " tb-off" : ""}`}
             onClick={toggleVoice}
             disabled={!ttsReady}
@@ -279,8 +261,6 @@ export default function Chat({active}: {active: boolean}) {
             aria-label={t("common.backTitle")}
             title={t("common.backTitle")}
             onClick={() => {
-              // 退出对话 = 本段进度落 auto 槽（auto 唯一的写入时机）
-              void saveAutoCheckpoint().catch(() => {});
               navigate("title");
             }}
           >

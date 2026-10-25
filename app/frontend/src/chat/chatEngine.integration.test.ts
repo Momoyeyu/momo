@@ -78,6 +78,7 @@ beforeEach(() => {
   update({
     settings: {
       ...getSettings(),
+      general: {...getSettings().general,textSpeed:100,sentenceSpeed:100},
       llm: { url: "http://llm.test", key: "", model: "test-model", thinking: false },
       tts: { url: "", key: "", voice: "", prompt: "" },
     },
@@ -94,8 +95,9 @@ describe("引擎消费真实 SSE（不 mock chatClient）", () => {
     const { engine, sentences } = makeEngine();
 
     engine.sendText("你好");
-    await vi.waitFor(() => expect(sentences).toHaveLength(3));
+    await vi.waitFor(() => expect(sentences).toHaveLength(3),{timeout:2000});
     expect(sentences).toEqual(["第一句。", "第二句。", "第三句。"]);
+    engine.dispose();
   });
 
   it("error 事件 → onError（调用方的映射路径）", async () => {
@@ -112,7 +114,7 @@ it('text-only conversation is valid without a configured voice service', async (
   stubFetch();
   const { engine, sentences, errors } = makeEngine();
   engine.sendText('叫我小星');
-  await vi.waitFor(() => expect(sentences).toHaveLength(3));
+  await vi.waitFor(() => expect(sentences).toHaveLength(3),{timeout:2000});
   expect(errors).toEqual([]);
   engine.dispose();
 });

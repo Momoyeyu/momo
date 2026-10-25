@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -43,7 +43,7 @@ test.beforeEach(async ({page}) => {
   await call('/api/state','PUT',state);
   await page.route('**/api/**',async route=>{
     const req=route.request();
-    const result=await call(new URL(req.url()).pathname,req.method(),req.postData()?req.postDataJSON():undefined);
+    const result=await call(new URL(req.url()).pathname+new URL(req.url()).search,req.method(),req.postData()?req.postDataJSON():undefined);
     if(!page.isClosed())await route.fulfill({status:result.status,body:result.body,contentType:result.contentType,headers:result.headers});
   });
 });

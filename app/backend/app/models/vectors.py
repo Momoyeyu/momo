@@ -15,6 +15,7 @@ import json
 import sqlite3
 
 from ..core import db
+from .memories import ACTIVE_SQL
 
 
 def dim() -> int | None:
@@ -47,15 +48,25 @@ def ensure(want_dim: int, namespace: str = "legacy") -> bool:
             "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
             (str(want_dim),),
         )
-        conn.execute("CREATE TABLE memory_vec_sources(id TEXT PRIMARY KEY, content TEXT NOT NULL)")
+        conn.execute(
+            "CREATE TABLE memory_vec_sources(id TEXT PRIMARY KEY, content TEXT NOT NULL)"
+        )
         for event in ("DELETE", "UPDATE OF content"):
             name = "memory_vec_invalidate_" + event.split()[0].lower()
             conn.execute(f"DROP TRIGGER IF EXISTS {name}")
-            conn.execute(f"CREATE TRIGGER {name} AFTER {event} ON memories BEGIN "
-                         "DELETE FROM memory_vec WHERE id=old.id; "
-                         "DELETE FROM memory_vec_sources WHERE id=old.id; END")
-        for key, value in (("vec_namespace", namespace), ("vec_generation", db.new_id())):
-            conn.execute("INSERT INTO meta(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, value))
+            conn.execute(
+                f"CREATE TRIGGER {name} AFTER {event} ON memories BEGIN "
+                "DELETE FROM memory_vec WHERE id=old.id; "
+                "DELETE FROM memory_vec_sources WHERE id=old.id; END"
+            )
+        for key, value in (
+            ("vec_namespace", namespace),
+            ("vec_generation", db.new_id()),
+        ):
+            conn.execute(
+                "INSERT INTO meta(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (key, value),
+            )
     return True
 
 
@@ -86,22 +97,45 @@ def drop(conn: sqlite3.Connection, mem_id: str) -> None:
     if dim() is None:
         return
     conn.execute("DELETE FROM memory_vec WHERE id=?", (mem_id,))
-    if conn.execute("SELECT 1 FROM sqlite_master WHERE name='memory_vec_sources'").fetchone():
+    if conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE name='memory_vec_sources'"
+    ).fetchone():
         conn.execute("DELETE FROM memory_vec_sources WHERE id=?", (mem_id,))
 
 
 def missing(limit: int = 16) -> list[dict]:
     """Compare exact source text so direct restore/import is also recoverable."""
-    return [dict(r) for r in db.query(
-        "SELECT m.id,m.content FROM memories m LEFT JOIN memory_vec_sources s ON m.id=s.id "
-        "LEFT JOIN memory_vec v ON m.id=v.id WHERE s.content IS NOT m.content OR v.id IS NULL LIMIT ?", (limit,))]
+    return [
+        dict(r)
+        for r in db.query(
+            "SELECT m.id,m.content FROM memories m LEFT JOIN memory_vec_sources s ON m.id=s.id "
+            "LEFT JOIN memory_vec v ON m.id=v.id WHERE (s.content IS NOT m.content OR v.id IS NULL) AND "
+            + ACTIVE_SQL
+            + " LIMIT ?",
+            (limit,),
+        )
+    ]
 
 
-def put_current(conn: sqlite3.Connection, mem_id: str, content: str,
-                vec: list[float], generation: str) -> bool:
-    current = conn.execute("SELECT content FROM memories WHERE id=?", (mem_id,)).fetchone()
-    if not current or current["content"] != content or db.meta_get("vec_generation") != generation:
+def put_current(
+    conn: sqlite3.Connection,
+    mem_id: str,
+    content: str,
+    vec: list[float],
+    generation: str,
+) -> bool:
+    current = conn.execute(
+        "SELECT m.content FROM memories m WHERE m.id=? AND " + ACTIVE_SQL, (mem_id,)
+    ).fetchone()
+    if (
+        not current
+        or current["content"] != content
+        or db.meta_get("vec_generation") != generation
+    ):
         return False
     put(conn, mem_id, vec)
-    conn.execute("INSERT OR REPLACE INTO memory_vec_sources(id,content) VALUES(?,?)", (mem_id, content))
+    conn.execute(
+        "INSERT OR REPLACE INTO memory_vec_sources(id,content) VALUES(?,?)",
+        (mem_id, content),
+    )
     return True

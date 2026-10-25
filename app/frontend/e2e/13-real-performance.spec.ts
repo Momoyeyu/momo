@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
@@ -30,7 +30,7 @@ test('real provider chooses calibrated controls and the stage executes them', as
   const results: object[] = [];
   let events: any[] = [];
   await page.route('**/api/state', r => r.fulfill({json: state}));
-  await page.route('**/api/checkpoints/live', r => r.fulfill({json: {summary: '', messages: []}}));
+  await page.route('**/api/life/history**', r => r.fulfill({json: {summary: '', messages: []}}));
   await page.route('**/api/chat/interrupt', r => r.fulfill({status: 204}));
   await page.route('**/api/chat', async route => {
     const result = await realTurn(route.request().postDataJSON());

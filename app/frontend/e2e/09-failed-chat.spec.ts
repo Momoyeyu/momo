@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import {waitForChatReady} from './helpers';
 
 for (const failure of ['network', 'upstream error', 'empty stream']) {
@@ -8,10 +8,10 @@ for (const failure of ['network', 'upstream error', 'empty stream']) {
     state.settings.llm = { url: 'http://preview.test', key: '', model: 'preview' };
     // Intercept all writes; the user's real history and settings stay intact.
     await page.route('**/api/state', route => route.fulfill({ json: state }));
-    await page.route('**/api/checkpoints/live', route => route.fulfill({ json: {
-      summary: '', messages: [
-        { role: 'user', text: 'Earlier question', at: 't' },
-        { role: 'assistant', text: 'Earlier answer', at: 't' },
+    await page.route('**/api/life/history**', route => route.fulfill({ json: {
+      summary: '', hasMore:false,nextBefore:1,messages: [
+        {eventId:'earlier-user',runId:'earlier',seq:1,role:'user',text:'Earlier question',at:'t'},
+        {eventId:'earlier-assistant',runId:'earlier',seq:2,role:'assistant',text:'Earlier answer',at:'t'},
       ],
     } }));
     await page.route('**/api/chat', route => {

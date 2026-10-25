@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { bootPersist, getSettings } from "./lib/store";
 import { startupPresence } from "./startup/presence";
-import { liveTranscript } from "./services/checkpointClient";
+import { historyPage } from "./services/lifeClient";
 import { loadTranscript } from "./chat/engineInstance";
 import "./styles/base.css";
 import { firstMeetingStatus } from "./services/onboardingClient";
@@ -27,7 +27,7 @@ void runtime()
   .then(() => { startup.stage("restoring"); return bootPersist(); })
   .then(() => { startup.language(getSettings().general.lang); })
   .then(() =>
-    liveTranscript()
+    historyPage()
       .then((t) => {
         if (t.messages.length) loadTranscript(t.messages);
       })

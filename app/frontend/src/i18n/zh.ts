@@ -2,6 +2,11 @@
 
 export const zh = {
   meeting: {
+    unavailable: "这次见面还没准备好，请稍后重试。",
+    ownerUnavailable: "暂时无法见面。请先关闭其他已进入见面的窗口，再重试。",
+    entering: "正在与你见面…",
+    retry: "重试",
+
     connectionSettings: '连接设置',
     'connectTitle': '让 momo 与你相遇',
     'connectBody': '先连接对话模型的 API（兼容 OpenAI 格式）。语音可稍后设置。',
@@ -60,8 +65,8 @@ export const zh = {
   },
   title: {
     tagline: "你能感受到我的心吗",
-    start: "开始",
-    continue: "继续",
+    start: "见面",
+    continue: "继续相处",
     config: "设置",
   },
   chat: {
@@ -93,27 +98,14 @@ export const zh = {
     you: "你",
   },
   backlog: {
+    earlier: "更早的记录",
+    loading: "正在读取…",
+    loadFailed: "记录暂时无法读取，请重试。",
     title: "记录",
     empty: "还没有对话。",
     replay: "回放",
     replayNeedTts: "先在「模型」tab 配置 TTS",
     replayMuted: "语音输出已静音，先在工具条打开",
-  },
-  checkpoint: {
-    save: "存档",
-    load: "读档",
-    autoBadge: "AUTO",
-    emptySlot: "空槽位",
-    confirmLoad: "读取该存档？当前会话进度将丢失",
-    confirmOverwrite: "覆盖该存档？当前会话内容将写入该槽",
-    confirmDelete: "删除该存档？该槽位将被释放",
-    overwriteTitle: "覆盖存档",
-    loadTitle: "读取存档",
-    deleteTitle: "删除存档",
-    overwriteAction: "覆盖",
-    loadAction: "读取",
-    busySave: "回复进行中——结束后再存档",
-    loadFailed: "存档操作失败（服务未启动？）",
   },
   settings: {
     title: "设置",

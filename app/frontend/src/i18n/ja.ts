@@ -2,6 +2,11 @@ import type { Dict } from "./zh";
 
 export const ja: Dict = {
   meeting: {
+    unavailable: "まだ会う準備ができていません。少し待って再試行してください。",
+    ownerUnavailable: "今は会えません。ほかの会話ウィンドウを閉じて再試行してください。",
+    entering: "会う準備をしています…",
+    retry: "再試行",
+
     connectionSettings: '接続設定',
     'connectTitle': 'momo に会おう',
     'connectBody': 'OpenAI 互換形式の対話モデル API に接続します。音声はあとで設定できます。',
@@ -58,8 +63,8 @@ export const ja: Dict = {
   },
   title: {
     tagline: "私の心、感じる？",
-    start: "はじめる",
-    continue: "つづきから",
+    start: "会いにいく",
+    continue: "また会う",
     config: "設定",
   },
   chat: {
@@ -91,27 +96,14 @@ export const ja: Dict = {
     you: "あなた",
   },
   backlog: {
+    earlier: "以前の記録",
+    loading: "読み込み中…",
+    loadFailed: "記録を読み込めませんでした。再試行してください。",
     title: "バックログ",
     empty: "まだ会話がありません。",
     replay: "再生",
     replayNeedTts: "先に「モデル」タブで TTS を設定してください",
     replayMuted: "音声出力がオフです。ツールバーでオンにしてください",
-  },
-  checkpoint: {
-    save: "セーブ",
-    load: "ロード",
-    autoBadge: "AUTO",
-    emptySlot: "空きスロット",
-    confirmLoad: "このセーブをロードしますか？現在の会話の進行状況は失われます。",
-    confirmOverwrite: "このセーブを上書きしますか？現在の会話内容がこのスロットに書き込まれます。",
-    confirmDelete: "このセーブを削除しますか？このスロットは解放されます。",
-    overwriteTitle: "セーブを上書き",
-    loadTitle: "セーブをロード",
-    deleteTitle: "セーブを削除",
-    overwriteAction: "上書き",
-    loadAction: "ロード",
-    busySave: "応答中です——終了してから保存してください",
-    loadFailed: "セーブ操作に失敗しました（サービス未起動？）",
   },
   settings: {
     title: "設定",

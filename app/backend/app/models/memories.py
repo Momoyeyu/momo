@@ -25,15 +25,25 @@ def _row(r: sqlite3.Row) -> Memory:
     }
 
 
+# No provenance means a deliberate manual/legacy memory. Source-bound facts
+# become active only after an actual conversation delivery acknowledgement.
+# Suppression prevents re-extraction from historical text; it does not revoke
+# other independently stored facts that happened to share the same source event.
+ACTIVE_SQL = """(NOT EXISTS (SELECT 1 FROM memory_sources ms WHERE ms.memory_id=m.id)
+    OR EXISTS (SELECT 1 FROM memory_sources ms JOIN messages e ON e.event_id=ms.event_id
+               WHERE ms.memory_id=m.id AND e.visible=1))"""
+
+
 def all_rows(pinned: bool | None = None) -> list[Memory]:
-    """全部记忆；pinned 过滤（None = 不过滤）。"""
-    if pinned is None:
-        rows = db.query("SELECT * FROM memories ORDER BY rowid")
-    else:
-        rows = db.query(
-            "SELECT * FROM memories WHERE pinned=? ORDER BY rowid",
-            (1 if pinned else 0,),
-        )
+    params = () if pinned is None else (1 if pinned else 0,)
+    condition = "" if pinned is None else " AND m.pinned=?"
+    rows = db.query(
+        "SELECT m.* FROM memories m WHERE "
+        + ACTIVE_SQL
+        + condition
+        + " ORDER BY m.rowid",
+        params,
+    )
     return [_row(r) for r in rows]
 
 

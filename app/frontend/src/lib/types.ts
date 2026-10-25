@@ -25,11 +25,14 @@ export interface TtsConfig {
 // 与后端契约同形的类型由 OpenAPI 生成（api/types.ts），这里只转出 ——
 // 页面继续从 lib/types 取类型，不必关心它们从哪来。
 export type { Memory } from "../api/types";
-export type {
-  CheckpointDetail as CheckpointSave,
-  CheckpointMeta,
-  StoredMessage as CheckpointMessage,
-} from "../api/types";
+/** Durable transcript identity, independent of the prompt's bounded context window. */
+export type StoredMessage = import("../api/types").StoredMessage & {
+  eventId?: string;
+  runId?: string;
+  source?: string;
+  externalMessageId?: string | null;
+  seq?: number;
+};
 
 export type Lang = "zh" | "ja" | "en";
 
@@ -57,6 +60,7 @@ export interface GeneralConfig {
  *  导入 tools/list，工具以 {server}_{tool} 注入）。
  *  通用字段 {name, transport, enabled}；stdio 分支 {command, args, env}，
  *  http 分支 {endpoint, headers}——两分支字段并存，按 transport 取用。 */
+export type McpPermission = "mcp.tools" | "channels.send" | "activities.game" | "activities.computer";
 export interface McpExtension {
   /** 显示名；同时用作工具名前缀（backend 会合法化为 [a-zA-Z0-9_]）。 */
   name: string;
@@ -74,6 +78,10 @@ export interface McpExtension {
   endpoint: string;
   /** http：请求头键值对——鉴权统一走这里（Authorization: Bearer …）。 */
   headers: Record<string, string>;
+  /** Reviewed adapters declare actual scopes; preserve these across configuration edits. */
+  declaredPermissions?: McpPermission[];
+  /** Explicitly granted scopes are separate from the adapter's declaration. */
+  grantedPermissions?: McpPermission[];
 }
 
 export interface Settings {
@@ -125,6 +133,11 @@ export interface AvatarMeta {
 
 export interface ChatMessage {
   id: string;
+  eventId?: string;
+  runId?: string;
+  source?: string;
+  externalMessageId?: string | null;
+  seq?: number;
   role: "user" | "assistant";
   text: string;
   at: string;
@@ -132,9 +145,6 @@ export interface ChatMessage {
 
 export type ChatStatus = "idle" | "listening" | "thinking" | "speaking";
 
-/** 存档里的单条消息（backend history 快照；无前端 id）。 */
-/** 存档槽列表项（GET /api/checkpoints；preview = 末条消息截断）。 */
-/** 存档全文（GET /api/checkpoints/{id} 与 load 返回）。 */
 /** /api/state 持久化载荷（backend momo.yaml ↔ localStorage 缓存共用 schema）。
  *  初始记忆（pin）与会话历史在 momo.db，不在此 schema。 */
 export interface PersistedState {

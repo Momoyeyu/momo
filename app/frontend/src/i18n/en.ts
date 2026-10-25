@@ -2,6 +2,11 @@ import type { Dict } from "./zh";
 
 export const en: Dict = {
   meeting: {
+    unavailable: "This meeting is not ready yet. Please try again shortly.",
+    ownerUnavailable: "This meeting is unavailable. Close another meeting window, then try again.",
+    entering: "Getting ready to meet…",
+    retry: "Try again",
+
     connectionSettings: 'Connection settings',
     'connectTitle': 'Meet momo',
     'connectBody': 'Connect a chat model API in OpenAI-compatible format. Voice can be set up later.',
@@ -58,8 +63,8 @@ export const en: Dict = {
   },
   title: {
     tagline: "Can you feel my heart?",
-    start: "Start",
-    continue: "Continue",
+    start: "Meet momo",
+    continue: "Continue together",
     config: "Config",
   },
   chat: {
@@ -91,27 +96,14 @@ export const en: Dict = {
     you: "You",
   },
   backlog: {
+    earlier: "Earlier moments",
+    loading: "Loading…",
+    loadFailed: "Could not load the history. Try again.",
     title: "Backlog",
     empty: "No conversation yet.",
     replay: "Replay",
     replayNeedTts: "Set up TTS in the Models tab first",
     replayMuted: "Voice output is muted — unmute it in the toolbar first",
-  },
-  checkpoint: {
-    save: "Save",
-    load: "Load",
-    autoBadge: "AUTO",
-    emptySlot: "Empty slot",
-    confirmLoad: "Load this save? The current session progress will be lost.",
-    confirmOverwrite: "Overwrite this save? The current session will be written to this slot.",
-    confirmDelete: "Delete this save? The slot will be freed.",
-    overwriteTitle: "Overwrite save",
-    loadTitle: "Load save",
-    deleteTitle: "Delete save",
-    overwriteAction: "Overwrite",
-    loadAction: "Load",
-    busySave: "Reply in progress — save after it finishes",
-    loadFailed: "Save operation failed (service not running?)",
   },
   settings: {
     title: "Settings",

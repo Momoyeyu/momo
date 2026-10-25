@@ -1,5 +1,7 @@
 # 桌面整合的实现边界
 
+> 历史记录：本文记录 v2 Web → Tauri 迁移。v3 重新启用 Web 为共享业务修改源，当前候选及原生验证见 [v3 开发流程](v3.md)；下面的旧存档与 Web 归档决定不代表 v3 当前状态。
+
 本轮以 app/migration/momo-web-baseline.json 冻结的源码快照为基线，包含 001–005、008、009 的实际交付及审查修复，旧 Rust 编排 / app/web 已退出活跃目录。源码中的未提交验收改动也纳入逐文件 SHA-256；原 momo-web 工作区与运行服务不受替换影响。
 
 React 游戏界面和 Python/FastAPI 业务保持原行为。Tauri 只承担窗口、单实例、应用目录、受控 sidecar 和退出清理，不在迁移同时重写业务。
@@ -10,6 +12,7 @@ React 游戏界面和 Python/FastAPI 业务保持原行为。Tauri 只承担窗�
 - 后端绑定 loopback 随机端口，输出带启动 nonce 和子进程 PID 的就绪帧；Rust 校验本次拥有的进程与鉴权健康响应后，主窗口通过 get_runtime IPC 取得地址 / 令牌。
 - HTTP 带鉴权头；ASR WebSocket 用第一帧鉴权，不将令牌置于 URL、日志、用户配置或存档。CORS / Origin 限定已支持的稳定 WebView 来源。
 - 退出只清理本应用的后端与 MCP 子进程，重复启动聚焦已有窗口；父进程失联时后端终止，不扫描并杀死占用某端口的外部服务。
+- v3 的 Python 后端启动安装包内的 Cordis / MCP 宿主，通过鉴权 stdio 保持连接；随包附带固定版本 Node，玩家无需另外安装 Node。宿主、后端和窗口属于同一次应用生命周期。
 
 ## 安装资源与用户数据
 
@@ -40,12 +43,16 @@ uv run --project app/backend --frozen --with huggingface-hub==2.2.0 python app/b
 uv run --project app/backend --frozen python app/backend/scripts/package_resources.py --output app/dist/momo-resources.zip
 uv run --project app/backend --frozen python app/scripts/prepare-models.py app/dist/momo-resources.zip
 uv run --project app/backend --frozen python app/scripts/prepare-core.py
+uv run --project app/backend --frozen python app/scripts/prepare-plugin-host.py
 uv pip install --python app/backend/.venv pyinstaller==6.20.0
 uv run --project app/backend --frozen python app/scripts/freeze-backend.py
+uv run --project app/backend --frozen python app/scripts/smoke-plugin-runtime.py app/resources
 uv run --project app/backend --frozen python app/scripts/smoke-frozen.py app/resources
 pnpm --dir app test:shell
 pnpm --dir app build
 ```
+
+`prepare-plugin-host.py` 目前只准备 macOS arm64 候选：校验官方 Node 22.23.3 下载包，按锁文件安装宿主的生产依赖，并生成资源校验清单。构建机 Node 与随包 Node 的版本相互独立。源码、依赖、Node 和离线模型均作为资源打包；用户配置及凭据目录不进入资源目录。
 
 macOS 的 SSH / 无 Finder 构建环境使用 `pnpm --dir app build:macos`，会验证签封后用 hdiutil 制作普通 DMG；不用 Finder AppleScript 排版。原生 E2E 使用 `pnpm --dir app build:e2e` 与 `pnpm --dir app test:native`，测试专用 identifier / 数据目录与正式版分离。正常发行依赖树不包含驱动插件。测试脚本通过真实 WebView 的标准 WebDriver 接口调用 IPC，不依赖旧版 JS mock 注入。
 

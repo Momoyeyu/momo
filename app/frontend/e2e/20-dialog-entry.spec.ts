@@ -1,4 +1,4 @@
-import {test,expect,type Page,type TestInfo} from '@playwright/test';
+import {test,expect,type Page,type TestInfo} from './fixtures';
 import {writeFile} from 'node:fs/promises';
 
 type Frame = {time:number;route:string;startup:boolean;cover:boolean;ink:boolean;opacity:number;
@@ -8,11 +8,12 @@ type Audit = {frames:Frame[];done:boolean};
 async function fixture(page:Page, configured=true) {
   await page.route('**/api/**',async route=>{
     const path=new URL(route.request().url()).pathname;
-    if(!['/api/state','/api/onboarding','/api/checkpoints','/api/checkpoints/live','/api/checkpoints/live/new','/api/memories'].includes(path))return route.continue();
+    if(path.startsWith('/api/meeting/'))return route.fulfill(path.endsWith('/leave')?{status:204}:{json:{leaseId:'visual-lease',epoch:1,expiresIn:60}});
+    if(!['/api/state','/api/onboarding','/api/life/history','/api/life/live','/api/memories'].includes(path))return route.continue();
     if(route.request().method()!=='GET')return route.fulfill({status:204});
     const json=path==='/api/state'?{settings:{general:{lang:'zh',voiceInput:false},llm:{url:configured?'https://fixture.test':'',model:configured?'fixture':'',key:''}}}
       :path==='/api/onboarding'?{stage:configured?'completed':'new',configured}
-      :path==='/api/checkpoints/live'?{messages:[],summary:''}:[];
+      :path==='/api/life/history'?{messages:[],summary:'',hasMore:false,nextBefore:null}:[];
     await route.fulfill({json});
   });
   await page.addInitScript(()=>{
@@ -65,7 +66,7 @@ function expectSequenced(frames:Frame[]) {
   expect(frames.at(-1)?.interactive).toBe(true);
 }
 
-for(const destination of ['设置','存档','读档','记录']){
+for(const destination of ['设置','记录']){
   test(`dialog waits for the scene when returning from ${destination}`,async({page},info)=>{
     await fixture(page);
     await page.goto('/#/chat');
@@ -89,7 +90,7 @@ test('direct chat waits for startup before its dialog rises',async({page},info)=
 test('title ASCII finishes before the dialog rises and input unlocks',async({page},info)=>{
   await fixture(page);
   await page.goto('/');
-  await page.getByRole('button',{name:'开始 start'}).click();
+  await page.getByRole('button',{name:'见面 meet'}).click();
   const frames=await finishAudit(page,info);
   expectSequenced(frames);
   expect(frames.some(frame=>frame.ink)).toBe(true);

@@ -1,14 +1,15 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 
 async function fixture(page: Page, waitForState: Promise<void> = Promise.resolve(), language = 'zh', firstLaunch = false) {
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
+    if(url.pathname.startsWith('/api/meeting/'))return route.fulfill(url.pathname.endsWith('/leave')?{status:204}:{json:{leaseId:'visual-lease',epoch:1,expiresIn:60}});
     let body: unknown = {};
     if (url.pathname === '/api/state') {
       if (route.request().method() === 'GET') await waitForState;
       body = {settings:{general:{lang:language,voiceInput:false},llm:{url:'',model:'',key:''},tts:{url:'',key:'',voice:'',prompt:''}}};
     }
-    if (url.pathname === '/api/checkpoints/live') body = {summary:'',messages:[]};
+    if (url.pathname === '/api/life/history') body = {summary:'',messages:[],hasMore:false,nextBefore:null};
     if (url.pathname === '/api/onboarding') body = {stage:firstLaunch?'new':'completed',busy:false,generation:0,configured:false};
     if (url.pathname === '/api/checkpoints' || url.pathname === '/api/memories') body = [];
     await route.fulfill({json:body});

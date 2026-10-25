@@ -82,3 +82,10 @@ macOS 14+（Apple Silicon）与 Windows 11 x64 已验证。当前安装包未获
 感谢 [AIRI](https://github.com/moeru-ai/airi) 等开源项目为 AI 角色与陪伴体验提供启发。默认 Hiyori 模型来自 Live2D Inc.；字体、语音识别、检索模型与语音服务都建立在各自的上游工作之上。
 
 项目代码按 [MIT 许可](LICENSE.md) 提供。第三方模型、Cubism Core、字体、依赖与展示素材遵守各自条款，仓库的 MIT 许可不替代它们。来源、许可与再分发注意事项见 [第三方声明](THIRD_PARTY_NOTICES.md)。
+
+
+## v3 开发预览
+
+共享界面、推理与插件业务现在先在 [momo-web 的 v3/development 分支](https://github.com/Momoyeyu/momo-web/tree/v3/development) 迭代；本仓库保留桌面壳、官网、TTS 与发行。Web 验收后以固定 revision / 哈希单向晋级到 `app/`。
+
+当前候选改为一段连续生活，存档槽由自动持久化、历史回顾与整包备份取代。v3 尚待体验验收，不代表已发行版本已升级。

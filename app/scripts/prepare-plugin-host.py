@@ -23,7 +23,8 @@ APP = Path(__file__).resolve().parents[1]
 
 
 def digest(path):
-    return hashlib.file_digest(path.open('rb'), 'sha256').hexdigest()
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
 def main():
@@ -61,8 +62,11 @@ def main():
         host.mkdir()
         for name in ('package.json', 'package-lock.json', 'README.md'):
             if (source / name).is_file(): shutil.copy2(source / name, host / name)
+        project_license = APP.parent / 'LICENSE.md'
+        if project_license.is_file(): shutil.copy2(project_license, host / 'LICENSE.md')
         shutil.copytree(source / 'src', host / 'src')
-        env = {**os.environ, 'PATH': str(node / 'bin') + os.pathsep + os.environ.get('PATH', '')}
+        env = {**os.environ, 'PATH': str(node / 'bin') + os.pathsep + os.environ.get('PATH', ''),
+               'NPM_CONFIG_CACHE': str(APP / 'target/npm-cache')}
         subprocess.run([str(node / 'bin/node'), str(node / 'lib/node_modules/npm/bin/npm-cli.js'),
                         'ci', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund'], cwd=host, env=env, check=True)
         version = subprocess.check_output([str(node / 'bin/node'), '--version'], text=True).strip()

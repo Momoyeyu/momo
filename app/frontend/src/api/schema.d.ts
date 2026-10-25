@@ -284,6 +284,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/life/ack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge */
+        post: operations["acknowledge_api_life_ack_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/life/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Continuous History */
+        get: operations["continuous_history_api_life_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/life/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Continuous Transcript */
+        get: operations["continuous_transcript_api_life_live_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/live2d/core": {
         parameters: {
             query?: never;
@@ -295,6 +346,74 @@ export interface paths {
         get: operations["cubism_core_api_live2d_core_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/meeting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_meeting_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/meeting/enter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enter */
+        post: operations["enter_api_meeting_enter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/meeting/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Heartbeat */
+        post: operations["heartbeat_api_meeting_heartbeat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/meeting/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Leave */
+        post: operations["leave_api_meeting_leave_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -490,6 +609,19 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AckIn */
+        AckIn: {
+            /** Clientid */
+            clientId?: string | null;
+            /** Generation */
+            generation: number;
+            /** Leaseid */
+            leaseId?: string | null;
+            /** Runid */
+            runId: string;
+            /** Text */
+            text: string;
+        };
         /** Body_upload_ref_api_tts_ref_post */
         Body_upload_ref_api_tts_ref_post: {
             /** File */
@@ -497,11 +629,17 @@ export interface components {
         };
         /** ChatIn */
         ChatIn: {
+            /** Clientid */
+            clientId?: string | null;
             /**
              * Firstmeeting
              * @default false
              */
             firstMeeting: boolean;
+            /** Leaseid */
+            leaseId?: string | null;
+            /** Messageid */
+            messageId?: string | null;
             presentation?: components["schemas"]["PresentationIn"] | null;
             /** Text */
             text: string;
@@ -610,13 +748,26 @@ export interface components {
              * @default
              */
             assistant: string;
+            /** Clientid */
+            clientId?: string | null;
             /** Generation */
             generation?: number | null;
+            /** Leaseid */
+            leaseId?: string | null;
+            /** Runid */
+            runId?: string | null;
             /**
              * User
              * @default
              */
             user: string;
+        };
+        /** LeaseIn */
+        LeaseIn: {
+            /** Clientid */
+            clientId: string;
+            /** Leaseid */
+            leaseId?: string | null;
         };
         /**
          * LiveTranscript
@@ -668,6 +819,10 @@ export interface components {
         };
         /** OpeningIn */
         OpeningIn: {
+            /** Clientid */
+            clientId?: string | null;
+            /** Leaseid */
+            leaseId?: string | null;
             presentation?: components["schemas"]["PresentationIn"] | null;
         };
         /** PresentationIn */
@@ -730,11 +885,21 @@ export interface components {
         StoredMessage: {
             /** At */
             at: string;
+            /** Eventid */
+            eventId?: string;
+            /** Externalmessageid */
+            externalMessageId?: string | null;
             /**
              * Role
              * @enum {string}
              */
             role: "user" | "assistant";
+            /** Runid */
+            runId?: string;
+            /** Seq */
+            seq?: number;
+            /** Source */
+            source?: string;
             /** Text */
             text: string;
         };
@@ -1196,6 +1361,91 @@ export interface operations {
             };
         };
     };
+    acknowledge_api_life_ack_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AckIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    continuous_history_api_life_history_get: {
+        parameters: {
+            query?: {
+                before?: number | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    continuous_transcript_api_life_live_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     cubism_core_api_live2d_core_get: {
         parameters: {
             query?: never;
@@ -1212,6 +1462,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    status_api_meeting_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    enter_api_meeting_enter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    heartbeat_api_meeting_heartbeat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    leave_api_meeting_leave_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

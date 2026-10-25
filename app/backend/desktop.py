@@ -47,6 +47,8 @@ def main():
         if server.started:
             print(json.dumps({"type": "momo-ready", "nonce": os.environ["MOMO_DESKTOP_NONCE"], "pid": os.getpid(), "port": sock.getsockname()[1]}), flush=True)
         await task
+        if not server.started:
+            raise SystemExit(1)
     try:
         asyncio.run(run())
     finally:

@@ -84,3 +84,10 @@ Code is one way to help. A specific experience report, a more natural translatio
 Thank you to open-source projects such as [AIRI](https://github.com/moeru-ai/airi) for inspiring work on AI characters and companionship. The default Hiyori model is by Live2D Inc.; the fonts, speech recognition, retrieval models, and voice service build on their respective upstream projects.
 
 Project code is available under the [MIT license](LICENSE.md). Third-party models, Cubism Core, fonts, dependencies, and showcase materials retain their own terms; the repository’s MIT license does not replace them. See [third-party notices](THIRD_PARTY_NOTICES.md) for sources, licenses, and redistribution considerations.
+
+
+## v3 development preview
+
+Shared UI, inference and plugin logic now iterate in [momo-web, v3/development](https://github.com/Momoyeyu/momo-web/tree/v3/development). This repository owns the desktop shell, website, TTS deployment and releases; reviewed Web revisions are promoted into `app/` with content hashes.
+
+The candidate uses one continuous life, automatic persistence, history and full-profile backups instead of parallel save slots. v3 is awaiting acceptance and does not change the currently published release.

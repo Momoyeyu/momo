@@ -149,6 +149,11 @@ class StoredMessage(TypedDict):
     role: Role
     text: str
     at: str
+    seq: NotRequired[int]
+    eventId: NotRequired[str]
+    runId: NotRequired[str]
+    source: NotRequired[str]
+    externalMessageId: NotRequired[str | None]
 
 
 class CheckpointMeta(TypedDict):

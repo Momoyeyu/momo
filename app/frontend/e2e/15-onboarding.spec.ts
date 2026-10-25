@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import {waitForChatReady} from './helpers';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -35,10 +35,10 @@ function call(directory: string, path: string, method = 'GET', body?: unknown, o
 }
 async function bridge(page: Page, directory: string, options = {}) {
   await page.route('**/api/**', async route => {
-    const req = route.request(), path = new URL(req.url()).pathname;
+    const req = route.request(), url = new URL(req.url()), path = url.pathname;
     if (path === '/api/probe/llm') return route.fulfill({json: {ok: true, detail: '1ms'}});
-    if (!['/api/onboarding', '/api/onboarding/opening', '/api/state', '/api/chat', '/api/chat/interrupt'].includes(path) && !path.startsWith('/api/checkpoints') && !path.startsWith('/api/memories')) return route.continue();
-    const result = await call(directory, path, req.method(), req.postData() ? req.postDataJSON() : undefined, options);
+    if (!['/api/onboarding', '/api/onboarding/opening', '/api/state', '/api/chat', '/api/chat/interrupt'].includes(path) && !path.startsWith('/api/checkpoints') && !path.startsWith('/api/memories') && !path.startsWith('/api/life') && !path.startsWith('/api/meeting')) return route.continue();
+    const result = await call(directory, path+url.search, req.method(), req.postData() ? req.postDataJSON() : undefined, options);
     if (!page.isClosed()) await route.fulfill({status: result.status, headers: result.headers, contentType: result.contentType, body: result.body});
   });
 }
@@ -57,7 +57,7 @@ test.afterEach(async ({page}) => {
   rmSync(directory, {recursive:true,force:true});
 });
 
-test('first launch speaks first, remembers the name, and does not repeat after reload or new session', async ({page}) => {
+test('first launch speaks first, remembers the name, and does not repeat after reload or meeting again', async ({page}) => {
   await bridge(page, directory);
   await page.goto('/');
   await expect(page).toHaveURL(/#\/chat$/);
@@ -75,9 +75,12 @@ test('first launch speaks first, remembers the name, and does not repeat after r
   await expect(page.locator('.subtitle')).toHaveText('你现在想聊什么？');
   live = JSON.parse((await call(directory, '/api/checkpoints/live')).body);
   expect(live.messages.filter((m: {text:string}) => m.text.includes('我叫 momo'))).toHaveLength(1);
-  await call(directory, '/api/checkpoints/live/new', 'POST');
+  const legacyReset = await call(directory, '/api/checkpoints/live/new', 'POST');
+  expect(legacyReset.status).toBe(410);
   await page.goto('/');
   await expect(page).not.toHaveURL(/#\/chat$/);
+  await page.getByRole('button',{name:'继续相处 meet'}).click();
+  await expect(page.locator('.subtitle')).toHaveText('你现在想聊什么？');
 });
 
 test('refusal ends the first meeting without inventing a memory', async ({page}) => {
@@ -208,14 +211,16 @@ test('real LLM first meeting forms a real editable memory', async ({page}) => {
 
 test('typing before the model loads resolves the name without a late scripted intro', async ({page}) => {
   await bridge(page, directory);
+  let releaseModel!:()=>void;
+  const modelGate=new Promise<void>(resolve=>{releaseModel=resolve;});
   await page.route('**/live2d/hiyori/Hiyori.model3.json', async route => {
-    await new Promise(resolve => setTimeout(resolve, 3500));
-    await route.continue();
+    await modelGate;await route.continue();
   });
   await page.goto('/');
   await waitForChatReady(page);
   await page.locator('.input-row input').fill('叫我小星');
   await page.locator('.input-row input').press('Enter');
+  releaseModel();
   await expect(page.locator('.subtitle')).toHaveText('你现在想聊什么？');
   const live = JSON.parse((await call(directory, '/api/checkpoints/live')).body);
   expect(live.messages.some((m:{text:string}) => m.text.includes('我叫 momo'))).toBe(false);
@@ -252,4 +257,29 @@ test('brand-new installation can save its very first model configuration', async
   await dialog.getByRole('button', {name:'开始相遇'}).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
+});
+
+test('refresh continues an opening from its acknowledged prefix without repeating or losing words',async({page})=>{
+  await bridge(page,directory);
+  const state=JSON.parse((await call(directory,'/api/state')).body);
+  state.settings.general.textSpeed=0;
+  await call(directory,'/api/state','PUT',state);
+  let openings=0;
+  page.on('request',request=>{if(new URL(request.url()).pathname==='/api/onboarding/opening')openings++;});
+  await page.goto('/');
+  await expect.poll(async()=>JSON.parse((await call(directory,'/api/life/live')).body).messages.map((message:{text:string})=>message.text).join('').length).toBeGreaterThan(0);
+  await page.evaluate(()=>{
+    Object.defineProperty(document,'visibilityState',{configurable:true,get:()=> 'hidden'});
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const partial=JSON.parse((await call(directory,'/api/life/live')).body).messages.map((message:{text:string})=>message.text).join('');
+  expect(partial.length).toBeLessThan('啊，你来了。……我叫 momo。我该怎么称呼你呀？'.length);
+  await page.reload();
+  await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
+  await expect.poll(async()=>JSON.parse((await call(directory,'/api/life/live')).body).messages.map((message:{text:string})=>message.text).join('')).toBe('啊，你来了。……我叫 momo。我该怎么称呼你呀？');
+  expect(openings).toBe(2);
+  await page.reload();
+  await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
+  await page.waitForTimeout(300);
+  expect(openings).toBe(2);
 });
