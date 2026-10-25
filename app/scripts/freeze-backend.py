@@ -18,8 +18,7 @@ subprocess.run([str(python), '-m', 'PyInstaller', '--noconfirm', '--clean',
     '--runtime-hook', str(app / 'scripts/hooks/windows-onnxruntime.py'),
     '--collect-all', 'sherpa_onnx', '--collect-all', 'onnxruntime',
     '--collect-all', 'sqlite_vec', '--collect-all', 'tokenizers',
-    '--collect-submodules', 'mcp.client', '--collect-submodules', 'mcp.shared', '--collect-submodules', 'mcp.server', '--collect-submodules', 'uvicorn',
-    '--collect-submodules', 'app', '--copy-metadata', 'mcp',
+    '--collect-submodules', 'uvicorn', '--collect-submodules', 'app',
     str(backend / 'desktop.py')], cwd=backend, check=True)
 dest = app / 'resources/backend'
 if dest.exists():

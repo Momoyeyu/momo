@@ -7,6 +7,7 @@
     "dev": "node scripts/desktop-dev.mjs",
     "build": "tauri build",
     "build:backend": "node scripts/python.mjs freeze-backend.py",
+    "build:plugin-host": "node scripts/python.mjs prepare-plugin-host.py",
     "prepare:models": "node scripts/python.mjs prepare-models.py",
     "test:shell": "cargo test --manifest-path src-tauri/Cargo.toml",
     "build:macos": "tauri build --bundles app && python3 scripts/package-macos.py",
