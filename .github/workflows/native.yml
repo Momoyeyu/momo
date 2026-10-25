@@ -4,13 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       platform:
-        description: 'Candidate platform (macOS first; other PC targets require separate validation)'
+        description: 'Validated macOS arm64 candidate; Windows is a separate follow-up'
         type: choice
-        default: macos-14
+        default: macos-15
         options:
-          - macos-14
-          - windows-2022
-          - ubuntu-24.04
+          - macos-15
 permissions:
   contents: read
 jobs:
@@ -18,16 +16,20 @@ jobs:
     runs-on: ${{ inputs.platform }}
     steps:
       - uses: actions/checkout@v4
-      - name: Linux WebView dependencies
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf
+      - name: Require the validated macOS arm64 runner
+        shell: bash
+        run: |
+          test "$(uname -s)" = Darwin && test "$(uname -m)" = arm64 || {
+            echo 'This candidate packages a pinned macOS arm64 Node runtime; use a macOS arm64 runner.' >&2
+            exit 1
+          }
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: app/src-tauri
       - uses: astral-sh/setup-uv@v6
         with:
-          python-version: '3.12'
+          python-version-file: app/backend/.python-version
           enable-cache: true
           cache-dependency-glob: app/backend/uv.lock
       - uses: pnpm/action-setup@v4
@@ -35,7 +37,7 @@ jobs:
           package_json_file: app/package.json
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: '22.23.3'
           cache: pnpm
           cache-dependency-path: |
             app/pnpm-lock.yaml
@@ -46,6 +48,8 @@ jobs:
         working-directory: app/frontend
       - run: uv sync --frozen
         working-directory: app/backend
+      - name: Prepare pinned bundled Node and Cordis runtime
+        run: uv run --project app/backend --frozen python app/scripts/prepare-plugin-host.py
       - name: Prepare fixed offline resources
         shell: bash
         run: |
@@ -62,21 +66,14 @@ jobs:
       - name: Exercise packaged offline backend
         shell: bash
         run: uv run --project app/backend --frozen python app/scripts/smoke-frozen.py app/resources
+      - name: Exercise bundled host lifecycle without a system Node
+        run: uv run --project app/backend --frozen python app/scripts/smoke-plugin-runtime.py app/resources
       - run: pnpm test:shell
         working-directory: app
       - name: Check Rust formatting
         run: cargo fmt --manifest-path app/src-tauri/Cargo.toml -- --check
       - name: Build macOS installer without Finder automation
-        if: runner.os == 'macOS'
         run: pnpm build:macos
-        working-directory: app
-      - name: Build Windows installer
-        if: runner.os == 'Windows'
-        run: pnpm exec tauri build --bundles nsis
-        working-directory: app
-      - name: Build Linux installer
-        if: runner.os == 'Linux'
-        run: pnpm exec tauri build --bundles deb
         working-directory: app
       - uses: actions/upload-artifact@v4
         with:

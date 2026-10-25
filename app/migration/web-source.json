@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "7cac33ebb163302be03632c8b700a9823bea217e",
+  "revision": "8d71c71e18205512c9b1628f925d2bbaa180a908",
   "checks": [
-    "318Python;161frontend;19Node;94browser+16followup;review-approved6650300;resource-license-only7cac33e"
+    "Web GitHub CI success https://github.com/Momoyeyu/momo-web/actions/runs/40219768355; title copy tsc and 4 browser smoke pass; prior macOS artifact7cac33e unchanged-runtime proof"
   ],
   "files": {
     "app/.env.example": {
@@ -538,7 +538,7 @@
     },
     "app/frontend/e2e/01-smoke.spec.ts": {
       "source": "frontend/e2e/01-smoke.spec.ts",
-      "sha256": "aa7ce42b7bad154c2ade712f0315dc5ea1e8fd2c52dbdfad93934323c4bf1a8d",
+      "sha256": "1992692e057d944b8e3d6d6d16a82ee5cb316d623d2d3f8b02f370913737b0a2",
       "mode": 33188
     },
     "app/frontend/e2e/02-settings.spec.ts": {
@@ -553,7 +553,7 @@
     },
     "app/frontend/e2e/05-continuous-life.spec.ts": {
       "source": "frontend/e2e/05-continuous-life.spec.ts",
-      "sha256": "56d6971eeb51f0cd37c5f79faa911ed90be0c2175a02f0b79bf695a168a9791e",
+      "sha256": "b2c19812bdd84743e3fbad47dc85145fa47eb5a62ca25fb37538e3768f7ec6f2",
       "mode": 33188
     },
     "app/frontend/e2e/06-chat.spec.ts": {
@@ -603,7 +603,7 @@
     },
     "app/frontend/e2e/15-onboarding.spec.ts": {
       "source": "frontend/e2e/15-onboarding.spec.ts",
-      "sha256": "a02d0b965f542c5e36963d165a951423cfb4ebc86781663db2fa021030cd27b5",
+      "sha256": "4acb1f0c99cd4c104766cd7a2b7b693a6e4b9f67ecc4581e1767cc92a013db15",
       "mode": 33188
     },
     "app/frontend/e2e/16-builtin-models.spec.ts": {
@@ -2203,7 +2203,7 @@
     },
     "app/frontend/src/i18n/en.ts": {
       "source": "frontend/src/i18n/en.ts",
-      "sha256": "487cd7e70fd140859ea324a52299981e60d4fd6ac9d89412ee8ba51ebdcd22d0",
+      "sha256": "d41330a251de724924ac0b4367f0fbc389657d83d1b5517c73b3d7ecfb1d2ec8",
       "mode": 33188
     },
     "app/frontend/src/i18n/index.ts": {
@@ -2213,7 +2213,7 @@
     },
     "app/frontend/src/i18n/ja.ts": {
       "source": "frontend/src/i18n/ja.ts",
-      "sha256": "6bbaedbabf12a9519d713b999eb3fb63a9dbfce82aa10d2ab89a1c1038d506eb",
+      "sha256": "ee83eed08c6e6c7b14bae88bca062ff86ea0778ff3f0b3fe566ccd107ca72fbb",
       "mode": 33188
     },
     "app/frontend/src/i18n/lang.test.ts": {
@@ -2223,7 +2223,7 @@
     },
     "app/frontend/src/i18n/zh.ts": {
       "source": "frontend/src/i18n/zh.ts",
-      "sha256": "da351f35505e70087c33b17a6f7ed5ef7b57c452beaf8e6650913a3dd27f53c1",
+      "sha256": "a2538ad1c8a5176016e6433d05b90bd4c23f4f388db60cb211172eef0ff25d46",
       "mode": 33188
     },
     "app/frontend/src/lib/asr.ts": {
@@ -2433,7 +2433,7 @@
     },
     "app/frontend/src/pages/Title.tsx": {
       "source": "frontend/src/pages/Title.tsx",
-      "sha256": "0031cebc861e618606b1f62124811f91aa47926d80c7fbc78e554f8005d67a73",
+      "sha256": "586e770da770d6dc8d0cde3fab6daef6789a382a8ebe41e6dee671b1afd36681",
       "mode": 33188
     },
     "app/frontend/src/pages/dialogPreviewSplit.test.ts": {
@@ -2827,13 +2827,6 @@
       "mode": 33188
     }
   },
-  "deleted": [
-    "app/frontend/e2e/05-checkpoint.spec.ts",
-    "app/frontend/src/lib/checkpointGrid.test.ts",
-    "app/frontend/src/lib/checkpointGrid.ts",
-    "app/frontend/src/pages/Checkpoint.tsx",
-    "app/frontend/src/services/checkpointClient.ts",
-    "app/frontend/src/styles/checkpoint.css"
-  ],
+  "deleted": [],
   "bootstrapRevision": "6701b48a3974aaafb4fe03cc4df686771614ee63"
 }
