@@ -1,5 +1,6 @@
 # momo desktop
 
-The game uses `frontend/` (React), `backend/` (Python/FastAPI), and `src-tauri/` (the desktop lifecycle shell). Default models ship as installation resources.
+Electron lifecycle shell in `desktop/`; one shared React frontend, Python coordinator, and Cordis plugin host promoted from the Web repository. Source revision and file hashes: `migration/web-source.json`.
 
-See [development configuration](../docs/development/configuration.md) and [migration boundaries](../docs/development/migration.md). Windows candidate checks are in [native Windows validation](../docs/development/windows.md). Player instructions live in [getting started](../docs/usage/getting-started.md).
+Build and isolated native smoke: [desktop migration](../../docs/development/migration.md).
+macOS arm64 candidate first. Windows and Linux are not yet validated for this shell. No signing/notarization claim.

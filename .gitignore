@@ -20,7 +20,6 @@ app/backend/resources/embedding/**/*.onnx
 app/backend/resources/embedding/**/tokenizer.json
 app/backend/resources/embedding/**/.cache/
 app/resources/
-app/src-tauri/binaries/
 app/frontend/test-results/
 app/frontend/playwright-report/
 app/frontend/.playwright/
@@ -38,7 +37,6 @@ app/frontend/.playwright/
 app/frontend/public/live2d/live2dcubismcore.min.js
 
 # Native E2E artifacts and local browser reports.
-app/src-tauri/target-e2e/
 site/test-results/
 site/playwright-report/
 
@@ -52,3 +50,6 @@ app/data/
 site/docs/public/live2d/
 site/docs/.vitepress/cache/
 .archify/
+
+app/.desktop/
+app/out/

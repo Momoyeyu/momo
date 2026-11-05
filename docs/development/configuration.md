@@ -4,7 +4,7 @@
 
 | 变量 | 用途 |
 | --- | --- |
-| MOMO_DATA_DIR | 显式隔离的应用数据目录；桌面壳自动传入 v2 路径，测试必须使用临时目录 |
+| MOMO_DATA_DIR | 显式隔离的应用数据目录；桌面壳自动传入 profile/data 路径，测试必须使用临时目录 |
 | MOMO_RESOURCES_DIR | 已安装的只读 ASR / embedding 资源根目录；不含用户数据 |
 | MOMO_ASR_MODELS | 仅开发调试覆盖 ASR 目录，普通用户不需要设置 |
 | MOMO_DESKTOP_TOKEN | 桌面壳临时随机令牌，仅传入子进程环境；不写配置 / URL / 日志 |
@@ -19,3 +19,7 @@
 `MOMO_E2E_SETUP=1` 启用 `setup.e2e.mjs` 的首次连接验证，需单独选择该 spec，并使用全新的测试 identifier / 数据目录；不能接入已有玩家档。先验证错误模型不保存、不进入对话，再用上述私有 LLM 配置验证真实健康检查与后续对话。
 
 `MOMO_E2E_TTS_CONFIG` 可单独启用原生真实 GPU 语音测试，JSON 字段为 `url`、可选 `key` / `prompt`、本地参考音绝对路径 `reference` 与可选文件名 `referenceName`。它使用固定对话供应商，观测实际 PCM 播放、采样率、播放完成和打断恢复，并将受控合成语音送入打包后的 SenseVoice 验证识别；不需要调用付费 LLM。运行时只使用隔离测试档。这些文件不属于玩家配置，不随安装包或测试报告交付。
+
+## Electron profile
+
+`MOMO_DESKTOP_DATA_DIR` 指定隔离桌面 profile 根目录，默认系统 appData/momo（开发为 momo-development）；内含 Chromium 存储和业务 data/。安装资源从应用包解析，不读取开发用的 MOMO_NODE / MOMO_PLUGIN_HOST / MOMO_RESOURCES_DIR。

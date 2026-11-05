@@ -1,7 +1,10 @@
-# The desktop build tools form their own project; frontend keeps its own lockfile.
 packages:
   - .
 allowBuilds:
-  esbuild: true
-  edgedriver: false
-  geckodriver: false
+  fs-xattr: true
+  electron: true
+  macos-alias: true
+minimumReleaseAgeExclude:
+  - electron@45.2.3
+
+nodeLinker: hoisted

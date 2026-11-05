@@ -1,86 +1,78 @@
-name: Native installers
-# Build candidate artifacts without publishing a release or signing credentials.
+name: Electron macOS candidate
 on:
   workflow_dispatch:
     inputs:
-      platform:
-        description: 'Candidate platform (macOS first; other PC targets require separate validation)'
-        type: choice
-        default: macos-14
-        options:
-          - macos-14
-          - windows-2022
-          - ubuntu-24.04
+      qq_archive_url:
+        description: Reviewed resource-only QQ tar.gz URL (resources/ and manifest.json)
+        required: true
+        type: string
+      qq_archive_sha256:
+        description: SHA-256 of that archive
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
   package:
-    runs-on: ${{ inputs.platform }}
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - name: Linux WebView dependencies
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: app/src-tauri
-      - uses: astral-sh/setup-uv@v6
-        with:
-          python-version: '3.12'
-          enable-cache: true
-          cache-dependency-glob: app/backend/uv.lock
-      - uses: pnpm/action-setup@v4
-        with:
-          package_json_file: app/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
-          cache-dependency-path: |
-            app/pnpm-lock.yaml
-            app/frontend/pnpm-lock.yaml
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app/package.json
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.14'
       - run: pnpm install --frozen-lockfile
         working-directory: app
       - run: pnpm install --frozen-lockfile --ignore-workspace
         working-directory: app/frontend
       - run: uv sync --frozen
         working-directory: app/backend
-      - name: Prepare fixed offline resources
-        shell: bash
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - run: gradle --no-daemon build
+        working-directory: app/plugin-host/minecraft-fabric
+      - name: Retrieve reviewed QQ resources
+        env:
+          QQ_ARCHIVE_URL: ${{ inputs.qq_archive_url }}
+          QQ_ARCHIVE_SHA256: ${{ inputs.qq_archive_sha256 }}
+        run: |
+          python3 - <<'PYTHON'
+          import hashlib, os, pathlib, tarfile, urllib.request
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'momo-qq'
+          target.mkdir()
+          archive = target / 'bundle.tar.gz'
+          urllib.request.urlretrieve(os.environ['QQ_ARCHIVE_URL'], archive)
+          if hashlib.file_digest(archive.open('rb'), 'sha256').hexdigest() != os.environ['QQ_ARCHIVE_SHA256']:
+              raise SystemExit('QQ archive checksum mismatch')
+          with tarfile.open(archive) as package:
+              package.extractall(target, filter='data')
+          PYTHON
+      - name: Prepare pinned offline resources
         run: |
           uv run --project app/backend --frozen python app/backend/scripts/download_asr_models.py
           uv run --project app/backend --frozen --with huggingface-hub==2.2.0 python app/backend/scripts/prepare_embedding.py
           uv run --project app/backend --frozen python app/backend/scripts/package_resources.py --output app/dist/momo-resources.zip
           uv run --project app/backend --frozen python app/scripts/prepare-models.py app/dist/momo-resources.zip
-          uv run --project app/backend --frozen python app/scripts/prepare-core.py
-      - name: Freeze backend
-        shell: bash
-        run: |
-          uv pip install --python app/backend/.venv pyinstaller==6.20.0
-          uv run --project app/backend --frozen python app/scripts/freeze-backend.py
-      - name: Exercise packaged offline backend
-        shell: bash
-        run: uv run --project app/backend --frozen python app/scripts/smoke-frozen.py app/resources
-      - run: pnpm test:shell
-        working-directory: app
-      - name: Check Rust formatting
-        run: cargo fmt --manifest-path app/src-tauri/Cargo.toml -- --check
-      - name: Build macOS installer without Finder automation
-        if: runner.os == 'macOS'
-        run: pnpm build:macos
-        working-directory: app
-      - name: Build Windows installer
-        if: runner.os == 'Windows'
-        run: pnpm exec tauri build --bundles nsis
-        working-directory: app
-      - name: Build Linux installer
-        if: runner.os == 'Linux'
-        run: pnpm exec tauri build --bundles deb
+          python3 app/scripts/prepare-core.py
+          python3 app/scripts/prepare-plugin-runtime.py
+          python3 app/scripts/prepare-qq-bundle.py --resources "$RUNNER_TEMP/momo-qq/resources" --manifest "$RUNNER_TEMP/momo-qq/manifest.json"
+      - run: uv pip install --python app/backend/.venv pyinstaller==6.20.0
+      - run: python3 app/scripts/freeze-backend.py
+      - run: node app/scripts/frontend.mjs build
+      - run: pnpm test:shell && pnpm build:macos
         working-directory: app
       - uses: actions/upload-artifact@v4
         with:
-          name: momo-${{ inputs.platform }}-candidate
-          path: |
-            app/src-tauri/target/release/bundle/
+          name: momo-macos-arm64-unsigned-candidate
+          path: app/out/make/
           if-no-files-found: error

@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "74089070b563eda12d9ff92c91bbf77640b94d80",
+  "revision": "fe3f7cc253603b5c4c21bafd6d0fc1ac709a4cd2",
   "checks": [
-    "backend 737 passed; native baseline smoke passed before resource additions"
+    "shared backend 737 passed; 15 shell tests and packaged baseline smoke passed"
   ],
   "files": {
     "app/.env.example": {
@@ -28,7 +28,7 @@
     },
     "app/backend/app/api/__init__.py": {
       "source": "backend/app/api/__init__.py",
-      "sha256": "e9becf3798512bd7b555473d2af077955a56308d002e6e849e27a94aeee2e62d",
+      "sha256": "d7dd4fc00e289213596e364bec8a3ee92a4985e584d6a93c46d696ea6f01be67",
       "mode": 33188
     },
     "app/backend/app/api/activities.py": {
@@ -3413,7 +3413,7 @@
     },
     "app/frontend/src/services/asrClient.ts": {
       "source": "frontend/src/services/asrClient.ts",
-      "sha256": "81acd767e007f1c5437545d4e0971774a74a4c62df379018e1095456b7057520",
+      "sha256": "fee443ce0b3547301d7faae234540a69524f00dc00643d6cfff3eaef760dbe24",
       "mode": 33188
     },
     "app/frontend/src/services/chatClient.test.ts": {
@@ -3818,7 +3818,7 @@
     },
     "app/plugin-host/minecraft-fabric/README.md": {
       "source": "plugin-host/minecraft-fabric/README.md",
-      "sha256": "fa83933c901c5edc407097c0e0e2cecf2f1a6b6eed14df3f9167862288b9a057",
+      "sha256": "ee067513859ed8cbd35e69fbc2d9f1ce036f72eaa8ed356e59518ab0d765cbf0",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/build.gradle": {

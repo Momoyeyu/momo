@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix='momo frozen 中文 ') as data:
         ready = json.loads(process.stdout.readline())
         assert ready['type'] == 'momo-ready' and ready['nonce'] == nonce and ready['pid'] == process.pid
         base = f"http://127.0.0.1:{ready['port']}"
-        def request(path, authorized=True, origin='tauri://localhost'):
+        def request(path, authorized=True, origin='momo://app'):
             headers = {'Origin': origin}
             if authorized:
                 headers['x-momo-token'] = token
@@ -48,7 +48,7 @@ with tempfile.TemporaryDirectory(prefix='momo frozen 中文 ') as data:
             raise AssertionError('Unauthenticated request accepted')
         except urllib.error.HTTPError as exc:
             assert exc.code in (401, 403)
-            assert exc.headers.get('Access-Control-Allow-Origin') == 'tauri://localhost'
+            assert exc.headers.get('Access-Control-Allow-Origin') == 'momo://app'
         try:
             request('/api/health', origin='https://untrusted.invalid')
             raise AssertionError('Untrusted browser origin accepted')
@@ -78,7 +78,7 @@ with tempfile.TemporaryDirectory(prefix='momo frozen 中文 ') as data:
         print('PASS actual frozen E5 inference and sqlite-vec index')
         async def asr():
             import websockets
-            async with websockets.connect(base.replace('http:', 'ws:') + '/api/asr/stream', origin='tauri://localhost', proxy=None) as ws:
+            async with websockets.connect(base.replace('http:', 'ws:') + '/api/asr/stream', origin='momo://app', proxy=None) as ws:
                 await ws.send(json.dumps({'type': 'authenticate', 'token': token}))
                 ready = json.loads(await asyncio.wait_for(ws.recv(), timeout=60))
                 assert ready['type'] == 'ready', ready

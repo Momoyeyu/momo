@@ -1,28 +1,36 @@
 {
   "name": "momo-desktop",
+  "productName": "momo",
+  "description": "momo companion desktop",
+  "author": "momoyeyu",
+  "license": "MIT",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
+  "main": ".desktop/main/index.js",
   "packageManager": "pnpm@12.6.0",
   "scripts": {
-    "dev": "node scripts/desktop-dev.mjs",
-    "build": "tauri build",
+    "dev": "pnpm build:shell && electron-forge start",
+    "build:shell": "tsc -p desktop/tsconfig.json",
+    "typecheck": "tsc -p desktop/tsconfig.json --noEmit",
+    "test:shell": "pnpm build:shell && node --test .desktop/test/*.test.js",
     "build:backend": "node scripts/python.mjs freeze-backend.py",
     "prepare:models": "node scripts/python.mjs prepare-models.py",
-    "test:shell": "cargo test --manifest-path src-tauri/Cargo.toml",
-    "build:macos": "tauri build --bundles app && python3 scripts/package-macos.py",
-    "test:native": "wdio run scripts/wdio.conf.mjs",
-    "build:e2e": "node scripts/build-e2e.mjs"
+    "build": "pnpm build:shell && electron-forge make",
+    "build:macos": "pnpm build",
+    "test:native": "node desktop/test/native-smoke.mjs",
+    "format": "prettier --write desktop forge.config.cjs",
+    "format:check": "prettier --check desktop forge.config.cjs"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.9.0",
-    "@wdio/cli": "^9.0.0",
-    "@wdio/local-runner": "^9.0.0",
-    "@wdio/mocha-framework": "^9.0.0",
-    "@wdio/spec-reporter": "^9.0.0",
-    "@wdio/tauri-service": "^1.5.0",
-    "webdriverio": "^9.0.0",
-    "@wdio/globals": "^9.0.0",
-    "@wdio/types": "^9.0.0",
-    "expect-webdriverio": "^6.0.0"
+    "@electron-forge/cli": "8.0.1",
+    "@electron-forge/maker-dmg": "8.0.1",
+    "@electron-forge/maker-zip": "8.0.1",
+    "@electron-forge/plugin-fuses": "8.0.1",
+    "@electron/fuses": "2.1.2",
+    "@playwright/test": "1.64.1",
+    "@types/node": "26.6.5",
+    "electron": "45.2.3",
+    "prettier": "3.6.2",
+    "typescript": "6.0.2"
   }
 }
