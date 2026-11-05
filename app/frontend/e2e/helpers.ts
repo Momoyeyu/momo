@@ -1,24 +1,50 @@
 // E2E 公共工具：路由跳转、配置快照/还原、定位器辅助。
 //
 // 测试必须打显式 MOMO_E2E_BASE_URL 隔离实例；配置快照仅用于测试间还原。
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "./fixtures";
 
-/** 应用外壳（五条路由各自的根容器）。 */
-const SHELL = ".title-screen, .chat-page, .settings-page, .backlog-page, .checkpoint-page";
+/** 应用外壳（四条路由各自的根容器）。 */
+const SHELL = ".title-screen, .chat-page, .settings-page, .backlog-page";
 
 /**
  * 打开某条路由。
  *
- * 必须用 page.goto：Playwright 每个用例都是全新页面，只改 hash 在
- * about:blank 上不会导航。应用是「先拉 backend state 再渲染」，
- * 所以还要等外壳出现。
+ * 首次打开用 page.goto；应用内按真实 hash 导航，避免把子页跳转
+ * 误当作整个文档刷新。专门测试刷新时显式调用 page.reload。
  */
 export async function gotoRoute(page: Page, route = "title"): Promise<void> {
-  await page.goto(`/#/${route}`);
+  if (route === "chat") {
+    const active=await page.evaluate(()=>Boolean(sessionStorage.getItem('momo.meeting-owner.v1'))).catch(()=>false);
+    if(active && await page.locator('.settings-page, .backlog-page').count()){
+      await page.evaluate(()=>{location.hash='#/chat';});
+      await expect(page.locator('.chat-page')).toBeVisible();
+      await waitForChatReady(page);
+      return;
+    }
+    await bootChat(page);
+    return;
+  }
+  const base=new URL(process.env.MOMO_E2E_BASE_URL!);
+  const current=new URL(page.url());
+  if(current.origin===base.origin && await page.locator(SHELL).count())
+    await page.evaluate(next=>{location.hash=`#/${next}`;},route);
+  else await page.goto(`/#/${route}`);
   await expect(page.locator(SHELL).first()).toBeVisible();
   // A mounted shell can still be behind startup or a scene/dialogue entrance.
   // Functional tests type only once real players can interact with that shell.
   await expect.poll(() => page.locator(SHELL).first().evaluate(element => !element.closest('[inert]'))).toBe(true);
+}
+
+/** Enter an active meeting through the player's Boot control. */
+export async function bootChat(page: Page): Promise<void> {
+  const base=new URL(process.env.MOMO_E2E_BASE_URL!);
+  const current=new URL(page.url());
+  if(current.origin!==base.origin || !await page.locator(SHELL).count())await page.goto('/#/title');
+  else if(!await page.locator('.title-screen').count())await page.evaluate(()=>{location.hash='#/title';});
+  await expect(page.locator('.title-screen')).toBeVisible();
+  await page.locator('.title-menu .menu-item').first().click();
+  await expect(page.locator('.chat-page')).toBeVisible();
+  await waitForChatReady(page);
 }
 
 /** 兼容旧名。 */
@@ -33,6 +59,12 @@ export async function waitForChatReady(page: Page): Promise<void> {
 export async function openTab(page: Page, label: string): Promise<void> {
   await gotoRoute(page, "settings");
   await page.locator(".stab", { hasText: label }).click();
+}
+
+/** 拓展内部的同级配置页，各自使用完整宽度。 */
+export async function openExtensionTab(page: Page, label: string): Promise<void> {
+  await openTab(page, "拓展");
+  await page.getByRole("tab", { name: label, exact: true }).click();
 }
 
 /** 收集控制台错误与未捕获异常，供「无错误」断言使用。 */

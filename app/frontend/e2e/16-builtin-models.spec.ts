@@ -1,9 +1,9 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
-import {waitForChatReady} from './helpers';
+import {bootChat,waitForChatReady} from './helpers';
 
 const backend = resolve(process.cwd(), '../backend');
 type Result = {status:number; body:string; contentType:string; headers?:Record<string,string>};
@@ -13,7 +13,7 @@ let queue: {resolve:(r:Result)=>void;reject:(e:Error)=>void}[] = [];
 function call(path:string, method='GET', body?:unknown, real=false):Promise<Result> {
   return new Promise((resolve,reject) => {
     queue.push({resolve,reject});
-    child.stdin!.write(JSON.stringify({directory:dir,path,method,body,real})+'\n');
+    child.stdin!.write(JSON.stringify({directory:dir,path,method,body,real,legacy:true})+'\n');
   });
 }
 test.beforeEach(async ({page}) => {
@@ -43,7 +43,7 @@ test.beforeEach(async ({page}) => {
   await call('/api/state','PUT',state);
   await page.route('**/api/**',async route=>{
     const req=route.request();
-    const result=await call(new URL(req.url()).pathname,req.method(),req.postData()?req.postDataJSON():undefined);
+    const result=await call(new URL(req.url()).pathname+new URL(req.url()).search,req.method(),req.postData()?req.postDataJSON():undefined);
     if(!page.isClosed())await route.fulfill({status:result.status,body:result.body,contentType:result.contentType,headers:result.headers});
   });
 });
@@ -133,7 +133,7 @@ test('clicking the microphone twice during connection cancels pending activation
     }
     window.WebSocket=PendingSocket as unknown as typeof WebSocket;
   });
-  await page.goto('/#/chat');
+  await bootChat(page);
   const mic=page.locator('.mic-btn');
   await expect(mic).toBeEnabled();
   await mic.click();
@@ -153,7 +153,7 @@ for (const thinking of [false, true]) {
     state.settings.general.sentenceSpeed=100;
     await call('/api/state','PUT',state);
     await page.route('**/api/onboarding',route=>route.fulfill({json:{stage:'completed',generation:0}}));
-    await page.goto('/#/chat');
+    await bootChat(page);
     const input=page.locator('.input-row input');
     await expect(input).toBeVisible();
     await waitForChatReady(page);

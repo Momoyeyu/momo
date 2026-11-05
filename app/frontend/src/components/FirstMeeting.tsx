@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { loadTranscript, getChatEngine, subscribeTranscript, transcriptVersion } from '../chat/engineInstance';
 import { getStage } from '../live2d/stage';
 import { getState, update, resyncPassthrough } from '../lib/store';
-import { liveTranscript } from '../services/checkpointClient';
+import { liveTranscript } from '../services/lifeClient';
 import { firstMeetingStatus, type FirstMeetingStatus } from '../services/onboardingClient';
 import { putState } from '../services/stateClient';
 import { apiJson } from '../services/http';
@@ -44,7 +44,7 @@ export default function FirstMeeting({connectionFailed = false}: {connectionFail
         const live = await liveTranscript().catch(() => null);
         if (!cancelled && live?.messages.length) loadTranscript(live.messages);
       }
-      if (next.stage !== 'new' || !next.configured) return;
+      if ((next.stage !== 'new' && !next.pendingOpening) || !next.configured) return;
       // Use the actual loaded catalog, never guessed resource names.
       const deadline = Date.now() + 6000;
       const begin = () => {

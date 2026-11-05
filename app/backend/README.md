@@ -1,15 +1,15 @@
-# momo backend
+# momo Web 内核
 
-Python / FastAPI 负责对话、记忆、存档、内置 ASR / embedding 和可选 TTS / MCP。Tauri 将它冻结为受控 sidecar；本轮不将业务重写为 Rust。
+FastAPI 是唯一生活、推理与长期记忆权威。Cordis 子进程负责插件连接与受许可执行，不能独立产生第二套对话循环。
 
-安装构建、运行边界和依赖准备见 [桌面迁移](../../docs/development/migration.md)，环境变量见 [运行配置](../../docs/development/configuration.md)。浏览器开发时显式指定隔离数据目录与本地端口；`desktop.py` 仅接受受控壳提供的随机凭据、资源与数据目录。
+开发从仓库根目录 `pnpm dev` 启动：独立数据目录、loopback 端口、临时令牌、宿主依赖和退出清理由启动器统一处理。不要把无鉴权的手动 uvicorn 实例暴露到网络，也不要复用桌面正式数据目录。
 
 ```sh
 uv sync --frozen
-MOMO_DATA_DIR=/tmp/momo-browser-test uv run uvicorn app.main:app --host 127.0.0.1 --port 7822
-uv run --frozen pytest -q
+.venv/bin/python -m pytest -q
+.venv/bin/python scripts/export_openapi.py
 ```
 
-接口以代码和 `openapi.json` 为准；修改 API 后执行 `uv run python scripts/export_openapi.py`，再在 `../frontend` 执行 `pnpm gen:api`。`test_openapi.py` 校验快照一致性。桌面 API 包括文档路由均须鉴权。
+修改 REST / SSE 契约后从 frontend 执行 `node scripts/gen-api.mjs` 并一起提交契约。数据层迁移、摘要和记忆遗忘测试必须使用临时目录。
 
-内置模型权重由构建脚本按固定清单准备，不在运行时联网下载。默认测试使用替身，真实离线模型用例需要显式 opt-in；不要把普通测试通过视作原生安装包或 GPU 语音验证通过。配置、密钥与本地数据不提交。
+[运行边界](../docs/development/v3-runtime.md) 说明连续账本、展示 ACK、租约、活动代际和恢复边界。资源 / 真实供应商测试为显式 opt-in；默认不分发角色参考音。

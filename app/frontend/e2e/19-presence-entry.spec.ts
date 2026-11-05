@@ -1,13 +1,17 @@
-import {test, expect, type Page} from '@playwright/test';
+import {test, expect, type Page} from './fixtures';
+import {writeFile} from 'node:fs/promises';
+
+type GlyphFrame={cells:number;painted:boolean;png:string};
 
 async function fixture(page: Page, lang = 'zh') {
   await page.route('**/api/**', async route => {
     const request = route.request(), path = new URL(request.url()).pathname;
-    if (!['/api/state','/api/onboarding','/api/checkpoints','/api/checkpoints/live','/api/checkpoints/live/new','/api/memories'].includes(path)) return route.continue();
+    if(path.startsWith('/api/meeting/'))return route.fulfill(path.endsWith('/leave')?{status:204}:{json:{leaseId:'visual-lease',epoch:1,expiresIn:60}});
+    if (!['/api/state','/api/onboarding','/api/life/history','/api/life/live','/api/memories'].includes(path)) return route.continue();
     if (request.method() !== 'GET') return route.fulfill({status:204});
     const json = path === '/api/state' ? {settings:{general:{lang,voiceInput:false},llm:{url:'https://fixture.test',key:'',model:'fixture'}}}
       : path === '/api/onboarding' ? {stage:'completed',configured:true}
-      : path === '/api/checkpoints/live' ? {messages:[],summary:''} : [];
+      : path === '/api/life/history' ? {messages:[],summary:'',hasMore:false,nextBefore:null} : [];
     await route.fulfill({json});
   });
   await page.goto('/');
@@ -37,22 +41,45 @@ for (const lang of ['zh','en','ja']) {
 }
 
 test('approved silhouette turns into visible ASCII, then releases real chat; settings retain RoPE', async ({page},info) => {
+  await page.clock.install();
   await fixture(page);
   const portrait = page.locator('.title-presence');
   await expect(portrait).toHaveAttribute('src','/brand/momo-presence-v2.webp');
   await expect.poll(() => portrait.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBe(1024);
   await expect.poll(() => page.locator('.title-menu .menu-item').last().evaluate(element=>Number(getComputedStyle(element).opacity))).toBe(1);
   await page.screenshot({path:info.outputPath('title-approved-silhouette.png')});
-  await page.getByRole('button',{name:'开始 start'}).click();
+  await page.clock.pauseAt(await page.evaluate(()=>Date.now())+100);
+  // Capture the transient phase in the page, atomically with its pixels. Trace
+  // snapshots can outlive the animation between separate Playwright requests.
+  // Drive only this visual phase with a clock; real image decoding still runs,
+  // and the separate fallback/reduced-motion tests keep their real clocks.
+  await page.evaluate(()=>{
+    const observed=window as Window&{entryGlyphFrame?:GlyphFrame};
+    const sample=()=>{
+      const canvas=document.querySelector<HTMLCanvasElement>('.chat-entry-canvas');
+      if(canvas?.dataset.phase==='glyphs'&&canvas.width>0&&canvas.height>0&&canvas.getBoundingClientRect().width>0){
+        const context=canvas.getContext('2d');
+        if(context){
+          const painted=context.getImageData(0,0,canvas.width,canvas.height).data.some((value,index)=>index%4===3&&value>0);
+          observed.entryGlyphFrame={cells:Number(canvas.dataset.cells),painted,png:canvas.toDataURL('image/png')};
+          return;
+        }
+      }
+      requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+  await page.getByRole('button',{name:'启动 boot'}).click();
   const ink = page.locator('.chat-entry-canvas');
   await expect(ink).toBeVisible();
-  await expect.poll(() => ink.getAttribute('data-phase')).toBe('glyphs');
-  expect(Number(await ink.getAttribute('data-cells'))).toBeGreaterThan(1000);
-  expect(await ink.evaluate(canvas => {
-    const context = (canvas as HTMLCanvasElement).getContext('2d')!;
-    return context.getImageData(0,0,canvas.width,canvas.height).data.some((value,index) => index % 4 === 3 && value > 0);
-  })).toBe(true);
-  await page.screenshot({path:info.outputPath('ascii-entry.png')});
+  await expect(ink).toHaveAttribute('width',/^\d+$/); // Assigned after real image decode and atlas preparation.
+  await page.clock.runFor(550);
+  await expect.poll(()=>page.evaluate(()=>(window as Window&{entryGlyphFrame?:GlyphFrame}).entryGlyphFrame?.cells??0)).toBeGreaterThan(1000);
+  const frame=await page.evaluate(()=>(window as Window&{entryGlyphFrame?:GlyphFrame}).entryGlyphFrame!);
+  expect(frame.painted).toBe(true);
+  await writeFile(info.outputPath('ascii-entry.png'),Buffer.from(frame.png.split(',')[1]!,'base64'));
+  await page.clock.runFor(1500);
+  await page.clock.resume();
   await expect(ink).toHaveCount(0);
   await expect(page.locator('.page-wrap.is-booting')).toHaveCount(0);
   await expect(page.locator('.input-row input')).toBeVisible();
@@ -64,10 +91,10 @@ test('approved silhouette turns into visible ASCII, then releases real chat; set
   await page.screenshot({path:info.outputPath('balanced-settings-backup.png')});
 });
 
-for (const destination of ['设置', '存档', '读档', '记录']) {
+for (const destination of ['设置', '记录']) {
   test(`returning from ${destination} uses RoPE without replaying the title entry`, async ({page}) => {
     await fixture(page);
-    await page.getByRole('button',{name:'开始 start'}).click();
+    await page.getByRole('button',{name:'启动 boot'}).click();
     await expect(page.locator('.chat-entry-canvas')).toBeVisible();
     await expect(page.locator('.chat-entry-canvas')).toHaveCount(0);
     await page.getByRole('button',{name:destination,exact:true}).click();
@@ -98,7 +125,7 @@ for (const destination of ['设置', '存档', '读档', '记录']) {
 
 test('rapid navigation cancels ASCII; only a new title-to-chat entry replays it', async ({page}) => {
   await fixture(page);
-  await page.getByRole('button',{name:'开始 start'}).click();
+  await page.getByRole('button',{name:'启动 boot'}).click();
   await expect(page.locator('.chat-entry-canvas')).toBeVisible();
   await page.evaluate(() => {location.hash='/settings';});
   await expect(page.locator('.chat-entry-canvas')).toHaveCount(0);
@@ -110,7 +137,7 @@ test('rapid navigation cancels ASCII; only a new title-to-chat entry replays it'
   await expect(page.locator('.page-wrap.is-front')).toHaveCount(0);
   await page.evaluate(() => {location.hash='/title';});
   await expect(page.locator('.title-screen')).toBeVisible();
-  await page.getByRole('button',{name:'开始 start'}).click();
+  await page.getByRole('button',{name:'启动 boot'}).click();
   await expect(page.locator('.chat-entry-canvas')).toBeVisible();
   await expect(page.locator('.chat-entry-canvas')).toHaveCount(0);
   await expect(page.locator('.page-wrap')).toHaveCount(1);
@@ -119,13 +146,13 @@ test('rapid navigation cancels ASCII; only a new title-to-chat entry replays it'
 test('missing decorative art and reduced motion never hold the dialogue behind a transition', async ({page}) => {
   await page.route('**/brand/momo-presence-v2.webp', route => route.abort());
   await fixture(page);
-  await page.getByRole('button',{name:'开始 start'}).click();
+  await page.getByRole('button',{name:'启动 boot'}).click();
   await expect(page.locator('.chat-entry-canvas')).toHaveCount(0);
   await expect(page.locator('.input-row input')).toBeVisible();
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.evaluate(() => {location.hash='/title';});
   await expect(page.locator('.title-screen')).toBeVisible();
-  await page.getByRole('button',{name:'开始 start'}).click();
+  await page.getByRole('button',{name:'启动 boot'}).click();
   await expect(page.locator('.chat-entry-canvas')).toHaveCount(0);
   await expect(page.locator('.input-row input')).toBeVisible();
 });

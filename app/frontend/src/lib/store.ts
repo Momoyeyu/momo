@@ -10,6 +10,7 @@ import type {
 } from "./types";
 import { mergeBuiltinResources } from "../live2d/controlCatalog";
 import { fetchState, putState } from "../services/stateClient";
+import {mcpPermissions} from './mcpPermissions';
 
 export type { PersistedState };
 
@@ -40,6 +41,9 @@ const DEFAULT_SETTINGS: Settings = {
     textSpeed: 60,
     sentenceSpeed: 60,
     voiceVolume: 100,
+    sfxVolume: 35,
+    musicVolume: 22,
+    soundPalette: "warm",
     showStatus: true,
     voiceInput: true,
   },
@@ -139,6 +143,7 @@ function normalizeExtensions(raw: unknown): McpExtension[] {
       env: strDict(o.env),
       endpoint: typeof o.endpoint === "string" ? o.endpoint : "",
       headers: strDict(o.headers),
+      ...mcpPermissions(o),
     }));
 }
 
@@ -207,11 +212,20 @@ function remoteSave(): void {
   if (!inBrowser()) return;
   if (persistencePaused) { saveQueued = true; return; }
   if (saveTimer !== null) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    saveTimer = null;
-    const snapshot = { ...passthrough, ...state };
-    saveInFlight = saveInFlight.then(() => putState(snapshot));
-  }, 300);
+  saveTimer = setTimeout(writePendingState, 300);
+}
+
+function writePendingState(): void {
+  if (saveTimer === null) return;
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  const snapshot = { ...passthrough, ...state };
+  saveInFlight = saveInFlight.then(() => putState(snapshot));
+}
+
+export async function flushPendingState(): Promise<void> {
+  writePendingState();
+  if (!await saveInFlight) throw new Error("Could not save configuration");
 }
 
 /** Hold debounced writes across a consistent backup or destructive restore.

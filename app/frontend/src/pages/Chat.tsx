@@ -1,3 +1,9 @@
+import ExtensionActivities from './ExtensionActivities';
+import {useImageDraft} from '../chat/useImageDraft';
+import '../styles/images.css';
+import DialogDrawer from '../phone/DialogDrawer';
+import DialogHandle from '../phone/DialogHandle';
+import {useIntro} from "../services/introClient";
 // 对话页：VN 式对话框（铭牌 + 字幕 + 输入 + 快捷栏）。
 // 历史不在本页展示，走 backlog 子页（#/backlog）。
 // 引擎是应用级单例：离开本页回合不中断，回来即恢复显示。
@@ -11,9 +17,9 @@ import {
   transcriptVersion,
 } from "../chat/engineInstance";
 import type { EngineHandlers } from "../chat/engineInstance";
+import { lastLocalAssistant } from "../chat/transcript";
 import type { ChatStatus } from "../lib/types";
 import { navigate } from "../router";
-import { saveAutoCheckpoint } from "../services/checkpointClient";
 import { useT, resolveChatLang } from "../i18n";
 import { getStage } from "../live2d/stage";
 import { ServiceError } from "../lib/errors";
@@ -21,9 +27,13 @@ import { getState, speakerName, subscribe } from "../lib/store";
 import { ttsConfigured } from "../lib/asr";
 import Button from "../ui/Button";
 import Icon from "../ui/Icon";
+import PhoneSurface from "../components/PhoneSurface";
 import FirstMeeting from "../components/FirstMeeting";
 import DialogBox from "../components/DialogBox";
 import "../styles/chat.css";
+import {controlAttention,type AttentionState} from '../services/meetingClient';
+import {warmCapture} from '../effects/captureStage';
+import TerminalPrompt from '../ui/TerminalPrompt';
 
 const STATUS_LABEL_KEYS: Record<ChatStatus, string> = {
   idle: "chat.idle",
@@ -32,8 +42,11 @@ const STATUS_LABEL_KEYS: Record<ChatStatus, string> = {
   speaking: "chat.speaking",
 };
 
-export default function Chat({active}: {active: boolean}) {
+export default function Chat({active,attention,onHome}: {active: boolean;attention:AttentionState;onHome:()=>void}) {
   const t = useT();
+  const [phoneOpen,setPhoneOpen]=useState(false),[phoneClose,setPhoneClose]=useState(0);
+  const intro=useIntro();
+  const introActive=!!intro.data && intro.data.phase!=="completed";
   // 角色名/通用设置跟随 store（切换语言、改名、状态开关即时生效）。
   useSyncExternalStore(subscribe, getState);
   const name = speakerName();
@@ -50,8 +63,18 @@ export default function Chat({active}: {active: boolean}) {
   const [error, setError] = useState<string | null>(null);
   const [modelError, setModelError] = useState(false);
   const [input, setInput] = useState("");
+  const drafts=useImageDraft();
+  const [imageSending,setImageSending]=useState(false);
+  const imagesEnabled=!!getState().settings.llm.vision&&!introActive;
   const [closeUp, setCloseUp] = useState(() => getStage().getCloseUp());
+  const [controlling,setControlling]=useState(false);
   const dialog = useRef<HTMLDivElement>(null);
+  useEffect(()=>{
+    if(!active)return;
+    // Warm only static fonts/library, never a user's conversation screenshot.
+    const timer=setTimeout(()=>{const stage=dialog.current?.closest<HTMLElement>('.app-stage');if(stage)void warmCapture(stage);},200);
+    return()=>clearTimeout(timer);
+  },[active]);
   const [entered, setEntered] = useState(false);
   // Follow the actual CSS animation rather than a second, competing timer.
   // No animations (reduced motion) resolves immediately; cancelled entries
@@ -75,6 +98,7 @@ export default function Chat({active}: {active: boolean}) {
     const engine = getChatEngine();
     const showErr = (e: Error): void => {
       let msg = e.message || t("chat.errDefault");
+      if(msg.startsWith("vision."))msg=t(msg);
       if (e instanceof ServiceError) {
         if (e.service === "llm") setModelError(true);
         const detail =
@@ -82,7 +106,7 @@ export default function Chat({active}: {active: boolean}) {
             ? t("chat.errCfg")
             : e.failure === "unreachable"
               ? t("chat.errConn")
-              : e.detail || `HTTP ${e.status}`;
+              : e.detail?.startsWith("vision.") ? t(e.detail) : e.detail || `HTTP ${e.status}`;
         msg = t(`chat.errSvc.${e.service}`, { detail });
       }
       setError(msg);
@@ -117,17 +141,25 @@ export default function Chat({active}: {active: boolean}) {
   }, []);
 
   useEffect(() => {
-    if (!interactive) return;
     const engine = getChatEngine();
-    engine.resumeMic();
-    return () => engine.suspendMic();
-  }, [interactive]);
+    engine.setSceneActive(interactive);
+    if(interactive&&!introActive)engine.resumeMic();
+    return () => {engine.setSceneActive(false);engine.suspendMic();};
+  }, [interactive,introActive]);
 
   const send = (): void => {
     const text = input.trim();
-    if (!text) return;
+    if ((!text&&!drafts.items.length)||imageSending||drafts.items.length&&!drafts.ready) return;
+    if(drafts.items.length&&!imagesEnabled){setError(t('vision.disabled'));return;}
     setModelError(false);
-    getChatEngine().sendText(text);
+    if(drafts.items.length){
+      setImageSending(true);
+      getChatEngine().sendText(text,drafts.items.flatMap(item=>item.image?[item.image]:[]),ok=>{
+        setImageSending(false);
+        if(ok)drafts.accepted();
+        else setInput(current=>current||text);
+      });
+    }else getChatEngine().sendText(text);
     setInput("");
   };
 
@@ -148,28 +180,37 @@ export default function Chat({active}: {active: boolean}) {
     setMuted(eng.muted);
   };
 
-  const lastAssistant = [...getChatEngine().history]
-    .reverse()
-    .find((m) => m.role === "assistant");
+  const lastAssistant = lastLocalAssistant(getChatEngine().history);
   const subtitle = streamActive
     ? streamText || "…"
     // 转写已是句级：末条 assistant 就是最后一句，切句全在 backend
     : streamText || (lastAssistant ? lastAssistant.text : "");
   const busy = status === "thinking" || status === "speaking";
+  const phoneBusy=(attention.activity?.source==='qq'||attention.activity?.toolSource==='qq');
+  const control=async(action:Parameters<typeof controlAttention>[0])=>{
+    setControlling(true);
+    try{if(action==='stop')getChatEngine().interrupt();await controlAttention(action);}
+    catch{setError(t('attention.controlError'));}
+    finally{setControlling(false);}
+  };
 
   return (
-    <div className="chat-page" inert={!interactive}>
+    <div className={`chat-page${phoneOpen?' has-phone':''}`} inert={!interactive}>
       {interactive && <FirstMeeting connectionFailed={modelError} />}
       {error && <div className="chat-error">{error}</div>}
 
+      <DialogDrawer>
       <div className="dialog-zone" ref={dialog}>
         <DialogBox
+          collapsed={phoneOpen}
+          handle={<DialogHandle active={phoneOpen} onClick={()=>setPhoneClose(v=>v+1)}/>}
           lang={resolveChatLang(getState().settings.general)}
           name={name}
           text={subtitle || <span className="muted">……</span>}
+          typing={busy&&streamActive}
           // 状态并进对话框（铭牌右侧），不再是页面左上角的浮标
           status={
-            showStatus ? (
+            phoneBusy ? <div className="chat-status chat-phone-status" role="status"><span className="phone-status-icon"><Icon name="phone" size={14}/></span>{t('attention.qq')}</div> : showStatus ? (
               <div className={`chat-status status-${status}`}>
                 <span className="dot" />
                 {t(STATUS_LABEL_KEYS[status])}
@@ -177,11 +218,29 @@ export default function Chat({active}: {active: boolean}) {
             ) : undefined
           }
         >
-          <div className="input-row">
+          {drafts.items.length>0&&<div className="image-drafts" aria-label={t('vision.draft')}>
+            {drafts.items.map(item=><div key={item.key} className={`image-draft${item.error?' has-error':''}`}>
+              <img src={item.url} alt={t('vision.image')}/>
+              <button type="button" disabled={imageSending} aria-label={t('vision.remove')} onClick={()=>drafts.remove(item.key)}>×</button>
+              {item.pending?<small>{t('vision.loading')}</small>:item.error?<button className="image-retry" title={t(item.error)} onClick={()=>drafts.retry(item)}>{t('vision.retry')}</button>:item.image?.animated?<small>{t('vision.still')}</small>:null}
+            </div>)}
+          </div>}
+          {drafts.error&&<p className="image-draft-error" role="alert">{t(drafts.error)}</p>}
+          <div data-intro="name-input" className="input-row" inert={phoneOpen}>
+            <span className="terminal-input-prompt" aria-hidden="true"><TerminalPrompt/></span>
             <input
               value={input}
               placeholder={t("chat.placeholder", { name })}
               onChange={(e) => setInput(e.target.value)}
+              onPaste={e=>{
+                const files=Array.from(e.clipboardData.items).filter(item=>item.kind==='file'&&item.type.startsWith('image/')).flatMap(item=>{const file=item.getAsFile();return file?[file]:[];});
+                if(!files.length)return;
+                e.preventDefault();
+                if(!imagesEnabled){setError(t('vision.disabled'));return;}
+                if(imageSending)return;
+                drafts.add(files);
+                const text=e.clipboardData.getData('text/plain');if(text)setInput(current=>current+text);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.nativeEvent.isComposing) send();
               }}
@@ -206,7 +265,7 @@ export default function Chat({active}: {active: boolean}) {
               variant="solid"
               className={`send-btn${busy ? " is-stopping" : ""}`}
               onClick={busy ? () => getChatEngine().interrupt() : send}
-              disabled={!busy && !input.trim()}
+              disabled={!busy && (imageSending||(!input.trim()&&!drafts.items.length)||(drafts.items.length>0&&!drafts.ready))}
               aria-label={t(busy ? "chat.stop" : "chat.send")}
               title={t(busy ? "chat.stop" : "chat.send")}
             >
@@ -216,16 +275,23 @@ export default function Chat({active}: {active: boolean}) {
         </DialogBox>
       </div>
 
-      {/* 底部工具条：对照 VN 底部 icon 栏，操作聚拢右侧，返回标题收尾 */}
+      </DialogDrawer>
+
+      {/* 固定右侧竖轨，与对话框及手机的显隐独立。 */}
       <div className="chat-toolbar">
         <div className="tb-side">
           <Button
             className="tb tb-framing"
-            title={t(closeUp ? "performance.fullBody" : "performance.closeUp")}
+            aria-label={t(closeUp ? "performance.fullBody" : "performance.closeUp")}
             onClick={() => { const next = !getStage().getCloseUp(); getStage().setCloseUp(next); setCloseUp(next); }}
           >
-            {t(closeUp ? "performance.fullBody" : "performance.closeUp")}
+            <Icon name={closeUp ? "frameFull" : "frameClose"} />
           </Button>
+          <Button className={`tb tb-focus tip${attention.focus?' is-active':''}`} aria-pressed={attention.focus} disabled={controlling} onClick={()=>void control(attention.focus?'focus_off':'focus_on')} aria-label={t('attention.focus')} data-tip={t('attention.focus')} data-tip-detail={t('attention.focusHint')}><Icon name="focus" size={16}/></Button>
+          {phoneBusy && <Button className="tb" disabled={controlling} onClick={()=>void control('stop')} aria-label={t('attention.stopPhone')} title={t('attention.stopPhone')}><Icon name="stop" size={15}/></Button>}
+          {attention.phonePaused && !attention.focus && <Button className="tb" disabled={controlling} onClick={()=>void control('resume_phone')} title={t('attention.resumePhone')}><Icon name="play" size={16}/></Button>}
+          {!introActive&&<ExtensionActivities/>}
+          {!introActive&&<PhoneSurface active={interactive} attention={attention} onVisibilityChange={setPhoneOpen} closeSignal={phoneClose}/>}
           <Button
             className="tb"
             aria-label={t("chat.backlog")}
@@ -233,23 +299,6 @@ export default function Chat({active}: {active: boolean}) {
             onClick={() => navigate("backlog")}
           >
             <Icon name="backlog" />
-          </Button>
-          <Button
-            className="tb"
-            disabled={busy}
-            title={busy ? t("checkpoint.busySave") : t("checkpoint.save")}
-            aria-label={t("checkpoint.save")}
-            onClick={() => navigate("checkpoint", { checkpointMode: "save" })}
-          >
-            <Icon name="save" />
-          </Button>
-          <Button
-            className="tb"
-            aria-label={t("checkpoint.load")}
-            title={t("checkpoint.load")}
-            onClick={() => navigate("checkpoint", { checkpointMode: "load" })}
-          >
-            <Icon name="load" />
           </Button>
           <Button
             className={`tb${muted || !ttsReady ? " tb-off" : ""}`}
@@ -268,6 +317,7 @@ export default function Chat({active}: {active: boolean}) {
           </Button>
           <Button
             className="tb"
+            data-intro="chat-settings"
             aria-label={t("settings.title")}
             title={t("settings.title")}
             onClick={() => navigate("settings")}
@@ -276,13 +326,12 @@ export default function Chat({active}: {active: boolean}) {
           </Button>
           <Button
             className="tb"
+            data-intro="chat-back"
             aria-label={t("common.backTitle")}
             title={t("common.backTitle")}
-            onClick={() => {
-              // 退出对话 = 本段进度落 auto 槽（auto 唯一的写入时机）
-              void saveAutoCheckpoint().catch(() => {});
-              navigate("title");
-            }}
+            onPointerEnter={()=>{const stage=dialog.current?.closest<HTMLElement>('.app-stage');if(stage)void warmCapture(stage);}}
+            onFocus={()=>{const stage=dialog.current?.closest<HTMLElement>('.app-stage');if(stage)void warmCapture(stage);}}
+            onClick={onHome}
           >
             <Icon name="home" />
           </Button>

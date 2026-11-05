@@ -1,3 +1,4 @@
+import {ambient,type Sound} from '../audio/ambient';
 // 通用按钮：把全站散落的 `ghost` / `small` 类组合收敛成声明式 props。
 //
 // 刻意**不引入基础类**（没有 .btn）——solid 就是裸 <button>，emit 出来的类串与
@@ -9,6 +10,8 @@ import type { ButtonHTMLAttributes } from "react";
 import "../styles/controls.css";
 
 export default function Button({
+  sound="tap",
+  onClick,
   variant = "solid",
   size = "md",
   className,
@@ -16,10 +19,18 @@ export default function Button({
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   /** solid = 实心主按钮（默认）；ghost = 描边次按钮。 */
+  sound?: Sound | false;
   variant?: "solid" | "ghost";
   /** md = 默认尺寸；sm = 卡片/行内小按钮（原 `small`）。 */
   size?: "md" | "sm";
 }) {
+  const toolbar=className?.split(/\s+/).includes('tb');
+  const tip=toolbar?rest['aria-label']??rest.title:undefined;
+  if(toolbar){
+    if(!('data-tip' in rest))Object.assign(rest,{'data-tip':tip});
+    if(!rest['aria-label'])rest['aria-label']=rest.title;
+    delete rest.title;
+  }
   const cls = [
     variant === "ghost" ? "ghost" : "",
     size === "sm" ? "small" : "",
@@ -27,5 +38,5 @@ export default function Button({
   ]
     .filter(Boolean)
     .join(" ");
-  return <button type={type} className={cls || undefined} {...rest} />;
+  return <button type={type} className={cls || undefined} {...rest} onClick={e=>{onClick?.(e);if(sound&&onClick&&!e.defaultPrevented)ambient.sound(sound);}} />;
 }

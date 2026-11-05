@@ -1,5 +1,6 @@
 import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import {guardWebProxy} from './dev/web-origin.ts';
 
 // dev 代理：浏览器直连遇到无 CORS 头的服务（如本地 momo-svc）时，
 // 设置页填 http://localhost:<devPort>/proxy/<llm|asr|tts> 即可绕过。
@@ -15,6 +16,8 @@ const UPSTREAM = {
   asr: env("MOMO_WEB_ASR_UPSTREAM") ?? "http://127.0.0.1:17810",
   tts: env("MOMO_WEB_TTS_UPSTREAM") ?? "http://127.0.0.1:17811",
 };
+const devToken = env('MOMO_DESKTOP_TOKEN');
+const devOrigin = env('MOMO_WEB_ORIGIN');
 
 const strip = (name: string) => (path: string) =>
   path.replace(new RegExp(`^/proxy/${name}`), "") || "/";
@@ -28,6 +31,15 @@ export default defineConfig({
         changeOrigin: true,
         // 内置 ASR 走 /api/asr/stream（WS）
         ws: true,
+        // Capability stays in the Vite process, never in the client bundle.
+        headers: devToken ? {'x-momo-token': devToken} : undefined,
+        configure(proxy) {
+          const check=guardWebProxy(devOrigin);
+          // Change the actual outgoing request: removing an incoming header
+          // after the proxy has constructed its request does not revoke it.
+          proxy.on('proxyReq', check);
+          proxy.on('proxyReqWs', check);
+        },
       },
       "/proxy/llm": {
         target: UPSTREAM.llm,

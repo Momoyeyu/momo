@@ -1,12 +1,14 @@
 // 全窗口 Live2D 画布：应用级常驻（模型始终预加载），
-// 但仅 chat 场景可见——与视觉小说一致：角色立绘只出现在对话场景。
+// 激活期间留在子页面下层，页面自身覆盖它；仅 chat 开放人物点击。
 // 加载失败时静默降级（背景图仍在，面板可正常用）。
 
+import RoomBackground from "./RoomBackground";
+import {roomPhase,roomImages} from "./roomTime";
 import { useEffect, useRef } from "react";
 import { getAvatarId, subscribe } from "../lib/store";
 import { getStage } from "./stage";
 
-export default function StageCanvas({ visible, onReady }: { visible: boolean; onReady: () => void }) {
+export default function StageCanvas({ visible, interactive, onReady }: { visible: boolean; interactive:boolean; onReady: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const homeRef = useRef<HTMLDivElement | null>(null);
 
@@ -18,7 +20,7 @@ export default function StageCanvas({ visible, onReady }: { visible: boolean; on
     // Imported / unavailable models must not leave startup covering usable UI forever.
     const deadline = window.setTimeout(prepared, 3000);
     const room = new Image();
-    room.src = '/stage/stage-room.jpg';
+    room.src = roomImages[roomPhase(new Date().getHours())];
     const roomReady = room.decode().catch(() => {});
     const canvas = canvasRef.current ??= document.createElement("canvas");
     canvas.className = "live2d-canvas";
@@ -49,7 +51,7 @@ export default function StageCanvas({ visible, onReady }: { visible: boolean; on
     // 不随组件卸载 dispose：舞台是应用级常驻单例。
   }, [onReady]);
 
-  useEffect(() => { getStage().setChatVisible(visible); }, [visible]);
+  useEffect(() => { getStage().setChatVisible(visible,interactive); }, [visible,interactive]);
 
   return (
     <div
@@ -62,6 +64,7 @@ export default function StageCanvas({ visible, onReady }: { visible: boolean; on
         backgroundPosition: "center",
       }}
     >
+      <RoomBackground />
       <div className="scene-ambient" aria-hidden="true" />
       <div ref={homeRef} className="live2d-home" style={{ position: "absolute", inset: 0 }} />
       <div className="scene-reading-shade" aria-hidden="true" />

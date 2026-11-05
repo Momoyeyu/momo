@@ -1,0 +1,4064 @@
+{
+  "format": "momo-web-source",
+  "version": 1,
+  "revision": "633f02e53d9dd967006e138f195920810fd242b5",
+  "checks": [
+    "backend 733 passed; frontend 247 passed; typecheck/build passed"
+  ],
+  "files": {
+    "app/.env.example": {
+      "source": ".env.example",
+      "sha256": "a7137763f6fc7cf8311393a5b16508f221652b4d8a502f8a68a2a74792c9725d",
+      "mode": 33188
+    },
+    "app/backend/.python-version": {
+      "source": "backend/.python-version",
+      "sha256": "a876e0b10411037a012498b9fe18d9bc1df32ed8b722a13564dc944ddcfd9135",
+      "mode": 33188
+    },
+    "app/backend/README.md": {
+      "source": "backend/README.md",
+      "sha256": "256a6b66f955d8da785a1a504bbee764fd2787f763f04f87fa28447f9b123033",
+      "mode": 33188
+    },
+    "app/backend/app/__init__.py": {
+      "source": "backend/app/__init__.py",
+      "sha256": "b070e2ed0c4e2a1f0168718f36ea69c418c4b2f508485436c38118a249b7d088",
+      "mode": 33188
+    },
+    "app/backend/app/api/__init__.py": {
+      "source": "backend/app/api/__init__.py",
+      "sha256": "e9becf3798512bd7b555473d2af077955a56308d002e6e849e27a94aeee2e62d",
+      "mode": 33188
+    },
+    "app/backend/app/api/activities.py": {
+      "source": "backend/app/api/activities.py",
+      "sha256": "a0e76eb1654ad16293fcba20ac23db7cff862879d160c7511b314d6fd520edfa",
+      "mode": 33188
+    },
+    "app/backend/app/api/app_permissions.py": {
+      "source": "backend/app/api/app_permissions.py",
+      "sha256": "5e73f775afcdbd3ddd3e5046072f6c83b5cb10984d89dd6179910b5382db22a6",
+      "mode": 33188
+    },
+    "app/backend/app/api/archive.py": {
+      "source": "backend/app/api/archive.py",
+      "sha256": "bbdae9730926bfc76627aa9e1b848e7a786ee4af5588169bcd8d50a5828886b5",
+      "mode": 33188
+    },
+    "app/backend/app/api/asr.py": {
+      "source": "backend/app/api/asr.py",
+      "sha256": "b511968c502e7cb81e5f2683736526664314a91b8bedf90bdc617a6ee68206c7",
+      "mode": 33188
+    },
+    "app/backend/app/api/browser.py": {
+      "source": "backend/app/api/browser.py",
+      "sha256": "e4eb0f04524eb0be177cf9370fd37d4c1526e524193f92c20c8dc6c1d43ee169",
+      "mode": 33188
+    },
+    "app/backend/app/api/chat.py": {
+      "source": "backend/app/api/chat.py",
+      "sha256": "8f0503cf2622322a59abbfa1b475875b705cb3bbead12754a343ec43952c3f53",
+      "mode": 33188
+    },
+    "app/backend/app/api/checkpoints.py": {
+      "source": "backend/app/api/checkpoints.py",
+      "sha256": "d6d11a27a2785c368b8e5dad335419c48650e7f56737f28d0950f7310739be52",
+      "mode": 33188
+    },
+    "app/backend/app/api/computer.py": {
+      "source": "backend/app/api/computer.py",
+      "sha256": "549d2712a618b48bfe64e00bd35af0804cc8291796966759bf86a22dec030f95",
+      "mode": 33188
+    },
+    "app/backend/app/api/extensions.py": {
+      "source": "backend/app/api/extensions.py",
+      "sha256": "4fcbf4ba8c142b4a07b6acf19f4a2f2d5ed9b4838453edad313f5ebb13e761aa",
+      "mode": 33188
+    },
+    "app/backend/app/api/intro.py": {
+      "source": "backend/app/api/intro.py",
+      "sha256": "45f724e0641ce5e6852f8e8dc8fa5fa4bb67f8ca9c3dbab592dc33da28a78b41",
+      "mode": 33188
+    },
+    "app/backend/app/api/live2d.py": {
+      "source": "backend/app/api/live2d.py",
+      "sha256": "01c64444435ec6375a3b89b9bcf9d5a30d4fe053284824380ba62ebb6e1b7076",
+      "mode": 33188
+    },
+    "app/backend/app/api/meeting.py": {
+      "source": "backend/app/api/meeting.py",
+      "sha256": "9de99490ce54a0033323168701ea2284fa0c419c2cacfa7acab3223fa3562ae8",
+      "mode": 33188
+    },
+    "app/backend/app/api/memories.py": {
+      "source": "backend/app/api/memories.py",
+      "sha256": "2a128acdf8a898d7f9c20eaf3a14036ff868bbd7c1f1248d7e1216cde3470594",
+      "mode": 33188
+    },
+    "app/backend/app/api/minecraft.py": {
+      "source": "backend/app/api/minecraft.py",
+      "sha256": "7134355f6625e52bb7bc95fac62dec8b72b2a15e87620c348913b0a3a37c5ace",
+      "mode": 33188
+    },
+    "app/backend/app/api/native_control.py": {
+      "source": "backend/app/api/native_control.py",
+      "sha256": "3f97897bdb3fe3abd33fca52b55020a90d762d4108f7e1826f015a8d359e0460",
+      "mode": 33188
+    },
+    "app/backend/app/api/onboarding.py": {
+      "source": "backend/app/api/onboarding.py",
+      "sha256": "c4a457a32e4ff9b382c468de0301829cb2084b2eada436cfb6db22c7454ed702",
+      "mode": 33188
+    },
+    "app/backend/app/api/probe.py": {
+      "source": "backend/app/api/probe.py",
+      "sha256": "e8456be7f727dd358b40a84ed3b3a859fafd92886623ebae5d39b885c83eb695",
+      "mode": 33188
+    },
+    "app/backend/app/api/resources.py": {
+      "source": "backend/app/api/resources.py",
+      "sha256": "7102584959e82b41fb18d5ff33a0256a8a3e2a6ee431569d64c1b63da00c51a1",
+      "mode": 33188
+    },
+    "app/backend/app/api/social.py": {
+      "source": "backend/app/api/social.py",
+      "sha256": "dc117a21219a1f280ee3ccfced8a285b21e8d669cc53f77414c8bf6c281caefa",
+      "mode": 33188
+    },
+    "app/backend/app/api/social_media.py": {
+      "source": "backend/app/api/social_media.py",
+      "sha256": "93ed182944bf8f09ede6f547a7500728cf685ea326f60750602d4c4222f42f5d",
+      "mode": 33188
+    },
+    "app/backend/app/api/state.py": {
+      "source": "backend/app/api/state.py",
+      "sha256": "b9e5c7584688c144adeab5a6d7062147702be42da373dc055cbf55ae0fdbf995",
+      "mode": 33188
+    },
+    "app/backend/app/api/tts.py": {
+      "source": "backend/app/api/tts.py",
+      "sha256": "9f8dcd705d1de727db91d6819cbbffa0ee64f2c8ccd9cb42fed19601a8dff063",
+      "mode": 33188
+    },
+    "app/backend/app/api/vision.py": {
+      "source": "backend/app/api/vision.py",
+      "sha256": "f8d3a5e4c9c944396fed9f1da3a642d51c3c5bba44d16bafabee793626b24bbd",
+      "mode": 33188
+    },
+    "app/backend/app/core/credentials.py": {
+      "source": "backend/app/core/credentials.py",
+      "sha256": "29e2afc1e4970e16e57e14b698c61a8fbc259b7d8261b224bf7139bdb2e03032",
+      "mode": 33188
+    },
+    "app/backend/app/core/data_lock.py": {
+      "source": "backend/app/core/data_lock.py",
+      "sha256": "d1a85eb2bf9db79ce1cc2d5920c1547fb5b0e9b6306dbe151aeb80b009456a5a",
+      "mode": 33188
+    },
+    "app/backend/app/core/db.py": {
+      "source": "backend/app/core/db.py",
+      "sha256": "3634402439d5529a8ea2f27b27516b55eeaa5768785d408e4c785900e915fbcc",
+      "mode": 33188
+    },
+    "app/backend/app/core/desktop_auth.py": {
+      "source": "backend/app/core/desktop_auth.py",
+      "sha256": "ce9d61f0b6e06e479a8f40cb3d5b792e00bcd166e8464d5717085751061d4f84",
+      "mode": 33188
+    },
+    "app/backend/app/core/embed.py": {
+      "source": "backend/app/core/embed.py",
+      "sha256": "9d05c3d84eb6645de17af40f39ec5389e4f827afda58b0c319a0057a0680c40a",
+      "mode": 33188
+    },
+    "app/backend/app/core/instance_lock.py": {
+      "source": "backend/app/core/instance_lock.py",
+      "sha256": "56cf107075ebabfbd2575b68301e845bbbea96f2199b18a3f51260924ee6d454",
+      "mode": 33188
+    },
+    "app/backend/app/core/llm.py": {
+      "source": "backend/app/core/llm.py",
+      "sha256": "027dfa30b1952c5fbef71fbc28d50ab058eb985a4a09cfc193d81dd961a4778c",
+      "mode": 33188
+    },
+    "app/backend/app/core/maintenance.py": {
+      "source": "backend/app/core/maintenance.py",
+      "sha256": "e6ee3b28563dc1b3357f307fd77d32e606107bee49c1399bb397f6fbcfdfcb1a",
+      "mode": 33188
+    },
+    "app/backend/app/core/mcp.py": {
+      "source": "backend/app/core/mcp.py",
+      "sha256": "69720fca6b29d713ae039ef82f8ebccc43e2c59c8b58a9ba8f9340b2bca756b3",
+      "mode": 33188
+    },
+    "app/backend/app/core/performance.py": {
+      "source": "backend/app/core/performance.py",
+      "sha256": "94805a9a7f5611373a31cff44c52457062a99f8dd6b613f04b6177f5aaec0bce",
+      "mode": 33188
+    },
+    "app/backend/app/core/plugin_host.py": {
+      "source": "backend/app/core/plugin_host.py",
+      "sha256": "6fc25551be300900a4912f8e0b02441f3c67d0ad833af929dde77848c16a29e6",
+      "mode": 33188
+    },
+    "app/backend/app/core/sentences.py": {
+      "source": "backend/app/core/sentences.py",
+      "sha256": "b674a5fd4810ca8d72c8b5ffd0b5a8174a85fbfa1689e28dfe19fc12a38e7c68",
+      "mode": 33188
+    },
+    "app/backend/app/core/state.py": {
+      "source": "backend/app/core/state.py",
+      "sha256": "f892433f2c659b83d7415abb378c39e0b7077dec7804333af22cbf1e1f322c40",
+      "mode": 33188
+    },
+    "app/backend/app/core/text.py": {
+      "source": "backend/app/core/text.py",
+      "sha256": "77ecca8d0237e6c6598e545b5e7b991ce0afee730023bbaaf304064308a7e61c",
+      "mode": 33188
+    },
+    "app/backend/app/core/time.py": {
+      "source": "backend/app/core/time.py",
+      "sha256": "191297b4edcdd13e650f6942a82d40bea6ffef1bb6cbe20dd6ce86451831836a",
+      "mode": 33188
+    },
+    "app/backend/app/main.py": {
+      "source": "backend/app/main.py",
+      "sha256": "511fbedcd943fadc974664c1a5ec68d02291e71157400a3cfde7f60c7eb3461b",
+      "mode": 33188
+    },
+    "app/backend/app/models/__init__.py": {
+      "source": "backend/app/models/__init__.py",
+      "sha256": "80fa8ee2efead98ef5063d6d4cbf392b1f67cabdea5ef1ee1dd0dbe41bdbe114",
+      "mode": 33188
+    },
+    "app/backend/app/models/memories.py": {
+      "source": "backend/app/models/memories.py",
+      "sha256": "2d9f948bf88ce4dea7913c051505956805170d5a11e74c0530a9f356817112fb",
+      "mode": 33188
+    },
+    "app/backend/app/models/vectors.py": {
+      "source": "backend/app/models/vectors.py",
+      "sha256": "0935420f6d7225725d3007dd4529d7610a55d7e858153de517355bff6ca18b5f",
+      "mode": 33188
+    },
+    "app/backend/app/services/activities.py": {
+      "source": "backend/app/services/activities.py",
+      "sha256": "ea8ef645ea6e5f88cf9d41d806f26502e28c9993f685227e1dfbdd198bdc6743",
+      "mode": 33188
+    },
+    "app/backend/app/services/app_permissions.py": {
+      "source": "backend/app/services/app_permissions.py",
+      "sha256": "f8cd5b51d44abbdadb82b30425065d17f2855f1b3823075d6f52a3555a5f6d57",
+      "mode": 33188
+    },
+    "app/backend/app/services/archive.py": {
+      "source": "backend/app/services/archive.py",
+      "sha256": "14b44bb5f3662ce869f7ce77eb305d763f9063550890d9c19828692f41a11144",
+      "mode": 33188
+    },
+    "app/backend/app/services/asr.py": {
+      "source": "backend/app/services/asr.py",
+      "sha256": "352d6431f2bc3f52b35bebbc08e3b829a9d4bec240ed7143341c200af090a27c",
+      "mode": 33188
+    },
+    "app/backend/app/services/browser.py": {
+      "source": "backend/app/services/browser.py",
+      "sha256": "e353c8081dfaaff17bd854a1583a1975a3ebd747903d73d9e0b93b84e24b45bb",
+      "mode": 33188
+    },
+    "app/backend/app/services/browser_fetch.py": {
+      "source": "backend/app/services/browser_fetch.py",
+      "sha256": "f9cccc2ffd39f5d66ef5793c8ef10b2b3bad72791de42718598a9fd2c19f026b",
+      "mode": 33188
+    },
+    "app/backend/app/services/capability.py": {
+      "source": "backend/app/services/capability.py",
+      "sha256": "309d102348751250f3be3678653455f7770cb43d75edc0b9a1c87428d1903f7f",
+      "mode": 33188
+    },
+    "app/backend/app/services/checkpoint.py": {
+      "source": "backend/app/services/checkpoint.py",
+      "sha256": "d40cdd91d3d78242337e275121b3029937a71fff2ea121215293ab0a55b6cfb3",
+      "mode": 33188
+    },
+    "app/backend/app/services/compress.py": {
+      "source": "backend/app/services/compress.py",
+      "sha256": "0dcb18bc314ddb6252584012d39a6a1dbc5406c5f6b4f12f26799d710215363d",
+      "mode": 33188
+    },
+    "app/backend/app/services/computer.py": {
+      "source": "backend/app/services/computer.py",
+      "sha256": "097c01826238237e313bc3cc57a4badcf79345325bd9c0d2ab0a6fe9e2ac94d8",
+      "mode": 33188
+    },
+    "app/backend/app/services/computer_tools.py": {
+      "source": "backend/app/services/computer_tools.py",
+      "sha256": "42bb9ad29dea279e1cc9bea5faade46ad6a260f21038a6d5b5414381eda8ed40",
+      "mode": 33188
+    },
+    "app/backend/app/services/context_policy.py": {
+      "source": "backend/app/services/context_policy.py",
+      "sha256": "179c04d0fa97bec937fb65341a3c19bf815c62ea544f968bc188f7a8ff46ca1a",
+      "mode": 33188
+    },
+    "app/backend/app/services/coordinator.py": {
+      "source": "backend/app/services/coordinator.py",
+      "sha256": "841accd875df9489b5b266a4a80197d566d48b978eb0fe236bf649882134f9ca",
+      "mode": 33188
+    },
+    "app/backend/app/services/dialogue_input.py": {
+      "source": "backend/app/services/dialogue_input.py",
+      "sha256": "8a0632aff12a25d0b863b6aab1d8ddd6883e4c4aa55e1e5005de9f3fdabeda0e",
+      "mode": 33188
+    },
+    "app/backend/app/services/extend.py": {
+      "source": "backend/app/services/extend.py",
+      "sha256": "ed3e709977f0bcb1fb77ca0b711ded03157be79f497923786d2a7bdb56f0ce61",
+      "mode": 33188
+    },
+    "app/backend/app/services/intro.py": {
+      "source": "backend/app/services/intro.py",
+      "sha256": "9c3b326c0434b179cdf595a14c2377d5709d5831ef4d63113bc0332579c4bd27",
+      "mode": 33188
+    },
+    "app/backend/app/services/live2d.py": {
+      "source": "backend/app/services/live2d.py",
+      "sha256": "8f97af8bb70161b84a0ac335e5ec86c418280cab425c63c7c973d1389d68bf47",
+      "mode": 33188
+    },
+    "app/backend/app/services/memory.py": {
+      "source": "backend/app/services/memory.py",
+      "sha256": "33c93720cdce77a8afb44c632cba9ad76d2c3ef02c26c6eafae0900abbad3415",
+      "mode": 33188
+    },
+    "app/backend/app/services/message_display.py": {
+      "source": "backend/app/services/message_display.py",
+      "sha256": "25b07d154ccee7423fd1e9090cded602f7a797304d49643fc9a333a86eb1cecb",
+      "mode": 33188
+    },
+    "app/backend/app/services/minecraft.py": {
+      "source": "backend/app/services/minecraft.py",
+      "sha256": "6742c9c5a015f991c5136a6f77c9a087c72d844f6d94c634b8d319d2d37af9a8",
+      "mode": 33188
+    },
+    "app/backend/app/services/minecraft_attach.py": {
+      "source": "backend/app/services/minecraft_attach.py",
+      "sha256": "5a834016e8b562cc6c1565ebb199d1f54701b55fb9d3240b82ab9c09e0960282",
+      "mode": 33188
+    },
+    "app/backend/app/services/native_control.py": {
+      "source": "backend/app/services/native_control.py",
+      "sha256": "2515a6cccc5e57e905a0b79f5592d0ee765ebaa2998a64ed71978a8866c0cb34",
+      "mode": 33188
+    },
+    "app/backend/app/services/onboarding.py": {
+      "source": "backend/app/services/onboarding.py",
+      "sha256": "0b7c67a093f802f6e1e01420b6286b616b5b35bcd7461c83cbeb3a363121bcbc",
+      "mode": 33188
+    },
+    "app/backend/app/services/phone.py": {
+      "source": "backend/app/services/phone.py",
+      "sha256": "5da7c1971d30ef697542e2169233a20d2cb95caa106770bcfd693c7c4ecb7e4b",
+      "mode": 33188
+    },
+    "app/backend/app/services/plugins.py": {
+      "source": "backend/app/services/plugins.py",
+      "sha256": "76098798f781d7bcf34c4aa8592eda5f49babf85d800ff166a13715a27d946c4",
+      "mode": 33188
+    },
+    "app/backend/app/services/prompt.py": {
+      "source": "backend/app/services/prompt.py",
+      "sha256": "de56053b63f5b4f4fb55c39861aef8ec185cbe445316f713612334e0cca04f63",
+      "mode": 33188
+    },
+    "app/backend/app/services/resources.py": {
+      "source": "backend/app/services/resources.py",
+      "sha256": "ba499878469d029060a7215db296c63734d57c609ac148cd1df254271cd6f96b",
+      "mode": 33188
+    },
+    "app/backend/app/services/social.py": {
+      "source": "backend/app/services/social.py",
+      "sha256": "a8283017661c17acf795849671ed5742383f9905bc7cdea0c50dd09479b019de",
+      "mode": 33188
+    },
+    "app/backend/app/services/social_actions.py": {
+      "source": "backend/app/services/social_actions.py",
+      "sha256": "e6dd9b4612a8d93ef15f911aac7be44e3e047c9a5de0f3c10205d0c5cccfd25e",
+      "mode": 33188
+    },
+    "app/backend/app/services/social_media.py": {
+      "source": "backend/app/services/social_media.py",
+      "sha256": "f6cceda4776e9432d1227c6dc18d9aea52688bc48d8d4165b209636f671d47ff",
+      "mode": 33188
+    },
+    "app/backend/app/services/social_tools.py": {
+      "source": "backend/app/services/social_tools.py",
+      "sha256": "30f812f9256b1132d8cae3f479b07fd22b862fe03e0b697d1930ff7fbf62779a",
+      "mode": 33188
+    },
+    "app/backend/app/services/state.py": {
+      "source": "backend/app/services/state.py",
+      "sha256": "4f95a91cba25d6766040b2c1cb9613c227d692477ceb7f381b811a2ecd9031d5",
+      "mode": 33188
+    },
+    "app/backend/app/services/tts.py": {
+      "source": "backend/app/services/tts.py",
+      "sha256": "64250dbe417381d5a6155385606ab4433cc5d897dcbf89ee9590f72c73649b5b",
+      "mode": 33188
+    },
+    "app/backend/app/services/turn.py": {
+      "source": "backend/app/services/turn.py",
+      "sha256": "5b13f1ac83bd415e3bf28bf06d0573cb1ad2e01ac12c7933db22b3b9bb00c312",
+      "mode": 33188
+    },
+    "app/backend/app/services/turn_context.py": {
+      "source": "backend/app/services/turn_context.py",
+      "sha256": "37d5ce4cf51ec0a48d1940f75edebde1ca04e316621be895b0cbee678f0cdffe",
+      "mode": 33188
+    },
+    "app/backend/app/services/vision.py": {
+      "source": "backend/app/services/vision.py",
+      "sha256": "f0fe45a2159c46a489254df601cba2d553e231cbebe58622ac50d800aa67f1fd",
+      "mode": 33188
+    },
+    "app/backend/desktop.py": {
+      "source": "backend/desktop.py",
+      "sha256": "97598d336a9d25bc26addc049e71f0815e850b98e1b6366358d6d85ee7d4dfc3",
+      "mode": 33188
+    },
+    "app/backend/openapi.json": {
+      "source": "backend/openapi.json",
+      "sha256": "caeb016b17b92ca62ec7c7104536e1e8c1ce93c1d97a1838cdbb457543b7692b",
+      "mode": 33188
+    },
+    "app/backend/pyproject.toml": {
+      "source": "backend/pyproject.toml",
+      "sha256": "e396235cfdacc82013ff309bd86f3de0201a088e93931e5290eae24a7f7b22ad",
+      "mode": 33188
+    },
+    "app/backend/resources/README.md": {
+      "source": "backend/resources/README.md",
+      "sha256": "2a8f62cc7b440fa36556a00e97e9dc227d8295150eb532db301439c292eb7243",
+      "mode": 33188
+    },
+    "app/backend/resources/asr/PROVENANCE.md": {
+      "source": "backend/resources/asr/PROVENANCE.md",
+      "sha256": "41bbf6fb36f6fa3dc911e321707395b1a46a3d5b6c8fb1731f623a65047c1ff8",
+      "mode": 33188
+    },
+    "app/backend/resources/asr/licenses/FunASR-MODEL-LICENSE": {
+      "source": "backend/resources/asr/licenses/FunASR-MODEL-LICENSE",
+      "sha256": "7dba975a2069691db4992b0592d70828b330d2f8a30a71450f4e152a554e84f8",
+      "mode": 33188
+    },
+    "app/backend/resources/asr/licenses/ONNX-LICENSE-REFERENCE": {
+      "source": "backend/resources/asr/licenses/ONNX-LICENSE-REFERENCE",
+      "sha256": "f1a4057b359881cbfd625166abcd5830c92f2f54c89aaa139fd75138cd694e8e",
+      "mode": 33188
+    },
+    "app/backend/resources/asr/licenses/SenseVoice-LICENSE": {
+      "source": "backend/resources/asr/licenses/SenseVoice-LICENSE",
+      "sha256": "4bc3bffe14ebe38cc67309991e04f92866835eac1c5e2e1abd37163f67c6de5f",
+      "mode": 33188
+    },
+    "app/backend/resources/asr/licenses/Silero-VAD-LICENSE": {
+      "source": "backend/resources/asr/licenses/Silero-VAD-LICENSE",
+      "sha256": "2e63e9a38b6e8fc0c7bc37ce174caca1862870856c6daf5697cfb785e925520b",
+      "mode": 33188
+    },
+    "app/backend/resources/asr/manifest.json": {
+      "source": "backend/resources/asr/manifest.json",
+      "sha256": "4c438082fec429296854cf811f7a3b11d014b6f49d16c88a16758dbb1967aa53",
+      "mode": 33188
+    },
+    "app/backend/resources/embedding/multilingual-e5-small/LICENSE": {
+      "source": "backend/resources/embedding/multilingual-e5-small/LICENSE",
+      "sha256": "b5cb7ff7859e7d282d98fc43ab081b0dda5dc659dc3385cf65740c759a7e6a6c",
+      "mode": 33188
+    },
+    "app/backend/resources/embedding/multilingual-e5-small/UPSTREAM_README.md": {
+      "source": "backend/resources/embedding/multilingual-e5-small/UPSTREAM_README.md",
+      "sha256": "0038de97aee16258cecbad7ffda4b4febd6953e747a00e0ddbc8e6ed241e9c1c",
+      "mode": 33188
+    },
+    "app/backend/resources/embedding/multilingual-e5-small/manifest.json": {
+      "source": "backend/resources/embedding/multilingual-e5-small/manifest.json",
+      "sha256": "331730b131b022c7e2fb9da38fcdd54b3f6ce78749942d8bf223380e3820934c",
+      "mode": 33188
+    },
+    "app/backend/resources/soul.md": {
+      "source": "backend/resources/soul.md",
+      "sha256": "960071b1dba98fb454bd74ac5d58c1aa053f386bfb7e34de739a7b501b25b313",
+      "mode": 33188
+    },
+    "app/backend/scripts/__init__.py": {
+      "source": "backend/scripts/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": 33188
+    },
+    "app/backend/scripts/benchmark_embedding.py": {
+      "source": "backend/scripts/benchmark_embedding.py",
+      "sha256": "27020108bdc42e4690426c281c214269d6ea8bc7cb3d94e1807aaf8bf3519909",
+      "mode": 33188
+    },
+    "app/backend/scripts/benchmark_thinking.py": {
+      "source": "backend/scripts/benchmark_thinking.py",
+      "sha256": "b75cbabcfb153ea9f13c33d51052d6e5c78486ac4b1acc4ba365f1ebf67cd60d",
+      "mode": 33188
+    },
+    "app/backend/scripts/download_asr_models.py": {
+      "source": "backend/scripts/download_asr_models.py",
+      "sha256": "357b22f2aa65a6ac38fdc76a3dbc3c52cacdd7215e80782127ad69755a2befa5",
+      "mode": 33188
+    },
+    "app/backend/scripts/export_openapi.py": {
+      "source": "backend/scripts/export_openapi.py",
+      "sha256": "190a857a9ffaea2513d4badf9eeddc4f9182c183414fdd2a42e16c5d1acbb2bb",
+      "mode": 33188
+    },
+    "app/backend/scripts/package_resources.py": {
+      "source": "backend/scripts/package_resources.py",
+      "sha256": "869ba840a26e274f09f2b08a8acd0c2846f3a88ed64bc1f2cab43ddb977c806a",
+      "mode": 33188
+    },
+    "app/backend/scripts/prepare_embedding.py": {
+      "source": "backend/scripts/prepare_embedding.py",
+      "sha256": "d1b0e2a98743b0138ee9ee247334570be6d573a6cd6e89b358da38019a5ea5b4",
+      "mode": 33188
+    },
+    "app/backend/tests/conftest.py": {
+      "source": "backend/tests/conftest.py",
+      "sha256": "81c090d407499ca348faaa61b5e3909032e4731d7fc06fda48da4c6e8900cb8a",
+      "mode": 33188
+    },
+    "app/backend/tests/fixtures/embedding_recall.json": {
+      "source": "backend/tests/fixtures/embedding_recall.json",
+      "sha256": "a2eb68ad1cb9ffc43f5f50a64f5fa90bc42a80d59227e049513dbd20f7cc821c",
+      "mode": 33188
+    },
+    "app/backend/tests/helpers/onboarding_request.py": {
+      "source": "backend/tests/helpers/onboarding_request.py",
+      "sha256": "94aafa98eac2d9b23bd316c7251664c3e3b2382294ad41d5ca4b4648ffa5bc1d",
+      "mode": 33188
+    },
+    "app/backend/tests/helpers/real_performance_turn.py": {
+      "source": "backend/tests/helpers/real_performance_turn.py",
+      "sha256": "af6b06d112c4b04ac9d58052ced62e6a99b7623dbe5b08eabfd91839a464fd45",
+      "mode": 33188
+    },
+    "app/backend/tests/test_activities.py": {
+      "source": "backend/tests/test_activities.py",
+      "sha256": "7ec570416469f0b64ad28066ad24ded9e144715e48c2ff5ab61b4c3da19a3e52",
+      "mode": 33188
+    },
+    "app/backend/tests/test_app_permissions.py": {
+      "source": "backend/tests/test_app_permissions.py",
+      "sha256": "6e0a2be74ca41e7347514407fc741c240704c0326fdd4a6fd78bfef60a1157b9",
+      "mode": 33188
+    },
+    "app/backend/tests/test_asr.py": {
+      "source": "backend/tests/test_asr.py",
+      "sha256": "3b7d7d1e6c5d586a708cf60742b907b1529399af110d4d6a460d37322b230d8c",
+      "mode": 33188
+    },
+    "app/backend/tests/test_browser.py": {
+      "source": "backend/tests/test_browser.py",
+      "sha256": "885448cb46baaf6bbaffc77c2651731174cd639e5cb66cabb07c0282b97d6e6e",
+      "mode": 33188
+    },
+    "app/backend/tests/test_browser_fetch.py": {
+      "source": "backend/tests/test_browser_fetch.py",
+      "sha256": "b3fc065b19530124221cd321a4ce2515758832bbbe32bf8500a06ff55d319f8e",
+      "mode": 33188
+    },
+    "app/backend/tests/test_checkpoint.py": {
+      "source": "backend/tests/test_checkpoint.py",
+      "sha256": "2d01c20ae36ec86284c7d5ead03607d7a243bb8a13d662b0eb0245e51b059a7c",
+      "mode": 33188
+    },
+    "app/backend/tests/test_computer.py": {
+      "source": "backend/tests/test_computer.py",
+      "sha256": "4bfde177a88d79ea817024d6bc01c07ca7b5625572b309cd8eb429dc5c65bf4e",
+      "mode": 33188
+    },
+    "app/backend/tests/test_computer_tools.py": {
+      "source": "backend/tests/test_computer_tools.py",
+      "sha256": "cabe9a8ad7b30424f9190a138264cc9ef9e827760003d10ddef44365583ab977",
+      "mode": 33188
+    },
+    "app/backend/tests/test_context_policy.py": {
+      "source": "backend/tests/test_context_policy.py",
+      "sha256": "4cab0a6e02792b43fa01c186336d789465f396aef4b67c1693ce0a621cac6f00",
+      "mode": 33188
+    },
+    "app/backend/tests/test_context_scenarios.py": {
+      "source": "backend/tests/test_context_scenarios.py",
+      "sha256": "7144691d1058a1dacc2826db565b1fd2a08a98e6a1f01b80ebd8e757514f536e",
+      "mode": 33188
+    },
+    "app/backend/tests/test_context_smoke.py": {
+      "source": "backend/tests/test_context_smoke.py",
+      "sha256": "83fc0649e3a8b5bd3e641f1fd313831dbbaaa98b10cc4924aaafd547242b6f74",
+      "mode": 33188
+    },
+    "app/backend/tests/test_continuous_life.py": {
+      "source": "backend/tests/test_continuous_life.py",
+      "sha256": "ef297bb64106740e6ea94841abd576be3ac8bead693baf02cc9b3ebb6c430553",
+      "mode": 33188
+    },
+    "app/backend/tests/test_coordinator.py": {
+      "source": "backend/tests/test_coordinator.py",
+      "sha256": "f9fa3b68682211e773f5b254a980731ffa09eb8655963dfdc152632446eac286",
+      "mode": 33188
+    },
+    "app/backend/tests/test_coordinator_edges.py": {
+      "source": "backend/tests/test_coordinator_edges.py",
+      "sha256": "e4df21bf922f34e6a75cb9c549864f08e2ec745af6d0344e8f7d79b4f847af73",
+      "mode": 33188
+    },
+    "app/backend/tests/test_credentials.py": {
+      "source": "backend/tests/test_credentials.py",
+      "sha256": "4b1cbe139458b7aab443fcb9b205968ac415d8f28c2209d05f266fa6693d9642",
+      "mode": 33188
+    },
+    "app/backend/tests/test_data_lock.py": {
+      "source": "backend/tests/test_data_lock.py",
+      "sha256": "fecd68eea8ceb6af580bf80e28fe5a146d51bf792055bf5b759e4a130c229d52",
+      "mode": 33188
+    },
+    "app/backend/tests/test_desktop.py": {
+      "source": "backend/tests/test_desktop.py",
+      "sha256": "11f8dc36c1feb7439ee6d261e0b1adf0e8c97df4831151843403ea9685b66f21",
+      "mode": 33188
+    },
+    "app/backend/tests/test_embedding_model.py": {
+      "source": "backend/tests/test_embedding_model.py",
+      "sha256": "eaac7da54d5ec48110f41578f23c3e69a275fa823ed00dbe0a66cf867ef4aeb1",
+      "mode": 33188
+    },
+    "app/backend/tests/test_extend.py": {
+      "source": "backend/tests/test_extend.py",
+      "sha256": "ce3fc51895db0cf6b0bdc46c52a566de55635df428d73ebac25fea3257fadd89",
+      "mode": 33188
+    },
+    "app/backend/tests/test_intro.py": {
+      "source": "backend/tests/test_intro.py",
+      "sha256": "9ff8ededea6ba37711c7cd14f5341fd489e9065b37e711b0786d8eab79bccbd0",
+      "mode": 33188
+    },
+    "app/backend/tests/test_layering.py": {
+      "source": "backend/tests/test_layering.py",
+      "sha256": "de362291ee3c65c53e8b123ed5a05cbaa751e7890e1244c8a04b0b829211b441",
+      "mode": 33188
+    },
+    "app/backend/tests/test_live2d.py": {
+      "source": "backend/tests/test_live2d.py",
+      "sha256": "5316d1b943a3cfbf0a512e4a87f1657329c5de1cdf14def2c1ec9678588a87e9",
+      "mode": 33188
+    },
+    "app/backend/tests/test_llm_stream.py": {
+      "source": "backend/tests/test_llm_stream.py",
+      "sha256": "f37d277d7c4704e231a4983d900f85a8a6a91b26a9543c11120d77f2db42296c",
+      "mode": 33188
+    },
+    "app/backend/tests/test_local_embedding.py": {
+      "source": "backend/tests/test_local_embedding.py",
+      "sha256": "54def584d348417dbd44618c6f4bebaf661ba37ae61d1d81ef5c5ac16fd2fd33",
+      "mode": 33188
+    },
+    "app/backend/tests/test_local_time.py": {
+      "source": "backend/tests/test_local_time.py",
+      "sha256": "0457a5cdd5b677c10aaed9e61d2cef4066113066452edd4273f9df2e97b2b3fb",
+      "mode": 33188
+    },
+    "app/backend/tests/test_loop.py": {
+      "source": "backend/tests/test_loop.py",
+      "sha256": "17a21e4593b7f69710004761cd54dd3231fb6860968ed00ac95d485b16ccfd4a",
+      "mode": 33188
+    },
+    "app/backend/tests/test_memory.py": {
+      "source": "backend/tests/test_memory.py",
+      "sha256": "17b2b152be971053a10527644b921d1b99c070f8dac73946cf59460631652aad",
+      "mode": 33188
+    },
+    "app/backend/tests/test_minecraft.py": {
+      "source": "backend/tests/test_minecraft.py",
+      "sha256": "859f64e0ea3a1b94473866ccd0de1f128bc3b73349154be3cb67b0844cf24468",
+      "mode": 33188
+    },
+    "app/backend/tests/test_minecraft_attach.py": {
+      "source": "backend/tests/test_minecraft_attach.py",
+      "sha256": "824976d90e1779fb36638d3f1d7a727475cead5446ffe70dbee9b1f043b2d9d3",
+      "mode": 33188
+    },
+    "app/backend/tests/test_native_control.py": {
+      "source": "backend/tests/test_native_control.py",
+      "sha256": "65d3bd8db1d48e68be2bcbbb887678bb28ee112c2b2767f7a03616c8aeb37b9b",
+      "mode": 33188
+    },
+    "app/backend/tests/test_native_thinking.py": {
+      "source": "backend/tests/test_native_thinking.py",
+      "sha256": "04f1e40734c8761a97e164e1c1e62c59e0a08b7f36ba1a982b3ee2d7b49957a2",
+      "mode": 33188
+    },
+    "app/backend/tests/test_onboarding.py": {
+      "source": "backend/tests/test_onboarding.py",
+      "sha256": "9f15618431beb6e1e61a3c6f186c8a716e278d1dbba4da0ee708c3a198a21e97",
+      "mode": 33188
+    },
+    "app/backend/tests/test_onboarding_delivery.py": {
+      "source": "backend/tests/test_onboarding_delivery.py",
+      "sha256": "00b311727b22cfde67c15e8664da465a7629ed049fedb0d98d859382eab3739f",
+      "mode": 33188
+    },
+    "app/backend/tests/test_openapi.py": {
+      "source": "backend/tests/test_openapi.py",
+      "sha256": "8a6db889ae7d47606a382ad59a5b3523d41c2498f7897c14882f324c9d732957",
+      "mode": 33188
+    },
+    "app/backend/tests/test_performance.py": {
+      "source": "backend/tests/test_performance.py",
+      "sha256": "7236a2dace93786c12628b703d705506d83fac090b11145fe92336cd4c9d7b7f",
+      "mode": 33188
+    },
+    "app/backend/tests/test_phone.py": {
+      "source": "backend/tests/test_phone.py",
+      "sha256": "5817ba9ef7149d1ec25caee9c71ba9c3816805af2253ea4ec231c94d3c548704",
+      "mode": 33188
+    },
+    "app/backend/tests/test_plugins.py": {
+      "source": "backend/tests/test_plugins.py",
+      "sha256": "571cfb9d441f7e113dbec8c9adf11c6ffb988c3534f45780890c347f1dcba87c",
+      "mode": 33188
+    },
+    "app/backend/tests/test_prepare_core.py": {
+      "source": "backend/tests/test_prepare_core.py",
+      "sha256": "cab296d5bafeb19172d1c115ff116d70a94dba59bc3ebced2516f4c1f7bb77bf",
+      "mode": 33188
+    },
+    "app/backend/tests/test_prompt.py": {
+      "source": "backend/tests/test_prompt.py",
+      "sha256": "e38c0097efec52569168171dd7dae61c97d77b28d22098ca6bda48fe38034f1f",
+      "mode": 33188
+    },
+    "app/backend/tests/test_provider_probe.py": {
+      "source": "backend/tests/test_provider_probe.py",
+      "sha256": "5a76ff288b5619201e3b3b727ba32b2a4bf1a9b841fffda4b6a7e62f05518094",
+      "mode": 33188
+    },
+    "app/backend/tests/test_qq_actions_integration.py": {
+      "source": "backend/tests/test_qq_actions_integration.py",
+      "sha256": "713aa4da9013e02fc64df273514a85134df3a8b655b69560c5672d50166bbf25",
+      "mode": 33188
+    },
+    "app/backend/tests/test_qq_boot_restore.py": {
+      "source": "backend/tests/test_qq_boot_restore.py",
+      "sha256": "853a3d9daa57930e8006e6128f4673f94aa2d18713ecd08b3819d616f521c728",
+      "mode": 33188
+    },
+    "app/backend/tests/test_qq_full_policy.py": {
+      "source": "backend/tests/test_qq_full_policy.py",
+      "sha256": "1b8d455eac4a2e0ae0d91cd06855be90851e9e56b12060985374f738565f20a8",
+      "mode": 33188
+    },
+    "app/backend/tests/test_qq_managed_connection.py": {
+      "source": "backend/tests/test_qq_managed_connection.py",
+      "sha256": "1c05e6dd061bac6701939314923885212090cd07a699ceec3c9620ee93a76bd3",
+      "mode": 33188
+    },
+    "app/backend/tests/test_qq_runtime_api.py": {
+      "source": "backend/tests/test_qq_runtime_api.py",
+      "sha256": "69f7b19d1d869b217d797e95b469155e6332e8ed754d1f6ededcb97696c75397",
+      "mode": 33188
+    },
+    "app/backend/tests/test_qq_runtime_startup.py": {
+      "source": "backend/tests/test_qq_runtime_startup.py",
+      "sha256": "93da23e296771fc45e5f9ad14d85696496a6108eb68f65e3d0c27c81d392b4c5",
+      "mode": 33188
+    },
+    "app/backend/tests/test_qq_unknown_recovery.py": {
+      "source": "backend/tests/test_qq_unknown_recovery.py",
+      "sha256": "cff3b7e8655d001db2a53c87defe10cbdca0747e36f82c55abe41d2673a84de2",
+      "mode": 33188
+    },
+    "app/backend/tests/test_receipt_recovery.py": {
+      "source": "backend/tests/test_receipt_recovery.py",
+      "sha256": "727514a4621011e2ba55b97860fd8c706a333e4c2ea1cc36ca3ce4d11746a2a1",
+      "mode": 33188
+    },
+    "app/backend/tests/test_resource_pack.py": {
+      "source": "backend/tests/test_resource_pack.py",
+      "sha256": "6505fc067cebc1820f162826bf1832dcb47cc6f343d9917762ec4835ab0ef6b7",
+      "mode": 33188
+    },
+    "app/backend/tests/test_restore_capabilities.py": {
+      "source": "backend/tests/test_restore_capabilities.py",
+      "sha256": "33b799ae0d5ae7e986ea2bd8b52b51e41332447edeb4afeb531d99bf80341577",
+      "mode": 33188
+    },
+    "app/backend/tests/test_retired_operations.py": {
+      "source": "backend/tests/test_retired_operations.py",
+      "sha256": "a5ebcb5219a7986a81a4b8572e5d3bc84e363123fb7777e808558aa03b8b7bf4",
+      "mode": 33188
+    },
+    "app/backend/tests/test_review_qq_integration.py": {
+      "source": "backend/tests/test_review_qq_integration.py",
+      "sha256": "b70e8a66bc812a35dfc409ffb08ff36baeb3749e7ae94ee9fbc6ee39785ace11",
+      "mode": 33188
+    },
+    "app/backend/tests/test_screen_reaction.py": {
+      "source": "backend/tests/test_screen_reaction.py",
+      "sha256": "c30920f9fdf1231a1ef38817507587f3100809a38a9f72f424463aaeb94bda43",
+      "mode": 33188
+    },
+    "app/backend/tests/test_sentences.py": {
+      "source": "backend/tests/test_sentences.py",
+      "sha256": "fd2aadcfc4e40eaaddb459623860b62fb2d715ecdbd30569ff90d97f6352c000",
+      "mode": 33188
+    },
+    "app/backend/tests/test_social_accounts.py": {
+      "source": "backend/tests/test_social_accounts.py",
+      "sha256": "104607746512397382c43c980281f3a1deff8d8e3bdc4779da4e943f543607e0",
+      "mode": 33188
+    },
+    "app/backend/tests/test_social_api.py": {
+      "source": "backend/tests/test_social_api.py",
+      "sha256": "9a3972e31caaf1b92d9d3b1e02ba361f3ddde38ecd3100f62910acd021cdd138",
+      "mode": 33188
+    },
+    "app/backend/tests/test_social_attention.py": {
+      "source": "backend/tests/test_social_attention.py",
+      "sha256": "504141c0bc34d577686bf2775aa1e054e788f3532d2f17bf78508595eb56a875",
+      "mode": 33188
+    },
+    "app/backend/tests/test_social_media.py": {
+      "source": "backend/tests/test_social_media.py",
+      "sha256": "16d8ae51cfd9deb3ab6ddc3a11ab8637d085b067ebeedaef5467f2ba46e6e6bd",
+      "mode": 33188
+    },
+    "app/backend/tests/test_social_model_tools.py": {
+      "source": "backend/tests/test_social_model_tools.py",
+      "sha256": "392d1e762fa5476156565f97e9b4efd279a917f2d66f8c489eb6e6fa5de5a90a",
+      "mode": 33188
+    },
+    "app/backend/tests/test_store.py": {
+      "source": "backend/tests/test_store.py",
+      "sha256": "598390442484e5a93674c26b6f01b137db036be7744b57b064e21c57e9508981",
+      "mode": 33188
+    },
+    "app/backend/tests/test_tts.py": {
+      "source": "backend/tests/test_tts.py",
+      "sha256": "37c33e99ba1ab27547d7c46587ac9f230e4ba807ccf8c099ecd4f7cb7e6a014f",
+      "mode": 33188
+    },
+    "app/backend/tests/test_tts_readiness.py": {
+      "source": "backend/tests/test_tts_readiness.py",
+      "sha256": "cd78403a2abc4a5f5dca56bf9c12527059c66362bd93bb1752e0b8d1636382b8",
+      "mode": 33188
+    },
+    "app/backend/tests/test_turn_context.py": {
+      "source": "backend/tests/test_turn_context.py",
+      "sha256": "bdcec970daf849adb07826d214c6b6b14d1c184b8d020ad2bb504ceb96764059",
+      "mode": 33188
+    },
+    "app/backend/tests/test_vision.py": {
+      "source": "backend/tests/test_vision.py",
+      "sha256": "23aca932a1ff0d407aad3c8a8f33872dd36629ae7ee64450e27cabe842655f89",
+      "mode": 33188
+    },
+    "app/backend/tests/test_web_loopback_origins.py": {
+      "source": "backend/tests/test_web_loopback_origins.py",
+      "sha256": "1f26bf5b810b6e65af56729f426d541cc60b462b857c620804fe807fc59d40d9",
+      "mode": 33188
+    },
+    "app/backend/uv.lock": {
+      "source": "backend/uv.lock",
+      "sha256": "366a007b3d8f8cc233924279c7c289a6b7c27ef67b227553cfe45d8ac8aad4e1",
+      "mode": 33188
+    },
+    "app/frontend/dev/web-origin.test.ts": {
+      "source": "frontend/dev/web-origin.test.ts",
+      "sha256": "b2fd85d99f56dcf0bd853005af9ee6a14430418e40f4b49a2c4e7357cef0455b",
+      "mode": 33188
+    },
+    "app/frontend/dev/web-origin.ts": {
+      "source": "frontend/dev/web-origin.ts",
+      "sha256": "b50042e39259f3c8b7a3ec78e98581ec4e3e6dff0ab864cead482ae15fe75d45",
+      "mode": 33188
+    },
+    "app/frontend/e2e/01-smoke.spec.ts": {
+      "source": "frontend/e2e/01-smoke.spec.ts",
+      "sha256": "59f820f8e492625a9b71d11f2b92f9c399a08f208239ec79474373022a36ced3",
+      "mode": 33188
+    },
+    "app/frontend/e2e/02-settings.spec.ts": {
+      "source": "frontend/e2e/02-settings.spec.ts",
+      "sha256": "37a8a6596e020d860833c3b6b1d1539777d0d86ad3d6eda31869ea4b171b92ad",
+      "mode": 33188
+    },
+    "app/frontend/e2e/03-memory.spec.ts": {
+      "source": "frontend/e2e/03-memory.spec.ts",
+      "sha256": "eac6394d9e1b8164f4cc259b41884753f57d49fb06604c10f36bb59d189b08e6",
+      "mode": 33188
+    },
+    "app/frontend/e2e/05-continuous-life.spec.ts": {
+      "source": "frontend/e2e/05-continuous-life.spec.ts",
+      "sha256": "51b791f3c1d091fcc72b70dd76addf3c0d43b19ba9604b2f20af7e256d6ffccc",
+      "mode": 33188
+    },
+    "app/frontend/e2e/06-chat.spec.ts": {
+      "source": "frontend/e2e/06-chat.spec.ts",
+      "sha256": "d353c4ce27e4fb8c90b129bf4fe20af39cf884fded6b9c382ead0194cb7af346",
+      "mode": 33188
+    },
+    "app/frontend/e2e/07-tts.spec.ts": {
+      "source": "frontend/e2e/07-tts.spec.ts",
+      "sha256": "0e25162d14e9bcfa4bcdc3260e976eae812438c63ce31072fa6ff7b9bfe65f21",
+      "mode": 33188
+    },
+    "app/frontend/e2e/08-performance.spec.ts": {
+      "source": "frontend/e2e/08-performance.spec.ts",
+      "sha256": "c4d05b44acc7059961c476d4eaeda6590e3f61e69bd613509d0ab022607a4d92",
+      "mode": 33188
+    },
+    "app/frontend/e2e/09-failed-chat.spec.ts": {
+      "source": "frontend/e2e/09-failed-chat.spec.ts",
+      "sha256": "fbf11695b8685453b34f9f7510765fa92040d0d36f4c34cbda7cafd376a82841",
+      "mode": 33188
+    },
+    "app/frontend/e2e/10-visual-preview.spec.ts": {
+      "source": "frontend/e2e/10-visual-preview.spec.ts",
+      "sha256": "3267d80c04a59624933bcdcbe4314d18db48487e20f7e106532c053cd450cfb9",
+      "mode": 33188
+    },
+    "app/frontend/e2e/11-resource-preview.spec.ts": {
+      "source": "frontend/e2e/11-resource-preview.spec.ts",
+      "sha256": "9f3eb5313a89a4afb57dd0236c1a3df4c847967839d7b10b59efc7c113abf12f",
+      "mode": 33188
+    },
+    "app/frontend/e2e/12-overlay-layout.spec.ts": {
+      "source": "frontend/e2e/12-overlay-layout.spec.ts",
+      "sha256": "06685229b8727671c7b6c4aa0ef5ab9057c4fa06043eef08aad7d4b030de1da8",
+      "mode": 33188
+    },
+    "app/frontend/e2e/13-real-performance.spec.ts": {
+      "source": "frontend/e2e/13-real-performance.spec.ts",
+      "sha256": "44210af8d8aa9d62eefcc65d68073b8f14299d81e4a760e65033e96f8319b03b",
+      "mode": 33188
+    },
+    "app/frontend/e2e/14-control-semantics.spec.ts": {
+      "source": "frontend/e2e/14-control-semantics.spec.ts",
+      "sha256": "295f0639134b8ef8cb1fd868582b1cf6c702b7d38c92bef038e71b7a3161b873",
+      "mode": 33188
+    },
+    "app/frontend/e2e/15-onboarding.spec.ts": {
+      "source": "frontend/e2e/15-onboarding.spec.ts",
+      "sha256": "7fc19529d6da102c3005e7e9334808e1cbb1b9a37e079901e5d67b173cf2f065",
+      "mode": 33188
+    },
+    "app/frontend/e2e/16-builtin-models.spec.ts": {
+      "source": "frontend/e2e/16-builtin-models.spec.ts",
+      "sha256": "10fc1b58def6c9e08a7b4474370834b56bad943b7a125ef46a7a9a95db1d0375",
+      "mode": 33188
+    },
+    "app/frontend/e2e/17-data-roundtrip.spec.ts": {
+      "source": "frontend/e2e/17-data-roundtrip.spec.ts",
+      "sha256": "d34de1b6672a5ab4d0ba57587418f161bbe7fa76471c4545d15a427e15bd6293",
+      "mode": 33188
+    },
+    "app/frontend/e2e/18-startup-presence.spec.ts": {
+      "source": "frontend/e2e/18-startup-presence.spec.ts",
+      "sha256": "cd10ac23939aa66c6ff5d2a797eb9430f59cb11b7f493afb04526dccd98c8bb4",
+      "mode": 33188
+    },
+    "app/frontend/e2e/19-presence-entry.spec.ts": {
+      "source": "frontend/e2e/19-presence-entry.spec.ts",
+      "sha256": "91f951dc8404b30a2a24225f6fa03c117963b95c0014430d596de5f598e3f9c3",
+      "mode": 33188
+    },
+    "app/frontend/e2e/20-dialog-entry.spec.ts": {
+      "source": "frontend/e2e/20-dialog-entry.spec.ts",
+      "sha256": "1220d652ad88b108c20aa396b34e9fa00531326c08c284984b9d3a31f1623c7d",
+      "mode": 33188
+    },
+    "app/frontend/e2e/21-runtime-meeting.spec.ts": {
+      "source": "frontend/e2e/21-runtime-meeting.spec.ts",
+      "sha256": "395fa557c661426cbe455f5085f1861a54eb9a0a71e4d08a2882edcb8be86b66",
+      "mode": 33188
+    },
+    "app/frontend/e2e/22-social-ui.spec.ts": {
+      "source": "frontend/e2e/22-social-ui.spec.ts",
+      "sha256": "a0510e63e86127ea65b343d47a24f903789d9667e17af719fd5bcf08cd639d7f",
+      "mode": 33188
+    },
+    "app/frontend/e2e/25-qq-managed-login.spec.ts": {
+      "source": "frontend/e2e/25-qq-managed-login.spec.ts",
+      "sha256": "5b7b35867ceac463d6f03ea9473612bf6c206b2a06349d0af0e1b89e7d3cba09",
+      "mode": 33188
+    },
+    "app/frontend/e2e/27-qq-full-permissions.spec.ts": {
+      "source": "frontend/e2e/27-qq-full-permissions.spec.ts",
+      "sha256": "c542883fefee90c511adb6085bf3ed8267e61c17eed0ef91294d4985bfa8a01a",
+      "mode": 33188
+    },
+    "app/frontend/e2e/28-intro-guide.spec.ts": {
+      "source": "frontend/e2e/28-intro-guide.spec.ts",
+      "sha256": "ff9e182d39e1a987061a18bf2f366378690bb8d4505633ed0469640b04d17907",
+      "mode": 33188
+    },
+    "app/frontend/e2e/29-chat-side-rail.spec.ts": {
+      "source": "frontend/e2e/29-chat-side-rail.spec.ts",
+      "sha256": "8d714e5fa54e885c6c07180a942ac255f6783d7f5cba8ec67a6f6c1b4a3f75c3",
+      "mode": 33188
+    },
+    "app/frontend/e2e/32-title-typing.spec.ts": {
+      "source": "frontend/e2e/32-title-typing.spec.ts",
+      "sha256": "9b5bee2ec7d57e27ccc9666ca26fbb315bd26d7a40c859f4affb64dd9ab3c375",
+      "mode": 33188
+    },
+    "app/frontend/e2e/33-phone-blur.spec.ts": {
+      "source": "frontend/e2e/33-phone-blur.spec.ts",
+      "sha256": "e2d5f4f3f1f5df351cbbb40a32f3fc14a063415d47c2cce6b572174157fe4756",
+      "mode": 33188
+    },
+    "app/frontend/e2e/34-glass-return.spec.ts": {
+      "source": "frontend/e2e/34-glass-return.spec.ts",
+      "sha256": "fdb8b41d453f05fa7ea862b21a8061582a960cbb240113a4e9a0fafcd40278c5",
+      "mode": 33188
+    },
+    "app/frontend/e2e/35-plugin-library.spec.ts": {
+      "source": "frontend/e2e/35-plugin-library.spec.ts",
+      "sha256": "0f3f51146355c9da6074fd0d7f284b2ee9fa34689a935190e94140f757959cbb",
+      "mode": 33188
+    },
+    "app/frontend/e2e/35-scene-layers.spec.ts": {
+      "source": "frontend/e2e/35-scene-layers.spec.ts",
+      "sha256": "a43dd9c2ea2c53d33f2d09bba978a1fabe69d336183d8f734b09e72155425f0e",
+      "mode": 33188
+    },
+    "app/frontend/e2e/36-terminal-dialog.spec.ts": {
+      "source": "frontend/e2e/36-terminal-dialog.spec.ts",
+      "sha256": "46da8fe00eb0dd0686355634e61d831a496a42c7bf92277615403ce4c400e0a6",
+      "mode": 33188
+    },
+    "app/frontend/e2e/37-image-understanding.spec.ts": {
+      "source": "frontend/e2e/37-image-understanding.spec.ts",
+      "sha256": "624ca65eecefb7ee54dd8d6ad9db31d6677bf633bf1998a6e166ed715ec6e36b",
+      "mode": 33188
+    },
+    "app/frontend/e2e/37-mcp-pagination.spec.ts": {
+      "source": "frontend/e2e/37-mcp-pagination.spec.ts",
+      "sha256": "e12218d7b67d6846ce95b890c500d1cd44728df7316d3b4d4515a498541691fb",
+      "mode": 33188
+    },
+    "app/frontend/e2e/38-browser-settings.spec.ts": {
+      "source": "frontend/e2e/38-browser-settings.spec.ts",
+      "sha256": "79ef6309ba279877d5875f7f7a2195e82d9a21ab209620993305a7f90936f36b",
+      "mode": 33188
+    },
+    "app/frontend/e2e/39-screen-companion.spec.ts": {
+      "source": "frontend/e2e/39-screen-companion.spec.ts",
+      "sha256": "7e5d045cd781dd4ba64108e4b934961cf209f75e75037116a9d4d471716af4c0",
+      "mode": 33188
+    },
+    "app/frontend/e2e/40-minecraft-settings.spec.ts": {
+      "source": "frontend/e2e/40-minecraft-settings.spec.ts",
+      "sha256": "70a7cb6062f455b5d7cb3745503aaffc05807a31881b09c26a5c615dd1b0d300",
+      "mode": 33188
+    },
+    "app/frontend/e2e/41-extension-entry.spec.ts": {
+      "source": "frontend/e2e/41-extension-entry.spec.ts",
+      "sha256": "7881223f91a3f55f423a88138f74d26476ef4d5e416d3fab9f30d0ec9f23827b",
+      "mode": 33188
+    },
+    "app/frontend/e2e/42-extension-layout.spec.ts": {
+      "source": "frontend/e2e/42-extension-layout.spec.ts",
+      "sha256": "0e9486026d3aec004e85a1fdffb3d47f6462ef6b4bebcdb8cd67ade1742dc06f",
+      "mode": 33188
+    },
+    "app/frontend/e2e/43-environment-audio.spec.ts": {
+      "source": "frontend/e2e/43-environment-audio.spec.ts",
+      "sha256": "800d0890f70e90767feb9d55ee3c45973d60ca484f0b5d0b8886cdee227bcf2d",
+      "mode": 33188
+    },
+    "app/frontend/e2e/44-room-time.spec.ts": {
+      "source": "frontend/e2e/44-room-time.spec.ts",
+      "sha256": "2a5600f28df2fffbf854ddde4bce1194bece0f5aaba373a41272c07e63c1478d",
+      "mode": 33188
+    },
+    "app/frontend/e2e/README.md": {
+      "source": "frontend/e2e/README.md",
+      "sha256": "ac8b641e9471564947dd25047211092f0feaaf8eab4295cc7950d37031e6190a",
+      "mode": 33188
+    },
+    "app/frontend/e2e/fixtures.ts": {
+      "source": "frontend/e2e/fixtures.ts",
+      "sha256": "24a5786df805d57257466c5e4fc781f5f7e6dfa498faced47537234f1ecbc2e5",
+      "mode": 33188
+    },
+    "app/frontend/e2e/fixtures/performance-prompts.json": {
+      "source": "frontend/e2e/fixtures/performance-prompts.json",
+      "sha256": "499d25d07fc798d2444e15f9df9d65877df1bf2a31442d2f3119883e9e6cff61",
+      "mode": 33188
+    },
+    "app/frontend/e2e/helpers.ts": {
+      "source": "frontend/e2e/helpers.ts",
+      "sha256": "8185b79e0bede48d7f8ded611f698d94fdcff55c64cc6cf109cabf15009bbdb8",
+      "mode": 33188
+    },
+    "app/frontend/e2e/helpers/runtime.ts": {
+      "source": "frontend/e2e/helpers/runtime.ts",
+      "sha256": "e1c03836efbca437197820eb7336ea708dec07c463c2a813355a9253ecf0cc07",
+      "mode": 33188
+    },
+    "app/frontend/index.html": {
+      "source": "frontend/index.html",
+      "sha256": "a5ead2b2a6ef22b459941fc6bbfed32345f1b1c340b36cf375cd33e99feeb24f",
+      "mode": 33188
+    },
+    "app/frontend/package.json": {
+      "source": "frontend/package.json",
+      "sha256": "ffd074e4d5f04d6cc531217ca98176b9da7906a68383e8d6a94f333ad7a109aa",
+      "mode": 33188
+    },
+    "app/frontend/playwright.config.ts": {
+      "source": "frontend/playwright.config.ts",
+      "sha256": "c9a39c79e371c5e54be39c83a665556d925b0440ec4ccded43643d47509913f8",
+      "mode": 33188
+    },
+    "app/frontend/pnpm-lock.yaml": {
+      "source": "frontend/pnpm-lock.yaml",
+      "sha256": "a3b607d5c777b8bad88d1e986142bb6030791a60963ea9d69d4f912786a4d48e",
+      "mode": 33188
+    },
+    "app/frontend/pnpm-workspace.yaml": {
+      "source": "frontend/pnpm-workspace.yaml",
+      "sha256": "44b627aa58902d12f2b7469e46784fd611bac456409c630d7636c0e7059c14aa",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/comfort-ost.mp3": {
+      "source": "frontend/public/audio/comfort-ost.mp3",
+      "sha256": "cab884553fe36d2d49c438f8bc5e0b67af35503e7d70499f5d3f95f01d98f547",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/comfort.wav": {
+      "source": "frontend/public/audio/comfort.wav",
+      "sha256": "10770015a8da9a0bdd7ee0e54804ed78f2bc251d2db7535909c9d51b9a2b24ea",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/connection-ost.mp3": {
+      "source": "frontend/public/audio/connection-ost.mp3",
+      "sha256": "b0a4447a89f048d8ef812d6dcff4ccda84df9d02de6275f8817efe5296f7fee7",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/connection.wav": {
+      "source": "frontend/public/audio/connection.wav",
+      "sha256": "47315ee61739ccaea947e87be33be2e6af9a98c65486524d3be1868f98ab56fc",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/daily-ost.mp3": {
+      "source": "frontend/public/audio/daily-ost.mp3",
+      "sha256": "53357385e7a1ea0c1ee3710865375703b307f9189880a8b2b62836b7b8db6d83",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/daily.wav": {
+      "source": "frontend/public/audio/daily.wav",
+      "sha256": "9fb77eaf241f5b5dbbff389ce6a48ea0163210c6a5d00087458da8054d5d8f0f",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-boot.wav": {
+      "source": "frontend/public/audio/glass-boot.wav",
+      "sha256": "93acbaf0a77779f875e28a3bec26a85a1d37d13a7fdea9d9fbef5c90a3913401",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-cancel.wav": {
+      "source": "frontend/public/audio/glass-cancel.wav",
+      "sha256": "2458d4264e58d2acccbe29307a7a5890826831d410b6db419a5195aff403a2e7",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-complete.wav": {
+      "source": "frontend/public/audio/glass-complete.wav",
+      "sha256": "fd8ecb8f803c82f7067b7365e4c3b94d7cb647f1bae272c3dd8c9a97fdcb8563",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-confirm.wav": {
+      "source": "frontend/public/audio/glass-confirm.wav",
+      "sha256": "31653995f5ed9988c16a4a14db0ff99c1c50742b6bae6bd0919c4262efcd4f06",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-home.wav": {
+      "source": "frontend/public/audio/glass-home.wav",
+      "sha256": "d38623f47d6a7d1634ac99cc3661ea7da4c3e19a41e611a5867463d9c2646da3",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-notify.wav": {
+      "source": "frontend/public/audio/glass-notify.wav",
+      "sha256": "31653995f5ed9988c16a4a14db0ff99c1c50742b6bae6bd0919c4262efcd4f06",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-off.wav": {
+      "source": "frontend/public/audio/glass-off.wav",
+      "sha256": "2458d4264e58d2acccbe29307a7a5890826831d410b6db419a5195aff403a2e7",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-on.wav": {
+      "source": "frontend/public/audio/glass-on.wav",
+      "sha256": "bd84bb1b99d7cdaf7d821f2203f18502d561dc7ad10876c4fab40279579f4213",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-phone-in.wav": {
+      "source": "frontend/public/audio/glass-phone-in.wav",
+      "sha256": "24efce235b3063454dd0a09ebb81ac33c6de0ce0a989fcc9bf55cca17251dddc",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-phone-out.wav": {
+      "source": "frontend/public/audio/glass-phone-out.wav",
+      "sha256": "b6415571ef2e41366969e56876498b7e07bcaea3c7e1e85269923a9bff475131",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-preview.wav": {
+      "source": "frontend/public/audio/glass-preview.wav",
+      "sha256": "b54a0c0c1088732e9047b5a8dc4c940e6db6e1e469b23cee274ec2979273ce45",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/glass-tap.wav": {
+      "source": "frontend/public/audio/glass-tap.wav",
+      "sha256": "2f64c0351694a9f1a74db669a2ca112b0e9071a1928891124ee564cffad3eae7",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/listen.html": {
+      "source": "frontend/public/audio/listen.html",
+      "sha256": "1f59a511f4a5910aa8997289c651d73110509d5af3a3941b9fe940fc8d774716",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/manifest.json": {
+      "source": "frontend/public/audio/manifest.json",
+      "sha256": "bcb20057e7d8c225b33a0c195d37772caf53d44c590017d944d9502add9387f4",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/night-ost.mp3": {
+      "source": "frontend/public/audio/night-ost.mp3",
+      "sha256": "7f3b98a55bc6675ec237ba1c9df59106a4a8f9aebb7c86507d622eeb408643d2",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/night.wav": {
+      "source": "frontend/public/audio/night.wav",
+      "sha256": "2b928e165306207eb297566bd77005a94da013b0556c0cd24f869fb269843212",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/quality.json": {
+      "source": "frontend/public/audio/quality.json",
+      "sha256": "7f83b1f877888f870d91879b6dc00af9109ff4b6ff71ceb956b439ba7bc58c5f",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/title-ost.mp3": {
+      "source": "frontend/public/audio/title-ost.mp3",
+      "sha256": "2edc0dfc825193433d3fb6be9b5dd86872700ebb40f1cedb953a653109086a14",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/title.wav": {
+      "source": "frontend/public/audio/title.wav",
+      "sha256": "5c48b46927b2270f3a78402958ada62b86f09d15cce71b25a4e4a9f018b04ea3",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/uplift-ost.mp3": {
+      "source": "frontend/public/audio/uplift-ost.mp3",
+      "sha256": "ceb8e39c144fa2b73cb770f866b594f3690894a497b107597bc9c6474471b4e8",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/uplift.wav": {
+      "source": "frontend/public/audio/uplift.wav",
+      "sha256": "e5905a8176fadae02c9f558ba3eec4219d8f76e361373aca5a47d54e4d133ec6",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-boot.wav": {
+      "source": "frontend/public/audio/warm-boot.wav",
+      "sha256": "570932d56fa2a4921a875652d6c642974761580c551633a1fcc657009cedf833",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-cancel.wav": {
+      "source": "frontend/public/audio/warm-cancel.wav",
+      "sha256": "2b99ed97dc6fbc62f7a438e0473424b31643b42d523ba947f237821fe6c85501",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-complete.wav": {
+      "source": "frontend/public/audio/warm-complete.wav",
+      "sha256": "87affe813db256625c669eaa9fe9eaa6796cec866b46f75d4880885cd6f4c957",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-confirm.wav": {
+      "source": "frontend/public/audio/warm-confirm.wav",
+      "sha256": "69dff8d6affa7bd367789bde2f88bed83882203b3bb2c8ad9b6f23c5a57cb336",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-home.wav": {
+      "source": "frontend/public/audio/warm-home.wav",
+      "sha256": "bbd9f4de84a325a130f4bfb09d9ea5fb55f1e5d562d6d7a3eff4d527855f029d",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-notify.wav": {
+      "source": "frontend/public/audio/warm-notify.wav",
+      "sha256": "69dff8d6affa7bd367789bde2f88bed83882203b3bb2c8ad9b6f23c5a57cb336",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-off.wav": {
+      "source": "frontend/public/audio/warm-off.wav",
+      "sha256": "2b99ed97dc6fbc62f7a438e0473424b31643b42d523ba947f237821fe6c85501",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-on.wav": {
+      "source": "frontend/public/audio/warm-on.wav",
+      "sha256": "3cd11cac938600eabfae3de2d5303c4b72ee513f37c1c04b7af04a653992e2ce",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-phone-in.wav": {
+      "source": "frontend/public/audio/warm-phone-in.wav",
+      "sha256": "1c835e2f18924304c009565758bc9ac1b6fb2db8eff4c142a05eb0c771d614fd",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-phone-out.wav": {
+      "source": "frontend/public/audio/warm-phone-out.wav",
+      "sha256": "6eee110ca2870da7380647962e0c45bd0d1ec19a0323083060b2a8a66fa89db6",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-preview.wav": {
+      "source": "frontend/public/audio/warm-preview.wav",
+      "sha256": "c047d124873bb9dbfd61ccf20460fe7a170d94d1144e955df9ff0ca0fc1413b7",
+      "mode": 33188
+    },
+    "app/frontend/public/audio/warm-tap.wav": {
+      "source": "frontend/public/audio/warm-tap.wav",
+      "sha256": "802e5eae45e2063d0b9e9747d0e49c73073a2cff62211d645e6d128ff645d294",
+      "mode": 33188
+    },
+    "app/frontend/public/brand/momo-icon.svg": {
+      "source": "frontend/public/brand/momo-icon.svg",
+      "sha256": "2424080f2c3db8a79078b5641589240d3a6412bd754072ccfdbec28364dcf26c",
+      "mode": 33188
+    },
+    "app/frontend/public/brand/momo-mark.svg": {
+      "source": "frontend/public/brand/momo-mark.svg",
+      "sha256": "1614132fec1e3530e648996e9ce54db45cd48e985b2c4ace1383e43038746ca3",
+      "mode": 33188
+    },
+    "app/frontend/public/brand/momo-presence-v2.webp": {
+      "source": "frontend/public/brand/momo-presence-v2.webp",
+      "sha256": "38ab93ada714de4982115ee8d2f322da576f01a90781af4bc03d40e8ad3ff3aa",
+      "mode": 33188
+    },
+    "app/frontend/public/brand/momo-wordmark.svg": {
+      "source": "frontend/public/brand/momo-wordmark.svg",
+      "sha256": "b5ac410b174ca2a8b251f8aba797e01db896e77eb27584cc6b0cf33dbdcd8476",
+      "mode": 33188
+    },
+    "app/frontend/public/brand/startup-presence.svg": {
+      "source": "frontend/public/brand/startup-presence.svg",
+      "sha256": "c4fc530afa8a2c79dcb1f16e88d923d5c119a5d9d599a1d181e406a928d1d3d2",
+      "mode": 33188
+    },
+    "app/frontend/public/favicon.svg": {
+      "source": "frontend/public/favicon.svg",
+      "sha256": "2424080f2c3db8a79078b5641589240d3a6412bd754072ccfdbec28364dcf26c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/README.md": {
+      "source": "frontend/public/fonts/README.md",
+      "sha256": "37ebf639d34ce914625114d4a3ef85c161445f2b915fb8eeb69ab070055e7ed6",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/fonts.css": {
+      "source": "frontend/public/fonts/fonts.css",
+      "sha256": "d53f46495fed7e835a6b98924196a7d385479714d4933db83662defa76bf9c48",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/manifest.json": {
+      "source": "frontend/public/fonts/manifest.json",
+      "sha256": "48b83d6c5a448476f0cc864fc434673c103c02d714b8f8541e0b4c3e86e6dd53",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-0017e0225f6c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-0017e0225f6c.woff2",
+      "sha256": "64ec79c6ea108eaaa352044d749c6eabac901bc662a823ffda7ed6ad21fa5681",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-00ccf1c5d258.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-00ccf1c5d258.woff2",
+      "sha256": "dd5d3138ee48eecf370f9e8bee418c45e5ce10ec9fe0ffdb6cc951fe4ca7976e",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-0438fc429aa1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-0438fc429aa1.woff2",
+      "sha256": "450ae5f071847470de2a44b2baf60f7f4fb859bdac401e5d4e60c97d42b9af64",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-095c8b1152e5.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-095c8b1152e5.woff2",
+      "sha256": "4c2ccdbe298de0510aaaecc8a61ecf59d9001d13f3a0bcd1a9a8f26f6d73e753",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-0a0b3cd18d11.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-0a0b3cd18d11.woff2",
+      "sha256": "c8422b75cf1738d4effc3516b68ed22beb1c97b6affd79fa25bb2e6c36cca9fe",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-0a4f78b5ab73.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-0a4f78b5ab73.woff2",
+      "sha256": "647237e08588941b2627d4059e9e58a0209a0f791f06c86fc55344bba7af26b2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-0b7370c6937a.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-0b7370c6937a.woff2",
+      "sha256": "8c2a1fba16aff8f8de002ef381bb24eaa0218d7daa42b4aee4b8616addae1787",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-0c0b50f6dd88.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-0c0b50f6dd88.woff2",
+      "sha256": "114ad7d9c81d79a23c27bea5563d6bb80d0c0d5bb5e221734b62f85a49b8acc2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-190d6ade1b83.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-190d6ade1b83.woff2",
+      "sha256": "25eb6189580347de1172d4a29f712b232d47eafacb78d32188039ba6f8032953",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-1aac60be9ca7.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-1aac60be9ca7.woff2",
+      "sha256": "a66e40d9ad8411665de31b37e50b3fc8bd909bf32b36271fc8bbf7e96c0b7486",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-1c9f2496d17e.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-1c9f2496d17e.woff2",
+      "sha256": "12c2a8e788f9c62e6d5cda9cea49e0e21f9f08de26a64e8c656f9bedc2c5b91e",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-1cc8b5cfebce.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-1cc8b5cfebce.woff2",
+      "sha256": "d0e0403331a41f2871f3bf19a78f75d24d75c31fed91b774c404056fbe28cc7b",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-21576257bf4e.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-21576257bf4e.woff2",
+      "sha256": "a78b9604fb4656237c83d96288f920da6cddd3272228b4dd2830dd58df885415",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-258b86c2d343.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-258b86c2d343.woff2",
+      "sha256": "731c5b20b9c657706bfd360bfac26464e1f1d1856477e8eda777554d81fadac3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-28c6e7f3cae6.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-28c6e7f3cae6.woff2",
+      "sha256": "431d1253162e578155d9537327de7f08e7a48f4567078d2735c8d0e1674c1931",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-2be24a8e59a4.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-2be24a8e59a4.woff2",
+      "sha256": "2b1630ea7da7295add99bb54ec43cbadff59a33b231849c7b76da39098d96ed2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-2be7f7ffc7ef.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-2be7f7ffc7ef.woff2",
+      "sha256": "6bbe1bcee045a41fc19aa1c4488a077120695c324ea0efd249e5b657a699dded",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-325f4bf78d84.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-325f4bf78d84.woff2",
+      "sha256": "e0eb852273009f95561cb4267b53cd9f0e113ed600518fd19d903a5920913e98",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-328bd80c6093.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-328bd80c6093.woff2",
+      "sha256": "f436b95f8740da8cb4d8992b632ed62c30fcec333ade158a20ff08010498ba90",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-36b72168cbff.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-36b72168cbff.woff2",
+      "sha256": "3c78df1121834a7f63888d45f48b561dd300419868677b26acc6565c5324f816",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-397b6e985577.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-397b6e985577.woff2",
+      "sha256": "393dc29681708f3915ff709f00db59f77497a0b78ca277190174b74e0d60bc28",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-3d59adea3acb.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-3d59adea3acb.woff2",
+      "sha256": "6e1b17bdd0dd4f357698ea71d37571f691fdcd44ddf2aae7d9ed2943acc7ff6f",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-3ef348d0ed9a.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-3ef348d0ed9a.woff2",
+      "sha256": "6cd87c47da369c49c7ae230a899d6f127213b8316195231481332fd51e2214e0",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-3fa9e2575805.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-3fa9e2575805.woff2",
+      "sha256": "50cc52317a9992578a90104b2fad0660d0f69206cca2b6e3685cd3253d622ddf",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-41f298189af9.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-41f298189af9.woff2",
+      "sha256": "f349e5c5f705a845a4f93d70b63f6e5a4bd139dc3bb5c75e6cf74da6d84940dc",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-4552fed42779.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-4552fed42779.woff2",
+      "sha256": "8ba4241cca98b04822b61ba9bb3e2f91f81709e3294317e50dd340302edd82f9",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-45afb068f844.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-45afb068f844.woff2",
+      "sha256": "cff5a5affcdbfcf91dd13d2a24ca21f79ec198e9fc2ff1f4e7f5c6a869ebafc1",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-4837ef7a6579.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-4837ef7a6579.woff2",
+      "sha256": "d9a84b8300079136145698976b1c8b9e60895c0cc88673c4ea0dbcb28f99511f",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-48713b23f96c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-48713b23f96c.woff2",
+      "sha256": "4dfc0f77371ec52138e80a724d74ac6ea895e2b41be6b6e3cb3192755c0bf8cd",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-49f7626c4ac1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-49f7626c4ac1.woff2",
+      "sha256": "88dccea1534382601d4a4d8cf2e2311e30cd705da66d526783125233efa11ad6",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-4dba0ffef04d.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-4dba0ffef04d.woff2",
+      "sha256": "68ce66639d66a6070a74727c8299eb8d12bc09a07ec002ebeb22ede5417263e1",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-50705a8e8007.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-50705a8e8007.woff2",
+      "sha256": "dc81542a76a71fa752e2ef92c0f90e96bebaaa980b0ed71ccf0e9a12df421803",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-5198f592b8af.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-5198f592b8af.woff2",
+      "sha256": "0f17b2748b52c59bc97ae562aabb38e7232409659641e64c2be4277ccd608b41",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-526eed7f56aa.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-526eed7f56aa.woff2",
+      "sha256": "c4557a49dcd65c5168dec4dc8e3b4d5059c7ecac38733acc9bc96576cdc152e0",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-55edddd03d5f.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-55edddd03d5f.woff2",
+      "sha256": "701aa37e03b10aeb64ed937c94d2e9365a06b253a6bb439a26fa7045de121298",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-574d2a3ee0a1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-574d2a3ee0a1.woff2",
+      "sha256": "fe568d50a29522314189c7e2189f2cbbca3acfa35b3173452d91b13053337ae7",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-5b2ab6cb53da.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-5b2ab6cb53da.woff2",
+      "sha256": "e8b5680f69489d24a0857537a764fdf539cb7eb3d411aa50290b2f1eb215a589",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-5b471629531c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-5b471629531c.woff2",
+      "sha256": "719a95a81aa2f4fc5f75931beef933f7f892c30bbebf7b715d0941577d0bd381",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-5d02f7915432.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-5d02f7915432.woff2",
+      "sha256": "4d7ca14c9eea5afdbc4ed10c30d875c706a65ddaaceaca702600712da9288b1f",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-5f2331d41f98.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-5f2331d41f98.woff2",
+      "sha256": "aed02e236b633aa90e081f94bb3a1e998f6f9b73910a7efce5a9a3068449fb0f",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-5f7f5ab04d28.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-5f7f5ab04d28.woff2",
+      "sha256": "662df765fb4c06e2b62a7eb0ee6d77f323fe6f87e50af822575dab0109f59d8c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-5fe4a68754fa.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-5fe4a68754fa.woff2",
+      "sha256": "69b2985f9b4520f4a8f11852bd5054a9dcfe1af4b53c570e6b5cb81f3f171d2d",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-604842ac4df6.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-604842ac4df6.woff2",
+      "sha256": "bde28debfa6489e5da1808d36d5c50dbf79403b99448c3470678306f95967e51",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-635a63dcfb35.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-635a63dcfb35.woff2",
+      "sha256": "6b500513a4cb4328b6a3fdb4482d368114e07ffca45852b83506eaed6733adfd",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-6464c72f9232.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-6464c72f9232.woff2",
+      "sha256": "8c1d0e099601ac7956ccab3667b688b8dafabad4b6fa9d151f31320f3518d6d5",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-657f9495cef6.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-657f9495cef6.woff2",
+      "sha256": "33c3bf956ac1fd652e2b6ed2d8cc095607cf89f7e512b989e40092956cfd5e76",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-687bf006fdca.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-687bf006fdca.woff2",
+      "sha256": "91eea7a9e124efec4d6b435ec8096cf0e7b8118bb6fa49bf38cb4dc2746e30e1",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-6a39bb5b86fb.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-6a39bb5b86fb.woff2",
+      "sha256": "41e1d3735115ef697306f55286cd0ac806bfac48428c26c86fbe1c464c902c96",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-6afdaa7661f1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-6afdaa7661f1.woff2",
+      "sha256": "6403394a9980dafe0ceee3b7edad1975fd52b6630e242ffc3dc369d66cedb551",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-6b651f582a8f.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-6b651f582a8f.woff2",
+      "sha256": "eb9918d846673765da7a60652fad8033ac69f129d3e32f453a28a23b63368358",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-6bb2cec942be.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-6bb2cec942be.woff2",
+      "sha256": "40eff58d340abdaa835896198211ae9f9ccfddfb400a1e57e89fdfc2c394b273",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-6c45b004dca3.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-6c45b004dca3.woff2",
+      "sha256": "ed6c64119956713fc69b2e2d665c9777d3d998e3c2d95c24b64241cd3b76e71c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-72f12362e36f.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-72f12362e36f.woff2",
+      "sha256": "bcf3f4c1d2503f1f4c36e664ea446ba4bd0bd0c14948b8bc039a7adc74d29735",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-77a5b7d08646.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-77a5b7d08646.woff2",
+      "sha256": "7cab9def0f200207177eb4dfdb3d6dd08cdbf06ee45e85d15f58064190a5e69f",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-7ee206fa2bc5.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-7ee206fa2bc5.woff2",
+      "sha256": "9599b975b5bd4bd9e79e8b19710f2fe4250d57380ee2f08e97e1491f86a4326c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-7fb6f127621a.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-7fb6f127621a.woff2",
+      "sha256": "fd237e1c09106cb15a4961de0363a91f34c16a3624156f717576e8b4fa4d3038",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-8053c022b9ba.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-8053c022b9ba.woff2",
+      "sha256": "b81fc546c809f5e1e6c3c724f049f8a3f940f02d7eff2713285d4546242c44e2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-8340f89bcc9c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-8340f89bcc9c.woff2",
+      "sha256": "a56512d1276cc0afeb80b07c2efceb951da10bf8521d934b8fe4c931b8e5e886",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-843f7038161d.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-843f7038161d.woff2",
+      "sha256": "076683c53a9ede79109d392319962e48c79ae0539f6ef2d25e5c06faf8f67d16",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-84fb65f5d097.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-84fb65f5d097.woff2",
+      "sha256": "b2d87199260e5b1954de4f16e442672d30751aab3610ec56114320d446156910",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-87d767000b10.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-87d767000b10.woff2",
+      "sha256": "984530d640f12381c6e2104ea2f70ae31503ae273312c3315b19b5d6664dcb8f",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-887c9dfe1d8f.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-887c9dfe1d8f.woff2",
+      "sha256": "bd162830a338710ab63a86cb0001d41cd977905ef16fef654e86f3c46bac29bb",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-891100317f75.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-891100317f75.woff2",
+      "sha256": "d47806eaad5ccb1226d8bd716153b40b6d0dffdba948143c64855ed040627ce2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-899275a1e6f1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-899275a1e6f1.woff2",
+      "sha256": "367ebd6d6ae02b7ad96466b8916c19aa0a50cbdaff175b77bf3075d0d5ac3d62",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-8ba48118e1d1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-8ba48118e1d1.woff2",
+      "sha256": "8030382eda8bda7f0fae2764cf712b7ef19baca1ccc2742ebe264148aa38d77c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-922a934dea1e.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-922a934dea1e.woff2",
+      "sha256": "336db5373f820565120565d80326380b662f98bde8c15e665887a8ca99843557",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-928be0fb7d3a.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-928be0fb7d3a.woff2",
+      "sha256": "6e4e9355deb91d40e98d014b296ce6a2cfd5be73e27bfd1618939f036b41a758",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-946a6900208c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-946a6900208c.woff2",
+      "sha256": "a260ae7006ec8428ab8b0794bd999b25176319c0533e57a6289152b31739e0fd",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-95e89d2a4ff1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-95e89d2a4ff1.woff2",
+      "sha256": "4ba5ffc310182ba6dd4a2b762967c4600774665ef54f621004acdbb905ba753d",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-96f5de142254.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-96f5de142254.woff2",
+      "sha256": "9b05d8e046064342ffa50d8c37916702ee8d6d775e75a3193d93a022feecb3a3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-97d60dea6b94.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-97d60dea6b94.woff2",
+      "sha256": "39451ca3e05244f1ddfd1aa5a46608304e90cd04bbe03ba906cf2e08196cd9f3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-9a3a827883b5.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-9a3a827883b5.woff2",
+      "sha256": "aada309d17d13c73db9dc261b3da02b29a634c46e60c1dbd107e24a1ac37a8cd",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-9b4d78fc830d.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-9b4d78fc830d.woff2",
+      "sha256": "dd4b968769ee0c8b4f0a092483442a1d663292f3506c95638741f90b68a73159",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-9ea5fcfd9c22.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-9ea5fcfd9c22.woff2",
+      "sha256": "ab05c4a9bee318021843f46f1139c56d5488fc433ddd16a752a2b828a7f34358",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-a2ab975ea462.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-a2ab975ea462.woff2",
+      "sha256": "69f7d0cbdc1ffcc820efcfa4630e5e0dd912ede7e0bdbecff30edbb94dc3b14c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-a30f5020c7b7.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-a30f5020c7b7.woff2",
+      "sha256": "4bc049769a14c1c25d8eca994cf17a56070aaa72c59c4566bc48ef43cc7d29e3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-a3b28d292ac1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-a3b28d292ac1.woff2",
+      "sha256": "b7504537e9acd70d9d193390b7c868a2e109a272885023355a1ac4d8681c9831",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-a71135b6595f.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-a71135b6595f.woff2",
+      "sha256": "b9b8a74a3df837e907f44a09d966c1e78fbf9e6223a10d1c7d34428930741037",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-a72ae9f1dd67.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-a72ae9f1dd67.woff2",
+      "sha256": "f3ef5b9fe4650a1e8474b0e44f5dda68f26d8f5fb3b21a4d165bbc7b8a7a3d49",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-a7e63a9e180e.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-a7e63a9e180e.woff2",
+      "sha256": "c9384ed3f76dfa2268f61110cdf665b290578e36cfab9c65378bdd4e6cc3bd27",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-a8ab8e8bebd1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-a8ab8e8bebd1.woff2",
+      "sha256": "cbd84d25a557f241262a65f5a8ed1ee4718f392c85c364e75893d436ffe68bd9",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-a8eb766bf271.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-a8eb766bf271.woff2",
+      "sha256": "9746bd72270dc0efc4556a06d9ec5511153e0df3753fe332197510485d5344ff",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-a9d782c525d4.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-a9d782c525d4.woff2",
+      "sha256": "7418dc3bd59729ecdefa7a36f31953d4866d977c516df37f8e0c8047e3344a81",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-aaca1014eac7.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-aaca1014eac7.woff2",
+      "sha256": "04835dd1a5e7977ba584d72c078d572ef131c074fde28b1f8d6b87c779725bb5",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-ab1af02f2639.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-ab1af02f2639.woff2",
+      "sha256": "d8e0ba34314deff2b1a393223c6d1286efcab6024a2985e9e91b382f3cb64734",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-ab9d2bd9e6a9.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-ab9d2bd9e6a9.woff2",
+      "sha256": "297a4ab27a112c71e2a9867b74579428ef50211aeb32722f41d129f5bffe860a",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-af42dd642eac.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-af42dd642eac.woff2",
+      "sha256": "d9b1b57892c0484008fccd4af07dcd8303569b1022af59cbd6dd1dbb2c552dbc",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-b47355a02b45.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-b47355a02b45.woff2",
+      "sha256": "c1ec3c62a5b83b69a645e7f58bf75a110335439668643959ac58abd31c03a43b",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-bca42f23b3d9.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-bca42f23b3d9.woff2",
+      "sha256": "c3896e9de2bc808476e911be028991aee6f4d2ba789ef0f3066a1eb636d3abb3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-c4ed4063952e.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-c4ed4063952e.woff2",
+      "sha256": "9a11a2f335bd9e84964dd1d62d3e014d06a1eec60dd3cf20ecff986e0d895cd2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-c6062458921e.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-c6062458921e.woff2",
+      "sha256": "f6fde21fb8ceb875a09f1b2d07b4e86a828e40916ba759a33778caaa809acaa4",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-ca55c8d65673.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-ca55c8d65673.woff2",
+      "sha256": "61fb2788fb317a6781247e9abbba9b805d81624cce847bbe632e607ff1fc1daf",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-cb699d1dc8de.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-cb699d1dc8de.woff2",
+      "sha256": "bc332e58a1ae8e7234864aaf637bac3338ca53c63cc20b980c9cc9b3892592d6",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-cb7fb6574178.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-cb7fb6574178.woff2",
+      "sha256": "23108257758c8c5ce00b30dc5512c3d68589659e673a5707341e646eeec64b1e",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-d1ef42980114.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-d1ef42980114.woff2",
+      "sha256": "95ca9779c49febd61eef42fbdc6d4fcbb6b7ecf02ba4a545ec4686ce95fbc3c9",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-d424595baa18.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-d424595baa18.woff2",
+      "sha256": "99ec0b3ea83e49bd00734150d1eab781ac0b319ea9bb878e89050c4dd281321a",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-d442bda40191.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-d442bda40191.woff2",
+      "sha256": "20217ea3b246ebadd90737aaedf3874cc934a781d7d17903c0a65a32698eb329",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-d8019f8eed9d.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-d8019f8eed9d.woff2",
+      "sha256": "c420d7998301c721215710028d8c73b583e62d9b9550f7b1b45131bbe41463df",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-d8240af38662.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-d8240af38662.woff2",
+      "sha256": "13c0328a4f41c5ee144a338b7b78099c4cef4afb34fe14d658841ee5c77f1a93",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-da61967b4a7b.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-da61967b4a7b.woff2",
+      "sha256": "009709def6f2bbb9827c60a1265abfc5fc6afa90b387a1f8bd3b16bfa95ce1bd",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-dd08593d78ac.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-dd08593d78ac.woff2",
+      "sha256": "f86243752d4be3de3c50d0bb6bd0d4e2ab33259bb5cc0224f81ec4fc3ccd6fc3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-e1fc59c01232.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-e1fc59c01232.woff2",
+      "sha256": "9ad3e79017992898280dcb3c3599c9c72440c553548fcb16560f53b4c5e8ae8b",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-e26405b6953a.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-e26405b6953a.woff2",
+      "sha256": "4ee74e5446fbd58e4f0f9bd65167d050503284efb7914ad014f4fc0d2d63aa9c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-e28dc56e70e2.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-e28dc56e70e2.woff2",
+      "sha256": "f66cbc6e4a38a65df1891c1d0bf4f135da459330bdd56c04ff0c30ad1bcc3ff5",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-e40d9cdd78e8.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-e40d9cdd78e8.woff2",
+      "sha256": "a0140d7af30c40505bcaa747c4d13727a48fbd65c07545c1fc43513d5fcd5b82",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-e57a89911984.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-e57a89911984.woff2",
+      "sha256": "8f59314f95afddadd65354f91a3228ac394e87b1453e9fb3f9e67e1b3afba159",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-e6fc2d17dd6a.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-e6fc2d17dd6a.woff2",
+      "sha256": "6f4b59448b6674e844aedf12ca731983d55ce306745f6b223e854e23d47f92c7",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-e76629d4eb02.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-e76629d4eb02.woff2",
+      "sha256": "a20b7431a801b17936af0b15fd2082da8fa3cb12c8d55035390ade372ab1d8a2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-e8ac1c063199.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-e8ac1c063199.woff2",
+      "sha256": "3fb3ba3e0daa93d966f0c3467ebf6920a660411c31b1ff02a64aad04e0ebb338",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-e951e21a4e31.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-e951e21a4e31.woff2",
+      "sha256": "9b14d2fde6f85c3d6d32810bd51229d02059df48e7cff4b39388407db21469b5",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-ea50dd81d941.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-ea50dd81d941.woff2",
+      "sha256": "4a2034990656d1840f375380defcd5f0c8d67058e547ef910d79aea000f1c075",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-ecf704732438.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-ecf704732438.woff2",
+      "sha256": "50dc38b7842c5710adc318aff3675505235574e713ba7024efab7210a8b5aea2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-ef1d43a50480.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-ef1d43a50480.woff2",
+      "sha256": "18c4caeda214240fede839a9a1677df15852097e6ddfdc2b10a8abb43071bd9c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-f2d2342cda0c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-f2d2342cda0c.woff2",
+      "sha256": "25b33a5a35a5b4011c47f35ecaba0d66e70ea1d8757fb057a035a5664e870b9e",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-f36197afa035.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-f36197afa035.woff2",
+      "sha256": "63a5792ca5f4942bfe44289bdc0bc8dd57e3f8b0210f5a0e34d7ebe588915d61",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-f3d2034c4394.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-f3d2034c4394.woff2",
+      "sha256": "08ece4af5dab7b4f1cddb30ce6cacd173f2bbb2e51b67bf381dcde13bd644a18",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-f761a83ebe61.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-f761a83ebe61.woff2",
+      "sha256": "b9df7810a66e8d2b31833e4c968fc326117fba46d1486f65a6ac880f68f52a94",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-f7f4a911e0cc.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-f7f4a911e0cc.woff2",
+      "sha256": "52940bb494d62e09f9bec8691069474a601c709b68648226ad367a5616b0f16d",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-f9a93d14387f.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-f9a93d14387f.woff2",
+      "sha256": "c219dd62843b3a713957cbaef1d93e1b671adeda8e103828caf593a15420da69",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-f9f13fdad0a5.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-f9f13fdad0a5.woff2",
+      "sha256": "b8aabbdc88f526ac9f3dd7e1bdaf03c8c61a84856597bee0fa8f5be0a8053c6a",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-fa2e09a6ad0b.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-fa2e09a6ad0b.woff2",
+      "sha256": "95dc6f7a3cffa3050327c7b8e62964832fb57df035c67f9cee3654243d9a58d5",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-fd31a1aed82f.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-fd31a1aed82f.woff2",
+      "sha256": "c0a2a76c75ace0ab18b989f6c33df4e6c0e688c6236a3147a6138d2f5f30bec5",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-fe61ce421378.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-fe61ce421378.woff2",
+      "sha256": "e09e18b76580419508c0ea22f1213ed92ae09ce65fd059f0fbf0fa447a620b51",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-jp-febab62f08ba.woff2": {
+      "source": "frontend/public/fonts/noto-sans-jp-febab62f08ba.woff2",
+      "sha256": "09ea73a305cdb72a5bae642ad40332a2c3b2cb8345673ecaf5de684e2fe1b0f3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-06f132490dd9.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-06f132490dd9.woff2",
+      "sha256": "add8a0bfe4ac000894bc5bc115f7bc6aa26d4a8b52c1835c15c880c503ae2ec2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-087aa3b1c45e.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-087aa3b1c45e.woff2",
+      "sha256": "4f9a99a8d9e893c18580b6a48fe1ba08d33eaa610e62b0075cebcde4d8b6d7eb",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-0b323d299be3.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-0b323d299be3.woff2",
+      "sha256": "fbd62ca155ea7a785493b418c7076493d3ed73acc581f0e4dfbb7cf675f98043",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-1234c639df6b.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-1234c639df6b.woff2",
+      "sha256": "75978a089957153f0714dcff4594f6469893395a343a360c0bf86a96e17d7c8a",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-133780a7eebb.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-133780a7eebb.woff2",
+      "sha256": "113ed2e5fe033476c8da28cf8608dd374d29e144871749489d9a6b4731f85a62",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-182bb234a8e8.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-182bb234a8e8.woff2",
+      "sha256": "4b74cab2d8e2b3c07b050fcbde8adc41a6193bbdb78c32001491d2950b5e6956",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-1bfcb32d0e0d.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-1bfcb32d0e0d.woff2",
+      "sha256": "2760361e7fd0e0ca8a5c671f684a1e908afbf8be519da247fc5e0926711e960b",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-1e4aedb86973.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-1e4aedb86973.woff2",
+      "sha256": "1b09d45bc4fa14fd7164723c52b997fb0db464630adad7baeef05fabd02a1155",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-2505a8c33587.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-2505a8c33587.woff2",
+      "sha256": "ee2c85ff2b5207630bf4cb863ec5ef3992d28f2bbbea0a905a861cbd63dde4b5",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-250690b82622.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-250690b82622.woff2",
+      "sha256": "2db38a16cd11d3d80c8186afd70f57aa833f341721aa487fc23c0accda01ef7d",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-277a3c504512.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-277a3c504512.woff2",
+      "sha256": "3045d947c7d78678a5ae0c4b356ec0bda8c8d8513599b9702ecdc1190e90136f",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-27805df98919.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-27805df98919.woff2",
+      "sha256": "1e0821cd2e0bbd587e4e7417109ec3656f2480d0e961a7ddfa60e0dcdb3b4520",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-295785b51ad4.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-295785b51ad4.woff2",
+      "sha256": "de53fb4fed079a6270971a5a4f20e8501191ffd8846a3cbfbc19c3f1d3fd6925",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-32457f63fd67.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-32457f63fd67.woff2",
+      "sha256": "f8f2f31e0d4c161b826c4f3622a44913934b0dd050151b51bc4580879e23216e",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-362b24ed1867.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-362b24ed1867.woff2",
+      "sha256": "a7f1e42cbf1209626de1ebea6241482aae14f50bf60020a3b969104c226bbadb",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-3a121bf93704.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-3a121bf93704.woff2",
+      "sha256": "4136c39ad0909016b4eb11c6705ba6ff75e0af6eeddf9cc0908120b2897f95ab",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-3dfce9b6d915.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-3dfce9b6d915.woff2",
+      "sha256": "f2099ad4a19de114d46b3c4d32353240f885ec76c09b95e65d15e36090d56add",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-3e45fce238c8.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-3e45fce238c8.woff2",
+      "sha256": "2d43f90aef16dde8420af269b952483ec67474f7b729a8d689f6b2bf77bca558",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-3e63a10f03c0.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-3e63a10f03c0.woff2",
+      "sha256": "8fd5870c4b22c2015c5a54a02ea9fec7c0102abff26599cf4b03cd2aaf3f58c5",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-3f239edb929a.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-3f239edb929a.woff2",
+      "sha256": "b7d51765c99c0ecb44ba17ac44d35f231e6662afcb5f773064cac2ae67bbe8bb",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-41c9ba4a0456.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-41c9ba4a0456.woff2",
+      "sha256": "8c2c0472d514eabb192f3c2c47fcb8c7e33895a3a96a0e1b021239cca115e453",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-42dd36d225f1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-42dd36d225f1.woff2",
+      "sha256": "d5683769e4748479ff987ec25234b997e75d67795279c8740625801ec3f84dc3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-45fda5d5f479.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-45fda5d5f479.woff2",
+      "sha256": "3d483f5a29464e66102be7eccbecc5789cc413aefcdbd2b411fff907c54012f6",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-4eca279fff69.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-4eca279fff69.woff2",
+      "sha256": "dbe0b5a015af24b6708bf24fdb477f68b7085ece81f2e333c00b24815a90b68c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-4ef8c2b6f4f8.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-4ef8c2b6f4f8.woff2",
+      "sha256": "a4b3be19a7a70889fd7a334d1b1573bdef8b20189f99b1c05a5f1aa044cd7cf3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-53d1478ca7e3.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-53d1478ca7e3.woff2",
+      "sha256": "b287c69afa5039a593ac30765c362fb3cf4b8e397de66d5e11b931df8a4ca4e8",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-5427d67a1c21.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-5427d67a1c21.woff2",
+      "sha256": "9bab402ba033334906b2478832ca6622fb382e97bbbe51a12df9065625e9497e",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-5597b37a3ca4.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-5597b37a3ca4.woff2",
+      "sha256": "f62b9ab15b8bef2bcb3529008cefd25c12ef804e0cf88d01d33be1441bb43d0c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-582313360ca3.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-582313360ca3.woff2",
+      "sha256": "356fe3740509fe66b6265db7b0f60e7a4485e1b7719c004f8abf3d642d52d747",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-592cfde6f513.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-592cfde6f513.woff2",
+      "sha256": "7bb430b6f7a4cb6a6f3d946c2bc0571150b4601dd12a8792a140f2845d88bd70",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-59a1d2c2d092.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-59a1d2c2d092.woff2",
+      "sha256": "35dddbc7b5c78f1dfaee0c9eb8852432a46fee2e9b05ede476b9c47890fa1ed4",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-5c9d67c14eaa.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-5c9d67c14eaa.woff2",
+      "sha256": "a0cf1ee49edfa5e58bac8b599e0005f2a98945eee65205166c8849fa3a41e699",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-60c42b92d05d.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-60c42b92d05d.woff2",
+      "sha256": "6689c10783e90ce2e3ad11bce8b33a05deecde83ad6561a63f50dcc120c92dc4",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-61be096922ac.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-61be096922ac.woff2",
+      "sha256": "c044d116dc8f655dd794a7d87eaa7dfe9a9371ddf1eef99af0e37b72f47475ee",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-64e94e61f41c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-64e94e61f41c.woff2",
+      "sha256": "43196b8058bd55a6ac484704118b5e6196d0ed6ec3265b2bdbda7bf888f120fc",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-661e8dd1879e.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-661e8dd1879e.woff2",
+      "sha256": "f81693a776e30ff9a45567eaa15d9a0bed038649007a61e75ecd0e780ab257c7",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-692e00d338f2.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-692e00d338f2.woff2",
+      "sha256": "f5bc6961ea42aee6c8c7669c52485c7e4682c3e189eb478dc9295f9c2965ea94",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-6a637665971b.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-6a637665971b.woff2",
+      "sha256": "4b594f04215780f690da15990ef2a1e5ac82f2f3a4d9cb91713d83d379c983f6",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-6b3ed176a8f4.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-6b3ed176a8f4.woff2",
+      "sha256": "03aa9df5058c995bb5805907cc35bd159b00f77e4aea30e7df68f7b39acbd69d",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-6db955826ed1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-6db955826ed1.woff2",
+      "sha256": "5b91a58010929377e94cd5c64c26c57b10a417687371138ef77627b907370bb8",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-70d25b91cae6.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-70d25b91cae6.woff2",
+      "sha256": "9e1f1f766eb3b9e4f5b6f0bfa525789a43bb83f636a93a034ed66c93dac2f0ea",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-775e0bbc135e.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-775e0bbc135e.woff2",
+      "sha256": "531d6a5dc22f7b69084100c07a9caa07724910703f7234e8e36603b47adb25b8",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-7b11bd7a5ebc.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-7b11bd7a5ebc.woff2",
+      "sha256": "adbe40605d1781449c8eb55df80bb53f52f331e97ea0d35fe1c2d53a6034d881",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-7bd9b5005e38.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-7bd9b5005e38.woff2",
+      "sha256": "2a169d8dc2ebf18d4ba3a646b7926e2ea8f03371daa8a33aa5aa4e222a30fcb4",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-830206359ee5.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-830206359ee5.woff2",
+      "sha256": "6d088e37bdc27339bb4c82d4bfe0966849df0cef5872fc99b81025f2488f42d8",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-83cf62a26a8e.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-83cf62a26a8e.woff2",
+      "sha256": "c3d4250403511b3fae48d031c22ecfe15696209abc9576f86a810e844d32bdc3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-87349d1ef0c1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-87349d1ef0c1.woff2",
+      "sha256": "b21735210b7eee7a48d74426275c0c6ba8f81cc9049b147a8222e25529feef00",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-894e9565a2c2.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-894e9565a2c2.woff2",
+      "sha256": "dbbdc3ebf4296eacf3e96da6872d4eb1985a7e2040211a8112e76e98968bce04",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-899588dac533.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-899588dac533.woff2",
+      "sha256": "58f780a2d2b3f293d50b1a3b7026a812273d1923af861a5046ff0f94d5335032",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-8a184be5766d.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-8a184be5766d.woff2",
+      "sha256": "cb019c3783d8da86144e2cc42b718dbe592ececafe2640ca77ebb6c9082c60e2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-8bfb4ed5f280.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-8bfb4ed5f280.woff2",
+      "sha256": "c973e4713ca031d7f2d154bfdeb111add88df7ae88dcdab98e8ba70228636362",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-937d2a92c438.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-937d2a92c438.woff2",
+      "sha256": "d32e7ca8037160ed0dabff758b75da2a39722fbc49567bb1dc11436da39d61f7",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-93e8611f845c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-93e8611f845c.woff2",
+      "sha256": "c1fc78539235f6468a2be89b59fba2a2316afad88dc2e1f602aeab5afebda98f",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-943e38c3e8f6.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-943e38c3e8f6.woff2",
+      "sha256": "98f590f9f68914d4e439e6151a85a4f1cba30a66e904305a74f81a3f470dd044",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-966de64f29cd.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-966de64f29cd.woff2",
+      "sha256": "3d0d06b73960ab03119d5502142dae3a408ad815d8efbc7d9a016735fd654d80",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-97168be8b07b.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-97168be8b07b.woff2",
+      "sha256": "c19eb125aee260696faefab99bea783f62279d9d763d45a316a62770644bfe31",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-97fe25304d91.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-97fe25304d91.woff2",
+      "sha256": "2938d56727e9fe32bd83c6410aef59ed9af9528f23fa224a3413538d8231a842",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-9d97d7d92159.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-9d97d7d92159.woff2",
+      "sha256": "81643939573a897901647110fcd7dbc0315beb87979a2c0ba56fb50da012755c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-a0a979815728.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-a0a979815728.woff2",
+      "sha256": "5a35370c68dbb4ce5b263b4a8326513f4ab94337f66197dca1b2810f3de9a7a9",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-a248fc31fc46.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-a248fc31fc46.woff2",
+      "sha256": "0af4fd643eb6e631776dd62b433c259ba73c36f93c7e3f358b8106a8761f1e7f",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-a2df4394d40c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-a2df4394d40c.woff2",
+      "sha256": "72d3f5812086c592a09fca4584779f59ad6349c43208922efe84347c915c0957",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-a6a2ee423c29.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-a6a2ee423c29.woff2",
+      "sha256": "220acde2a122a7608737ce22da353b6788aa79af2bed9ded842cbbe446694540",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-aaa3e977b91d.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-aaa3e977b91d.woff2",
+      "sha256": "96d17ca1177682c2073ac7f905d1cc529ba43495275f93391e45f663039cb43d",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-ab362ffae887.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-ab362ffae887.woff2",
+      "sha256": "9b749147b8cb1aafb56c2515cfd804ff5022b13e29d1803640a12361899b0174",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-ab8b20813efe.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-ab8b20813efe.woff2",
+      "sha256": "ce48c8f42ed1659df11fa8c9d3d57596afb5383d3537e1a70c836b2cc699db1a",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-adcf1d6b6049.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-adcf1d6b6049.woff2",
+      "sha256": "e90d33efb8e09c9a4d4c061f59c035fa8ebd6d8fe3824c29eb1abfc0d7e9d9c1",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-b2bdec2cb611.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-b2bdec2cb611.woff2",
+      "sha256": "dfa871e4db4e5582d077c6be55222da33ac6e8f39cd33e6ed8f7fdd058b796e4",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-b44dd062e162.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-b44dd062e162.woff2",
+      "sha256": "e459c174c5fd1d360072fab540c2d833f8d3350a927b01cca3f88148aaec3cf7",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-b71cdcc85445.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-b71cdcc85445.woff2",
+      "sha256": "5dd5e84947322ad943769aa36d9134b8233fa4221e542babe98b64f824d79c6f",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-b86f1feb88de.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-b86f1feb88de.woff2",
+      "sha256": "cea85861c06f2116541c421f5ddef5e2fff1b91f004e48fac8af204b8bac8486",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-b9367411ba04.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-b9367411ba04.woff2",
+      "sha256": "9efef22fce6ed4d723ce957f7616e6c280689406b54f3c89bfd8833e3a0312e7",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-c302abfebde6.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-c302abfebde6.woff2",
+      "sha256": "59b1d13bedcf5c12a08ab972040bbc1d8eab7e40cf582b088997f5d08eca068d",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-c32884fdc520.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-c32884fdc520.woff2",
+      "sha256": "5e7eeacc84fb0e14511ba8b5ac81cf4d3203127e554d90999edd8087f56698b2",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-c37aeef0ba54.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-c37aeef0ba54.woff2",
+      "sha256": "d7b2b43c6cf022f319e90b568557f60f0b7058ab9a1b60cce599df090922cec3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-c3ea250bb323.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-c3ea250bb323.woff2",
+      "sha256": "3a2247284b74fa6a2ccd10107365f259a00744041551363476b92318f434339e",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-c3fc1420875b.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-c3fc1420875b.woff2",
+      "sha256": "d81380d9dd8d05680d3d2ba7fa9a831473f7d340b6ce32af11063b4d73118ca3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-c764af3a25d8.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-c764af3a25d8.woff2",
+      "sha256": "3562cf3416a92cb9f2831407857ff1b70f0f14e66671f55fc818fa2a8411d192",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-ccd4d669a764.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-ccd4d669a764.woff2",
+      "sha256": "9692ba2d33aa4c795956987e14366575ecbc352981ae6a7114bd457727cddd93",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-d34f57b9eec5.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-d34f57b9eec5.woff2",
+      "sha256": "f566efbed79d24085d19f7b6eac7adff4ab01a5dd66db0c53d4a847c8816c531",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-d91574944b7a.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-d91574944b7a.woff2",
+      "sha256": "0911100b53608b380eab7bf0f879a5418e6a0839968e75424055e3c0cb3189b9",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-db36de44f24c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-db36de44f24c.woff2",
+      "sha256": "475a845fd23f4cbedac5c89189133462ac3e4f76adae2ba5f464c49b9f27c929",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-dd22f443d686.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-dd22f443d686.woff2",
+      "sha256": "32555d5143d763f175af8fc718faf83d39db9fe0c108c41c1bb5abc8331c0e58",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-dd7327a0c864.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-dd7327a0c864.woff2",
+      "sha256": "adcf9fc8f639e955c89082a77f818c98f7b909f05a6fdf875dd0174613801123",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-dd8c9b573df6.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-dd8c9b573df6.woff2",
+      "sha256": "57a0369c4b77675ba1a1fb082ddbe1e7295734774420d5327b83a79af7edae75",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-dfe7cd3d5a7c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-dfe7cd3d5a7c.woff2",
+      "sha256": "6434ae9a8b511ac4661ae9edc7b1848c15cb13c65d4e1ec48e8b69a4c80174e3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-e2769a819377.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-e2769a819377.woff2",
+      "sha256": "1195229dca099d5129fac3f4a4a8abbd6e60a454980bf1ae1897543a2284475a",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-e6a9661669a4.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-e6a9661669a4.woff2",
+      "sha256": "71b55199d1490a0c4ba7795ee1adb6460c2235454809d24b17a93d61c2d131ff",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-e72cc5fb43d9.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-e72cc5fb43d9.woff2",
+      "sha256": "640eba7a58c43bc7642f1bb1a402e831daad1b9e57d1a86f3169f36c212be619",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-e762a8ae57bb.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-e762a8ae57bb.woff2",
+      "sha256": "fbed7260234ad0056ecd2c729e3896d00678322d9db9d177f41ccc120264d3e6",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-e7ca582f2ed1.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-e7ca582f2ed1.woff2",
+      "sha256": "b6baabe9aaac2371672ce830f078a90e0fb57dae37ef0926c61a11bc41fbafd3",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-ea59cc674f58.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-ea59cc674f58.woff2",
+      "sha256": "52d01e2db91fdaabb65c1c1f931b53a141fab818ec1e7ecca29742fef6c61d3c",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-ea6708d858b5.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-ea6708d858b5.woff2",
+      "sha256": "7c23510d150928c1d41605a433f47923a6763a2c98675b02c71c16f3fa876a22",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-eaed6edb42bb.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-eaed6edb42bb.woff2",
+      "sha256": "ffc12c1cfc6d27bf9c76e32d31f04cbc6db87a0eb502e4ccecbbee6f3b011ff6",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-edbe07582bd2.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-edbe07582bd2.woff2",
+      "sha256": "369278225da93c7bda480f501d7ca9f004acaff1bdd3d60df874eddaae27f69b",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-ee0e1add2061.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-ee0e1add2061.woff2",
+      "sha256": "ee44006cb7c5a9dd0786f97a246a07717511483090c7cbd4354795dddb157a15",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-ee66dbf9b476.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-ee66dbf9b476.woff2",
+      "sha256": "6a1a698b9a7fe536169d8f69c6d1c2d23c975816db7cec2345ae41a81cc544ca",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-f38e4af647f6.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-f38e4af647f6.woff2",
+      "sha256": "62e9d990f68bf1921eec30b7a19a9bd64af5dc5af0964246a1673920589cbb92",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-f4c405283a24.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-f4c405283a24.woff2",
+      "sha256": "ce6a9f5fc5666236b9481e5d93aba8fac485a933a2f024c9345d031cbca40c4a",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-f8c83a880a24.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-f8c83a880a24.woff2",
+      "sha256": "e7fccadb948a87765794c78194d86704802d91b61d4da04614a948eb2e0ecb41",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-fc9384f64b5c.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-fc9384f64b5c.woff2",
+      "sha256": "5fc65f704d01095033e6c459682bdc993714bd4ee0734d3d1e49286648173987",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/noto-sans-sc-fe0cfca799a3.woff2": {
+      "source": "frontend/public/fonts/noto-sans-sc-fe0cfca799a3.woff2",
+      "sha256": "9f92796490e4baf1c7a3e431351def75097a4ef211d0903ef081932a95235046",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/notosansjp-OFL.txt": {
+      "source": "frontend/public/fonts/notosansjp-OFL.txt",
+      "sha256": "babcfe66c8a098b2fa279bc724a3a342f8124f77ce18941fbcc1bbb39823cded",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/notosanssc-OFL.txt": {
+      "source": "frontend/public/fonts/notosanssc-OFL.txt",
+      "sha256": "babcfe66c8a098b2fa279bc724a3a342f8124f77ce18941fbcc1bbb39823cded",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/nunito-59c4439e43d7.woff2": {
+      "source": "frontend/public/fonts/nunito-59c4439e43d7.woff2",
+      "sha256": "d107f72673f443b440185eea74262d7aecbe8fb70150e397334e2ab202c5d301",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/nunito-73a68363498c.woff2": {
+      "source": "frontend/public/fonts/nunito-73a68363498c.woff2",
+      "sha256": "b63651df977d08650ff2e598a3979a490f114b59353605e091dd3fdb530f530e",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/nunito-OFL.txt": {
+      "source": "frontend/public/fonts/nunito-OFL.txt",
+      "sha256": "ee9491ad3ea5d390878695bd6cce49beb3cacd5c4312f8ab574b541e9f7afa21",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/nunito-d8992a5338f7.woff2": {
+      "source": "frontend/public/fonts/nunito-d8992a5338f7.woff2",
+      "sha256": "2d06f2c340ecb52c55153ec56093dc70b167699d7206246570f8ad4800190825",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/nunito-d95b7307bfc2.woff2": {
+      "source": "frontend/public/fonts/nunito-d95b7307bfc2.woff2",
+      "sha256": "511ce967375fd2d924483d798f1086a533259fc675181f62944ec1176fe8786d",
+      "mode": 33188
+    },
+    "app/frontend/public/fonts/nunito-dbc43460b8f7.woff2": {
+      "source": "frontend/public/fonts/nunito-dbc43460b8f7.woff2",
+      "sha256": "20fc9b6fc618e7c3c68d3ac750a2a5dfbceb8521675458d2cea580b5693e4798",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/Hiyori.2048/texture_00.png": {
+      "source": "frontend/public/live2d/hiyori/Hiyori.2048/texture_00.png",
+      "sha256": "560aea0d910dc04950d669640b2ef17c0d817969e9909f477f166bb5cbd8ffbe",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/Hiyori.2048/texture_01.png": {
+      "source": "frontend/public/live2d/hiyori/Hiyori.2048/texture_01.png",
+      "sha256": "87fe9ab7db81ab3025e0407229e449233581e00fa92c8e911923bc6c7d98ce84",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/Hiyori.cdi3.json": {
+      "source": "frontend/public/live2d/hiyori/Hiyori.cdi3.json",
+      "sha256": "0fc3fc76b7a68136056c8832c930c8af9f93899f359eded7349b481ea2342d03",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/Hiyori.moc3": {
+      "source": "frontend/public/live2d/hiyori/Hiyori.moc3",
+      "sha256": "0323f5f377b9afef54318be09e9b4eea2a8cb266190ff9d2f843f95ecb77716c",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/Hiyori.model3.json": {
+      "source": "frontend/public/live2d/hiyori/Hiyori.model3.json",
+      "sha256": "16681a6b91a72219524d2ae746b88474c6d3bd18d5bb88163ecaf44181e97ae5",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/Hiyori.physics3.json": {
+      "source": "frontend/public/live2d/hiyori/Hiyori.physics3.json",
+      "sha256": "c7a6d641893519c0bbc615545887f03f6c5b8031b4096873740b618370452fc1",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/Hiyori.pose3.json": {
+      "source": "frontend/public/live2d/hiyori/Hiyori.pose3.json",
+      "sha256": "ff1cc242790f196c87a7379dc1340b608723db60af1b2825e00da8f351ffc1bf",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/Hiyori.userdata3.json": {
+      "source": "frontend/public/live2d/hiyori/Hiyori.userdata3.json",
+      "sha256": "75fe50a89ea695b46c98dce8991c2f3d67e3d7a479786e6310460289b552d29b",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/LICENSE.md": {
+      "source": "frontend/public/live2d/hiyori/LICENSE.md",
+      "sha256": "425884684c746b46c0739f6f454e034bf6ee288d78405b8d9dc6f5ebfcaa53f6",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/NOTICE.txt": {
+      "source": "frontend/public/live2d/hiyori/NOTICE.txt",
+      "sha256": "30b9c1ff3ac604cc1e069fe3f4e3d5743538281e52f4533799d87175d6766072",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/expressions/curious.exp3.json": {
+      "source": "frontend/public/live2d/hiyori/expressions/curious.exp3.json",
+      "sha256": "62880d8622fde229632b19d34cdde3c36b0d8354ea597413ba08ac5e6b8c9f21",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/expressions/happy.exp3.json": {
+      "source": "frontend/public/live2d/hiyori/expressions/happy.exp3.json",
+      "sha256": "d7146d0895e3c6cde18338b8bafa858e5fe1bcc0f1cd0201832a773435b50588",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/expressions/shy.exp3.json": {
+      "source": "frontend/public/live2d/hiyori/expressions/shy.exp3.json",
+      "sha256": "dc1f1eef717c3b03253066acf77c16c8c982c991f470e7130c08dc828528b64e",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/expressions/surprised.exp3.json": {
+      "source": "frontend/public/live2d/hiyori/expressions/surprised.exp3.json",
+      "sha256": "93658b86a3aab755a346d95898aed7b826a2f1e283953ecf0dd0c0843b9bc8de",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/motions/Hiyori_m01.motion3.json": {
+      "source": "frontend/public/live2d/hiyori/motions/Hiyori_m01.motion3.json",
+      "sha256": "c4f0d982c685b81c1af0ced96c8f6bd5118b8a3fa972c3a12a46652b8d78461d",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/motions/Hiyori_m02.motion3.json": {
+      "source": "frontend/public/live2d/hiyori/motions/Hiyori_m02.motion3.json",
+      "sha256": "858c582874a0c4badfec38d4caf19e232fea5ba714f5a2ac6a282c617910c154",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/motions/Hiyori_m03.motion3.json": {
+      "source": "frontend/public/live2d/hiyori/motions/Hiyori_m03.motion3.json",
+      "sha256": "de33a8ce78226a5ff80cfa941fb5a4c50b6c1c4b346031ed44b384f772b62cf9",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/motions/Hiyori_m04.motion3.json": {
+      "source": "frontend/public/live2d/hiyori/motions/Hiyori_m04.motion3.json",
+      "sha256": "54ddb94d0494772e10355429c547bb7e29601f38d663087804b0c793b29cc51f",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/motions/Hiyori_m05.motion3.json": {
+      "source": "frontend/public/live2d/hiyori/motions/Hiyori_m05.motion3.json",
+      "sha256": "7f71061c9207ac1da6e06098ede9318307a7e75715a3ef97c82646acd9ee8620",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/motions/Hiyori_m06.motion3.json": {
+      "source": "frontend/public/live2d/hiyori/motions/Hiyori_m06.motion3.json",
+      "sha256": "55c007646febe4cb76d20cbb0623086986dbb55c7ef82212693a5e26636a32ef",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/motions/Hiyori_m07.motion3.json": {
+      "source": "frontend/public/live2d/hiyori/motions/Hiyori_m07.motion3.json",
+      "sha256": "3f06cb70f5654eed3389978885e4dff151b6cf9e8d59248680addcd267ff793a",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/motions/Hiyori_m08.motion3.json": {
+      "source": "frontend/public/live2d/hiyori/motions/Hiyori_m08.motion3.json",
+      "sha256": "66022fff5cff3c30b7fc1295bf92e4975e3ab9980d5cb296b5e24a2a8acc6daf",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/motions/Hiyori_m09.motion3.json": {
+      "source": "frontend/public/live2d/hiyori/motions/Hiyori_m09.motion3.json",
+      "sha256": "9edbd6a88e977221fa90625b5f94c9fd27212e1183288105584be8272543ade7",
+      "mode": 33188
+    },
+    "app/frontend/public/live2d/hiyori/motions/Hiyori_m10.motion3.json": {
+      "source": "frontend/public/live2d/hiyori/motions/Hiyori_m10.motion3.json",
+      "sha256": "ba0ba6764a80459432ffd48d6bd5ba261fd25f196208ade3016be74efb9d3dfc",
+      "mode": 33188
+    },
+    "app/frontend/public/stage/README.md": {
+      "source": "frontend/public/stage/README.md",
+      "sha256": "6367c59ab9e5b21bb79d08f5ea69689b7c51067407096129788fba920e067d44",
+      "mode": 33188
+    },
+    "app/frontend/public/stage/room-evening.webp": {
+      "source": "frontend/public/stage/room-evening.webp",
+      "sha256": "aeed57233f8705c598ac36f9c36e054e331e07ff09d8a9d3480269c897aba5e3",
+      "mode": 33188
+    },
+    "app/frontend/public/stage/room-morning.webp": {
+      "source": "frontend/public/stage/room-morning.webp",
+      "sha256": "233d4895316ff0650db7a820375e2c166e09d5fd0f7fe916d155d3b2dd5bd258",
+      "mode": 33188
+    },
+    "app/frontend/public/stage/room-night.webp": {
+      "source": "frontend/public/stage/room-night.webp",
+      "sha256": "e412b626ee51784d552b386daa88ca0ddebf2a5f55abd15d6ecaee04daf58030",
+      "mode": 33188
+    },
+    "app/frontend/public/stage/stage-room.jpg": {
+      "source": "frontend/public/stage/stage-room.jpg",
+      "sha256": "3089ab43648731cd76a1a6ef1827ad92597c2a9ada5b81bfd008b1af652a27c0",
+      "mode": 33188
+    },
+    "app/frontend/public/startup.css": {
+      "source": "frontend/public/startup.css",
+      "sha256": "330ccc23948a3e470924ea0c80af1c23cf8152b12457d760e6c9f3e1cdf697f7",
+      "mode": 33188
+    },
+    "app/frontend/public/worklets/pcm-player.js": {
+      "source": "frontend/public/worklets/pcm-player.js",
+      "sha256": "adfbfe5e7dc50e8d2762060685b4b1027fd2ed65b62218fdf677f26abe85a8e9",
+      "mode": 33188
+    },
+    "app/frontend/scripts/gen-api.mjs": {
+      "source": "frontend/scripts/gen-api.mjs",
+      "sha256": "8ca7228a591a31c90a6a990e41e7c6e58e428e0ae8c8feebb25cac978ceb96b3",
+      "mode": 33188
+    },
+    "app/frontend/scripts/mock-services.mjs": {
+      "source": "frontend/scripts/mock-services.mjs",
+      "sha256": "b7659c17ac8f546aac14f37bab924438ad1e9e2217c5f617f9c3c56ef863ce54",
+      "mode": 33188
+    },
+    "app/frontend/scripts/phone-smoke.mjs": {
+      "source": "frontend/scripts/phone-smoke.mjs",
+      "sha256": "1101154a91571fc8f27d9586834325438ded6d0e7404823d6aff6fc16777ad71",
+      "mode": 33188
+    },
+    "app/frontend/src/App.tsx": {
+      "source": "frontend/src/App.tsx",
+      "sha256": "ba9102e33f31194c4d70ec2d2ed6b46c8342223da3a7721877b151ee79480ff2",
+      "mode": 33188
+    },
+    "app/frontend/src/api/schema.d.ts": {
+      "source": "frontend/src/api/schema.d.ts",
+      "sha256": "762eba5039d29b0e7f1ac83f0ae53a5289b6e6674c3c7ce45b6c9f5645b35364",
+      "mode": 33188
+    },
+    "app/frontend/src/api/schema.sha256": {
+      "source": "frontend/src/api/schema.sha256",
+      "sha256": "44ca3bc6f06b796980a0a59eae609fb47c6429da1efd4edaba9afc9cc25d39ba",
+      "mode": 33188
+    },
+    "app/frontend/src/api/schema.test.ts": {
+      "source": "frontend/src/api/schema.test.ts",
+      "sha256": "a502e4ee2fcc27d3b1f34526de0df08fe29462b3dd0926ce8725dac495edd0ec",
+      "mode": 33188
+    },
+    "app/frontend/src/api/types.ts": {
+      "source": "frontend/src/api/types.ts",
+      "sha256": "cb292e43a6f4e77ff150ad897f630f817b1a0ad2955d8bbc746ea33016ea3144",
+      "mode": 33188
+    },
+    "app/frontend/src/audio/ambient.test.ts": {
+      "source": "frontend/src/audio/ambient.test.ts",
+      "sha256": "c640c0f8c9f1790f3d466693f333f63a316ca33fc76a1bd5ec9852c1b6961976",
+      "mode": 33188
+    },
+    "app/frontend/src/audio/ambient.ts": {
+      "source": "frontend/src/audio/ambient.ts",
+      "sha256": "4a4e8fcb1c4885b877dc53a0dd74034c428fd8bcc958c5925f68d1b46f359c6c",
+      "mode": 33188
+    },
+    "app/frontend/src/audio/capture.ts": {
+      "source": "frontend/src/audio/capture.ts",
+      "sha256": "58a47268d5f1311906805865fe729e57269c990c383c63efd5bf89d3b86a9165",
+      "mode": 33188
+    },
+    "app/frontend/src/audio/director.test.ts": {
+      "source": "frontend/src/audio/director.test.ts",
+      "sha256": "410533a7f44169ee54c88aebc35f3c7beb801f3c19d01268d0c4395f0d7682c6",
+      "mode": 33188
+    },
+    "app/frontend/src/audio/director.ts": {
+      "source": "frontend/src/audio/director.ts",
+      "sha256": "d0ad1744d7e49ff7582be7144b7ce7cdbe01ebf530e93737afc234d7040d6731",
+      "mode": 33188
+    },
+    "app/frontend/src/audio/pcm.test.ts": {
+      "source": "frontend/src/audio/pcm.test.ts",
+      "sha256": "ae9e796078dd00045aae4a7e52ab8fe81e9be15519713dcc06ef02817cac320c",
+      "mode": 33188
+    },
+    "app/frontend/src/audio/pcm.ts": {
+      "source": "frontend/src/audio/pcm.ts",
+      "sha256": "5854b0257bba6685d952289feee8f3300e76a980b5a616cbce4a5c7f1be478be",
+      "mode": 33188
+    },
+    "app/frontend/src/audio/player.test.ts": {
+      "source": "frontend/src/audio/player.test.ts",
+      "sha256": "5816667590c4fbceb12b5c0118ac44ae893b92443233396b8957818cc8663ff0",
+      "mode": 33188
+    },
+    "app/frontend/src/audio/player.ts": {
+      "source": "frontend/src/audio/player.ts",
+      "sha256": "a52c82252a0d353ea977def5ae984c9406c792d97de8fb33a3f41e66e30ac8e9",
+      "mode": 33188
+    },
+    "app/frontend/src/audio/worklet.test.ts": {
+      "source": "frontend/src/audio/worklet.test.ts",
+      "sha256": "15cd089581cebac9b6ca1ddf3b74e464be5cb60a6dfda1ad12aae105db321532",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/chatEngine.integration.test.ts": {
+      "source": "frontend/src/chat/chatEngine.integration.test.ts",
+      "sha256": "ea5df3a022515517ad76a97420e151c1d734cddc93d0fb328fa416a7a5e037df",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/chatEngine.test.ts": {
+      "source": "frontend/src/chat/chatEngine.test.ts",
+      "sha256": "0f2b76ab252a403eebfbc9273a4708501dec23670d7fc9c849937166b3a98998",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/chatEngine.ts": {
+      "source": "frontend/src/chat/chatEngine.ts",
+      "sha256": "bef4ec0e43c731d40f80c6fde73f0aca9b3edfed5700f385d75e3f8e4f43f30b",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/cueScheduler.test.ts": {
+      "source": "frontend/src/chat/cueScheduler.test.ts",
+      "sha256": "2865c4ea69255cb33ad791064c1bc49d37c406eb8b66e0da20d13f5a333e4993",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/cueScheduler.ts": {
+      "source": "frontend/src/chat/cueScheduler.ts",
+      "sha256": "cf2058eff2af9e222af23cf7bb7f69a00a603271182317243b765d3d28336dea",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/engineInstance.ts": {
+      "source": "frontend/src/chat/engineInstance.ts",
+      "sha256": "9a9390161a126db39b3e692083aa86014a18c38ed3d8e10d7ae2dcdea79af6af",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/pacing.test.ts": {
+      "source": "frontend/src/chat/pacing.test.ts",
+      "sha256": "10206b9c184fd3958566869f9e324794618ce27c4e5d1d00e24d83590c515c4e",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/pacing.ts": {
+      "source": "frontend/src/chat/pacing.ts",
+      "sha256": "8b1e80a96335c519120973ea8ed073ceb47dd3a567966a610a88a3afa09cd515",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/transcript.test.ts": {
+      "source": "frontend/src/chat/transcript.test.ts",
+      "sha256": "240dbd058f9c8b1f0c09a915541f074064770c86cb40d22ccce0b62549824fde",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/transcript.ts": {
+      "source": "frontend/src/chat/transcript.ts",
+      "sha256": "036df5ff8408d2f73c9b02971909d6be656b44f14f628bbc387b9206e5a226dc",
+      "mode": 33188
+    },
+    "app/frontend/src/chat/useImageDraft.ts": {
+      "source": "frontend/src/chat/useImageDraft.ts",
+      "sha256": "9d52eade4e53c381a38ac418eef411d2281a689e6284a67b64e294771843519f",
+      "mode": 33188
+    },
+    "app/frontend/src/components/AppPermissions.tsx": {
+      "source": "frontend/src/components/AppPermissions.tsx",
+      "sha256": "b2831b5c89e0025330209ce3e23d7e16a53322dd70250f8b853b07cdaa1aaee3",
+      "mode": 33188
+    },
+    "app/frontend/src/components/BuiltinResourcesNotice.tsx": {
+      "source": "frontend/src/components/BuiltinResourcesNotice.tsx",
+      "sha256": "e818eadabca5db5bb0c16829693e5dfe493ce7c9d4ff8a44fd6334863a511315",
+      "mode": 33188
+    },
+    "app/frontend/src/components/ChatEntryTransition.tsx": {
+      "source": "frontend/src/components/ChatEntryTransition.tsx",
+      "sha256": "47ebe84ae94c4795a099f317c9313b42ad19630a6bebc8ceab03fdf938dc0a1a",
+      "mode": 33188
+    },
+    "app/frontend/src/components/DetailModal.test.tsx": {
+      "source": "frontend/src/components/DetailModal.test.tsx",
+      "sha256": "46341bb40bd972c8f849160df80fe239f89503043249027df199bc1945ac679d",
+      "mode": 33188
+    },
+    "app/frontend/src/components/DetailModal.tsx": {
+      "source": "frontend/src/components/DetailModal.tsx",
+      "sha256": "7ea939b525859779caf5912ebd5da2b63b20d0429a73d6ef97e3a08e7576d78b",
+      "mode": 33188
+    },
+    "app/frontend/src/components/DialogBox.tsx": {
+      "source": "frontend/src/components/DialogBox.tsx",
+      "sha256": "6fad04377a119fc3bddcb7d12842e99e9608412f5394ca87d12ea014f3d3ef28",
+      "mode": 33188
+    },
+    "app/frontend/src/components/EcgCanvas.tsx": {
+      "source": "frontend/src/components/EcgCanvas.tsx",
+      "sha256": "2ff500bf5b940794ea2110fc96c9b2da8431004ebe1bc8b7ae0dfa94e2813678",
+      "mode": 33188
+    },
+    "app/frontend/src/components/FirstMeeting.tsx": {
+      "source": "frontend/src/components/FirstMeeting.tsx",
+      "sha256": "ccdb0bcdb5a250b1d443aab95ca978e8ced8c8b7eb1348754e85aff7ae9459b4",
+      "mode": 33188
+    },
+    "app/frontend/src/components/GridBackdrop.tsx": {
+      "source": "frontend/src/components/GridBackdrop.tsx",
+      "sha256": "3a0a5f88bc5ea0961e3e30bfe150e0719a96d19ac0724ad13b486f6f83caab7d",
+      "mode": 33188
+    },
+    "app/frontend/src/components/ImageAttachments.tsx": {
+      "source": "frontend/src/components/ImageAttachments.tsx",
+      "sha256": "b7efc4c4c9d12a984d82867c8380cdd6a33352af19b2f1b5fd8730cf1072a310",
+      "mode": 33188
+    },
+    "app/frontend/src/components/IntroGuide.tsx": {
+      "source": "frontend/src/components/IntroGuide.tsx",
+      "sha256": "bb86438fc65bd1a0ad3a0d1f823d087243d52d3e99ee26da3b076555105a330a",
+      "mode": 33188
+    },
+    "app/frontend/src/components/MessageMedia.tsx": {
+      "source": "frontend/src/components/MessageMedia.tsx",
+      "sha256": "d620b65e8a51de1b148dd832fc48f8b8d094900522cc69409ba725c380c90047",
+      "mode": 33188
+    },
+    "app/frontend/src/components/PhoneSurface.tsx": {
+      "source": "frontend/src/components/PhoneSurface.tsx",
+      "sha256": "3f3742676b82475a6cc642d874fa408e156e2b4af75953c30b9e8fea38f173cb",
+      "mode": 33188
+    },
+    "app/frontend/src/components/ResourcePreview.tsx": {
+      "source": "frontend/src/components/ResourcePreview.tsx",
+      "sha256": "67a0666316b26712d64da3366c4cdfac62c32262a8c5ff73e8099818612e391c",
+      "mode": 33188
+    },
+    "app/frontend/src/components/TerminalTagline.tsx": {
+      "source": "frontend/src/components/TerminalTagline.tsx",
+      "sha256": "b52aec7e77be141fd8d79453a8b763882d85396397e272b358182906e1cfbce8",
+      "mode": 33188
+    },
+    "app/frontend/src/effects/BlurPresence.tsx": {
+      "source": "frontend/src/effects/BlurPresence.tsx",
+      "sha256": "7fa37853756ffb605fc5088e6286f1b5792640b3bf6ed470f0c33fe201dd395c",
+      "mode": 33188
+    },
+    "app/frontend/src/effects/GlassReturn.tsx": {
+      "source": "frontend/src/effects/GlassReturn.tsx",
+      "sha256": "6b2ed4548c4da9f574ed2ddf71ac9f7783dca359f3b8f650ee6eadc29d500acc",
+      "mode": 33188
+    },
+    "app/frontend/src/effects/blurPresence.css": {
+      "source": "frontend/src/effects/blurPresence.css",
+      "sha256": "00119b99446cd4b8b95ec5c9465749669a7200bd076919573aa7c605271eee1b",
+      "mode": 33188
+    },
+    "app/frontend/src/effects/captureStage.ts": {
+      "source": "frontend/src/effects/captureStage.ts",
+      "sha256": "4c78e114575af8f2a48a64ce7af9746b28b9ac04e45cb861a38046af0b940c33",
+      "mode": 33188
+    },
+    "app/frontend/src/effects/glassReturn.css": {
+      "source": "frontend/src/effects/glassReturn.css",
+      "sha256": "93660ffdff10159cbab0f97ec27e1739ffe2f315b16cef2a62ba5f9041834e7b",
+      "mode": 33188
+    },
+    "app/frontend/src/i18n/dict.test.ts": {
+      "source": "frontend/src/i18n/dict.test.ts",
+      "sha256": "6c9d8bf3eff178caa7d1c294baccdb726086ceabd9fff1361d74e0f8f432d6a3",
+      "mode": 33188
+    },
+    "app/frontend/src/i18n/en.ts": {
+      "source": "frontend/src/i18n/en.ts",
+      "sha256": "117cd726caae3e4d00fc42b8a0bf25d48bcbdab6bf3dd0b9418ae4a857b615bd",
+      "mode": 33188
+    },
+    "app/frontend/src/i18n/index.ts": {
+      "source": "frontend/src/i18n/index.ts",
+      "sha256": "98be94aaf9c9fc9fcc9f3f506c55917340cb7f4c3f239f92ccab13033e29e1b5",
+      "mode": 33188
+    },
+    "app/frontend/src/i18n/ja.ts": {
+      "source": "frontend/src/i18n/ja.ts",
+      "sha256": "764d31c85da0be3f2d27769a85c02c0085d571956db93540e3e95a1ce9c5eeb7",
+      "mode": 33188
+    },
+    "app/frontend/src/i18n/lang.test.ts": {
+      "source": "frontend/src/i18n/lang.test.ts",
+      "sha256": "b8f5becc6818d6f90596a5523de2e961297f5003916560a73a9c7605315941fd",
+      "mode": 33188
+    },
+    "app/frontend/src/i18n/zh.ts": {
+      "source": "frontend/src/i18n/zh.ts",
+      "sha256": "1dcf03b6bee5db6d218e1225d825e9eb7a74073b3d8847152a60beaadb64afe5",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/asr.ts": {
+      "source": "frontend/src/lib/asr.ts",
+      "sha256": "e75fd759828530c3f37beba835a9e7d92978374165b7300b918f7033968a50b3",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/blobMask.ts": {
+      "source": "frontend/src/lib/blobMask.ts",
+      "sha256": "279965c5f2dfdbd7e0697f1214c6cfcf75677f1fea48d1f8ba8c8c29c387704a",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/builtinSettings.test.ts": {
+      "source": "frontend/src/lib/builtinSettings.test.ts",
+      "sha256": "77ddf82926972b895d0b54c09c11ff86a7b9699f76ad3ef9c19f24617dfd3fd0",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/errors.ts": {
+      "source": "frontend/src/lib/errors.ts",
+      "sha256": "4b43f9f6c4ed03870d74a6d939618c16ef454832a4c512403943014d1113b058",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/glassShatter.test.ts": {
+      "source": "frontend/src/lib/glassShatter.test.ts",
+      "sha256": "c53a3d34d8e146432b9bcda29018e530cd5796471c9c7a918f184f8a3d41e671",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/glassShatter.ts": {
+      "source": "frontend/src/lib/glassShatter.ts",
+      "sha256": "66e17efd40ff268d00fa8f2959cf45670dbb3c3241fd8f4f52a04a14c302356b",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/grid.ts": {
+      "source": "frontend/src/lib/grid.ts",
+      "sha256": "4cc8dcf99a0705cfb4e199b9fae1a372bd623e37ed8b71e66c659df7284da3a6",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/gridReveal.test.ts": {
+      "source": "frontend/src/lib/gridReveal.test.ts",
+      "sha256": "be3209e87d68f42abc0d8dd978cd24d95fac46df48f660d45df41cc472b07ec5",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/gridReveal.ts": {
+      "source": "frontend/src/lib/gridReveal.ts",
+      "sha256": "2c94135550ad61f707db22901d79edaa816fadbf325b1ec495670db77d6053ca",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/idb.ts": {
+      "source": "frontend/src/lib/idb.ts",
+      "sha256": "fe512aae9ba31b2f30c4a95a76b3a3a8a7bc4f5149a182323ed5bf1ebb29c4bf",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/mcpForm.test.ts": {
+      "source": "frontend/src/lib/mcpForm.test.ts",
+      "sha256": "493435a4c33d63adcd3d62a840c39c023177c330f6dcae68c349106118b4298a",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/mcpForm.ts": {
+      "source": "frontend/src/lib/mcpForm.ts",
+      "sha256": "dc0678f4b7a089d65410950f6824a452b3d65e97ec021b1bb91c0be8b1d390df",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/mcpJson.test.ts": {
+      "source": "frontend/src/lib/mcpJson.test.ts",
+      "sha256": "84605eef6a5de0bcbb738466c88ad3f992281a53978bbe6503c1ab468096e9a6",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/mcpJson.ts": {
+      "source": "frontend/src/lib/mcpJson.ts",
+      "sha256": "9e81cbac07205734e8dc0ecd537f74976aebeb90fc4236a34c182513b00d3e0b",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/mcpPermissions.ts": {
+      "source": "frontend/src/lib/mcpPermissions.ts",
+      "sha256": "76b12d3857460e5ae5492e52f894567561e31160d932b7d5d3e037e3e8da6480",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/paging.test.ts": {
+      "source": "frontend/src/lib/paging.test.ts",
+      "sha256": "13de4d4131d13e29ebf630e3ed28fbdff490a5097a172a0d7e53842eb783ab11",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/paging.ts": {
+      "source": "frontend/src/lib/paging.ts",
+      "sha256": "2909ad929d8fde333801827b69ea01aece7dd12ed121d14ca0599c8d1105a1f9",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/presenceTransition.test.ts": {
+      "source": "frontend/src/lib/presenceTransition.test.ts",
+      "sha256": "11a4bdec7f7d03478b651fc4318fa86d35ce955617293437274dbee28bb5030e",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/presenceTransition.ts": {
+      "source": "frontend/src/lib/presenceTransition.ts",
+      "sha256": "5e38cb3625d68f4b457f74a274f4ffcc7bbb331351924e0498a639cece79e2c8",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/ropeAngle.ts": {
+      "source": "frontend/src/lib/ropeAngle.ts",
+      "sha256": "7cb10e5c5826e1bfe4698935577e2f4f1138c3219b04134a847447bc54b31365",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/store.defaults.test.ts": {
+      "source": "frontend/src/lib/store.defaults.test.ts",
+      "sha256": "4195598fb579fe4c4634374da382032c58e944dac856ccfce2ebb444775ba5ff",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/store.transfer.test.ts": {
+      "source": "frontend/src/lib/store.transfer.test.ts",
+      "sha256": "d650c9feb3c9c07c5fafb5c791642c4cd421ed239d2bc9b977d364db54370838",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/store.ts": {
+      "source": "frontend/src/lib/store.ts",
+      "sha256": "041a4ac8bd44c26fbf98e30b84aaa338dd11029eef9fbe27ac0ff3fdd8ab3d20",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/thinking.ts": {
+      "source": "frontend/src/lib/thinking.ts",
+      "sha256": "4bfb1b7957ac59bc9406422411e0e576e155fdac62662908af7d5927a55fe9d3",
+      "mode": 33188
+    },
+    "app/frontend/src/lib/types.ts": {
+      "source": "frontend/src/lib/types.ts",
+      "sha256": "95a019c838ced088c1378551d1587b84ffa6813e1dd83fce547a58e59f178ea0",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/RoomBackground.tsx": {
+      "source": "frontend/src/live2d/RoomBackground.tsx",
+      "sha256": "289eb5cf2bf12a05c0cccb67936d0d55918880938d5d4c74ed4403ee43b78cbd",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/StageCanvas.tsx": {
+      "source": "frontend/src/live2d/StageCanvas.tsx",
+      "sha256": "2eb4492327af661d0c6483b93cfd07eaf0f6f4e344fb79c38129f0c8c685448a",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/avatarZip.test.ts": {
+      "source": "frontend/src/live2d/avatarZip.test.ts",
+      "sha256": "b8de46e820b4392afc50669d36052d7a294ca2de9bfc9440cddefe839bbdefa5",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/avatarZip.ts": {
+      "source": "frontend/src/live2d/avatarZip.ts",
+      "sha256": "339d39cc78f76e4865b02ad16b1896c77b0878f763923e65aacfb40283dfb5f5",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/controlCatalog.test.ts": {
+      "source": "frontend/src/live2d/controlCatalog.test.ts",
+      "sha256": "aeaf1b6ab44bcc22cec86938fc19f365f569f863f1781819a2567bd2a31625f4",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/controlCatalog.ts": {
+      "source": "frontend/src/live2d/controlCatalog.ts",
+      "sha256": "dad8513122e82bca186f9e68f0d7c74d308c52be724064042d641cda13fc50ab",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/csp.test.ts": {
+      "source": "frontend/src/live2d/csp.test.ts",
+      "sha256": "b6126f49d089c439bcad553a894a4bb40ec2474dcf8f5a313dadd0d45d812256",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/parameterMixer.ts": {
+      "source": "frontend/src/live2d/parameterMixer.ts",
+      "sha256": "fb11690eff4ad1c08caf15c81193dd5019a8dfa5fcae4eae03daa9279e6103bc",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/performance.test.ts": {
+      "source": "frontend/src/live2d/performance.test.ts",
+      "sha256": "ba22f53ef4e4099912272e07bf9d28154029ad1d2d4d91898fb14cd3b28f9a1f",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/performanceController.ts": {
+      "source": "frontend/src/live2d/performanceController.ts",
+      "sha256": "705b2fb566e792259c1001dce457f1d2c7f8e10eb890e37e8ae5dbfa6ca41ca3",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/performanceTypes.ts": {
+      "source": "frontend/src/live2d/performanceTypes.ts",
+      "sha256": "6bae1b90e995a4604071c6810c7243b09fb5cf9777aac59751438acff3ff6cbb",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/previewPlayback.test.ts": {
+      "source": "frontend/src/live2d/previewPlayback.test.ts",
+      "sha256": "35a06eebfb41c9a52373abb05841d751de0fdac3ee1546e30248fff7dc8f9603",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/previewPlayback.ts": {
+      "source": "frontend/src/live2d/previewPlayback.ts",
+      "sha256": "c1ea137612398f274d2a7744d11bac9254c5a5435ca91a2e28443baab7368911",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/resourceProfiles.ts": {
+      "source": "frontend/src/live2d/resourceProfiles.ts",
+      "sha256": "9d01a98257ad0c20631d228fdde11ba3d7c65d1428835e2e1aae22d8ec5db0ec",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/roomTime.test.ts": {
+      "source": "frontend/src/live2d/roomTime.test.ts",
+      "sha256": "baa20937bd0cbdb25f6156d164725671c32d1b68d907840c083c867d973f2652",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/roomTime.ts": {
+      "source": "frontend/src/live2d/roomTime.ts",
+      "sha256": "b6eedc7547c6eb7679b1d48f0657c2494d54ec2a1884688e99ca80635607c89f",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/speechMouth.test.ts": {
+      "source": "frontend/src/live2d/speechMouth.test.ts",
+      "sha256": "1eafa49906600c7e8b17df8090afb8e506682d8fa3943b48657964fdaec2ae39",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/speechMouth.ts": {
+      "source": "frontend/src/live2d/speechMouth.ts",
+      "sha256": "ae3af1c4eed62ca1a3bc5f5bd36b00a24a52fbfd4ef9929a2be4c6b11039a0cc",
+      "mode": 33188
+    },
+    "app/frontend/src/live2d/stage.ts": {
+      "source": "frontend/src/live2d/stage.ts",
+      "sha256": "f2570253a86908c2fd17cf260174b9d338cc8a036882b827bb3bb96d0b5b3e61",
+      "mode": 33188
+    },
+    "app/frontend/src/main.tsx": {
+      "source": "frontend/src/main.tsx",
+      "sha256": "493b7a423e0c30b279b79094926d7e29b19553d673707b2a3264d7b509f38b07",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/Backlog.tsx": {
+      "source": "frontend/src/pages/Backlog.tsx",
+      "sha256": "78c621cc4cee00ac46af18d1b22cd040995c5dd57e8f83ddcb3f2ee7707ed222",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/Chat.tsx": {
+      "source": "frontend/src/pages/Chat.tsx",
+      "sha256": "a82cbe10809362808da3e3f85f9edab8edf950ba53c23124ebb3c54f71149a93",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/ExtensionActivities.tsx": {
+      "source": "frontend/src/pages/ExtensionActivities.tsx",
+      "sha256": "35009dcdfb340039cdbab4a1a1dab41f8531788474d01ef7609b5f30592da3e4",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/Settings.tsx": {
+      "source": "frontend/src/pages/Settings.tsx",
+      "sha256": "4e26dab7c5ee5837ccd393b4a67a4877cba0d906886c3a46163cef9df9e99b1e",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/Title.tsx": {
+      "source": "frontend/src/pages/Title.tsx",
+      "sha256": "0e70892f402956ed4da3e4faea9b4f27059322158bcc96afe9beef8b4b750793",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/dialogPreviewSplit.test.ts": {
+      "source": "frontend/src/pages/dialogPreviewSplit.test.ts",
+      "sha256": "307b34df9359539f931c178dfa6370bfb8faee9690e2a64cfc406a135b48b1e0",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/dialogPreviewSplit.ts": {
+      "source": "frontend/src/pages/dialogPreviewSplit.ts",
+      "sha256": "dbe28e1ad38f932cc435529cd67bacd82dc099857e34c9650793f4dbf590993c",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/panels/Avatar.tsx": {
+      "source": "frontend/src/pages/panels/Avatar.tsx",
+      "sha256": "460cce6fe6f400cef9df626bec5fef6f90690ba41fdd73f59af75c1e9a0753d9",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/panels/Memory.tsx": {
+      "source": "frontend/src/pages/panels/Memory.tsx",
+      "sha256": "b2fe469789edffc254b6ebadd3d10256ead0400103b725a7e96ab35d70e8231d",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/BrowserCompanion.tsx": {
+      "source": "frontend/src/pages/settings/BrowserCompanion.tsx",
+      "sha256": "96a974930759d7eb3b39f124f553fc17e72ecd08d48853796ca5e30f2bd8393f",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/ComputerCompanion.tsx": {
+      "source": "frontend/src/pages/settings/ComputerCompanion.tsx",
+      "sha256": "5bb746517284fc39dfe2dd5e12434e32eba135f1d6d6f70ca23fc71184b86bf8",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/DataTransfer.tsx": {
+      "source": "frontend/src/pages/settings/DataTransfer.tsx",
+      "sha256": "040e5247575ac63045941f376976b314ecb7b874c6cdd9bfb58cad819246647e",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/DialogPreview.tsx": {
+      "source": "frontend/src/pages/settings/DialogPreview.tsx",
+      "sha256": "990acfb32454eb9fd0a2c5c4d3ae0a8d1f5f976b885a061a0adc27356020eb81",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/ExtConfigModal.tsx": {
+      "source": "frontend/src/pages/settings/ExtConfigModal.tsx",
+      "sha256": "84bf5a8f793549f6cfce75242896be59c5d71eb3a298035f194dbaeb44d57a79",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/ExtensionCard.tsx": {
+      "source": "frontend/src/pages/settings/ExtensionCard.tsx",
+      "sha256": "5e52ccb2c3cdce2ac6fb4755b2146da5cfdc1dfb0e56ac06179f7e3bf3b9af7d",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/ExtensionsTab.tsx": {
+      "source": "frontend/src/pages/settings/ExtensionsTab.tsx",
+      "sha256": "9573f06c808ab69bfb2f7a1858a3c39893e30d75170e748f067262cb79ad84d3",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/GeneralTab.tsx": {
+      "source": "frontend/src/pages/settings/GeneralTab.tsx",
+      "sha256": "9527ef3eddd5652ba644c5f837fddccb727a5e05d2866732f79176b8ccb15d81",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/MinecraftCompanion.tsx": {
+      "source": "frontend/src/pages/settings/MinecraftCompanion.tsx",
+      "sha256": "b5d46f388c1111d2a6e71f1e04f633975923dff1f8fc275afe87e3ee59b8a8a8",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/ModelsTab.tsx": {
+      "source": "frontend/src/pages/settings/ModelsTab.tsx",
+      "sha256": "aa4f81acb9698ec335acf062f450ec77b25a5b29cf76bda8d6f6ecc4d05f81e9",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/NativeCompanion.tsx": {
+      "source": "frontend/src/pages/settings/NativeCompanion.tsx",
+      "sha256": "c324311d9175f3d81afa6d92d0cf8c51d0c3af31fb75a60f26be544d72ce9db2",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/OfficialPlugins.tsx": {
+      "source": "frontend/src/pages/settings/OfficialPlugins.tsx",
+      "sha256": "4c6fc8a22ea908fd966851511d876f2585014a9e3e5a996143be5470f014dbee",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/PluginLibrary.tsx": {
+      "source": "frontend/src/pages/settings/PluginLibrary.tsx",
+      "sha256": "704220a31dfe0e3f455d09661eb445f9c86fd500fcb46b61f6731ef416dd43d1",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/QQLoginPanel.test.tsx": {
+      "source": "frontend/src/pages/settings/QQLoginPanel.test.tsx",
+      "sha256": "db3db3015d8e388639a1e6ad730b47b7bdf97bde6ec9581a6dd5a2876b88c306",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/QQLoginPanel.tsx": {
+      "source": "frontend/src/pages/settings/QQLoginPanel.tsx",
+      "sha256": "081d11e968e8196610db43c9dd5d79860f1dfbe2479582c79d8919989324547e",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/QQMediaLibrary.tsx": {
+      "source": "frontend/src/pages/settings/QQMediaLibrary.tsx",
+      "sha256": "203c56e359f523b5c5213a9ca6e75c148df5b735bd011a5a5f650fcebb79cd08",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/QQScopeEditor.tsx": {
+      "source": "frontend/src/pages/settings/QQScopeEditor.tsx",
+      "sha256": "07cfaac1acb57bbd59a708571854b02b908011169e500dcc84d5bf8600487651",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/RetiredSocialRecords.tsx": {
+      "source": "frontend/src/pages/settings/RetiredSocialRecords.tsx",
+      "sha256": "613a8828cfe92c8a3dd1897e9b27e84d84012171d42c100456389bd276f23c33",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/SocialConfigModal.tsx": {
+      "source": "frontend/src/pages/settings/SocialConfigModal.tsx",
+      "sha256": "83109a9ef988987b4972601083c60dc8d40eb82cd267992faa30793f23fda8b3",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/DialogDrawer.tsx": {
+      "source": "frontend/src/phone/DialogDrawer.tsx",
+      "sha256": "2674beed707c4843e9153e94dc3523e32ddb0a1fa79a0b9fe99b18981325b23d",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/DialogHandle.tsx": {
+      "source": "frontend/src/phone/DialogHandle.tsx",
+      "sha256": "32fe7eb724e6311861a90d843c5aa3b935c33bcb8b1d49ad9ae74bb37853035b",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/PhoneField.tsx": {
+      "source": "frontend/src/phone/PhoneField.tsx",
+      "sha256": "acd90156483d9e891a1aae7a5d9dcdb69172450692028a7e60b180f763721eb0",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/QQPhoneView.tsx": {
+      "source": "frontend/src/phone/QQPhoneView.tsx",
+      "sha256": "fdcddac5df869fd866a488b06c395fd3fbe1a4c577e1db2fa889314755f9b876",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/projection.test.ts": {
+      "source": "frontend/src/phone/projection.test.ts",
+      "sha256": "807572e3cbe206fd7b110bd148363f60abb33d9282a78343f83fd95d55bfecd5",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/projection.ts": {
+      "source": "frontend/src/phone/projection.ts",
+      "sha256": "ce73e2ad12b14203e4b9c9a05e779f5773e82a027f629ac3a1bf8e08c8cd081e",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/qqApp.tsx": {
+      "source": "frontend/src/phone/qqApp.tsx",
+      "sha256": "6edfdc60ecfb5c06e907308b7081da55c444e85b609b7192f65706fb4e18df15",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/registry.test.tsx": {
+      "source": "frontend/src/phone/registry.test.tsx",
+      "sha256": "f8dd9500f7498f434ed43d30a5f3b1df4ab6ab408c5e3685585c8f990eb4a02b",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/registry.tsx": {
+      "source": "frontend/src/phone/registry.tsx",
+      "sha256": "7de24fddcd9cdbe5db44e3ae960f2b87cae63ae946d4d430ef6a1924bd1e7831",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/usePhoneTyping.ts": {
+      "source": "frontend/src/phone/usePhoneTyping.ts",
+      "sha256": "4a1ee2e1c1c42ae81cfe53d7565a886c0ead204bf439a31da4723c24694031e3",
+      "mode": 33188
+    },
+    "app/frontend/src/phone/visibility.ts": {
+      "source": "frontend/src/phone/visibility.ts",
+      "sha256": "4d84813cf25e525aa51ac569a10ed9972763d55494dc771a696145fc62a45ec7",
+      "mode": 33188
+    },
+    "app/frontend/src/router.ts": {
+      "source": "frontend/src/router.ts",
+      "sha256": "55461ab37f578e6162f4358203188408ba3b5c575a52475a93267a5043a625e6",
+      "mode": 33188
+    },
+    "app/frontend/src/services/asrClient.test.ts": {
+      "source": "frontend/src/services/asrClient.test.ts",
+      "sha256": "da12b4bf92968fd204486266ee72648f93083255b2097c3d3f2dc21105aa4f5d",
+      "mode": 33188
+    },
+    "app/frontend/src/services/asrClient.ts": {
+      "source": "frontend/src/services/asrClient.ts",
+      "sha256": "81acd767e007f1c5437545d4e0971774a74a4c62df379018e1095456b7057520",
+      "mode": 33188
+    },
+    "app/frontend/src/services/chatClient.test.ts": {
+      "source": "frontend/src/services/chatClient.test.ts",
+      "sha256": "212f49f1298c6971629f53dad20acaf9beb9d81cc9c68e1ae9b31d6784a09e1d",
+      "mode": 33188
+    },
+    "app/frontend/src/services/chatClient.ts": {
+      "source": "frontend/src/services/chatClient.ts",
+      "sha256": "53b46c61701fc7c33b52c9cd92c1269bdf48c95e04bbbc05af0bf2cb318bab81",
+      "mode": 33188
+    },
+    "app/frontend/src/services/computerClient.test.ts": {
+      "source": "frontend/src/services/computerClient.test.ts",
+      "sha256": "9a2d5357a460221722efee51c68375648dc2d07dd66ee59d13e746420564b710",
+      "mode": 33188
+    },
+    "app/frontend/src/services/computerClient.ts": {
+      "source": "frontend/src/services/computerClient.ts",
+      "sha256": "9078213c7bdafbf50fc1b30b30fff9b39022a84096f4076462045a8012347c1d",
+      "mode": 33188
+    },
+    "app/frontend/src/services/dataTransfer.test.ts": {
+      "source": "frontend/src/services/dataTransfer.test.ts",
+      "sha256": "ed817e9643bccaa23a2f549439efc21775c3c4537d847053d152f06d7dc2d4df",
+      "mode": 33188
+    },
+    "app/frontend/src/services/dataTransfer.ts": {
+      "source": "frontend/src/services/dataTransfer.ts",
+      "sha256": "60591a71cff219aee2ca675813b31ae45eb1faaab77da4866bae11e228eebdff",
+      "mode": 33188
+    },
+    "app/frontend/src/services/extClient.ts": {
+      "source": "frontend/src/services/extClient.ts",
+      "sha256": "4af2a4d98889f692bbfc404260d2eefa5e2805792eafa6631ac3c762e69e0cf3",
+      "mode": 33188
+    },
+    "app/frontend/src/services/extensionActivities.ts": {
+      "source": "frontend/src/services/extensionActivities.ts",
+      "sha256": "2bd422a9de73c9294cb7527131cbfac60b85a817e77c8d4f4bb90b948d3c1410",
+      "mode": 33188
+    },
+    "app/frontend/src/services/http.ts": {
+      "source": "frontend/src/services/http.ts",
+      "sha256": "49c509b3107adc616ed39a17c6bced7e0f128cdc4390ec04517d7686840b6d2e",
+      "mode": 33188
+    },
+    "app/frontend/src/services/introClient.ts": {
+      "source": "frontend/src/services/introClient.ts",
+      "sha256": "4ca65be815e2f470d0540d52d5790ac77c26086679e567d9a00342e8cdd6ee10",
+      "mode": 33188
+    },
+    "app/frontend/src/services/lifeClient.ts": {
+      "source": "frontend/src/services/lifeClient.ts",
+      "sha256": "739c08cade1cdb52b443c294dd17de9e015ef0fead0f63d13ecaeb49d47c062f",
+      "mode": 33188
+    },
+    "app/frontend/src/services/meetingClient.test.ts": {
+      "source": "frontend/src/services/meetingClient.test.ts",
+      "sha256": "dcd177e1612f70466adc7e1e28c2774894799d8ccfb31e39527ce1bf875d6ccc",
+      "mode": 33188
+    },
+    "app/frontend/src/services/meetingClient.ts": {
+      "source": "frontend/src/services/meetingClient.ts",
+      "sha256": "df93cd2e90ea4d6fbfe4a6aa46df81640607c5cf4c56f56a738b46f453ac9347",
+      "mode": 33188
+    },
+    "app/frontend/src/services/memoryClient.ts": {
+      "source": "frontend/src/services/memoryClient.ts",
+      "sha256": "0e4b8208736effe5a614bf851336eef2c0ba62a109cbb1eb10808d9b8c342e24",
+      "mode": 33188
+    },
+    "app/frontend/src/services/onboardingClient.test.ts": {
+      "source": "frontend/src/services/onboardingClient.test.ts",
+      "sha256": "1617bb3f444816ecba6dc45f87b5f448d7213e2e42e74dd1302a80155f2e89cc",
+      "mode": 33188
+    },
+    "app/frontend/src/services/onboardingClient.ts": {
+      "source": "frontend/src/services/onboardingClient.ts",
+      "sha256": "34a07f27f5810416553453b29f5e7fa42fcff72314279b1e552eaf5c72c3e1ba",
+      "mode": 33188
+    },
+    "app/frontend/src/services/phoneClient.ts": {
+      "source": "frontend/src/services/phoneClient.ts",
+      "sha256": "910da78b139d490a060396a1c9da86340c7207ba58c3adeba2ff2167f5a26454",
+      "mode": 33188
+    },
+    "app/frontend/src/services/probe.ts": {
+      "source": "frontend/src/services/probe.ts",
+      "sha256": "1bb35c9d7fa2d7bdef92249314f487e4d011777e84ebbb0d2024313118d1d816",
+      "mode": 33188
+    },
+    "app/frontend/src/services/qqAllowlist.test.ts": {
+      "source": "frontend/src/services/qqAllowlist.test.ts",
+      "sha256": "76105b119dccb6d7fdd8d9f722e8d0d898e5c2abd2469c1d2d22ba88facfb445",
+      "mode": 33188
+    },
+    "app/frontend/src/services/qqAllowlist.ts": {
+      "source": "frontend/src/services/qqAllowlist.ts",
+      "sha256": "5f678d40725019ad89ad935ce6d822c1089ac164aac110ad6fb44d7ed42a0e9d",
+      "mode": 33188
+    },
+    "app/frontend/src/services/qqRuntimeClient.test.ts": {
+      "source": "frontend/src/services/qqRuntimeClient.test.ts",
+      "sha256": "717b1eb07f947b7de6c1b3661f3578bce995902b823d2dca9673693499334a7c",
+      "mode": 33188
+    },
+    "app/frontend/src/services/qqRuntimeClient.ts": {
+      "source": "frontend/src/services/qqRuntimeClient.ts",
+      "sha256": "68cced6b1f710073bdbd82d4a774b7dfbe0aa0380fdc8874f0ae8cb29c9fe07b",
+      "mode": 33188
+    },
+    "app/frontend/src/services/runtime.test.ts": {
+      "source": "frontend/src/services/runtime.test.ts",
+      "sha256": "0d1fec56e85d804c1966dce436dcbae9dce795370591cbef444dd6c6c0a5d0b1",
+      "mode": 33188
+    },
+    "app/frontend/src/services/runtime.ts": {
+      "source": "frontend/src/services/runtime.ts",
+      "sha256": "f70ea09a51d32829b79f8a9d6e3198d06122e327e33cefd0baee54f4e58026e6",
+      "mode": 33188
+    },
+    "app/frontend/src/services/socialClient.test.ts": {
+      "source": "frontend/src/services/socialClient.test.ts",
+      "sha256": "144461e5a08d789a55c2fb333390569c3d0215924deae6944e52500691f96bac",
+      "mode": 33188
+    },
+    "app/frontend/src/services/socialClient.ts": {
+      "source": "frontend/src/services/socialClient.ts",
+      "sha256": "19080551340e3cdb4ce019c92a2d3eb16015fc5273f63160c7167336e7855f19",
+      "mode": 33188
+    },
+    "app/frontend/src/services/socialPreferences.test.ts": {
+      "source": "frontend/src/services/socialPreferences.test.ts",
+      "sha256": "439aec0b3b809895026f59dadae1b9caa7e00bc9e9e21f9df016892d623a3a96",
+      "mode": 33188
+    },
+    "app/frontend/src/services/socialPreferences.ts": {
+      "source": "frontend/src/services/socialPreferences.ts",
+      "sha256": "06b17713381a514a64173ac02f9e15fd9f07dfd248b8dd8a73ae2cdea60face5",
+      "mode": 33188
+    },
+    "app/frontend/src/services/stateClient.test.ts": {
+      "source": "frontend/src/services/stateClient.test.ts",
+      "sha256": "a07fb1222a83dc8060cfc273ab1e7ecdc5a9c1a6bcbe75aac798e7de5504b0c1",
+      "mode": 33188
+    },
+    "app/frontend/src/services/stateClient.ts": {
+      "source": "frontend/src/services/stateClient.ts",
+      "sha256": "22c769f6d0425f5426c5df83823d031ac717849645cc9f0985b8fa1fd3fe02c7",
+      "mode": 33188
+    },
+    "app/frontend/src/services/ttsClient.test.ts": {
+      "source": "frontend/src/services/ttsClient.test.ts",
+      "sha256": "6daaffad7f2a354f0e354273f60f381739e3679320fed10396eb20adf2a6c68f",
+      "mode": 33188
+    },
+    "app/frontend/src/services/ttsClient.ts": {
+      "source": "frontend/src/services/ttsClient.ts",
+      "sha256": "bb715101f12d708605d817b859546abc71c504eb9c5441c334b27df2070711df",
+      "mode": 33188
+    },
+    "app/frontend/src/services/ttsWarmup.test.ts": {
+      "source": "frontend/src/services/ttsWarmup.test.ts",
+      "sha256": "a4f989084c1ad5c1394bd9185a5b1fb5334226f9e834bfeb2ffbeb02eab81536",
+      "mode": 33188
+    },
+    "app/frontend/src/services/ttsWarmup.ts": {
+      "source": "frontend/src/services/ttsWarmup.ts",
+      "sha256": "03699b89d049d7e1a963b8b441b76ebb84aa571b94327a81a01d1247fb39117a",
+      "mode": 33188
+    },
+    "app/frontend/src/services/visionClient.ts": {
+      "source": "frontend/src/services/visionClient.ts",
+      "sha256": "fc4f6494ffb1dad5c6e7edc7f136abf0182cfed1fa893fa1d4d33cf4d571220f",
+      "mode": 33188
+    },
+    "app/frontend/src/startup/presence.ts": {
+      "source": "frontend/src/startup/presence.ts",
+      "sha256": "54fecbfe6c1b0d267f418996045ed79ee9597245fd5a2d3a8ab7294097acd1c8",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/backlog.css": {
+      "source": "frontend/src/styles/backlog.css",
+      "sha256": "2d7ea6aee0b6ef141b6db102c236c55b77e87aa1a20173a4a8d37f14157acda0",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/base.css": {
+      "source": "frontend/src/styles/base.css",
+      "sha256": "f03937a0ceb1bfc3bf58ae3694c797f13da5756cb92e7e8421ed4aef457658f0",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/chat.css": {
+      "source": "frontend/src/styles/chat.css",
+      "sha256": "a1bf09b6ce9dc3621c94e695c2bcd0ed9a731d9e68da0b75053d2137cbbd88da",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/controls.css": {
+      "source": "frontend/src/styles/controls.css",
+      "sha256": "608ea70669eaf416d0a4f55b776d3e135e85f24cc307b366591384d6985fcc60",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/data-transfer.css": {
+      "source": "frontend/src/styles/data-transfer.css",
+      "sha256": "0d47e3f31bf85e08620d73337488c7e5c5d462172d09c86c006eff960bdcc2bb",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/images.css": {
+      "source": "frontend/src/styles/images.css",
+      "sha256": "149540123dd0bc4ecd6136596d3df0b8504e151d5c924c599df7678d9b124601",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/intro.css": {
+      "source": "frontend/src/styles/intro.css",
+      "sha256": "021071368459af6db95286d0c1010dbf3e0164e92a77b8a50d62d7426e2933e2",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/modal.css": {
+      "source": "frontend/src/styles/modal.css",
+      "sha256": "f55b54b1c0628574b4ac12aebf9d75dbb8e2cbfa13202a801a252db6aabffb9e",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/onboarding.css": {
+      "source": "frontend/src/styles/onboarding.css",
+      "sha256": "1653c3ffdf3b590458e748cdf3b30b377c85c4f6ffcc43db7829980ffb9e6e49",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/persona.css": {
+      "source": "frontend/src/styles/persona.css",
+      "sha256": "b7d5a5063fea10cd965a3c2be1097a87be520a63857d61aa8ff90e4575e9c78e",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/phone.css": {
+      "source": "frontend/src/styles/phone.css",
+      "sha256": "0541a14ef6fcbbd1289685e4097330a5f6f3889f84ffd8b750a70a5e00627bdf",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/plugin-library.css": {
+      "source": "frontend/src/styles/plugin-library.css",
+      "sha256": "bb26cbf0fc2bdf584672cce87e4147eef7aef7a92192aaa704a05c6b64c78023",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/presence-entry.css": {
+      "source": "frontend/src/styles/presence-entry.css",
+      "sha256": "bb2692f8b03cd1816a0763cce9dd1c190ce44d75ec5120ccb2bd2c9f3ddde69a",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/settings.css": {
+      "source": "frontend/src/styles/settings.css",
+      "sha256": "bb76efa0b4cb56126f203c9101d1c53feb9d2dfe6eefdc2c53651e15119d9671",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/social.css": {
+      "source": "frontend/src/styles/social.css",
+      "sha256": "0189111d3b56d4558f5294cf4e887029a4a55ff71fd8152b827521aee774f1a0",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/title.css": {
+      "source": "frontend/src/styles/title.css",
+      "sha256": "0ac379abe0c87f7ab28498071b91e93ac9c4ee677627aae63e6e2af48e5af458",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/AddItemModal.tsx": {
+      "source": "frontend/src/ui/AddItemModal.tsx",
+      "sha256": "e8c8b7524c64d6f9d72354d71db4f521cf9fc672a2ace47e2ec8fcde2aa52552",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Button.test.tsx": {
+      "source": "frontend/src/ui/Button.test.tsx",
+      "sha256": "ddffda592bc96f5d673f12459b77785f01672267873116889ed3129bd6f9a420",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Button.tsx": {
+      "source": "frontend/src/ui/Button.tsx",
+      "sha256": "34f7b222214b665391ecc6260ba78f4e87b604c90562487ae6bf0bcc04d93ffc",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Checkbox.tsx": {
+      "source": "frontend/src/ui/Checkbox.tsx",
+      "sha256": "9fb715da26d1b6e37f8ea6db184ab4228404cc73244e8adeb1ee676678d80c39",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Confirm.tsx": {
+      "source": "frontend/src/ui/Confirm.tsx",
+      "sha256": "d60581277e00b1028eb6fd98133c28264a54aadeae2225e7c1310ffc1da109c7",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/EditableItem.test.tsx": {
+      "source": "frontend/src/ui/EditableItem.test.tsx",
+      "sha256": "e1a5225bfd5e3e099f8927a3c4cf8b5e25824dedb990d8456e0189a918609685",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/EditableItem.tsx": {
+      "source": "frontend/src/ui/EditableItem.tsx",
+      "sha256": "d58051e0539d39e642383489021b4f8676b10db511ba8ff7fa3f068ee9d07390",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/FieldRow.tsx": {
+      "source": "frontend/src/ui/FieldRow.tsx",
+      "sha256": "ad0a70e0f81c46b564109a5a480708f48ea6b2e4c2a25a03af098894c0cf81d1",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Hint.test.tsx": {
+      "source": "frontend/src/ui/Hint.test.tsx",
+      "sha256": "1014503897aacaae7353ec9df6abc3d959a621c69501052dcc975b2b201ada96",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Hint.tsx": {
+      "source": "frontend/src/ui/Hint.tsx",
+      "sha256": "109b32b0d46bcebcda13f6735351a283c107333a6b57ded801ba263804d9d165",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Icon.tsx": {
+      "source": "frontend/src/ui/Icon.tsx",
+      "sha256": "772de2071aa92e698b44a0afccc4db51017c551a2fc57bafe6d9eb348ba20a68",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/IconButton.tsx": {
+      "source": "frontend/src/ui/IconButton.tsx",
+      "sha256": "729a29f52604578bef748e29c0cc03beb4875b2b3d91c2129f053c42edfe0a9e",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Modal.tsx": {
+      "source": "frontend/src/ui/Modal.tsx",
+      "sha256": "c70a47bf10fa96805c424b9ea8c622f2e6c58999a2438abdc02d1caa842029cc",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/PageHeader.tsx": {
+      "source": "frontend/src/ui/PageHeader.tsx",
+      "sha256": "98478a17658fd7617ba70c11adf07dbf44bd29b9b988c1a663c6be9859778c46",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Pager.tsx": {
+      "source": "frontend/src/ui/Pager.tsx",
+      "sha256": "1290709545d2a0aa1ced54b97bb11f28bf3626f86b3a9743420cee4030b2f4c4",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Select.tsx": {
+      "source": "frontend/src/ui/Select.tsx",
+      "sha256": "01d6534dc066254f407ada6c10d2ba2419f52ba6450bc6201ae6069a36229b41",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Slider.tsx": {
+      "source": "frontend/src/ui/Slider.tsx",
+      "sha256": "cd5d193262616e2b5a3f13e556bba03181dc68e21de5cedff55e994e4604d75b",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/Switch.tsx": {
+      "source": "frontend/src/ui/Switch.tsx",
+      "sha256": "9816d34ac6d3ba7b713deb63ff5a8b9f1c3b5bfcd5ede9f335f56088131597b5",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/TerminalPrompt.tsx": {
+      "source": "frontend/src/ui/TerminalPrompt.tsx",
+      "sha256": "41d8e5dc8daa0305a38e0f91a9e5acfc76b0aded6b9180554a648282ed96f19e",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/TooltipLayer.tsx": {
+      "source": "frontend/src/ui/TooltipLayer.tsx",
+      "sha256": "54e0c172c9bec13e391cd8b66cd8357531aa0eb4d82b3e5b464631a32bb9e713",
+      "mode": 33188
+    },
+    "app/frontend/src/ui/icons.ts": {
+      "source": "frontend/src/ui/icons.ts",
+      "sha256": "71ed780f61567e44cc8cc7870cf50d5cf601cd78b298b70b60355963aa4ce4cf",
+      "mode": 33188
+    },
+    "app/frontend/tsconfig.json": {
+      "source": "frontend/tsconfig.json",
+      "sha256": "6bdd759cfa5e86ef57c9f6c66a837c701e5ff6a04d7fe95c81b53ae9c5d783fd",
+      "mode": 33188
+    },
+    "app/frontend/vite.config.ts": {
+      "source": "frontend/vite.config.ts",
+      "sha256": "c2d24ffc38c9cf5719abc8994f3d89aee58ed47e18b8cb79e51ebb2271fe92e9",
+      "mode": 33188
+    },
+    "app/migration/cubism-core.json": {
+      "source": "migration/cubism-core.json",
+      "sha256": "19029d129a917f657e4e12f47cec52a86cb35b9ccf0c08adc3c84fcb4b93181f",
+      "mode": 33188
+    },
+    "app/plugin-host/PLUGIN-FORMAT.md": {
+      "source": "plugin-host/PLUGIN-FORMAT.md",
+      "sha256": "b477b02a45e0db3eb4d9df49331f251f7b26945cd5fff006ad2de407208fee68",
+      "mode": 33188
+    },
+    "app/plugin-host/README.md": {
+      "source": "plugin-host/README.md",
+      "sha256": "46dc8595684a7ae576365764ed16583ad7df7d7bdafb829714c0f5d588ddd5b3",
+      "mode": 33188
+    },
+    "app/plugin-host/examples/hello-plugin.json": {
+      "source": "plugin-host/examples/hello-plugin.json",
+      "sha256": "327774b22be32d5b0adcc914bc15abc180e871667bfc59cb160aae17b4d56990",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/.gitignore": {
+      "source": "plugin-host/minecraft-fabric/.gitignore",
+      "sha256": "07ebb1a51a91a553970b44b2a5b5332345f73335cf6d4dc8452bebe9d3469a02",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/README.md": {
+      "source": "plugin-host/minecraft-fabric/README.md",
+      "sha256": "fa83933c901c5edc407097c0e0e2cecf2f1a6b6eed14df3f9167862288b9a057",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/build.gradle": {
+      "source": "plugin-host/minecraft-fabric/build.gradle",
+      "sha256": "274762d1bc1ed9aeab7cf94a06513cdef6e93f0cfa99a8964b79d0e8f0cca9c3",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/settings.gradle": {
+      "source": "plugin-host/minecraft-fabric/settings.gradle",
+      "sha256": "01e362b5cabbe7e94cb394192d38a1509222b8005327a74ede8aaa3f7f25832b",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/BoundedPath.java": {
+      "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/BoundedPath.java",
+      "sha256": "e8a692437d3cafbf7a30c8ee7e3b7d20c1154971689fced26e0142bda6f3a6c3",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java": {
+      "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java",
+      "sha256": "3531f7229d03361efcd0a52f0dfddd4cb001d9b1d1cc58cd74569fa42b467055",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/src/main/resources/fabric.mod.json": {
+      "source": "plugin-host/minecraft-fabric/src/main/resources/fabric.mod.json",
+      "sha256": "d2825306d051d65a94c6fbc09209130a6c3a4e0df915a0a1493b581afc7c430e",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/BoundedPathSmoke.java": {
+      "source": "plugin-host/minecraft-fabric/src/test/java/dev/momo/BoundedPathSmoke.java",
+      "sha256": "0fda7e72dbf552c3d7bb3a7553c59e12c082f3b4f4b8b959b177187c9ca87fc4",
+      "mode": 33188
+    },
+    "app/plugin-host/native/macos/isolation.sb": {
+      "source": "plugin-host/native/macos/isolation.sb",
+      "sha256": "7229f8c075b51aa5e533be480c2a4eaa0b57e1f38eff7f666f9e9fe9c9b4a01b",
+      "mode": 33188
+    },
+    "app/plugin-host/native/macos/launcher.m": {
+      "source": "plugin-host/native/macos/launcher.m",
+      "sha256": "ec10607f53019183b1769cd252e7a383738c184fde54cc9d2d8353f1d386a8f8",
+      "mode": 33188
+    },
+    "app/plugin-host/package-lock.json": {
+      "source": "plugin-host/package-lock.json",
+      "sha256": "7d87e8bcc3ce1bb1c8960a6bfebc58fd9712a0d4d8f35cef3a030b9c2c374b01",
+      "mode": 33188
+    },
+    "app/plugin-host/package.json": {
+      "source": "plugin-host/package.json",
+      "sha256": "185947a2f803f792be1cdb686cdeaab25dbf1c5e0b5ea9706d22a24ee8b61d3c",
+      "mode": 33188
+    },
+    "app/plugin-host/resources/native-control/AIRI-LICENSE": {
+      "source": "plugin-host/resources/native-control/AIRI-LICENSE",
+      "sha256": "f334260edf0508041280b534ca9d0abd5a02a9626c1d2e20a556ac4eb72b07f9",
+      "mode": 33188
+    },
+    "app/plugin-host/resources/native-control/NOTICE.md": {
+      "source": "plugin-host/resources/native-control/NOTICE.md",
+      "sha256": "12d66d935818a313bb11c0e201b5d350ae2158c7519426fd5531b37b158374e9",
+      "mode": 33188
+    },
+    "app/plugin-host/resources/native-control/control.swift": {
+      "source": "plugin-host/resources/native-control/control.swift",
+      "sha256": "7ddf6c99b93ca67c529ca08f2adae4b9726fcc9f1fc3c8242080d19844bff008",
+      "mode": 33188
+    },
+    "app/plugin-host/src/channels.mjs": {
+      "source": "plugin-host/src/channels.mjs",
+      "sha256": "02934d3e1c87bcfe53e3b70286b3ad51c7663373f9a8a907f61aab3edc3cb94b",
+      "mode": 33188
+    },
+    "app/plugin-host/src/host.mjs": {
+      "source": "plugin-host/src/host.mjs",
+      "sha256": "bd872df5f11e2047bb63ce425d81cd7b269b98889cb7e7d49246519bc1b898e9",
+      "mode": 33188
+    },
+    "app/plugin-host/src/index.mjs": {
+      "source": "plugin-host/src/index.mjs",
+      "sha256": "2759259361d4feb2131be0b82674157d5892e19df97981f28ac4692bd89a5ed7",
+      "mode": 33188
+    },
+    "app/plugin-host/src/minecraft-adapter.mjs": {
+      "source": "plugin-host/src/minecraft-adapter.mjs",
+      "sha256": "b81e71980181b9ada07abb9d1b862a06c5da3c4b371b62da41be598434f06fc0",
+      "mode": 33188
+    },
+    "app/plugin-host/src/native-control.mjs": {
+      "source": "plugin-host/src/native-control.mjs",
+      "sha256": "64991f93c9cc7c516f83344d066d5ac1551c9070d839e7a4584fd81426919ae3",
+      "mode": 33188
+    },
+    "app/plugin-host/src/plugin-manifest.mjs": {
+      "source": "plugin-host/src/plugin-manifest.mjs",
+      "sha256": "f70cc370fcf34342d95c32138cdb4f2fe49998e93470dc6ca0e53407534fcd14",
+      "mode": 33188
+    },
+    "app/plugin-host/src/qq-invocation.mjs": {
+      "source": "plugin-host/src/qq-invocation.mjs",
+      "sha256": "42e07b6152aac07e0f083da79dfac87ffd95cc464090d7bf9f8207cb77bbecd9",
+      "mode": 33188
+    },
+    "app/plugin-host/src/qq-native-worker.cjs": {
+      "source": "plugin-host/src/qq-native-worker.cjs",
+      "sha256": "5183236a1f6fab4455b6daf75cb40308d4d474abca1665e9697cb0195501e215",
+      "mode": 33188
+    },
+    "app/plugin-host/src/qq-operations.mjs": {
+      "source": "plugin-host/src/qq-operations.mjs",
+      "sha256": "a1be0a20878d6dc076d2a71f3d009b946e67436f64d134a9be7f72bb0fd52e20",
+      "mode": 33188
+    },
+    "app/plugin-host/src/qq-resources.mjs": {
+      "source": "plugin-host/src/qq-resources.mjs",
+      "sha256": "1323c5de9a49d65fedd4550825d24a79f07cf96741479c1f1355e47a29949aca",
+      "mode": 33188
+    },
+    "app/plugin-host/src/qq-runtime.mjs": {
+      "source": "plugin-host/src/qq-runtime.mjs",
+      "sha256": "38f85a647656aed568d6814b7b6d775a3170e369d4d3141b45aba52faab5e9fa",
+      "mode": 33188
+    },
+    "app/plugin-host/src/qq-voice.mjs": {
+      "source": "plugin-host/src/qq-voice.mjs",
+      "sha256": "dd2355632ce9605f941199fb007306a66faed7368aed7ebc07d25da6c0358cd2",
+      "mode": 33188
+    },
+    "app/plugin-host/test/fixtures/mcp-server.mjs": {
+      "source": "plugin-host/test/fixtures/mcp-server.mjs",
+      "sha256": "90471fc652d5fd07530356dfd7b05ea665deebbda4a919f3c5a62ed9a4bccd7e",
+      "mode": 33188
+    },
+    "app/plugin-host/test/fixtures/qq-full-host.mjs": {
+      "source": "plugin-host/test/fixtures/qq-full-host.mjs",
+      "sha256": "cc63d0e0968ea474a7335ea965e0b44a6027678b6606f7f7f6604d0bdb79eb75",
+      "mode": 33188
+    },
+    "app/plugin-host/test/fixtures/qq-full-native.cjs": {
+      "source": "plugin-host/test/fixtures/qq-full-native.cjs",
+      "sha256": "1eff3f0f2e29d2cb4d018bea7671916acf1b28a79a3d20c2e37b22aaf10e5db9",
+      "mode": 33188
+    },
+    "app/plugin-host/test/host-shutdown.test.mjs": {
+      "source": "plugin-host/test/host-shutdown.test.mjs",
+      "sha256": "1b48079f8d570acdd5c1a5debc956754c2f1ede9d3c053fcf4bb9e04383597f2",
+      "mode": 33188
+    },
+    "app/plugin-host/test/host.test.mjs": {
+      "source": "plugin-host/test/host.test.mjs",
+      "sha256": "79955d7fe2c89d83869afb888700c4a300757cae11320762160de786e8e3f25b",
+      "mode": 33188
+    },
+    "app/plugin-host/test/minecraft-adapter.test.mjs": {
+      "source": "plugin-host/test/minecraft-adapter.test.mjs",
+      "sha256": "992f2fa8a53281b7b7ae7c3c31a4a0a92a97976e494416e8623c26ad896f33f8",
+      "mode": 33188
+    },
+    "app/plugin-host/test/native-control.test.mjs": {
+      "source": "plugin-host/test/native-control.test.mjs",
+      "sha256": "50d73e80e4f9207be7404cd51a4dc7b118f1a04cf4386b4a849fa425faa26b2c",
+      "mode": 33188
+    },
+    "app/plugin-host/test/plugin-disposal.test.mjs": {
+      "source": "plugin-host/test/plugin-disposal.test.mjs",
+      "sha256": "778547afa77329ebd0c4259df3e69a6ea97df1c8aa66a66b920e4209eda142dc",
+      "mode": 33188
+    },
+    "app/plugin-host/test/plugin-manifest.test.mjs": {
+      "source": "plugin-host/test/plugin-manifest.test.mjs",
+      "sha256": "37eb15aa8687f5ccea527c98ebdb5e990bbae3965881b933f5948894ae4f060a",
+      "mode": 33188
+    },
+    "app/plugin-host/test/protocol.test.mjs": {
+      "source": "plugin-host/test/protocol.test.mjs",
+      "sha256": "9a21857dbf96aad57409dbb2e8d741f391ee48960d1730ace8c86ba8e718e88a",
+      "mode": 33188
+    },
+    "app/plugin-host/test/qq-actions-host.test.mjs": {
+      "source": "plugin-host/test/qq-actions-host.test.mjs",
+      "sha256": "a5ebbfc062e67db56519e450e38e2516f73d12282117c39510baa284a1c43251",
+      "mode": 33188
+    },
+    "app/plugin-host/test/qq-host-runtime.test.mjs": {
+      "source": "plugin-host/test/qq-host-runtime.test.mjs",
+      "sha256": "1c6816143aa8fecdb065a80442a223dde1111b4f889779e077431fa1571af216",
+      "mode": 33188
+    },
+    "app/plugin-host/test/qq-invocation.test.mjs": {
+      "source": "plugin-host/test/qq-invocation.test.mjs",
+      "sha256": "e3b852e9b88ef7045c40aa0cbda7da646e9b8e10e897a414b29a0ac44c860c7e",
+      "mode": 33188
+    },
+    "app/plugin-host/test/qq-managed-channel.test.mjs": {
+      "source": "plugin-host/test/qq-managed-channel.test.mjs",
+      "sha256": "8e4d6bac4dcc00b54a3c5f7c146a41193698741a57e8dcc25ab6ebd55185dab3",
+      "mode": 33188
+    },
+    "app/plugin-host/test/qq-managed-host.test.mjs": {
+      "source": "plugin-host/test/qq-managed-host.test.mjs",
+      "sha256": "b3b2d89f703e04f440d316780d0a82fe58b37947525553f438045f540e184e16",
+      "mode": 33188
+    },
+    "app/plugin-host/test/qq-native-worker.test.mjs": {
+      "source": "plugin-host/test/qq-native-worker.test.mjs",
+      "sha256": "4760c9e811d8ae5d227cddddac8ecfdc52bb497e0d4198310359b106baf84ba3",
+      "mode": 33188
+    },
+    "app/plugin-host/test/qq-resources.test.mjs": {
+      "source": "plugin-host/test/qq-resources.test.mjs",
+      "sha256": "20913338f15e82c5ae453a0e61b14190ca63abc472c145779c2513a70fb84b98",
+      "mode": 33188
+    },
+    "app/plugin-host/test/qq-runtime.test.mjs": {
+      "source": "plugin-host/test/qq-runtime.test.mjs",
+      "sha256": "264f5aac461aadd2b9bcfc4a1b2dae5e3267391ebb2ac70e3b61cbe67157cfbe",
+      "mode": 33188
+    },
+    "app/plugin-host/test/qq-voice.test.mjs": {
+      "source": "plugin-host/test/qq-voice.test.mjs",
+      "sha256": "e61975732e1f6bd1ec85c9a95ef149acd11bb7af1d828da99fb695dfd8c1b8b6",
+      "mode": 33188
+    },
+    "app/plugin-host/test/social.test.mjs": {
+      "source": "plugin-host/test/social.test.mjs",
+      "sha256": "3a584a14f7886d54547411814eb2906cedc133488ec73a46f477f64f05cab4da",
+      "mode": 33188
+    },
+    "app/scripts/offline-resources.json": {
+      "source": "scripts/offline-resources.json",
+      "sha256": "9fb4882fcd454732f5ec172c00ff7a4fc85d4dc12215e89a54aa2a207707bec9",
+      "mode": 33188
+    },
+    "app/scripts/prepare-core.py": {
+      "source": "scripts/prepare-core.py",
+      "sha256": "b913fd851816f9394627a890c57f47049c9f06f17a0b5dedaf66f6a5d2f06d79",
+      "mode": 33188
+    },
+    "app/scripts/prepare-models.py": {
+      "source": "scripts/prepare-models.py",
+      "sha256": "2d22c4cf233398540d1d5637fbf713f8a2aadf5adcb00d06621998b99891a94e",
+      "mode": 33188
+    }
+  },
+  "deleted": [
+    "app/frontend/e2e/05-checkpoint.spec.ts",
+    "app/frontend/src/lib/checkpointGrid.test.ts",
+    "app/frontend/src/lib/checkpointGrid.ts",
+    "app/frontend/src/pages/Checkpoint.tsx",
+    "app/frontend/src/services/checkpointClient.ts",
+    "app/frontend/src/styles/checkpoint.css"
+  ],
+  "bootstrapRevision": "13022fbf859dda454258b299e96b81284b3d3d59"
+}

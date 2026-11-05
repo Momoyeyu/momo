@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import {bootChat} from './helpers';
+import { test, expect } from './fixtures';
 import JSZip from 'jszip';
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -10,11 +11,11 @@ test.beforeEach(async ({ page, request }) => {
   state.settings.general = { ...state.settings.general, lang: 'zh', voiceInput: false };
   // Preview and edits must never write the user's real configuration or history.
   await page.route('**/api/state', route => route.fulfill({ json: state }));
-  await page.route('**/api/checkpoints/live', route => route.fulfill({ json: { summary: '', messages: [] } }));
+  await page.route('**/api/life/history**', route => route.fulfill({ json: { summary: '', messages: [] } }));
 });
 
 test('resource dialog owns the live canvas and returns it when closed', async ({ page }) => {
-  await page.goto('/#/chat');
+  await bootChat(page);
   await expect(page.getByRole('button', { name: '表演预览', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '全身', exact: true }).click();
   const originalCanvas = await page.locator('.live2d-home canvas').elementHandle();

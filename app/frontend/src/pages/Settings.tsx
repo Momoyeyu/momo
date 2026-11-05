@@ -8,10 +8,12 @@
 // 即改即生效：各控件直接 update() 落盘（localStorage + 防抖 PUT /api/state），
 // 无草稿/保存概念——语言切换等立即生效。
 
+import {useIntro} from "../services/introClient";
 import { useState } from "react";
 
 import { useT } from "../i18n";
 import { fromRoute, navigate } from "../router";
+import {storedMeetingIdentity} from '../services/meetingClient';
 import Button from "../ui/Button";
 import BuiltinResourcesNotice from "../components/BuiltinResourcesNotice";
 import GridBackdrop from "../components/GridBackdrop";
@@ -35,8 +37,9 @@ const ROT_STEP = 70;
 
 export default function Settings() {
   const t = useT();
+  const intro=useIntro();
   const [tab, setTab] = useState<Section>("general");
-  const backRoute = fromRoute() === "chat" ? ("chat" as const) : ("title" as const);
+  const backRoute = intro.data?.phase==='return_title' ? ("title" as const) : fromRoute() === "chat" || storedMeetingIdentity() ? ("chat" as const) : ("title" as const);
   const backLabel =
     backRoute === "chat" ? t("common.backChat") : t("common.backTitle");
   const idx = TABS.indexOf(tab);
@@ -52,8 +55,9 @@ export default function Settings() {
             style={{ transform: `translateX(${idx * 100}%)` }}
           />
           {TABS.map((id) => (
-            <Button
+            <Button sound={tab===id?false:"confirm"}
               key={id}
+              data-intro={`tab-${id}`}
               className={`stab${tab === id ? " active" : ""}`}
               onClick={() => setTab(id)}
             >
@@ -86,7 +90,7 @@ export default function Settings() {
           >
             <div className="settings-content">
               <div className="settings-body">
-                <ModelsTab />
+                <ModelsTab active={tab === "models"} />
               </div>
             </div>
           </section>
@@ -106,7 +110,7 @@ export default function Settings() {
           >
             <div className="settings-content">
               <div className="settings-body">
-                <ExtensionsTab />
+                <ExtensionsTab active={tab === "extend"} />
               </div>
             </div>
           </section>
@@ -118,7 +122,7 @@ export default function Settings() {
         <div className="footbar-inner">
           <BuiltinResourcesNotice />
           <div className="foot-right">
-            <Button variant="ghost" onClick={() => navigate(backRoute)}>
+            <Button data-intro="settings-back" variant="ghost" onClick={() => navigate(backRoute)}>
               {backLabel}
             </Button>
           </div>

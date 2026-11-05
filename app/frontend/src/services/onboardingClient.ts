@@ -11,6 +11,7 @@ export interface FirstMeetingStatus {
   busy: boolean;
   generation: number;
   configured: boolean;
+  pendingOpening?: boolean;
 }
 export async function firstMeetingStatus(): Promise<FirstMeetingStatus | null> {
   try {

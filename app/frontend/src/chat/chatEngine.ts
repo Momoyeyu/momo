@@ -1,8 +1,10 @@
+import {musicDirector} from '../audio/director';
 // 回合协调器：文字/语音输入 → backend SSE（/api/chat，ReAct 在 backend）
 // → 情绪解析 + 句切 → TTS 流式播放 → 口型/表情驱动；
 // 打断（SpeechStarted / stop）= 停播放 + abort SSE/TTS。
 // 设置每次回合开始从 store 现读——setting 页改动无需重启即生效。
 
+import {meetingIdentity,acknowledgePresentation,acquireReplay} from "../services/meetingClient";
 import { createAsr } from "../services/asrClient";
 import { ttsConfigured } from "../lib/asr";
 import type { AsrEngine } from "../services/asrClient";
@@ -13,17 +15,21 @@ import type { Live2DStage } from "../live2d/stage";
 import { ServiceError } from "../lib/errors";
 import { getSettings, newId, subscribe } from "../lib/store";
 import type {
+  ImageRef,
   ChatMessage,
   ChatStatus,
-  CheckpointMessage,
+  StoredMessage,
   Settings,
 } from "../lib/types";
 import { resolveChatLang } from "../i18n";
+import { cancelWarmup } from "../services/ttsWarmup";
 import { streamSpeech } from "../services/ttsClient";
-import { chat, interrupt as sendInterrupt } from "../services/chatClient";
+import { chat, acknowledgeDisplay, interrupt as sendInterrupt } from "../services/chatClient";
 import type { PerformanceCue, PresentationSnapshot } from "../live2d/performanceTypes";
 import { dueCues } from "./cueScheduler";
 import { meetingGeneration } from "../services/onboardingClient";
+import {lastLocalAssistant,storedMessage} from "./transcript";
+import type {SentenceIdentity} from "../services/chatClient";
 import { charsPerSec, dwellMs, sentencePauseMs } from "./pacing";
 
 interface ChatEngineEvents {
@@ -44,6 +50,7 @@ type Phase = "idle" | "thinking" | "speaking";
 
 /** 一句的 TTS 合成项：合成可并发，块先攒本地，轮到该句展示时才供 player。 */
 interface TtsItem {
+  controller: AbortController;
   chunks: Uint8Array[];
   pushed: number;
   /** streamSpeech 流结束（成败都算——失败句直接跳过不占位）。 */
@@ -53,6 +60,7 @@ interface TtsItem {
 /** 展示队列项：一句话 + 它的 TTS（无语音/静音时 tts=null，走驻留计时）
  *  + 句内待触发指令（展示游标越过其偏移才派发）。 */
 interface SentItem {
+  message: ChatMessage | null;
   text: string;
   tts: TtsItem | null;
   /** 本句附着的表情/动作指令，按到达顺序。 */
@@ -76,13 +84,29 @@ interface DisplayState {
 }
 
 interface Turn {
+  screenGeneration?:number;
+  images?: ImageRef[];
+  imageResult?: (ok:boolean)=>void;
   presentation: PresentationSnapshot | null;
   id: string;
   abort: AbortController;
   /** 只杀 TTS 合成不杀 LLM：静音时 abort 在途 speech 请求并跳过新句子。 */
   audioAbort: AbortController;
+  firstAudio?: Promise<void>;
   userText: string;
   userMessageId: string;
+  userMessage: ChatMessage | null;
+  runId: string | null;
+  owner: ReturnType<typeof meetingIdentity>;
+  ackText: string;
+  ackSentText: string;
+  ackRunning: boolean;
+  ackAt: number;
+  ackQueue: Promise<void>;
+  presentationToken:string|null;
+  presentationSuspended:boolean;
+  queuedStopToken:string|null;
+  presentationQueue:Promise<void>;
   opening: boolean;
   generation: number | null;
   /** assistant 已产出全文（打断按此落账）。 */
@@ -102,6 +126,13 @@ interface Turn {
   pushed: number;
   /** 播放 tick（setInterval id；构造期占位 0）。 */
   timer: ReturnType<typeof setInterval> | number;
+}
+interface Replay {
+  runId:string;token:string;generation:number;text:string;
+  owner:{clientId:string;leaseId:string};
+  abort:AbortController;
+  releaseDrain:(()=>void)|null;
+  finalizing:Promise<void>|null;
 }
 
 const INTERRUPT_DEBOUNCE_MS = 300;
@@ -138,14 +169,24 @@ export class ChatEngine {
   private unsubVolume: (() => void) | null = null;
   /** 最近一次上屏字幕（Chat 页中途挂载时同步用）。 */
   private lastDisplay = "";
+  private sceneActive=true;
+  private presentationPaused=false;
+  private presentationPausedAt=0;
+  private presentationRetry:ReturnType<typeof setTimeout>|null=null;
+  private replay:Replay|null=null;
+  private replayVersion=0;
+  private readonly visibilityChanged=()=>{this.applyPresentationVisibility();if(document.visibilityState==='hidden')void this.stopReplay();};
 
   constructor(ev: ChatEngineEvents) {
     this.events = ev;
+    if(typeof document!=="undefined")document.addEventListener("visibilitychange",this.visibilityChanged);
+    this.applyPresentationVisibility();
     this.applyVolume();
     this.unsubVolume = subscribe(() => this.applyVolume());
     this.player.onMouthOpen = (v) =>
       this.tryStage((s) => s.setMouthOpen(v, this.player.playing));
     this.player.onUnavailable = () => {
+      if(this.replay)void this.stopReplay();
       const t = this.turn;
       if (!t) return;
       t.audioAbort.abort();
@@ -155,6 +196,7 @@ export class ChatEngine {
       this.maybeFinish(t);
     };
     this.player.onDrain = () => {
+      this.replay?.releaseDrain?.();
       const t = this.turn;
       if (t) this.maybeFinish(t);
     };
@@ -166,7 +208,15 @@ export class ChatEngine {
     return this.micOn ? "listening" : "idle";
   }
 
-  /** 麦克风是否开着（持续监听形态，与回合状态正交）。 */
+  /** The full reply is visible even if the player is still speaking. */
+  get replyTextShown(): boolean {
+    const turn = this.turn;
+    if (!turn) return true;
+    const last = turn.sentences.length - 1;
+    return turn.llmDone && last >= 0 && (turn.disp.idx > last ||
+      (turn.disp.idx === last && turn.disp.emitted === turn.sentences[last].text));
+  }
+
   get listening(): boolean {
     return this.micOn;
   }
@@ -202,38 +252,74 @@ export class ChatEngine {
    * backlog 语音重播：空闲时把一条 assistant 消息重新合成播放
    * （口型随播放驱动，不进历史、不占回合）。回合进行中调用为空操作。
    */
-  replayMessage(m: ChatMessage): Promise<void> {
+  async replayMessage(m: ChatMessage): Promise<void> {
     if (
       this.disposed ||
       this.phase !== "idle" ||
       m.role !== "assistant" ||
-      !m.text.trim()
+      !m.text.trim() || !m.runId || !m.eventId || this.replay
     ) {
-      return Promise.resolve();
+      return;
     }
     const cfg = getSettings();
-    if (!ttsConfigured(cfg.tts)) return Promise.resolve();
-    this.safe(() => this.player.stop());
-    return streamSpeech(m.text, {
-      // 回放与实时合成同一口径：语言 = 对话语言
-      lang: resolveChatLang(cfg.general),
-      onSampleRate: (hz) => this.safe(() => this.player.setSampleRate(hz)),
-      onChunk: (pcm) => {
-        if (this.disposed) return;
-        this.safe(() => this.player.push(pcm));
-      },
-    });
+    if (!ttsConfigured(cfg.tts)) return;
+    const owner=meetingIdentity();
+    if(!owner)return;
+    const version=++this.replayVersion;
+    const permit=await acquireReplay(m.runId,m.eventId);
+    if(this.disposed||version!==this.replayVersion||this.phase!=='idle'){
+      await acknowledgePresentation(permit.runId,permit.token,permit.generation,'stopped','',owner).catch(()=>undefined);
+      return;
+    }
+    const replay:Replay={...permit,owner,abort:new AbortController(),releaseDrain:null,finalizing:null};
+    this.replay=replay;
+    this.safe(() => {this.player.stop();this.player.setPaused(false);});
+    try{
+      await streamSpeech(permit.text,{
+        lang:resolveChatLang(cfg.general),signal:replay.abort.signal,
+        onSampleRate:hz=>this.safe(()=>this.player.setSampleRate(hz)),
+        onChunk:pcm=>{if(this.replay===replay)this.safe(()=>this.player.push(pcm));},
+      });
+      if(this.replay!==replay)return;
+      if(this.playerPlaying())await new Promise<void>(resolve=>{replay.releaseDrain=resolve;if(!this.playerPlaying())resolve();});
+      if(this.replay===replay){
+        // Keep departure and a concurrent stop behind this terminal ACK. If it
+        // fails, release the permit as stopped before allowing another action.
+        replay.finalizing=acknowledgePresentation(replay.runId,replay.token,replay.generation,'completed',replay.text,replay.owner)
+          .catch(async error=>{
+            await acknowledgePresentation(replay.runId,replay.token,replay.generation,'stopped','',replay.owner).catch(()=>undefined);
+            throw error;
+          });
+        try{await replay.finalizing;}finally{if(this.replay===replay)this.replay=null;}
+      }
+    }catch(error){
+      await this.stopReplay();
+      throw error;
+    }
+  }
+
+  async stopReplay():Promise<void>{
+    this.replayVersion++;
+    const replay=this.replay;
+    if(!replay)return;
+    if(replay.finalizing){await replay.finalizing.catch(()=>undefined);return;}
+    this.replay=null;
+    replay.abort.abort();
+    replay.releaseDrain?.();
+    this.safe(()=>this.player.stop());
+    await acknowledgePresentation(replay.runId,replay.token,replay.generation,'stopped','',replay.owner).catch(()=>undefined);
   }
 
   /** 已落账对话历史（system prompt 组装用）。 */
   readonly history: ChatMessage[] = [];
 
   /**
-   * 读档灌入：用存档 messages 整体替换内存转写（backlog/字幕显示它）。
+   * 启动恢复：用最近记录恢复内存转写（backlog/字幕显示它）。
    * 在途回合先打断（其部分落账随旧转写一起被覆盖）；字幕 = 最后一条
-   * assistant 的末句，无则空。调用方负责 bumpTranscript 通知订阅者。
+   * 本地 assistant 的末句，无则空；渠道记录仍完整保留。
+   * 调用方负责 bumpTranscript 通知订阅者。
    */
-  loadHistory(messages: CheckpointMessage[]): void {
+  loadHistory(messages: StoredMessage[]): void {
     this.tryStage((st) => st.cancelPerformance());
     if (this.turn) this.interruptNow(false);
     this.safe(() => this.player.stop());
@@ -241,30 +327,34 @@ export class ChatEngine {
     for (const m of messages) {
       if (m.role !== "user" && m.role !== "assistant") continue;
       this.history.push({
-        id: newId("m"),
-        role: m.role,
-        text: String(m.text ?? ""),
-        at: String(m.at ?? ""),
+        ...storedMessage(m),
       });
     }
-    const last = [...this.history]
-      .reverse()
-      .find((m) => m.role === "assistant");
+    const last = lastLocalAssistant(this.history);
     // 落库已是句级（一句一行），末条即最后一句，无需再切
-      this.lastDisplay = last ? last.text : "";
+    this.lastDisplay = last ? last.text : "";
     this.events.onDisplay(this.lastDisplay);
   }
 
   /** 发送一条用户文本并跑一回合（thinking→speaking→idle）。
    *  走串行队列：在途回合先等打断回传落地，再发新回合请求。 */
-  sendText(text: string): void {
+  sendText(text: string, images: ImageRef[] = [], imageResult?: (ok:boolean)=>void): void {
     if (this.disposed) return;
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed && !images.length) return;
     // catch 保底：单次发送异常不毒化队列（否则后续发送全部静默丢失）。
     this.sendQueue = this.sendQueue.then(
-      () => this.doSend(trimmed).catch(() => {}),
+      () => this.doSend(trimmed, false, images, imageResult).catch(() => {imageResult?.(false);}),
     );
+  }
+
+  /** A screen reaction uses the same display/voice path, without a player message. */
+  sendScreenReaction(generation:number):void {
+    if(this.disposed||this.phase!=="idle"||this.turn||!meetingIdentity()||this.presentationPaused)return;
+    this.sendQueue=this.sendQueue.then(async()=>{
+      if(this.phase!=="idle"||this.turn||this.presentationPaused)return;
+      await this.doSend("",false,[],undefined,generation);
+    }).catch(()=>{});
   }
 
   /** First meeting uses normal pacing / TTS / ACT, without a fictitious user. */
@@ -274,15 +364,17 @@ export class ChatEngine {
     this.sendQueue = this.sendQueue.then(() => this.doSend("", true)).catch(() => {});
   }
 
-  private async doSend(trimmed: string, opening = false): Promise<void> {
+  private async doSend(trimmed: string, opening = false, images: ImageRef[] = [], imageResult?: (ok:boolean)=>void, screenGeneration?:number): Promise<void> {
     if (this.disposed) return;
+    await this.stopReplay();
     // 新输入隐式打断在途回合（绕过防抖，保证打断一定生效）；
     // await 回传完成：backend 先修正尾对再收新消息，保证消息不乱序。
-    if (this.phase !== "idle") await this.interruptNow(true);
+    if (this.phase !== "idle" || this.turn) await this.interruptNow(true);
     if (this.disposed) return;
 
     const cfg = getSettings();
     if (!cfg.llm.url) {
+      imageResult?.(false);
       this.events.onError(new ServiceError("llm", "unconfigured"));
       return;
     }
@@ -294,20 +386,27 @@ export class ChatEngine {
       id: newId("m"),
       role: "user",
       text: trimmed,
+      ...(images.length ? {images} : {}),
       at: new Date().toISOString(),
     };
-    if (!opening) {
-      this.history.push(userMsg);
-      this.events.onUserMessage(userMsg);
-    }
 
     const turn: Turn = {
+      images, imageResult, screenGeneration,
       presentation: null,
       id: newId("m"),
       abort: new AbortController(),
       audioAbort: new AbortController(),
       userText: trimmed,
-      userMessageId: opening ? "" : userMsg.id,
+      userMessageId: opening || screenGeneration!==undefined ? "" : userMsg.id,
+      userMessage: opening || screenGeneration!==undefined ? null : userMsg,
+      runId: null,
+      owner: meetingIdentity(),
+      ackText: "",
+      ackSentText: "",
+      ackRunning: false,
+      ackAt: 0,
+      ackQueue: Promise.resolve(),
+      presentationToken:null,presentationSuspended:false,queuedStopToken:null,presentationQueue:Promise.resolve(),
       opening,
       generation: meetingGeneration(),
       text: "",
@@ -324,10 +423,9 @@ export class ChatEngine {
     };
     this.turn = turn;
     this.tryStage((st) => { st.beginPerformance(turn.id); turn.presentation = st.getPresentation(); });
-    this.lastDisplay = "";
+    if(screenGeneration===undefined)this.lastDisplay = "";
     turn.timer = setInterval(() => this.displayTick(turn), DISPLAY_TICK_MS);
-    this.events.onAssistantStart(turn.id);
-    this.setPhase("thinking");
+    if(screenGeneration===undefined){this.events.onAssistantStart(turn.id);this.setPhase("thinking");}
     void this.runTurn(turn, cfg, trimmed);
   }
 
@@ -427,7 +525,7 @@ export class ChatEngine {
   }
 
   /** 打断：停播放、abort 在途 LLM/TTS、当前 assistant 消息按已展示部分落账，
-   *  并回传 backend 截断持久化（两侧一致）。persist=false 用于读档等
+   *  并回传 backend 截断持久化（两侧一致）。persist=false 用于启动恢复等
    *  无需回传的场景（live 即将被整体覆盖）。
    *  300ms 防抖——重复触发（SpeechStarted + 手动停止）忽略。
    *  回传 promise 挂进发送队列：紧随其后的 sendText 等它落地再发新回合。 */
@@ -444,10 +542,97 @@ export class ChatEngine {
     this.sendQueue = this.sendQueue.then(() => done);
   }
 
+  setSceneActive(active:boolean):void {
+    if (!active && this.turn && this.replyTextShown) {
+      this.turn.audioAbort.abort();
+      for (const item of this.turn.sentences) item.tts = null;
+      this.safe(() => this.player.stop());
+    }
+    this.sceneActive=active;this.applyPresentationVisibility();
+  }
+
+  private applyPresentationVisibility():void {
+    const paused=!this.sceneActive||typeof document!=="undefined"&&document.visibilityState==="hidden";
+    const turn=this.turn;
+    if(paused && turn && turn.presentationToken && turn.queuedStopToken!==turn.presentationToken){
+      // Stop audio/cues before releasing the brain's presentation ownership.
+      this.safe(()=>this.player.setPaused(true));
+      this.tryStage(stage=>stage.cancelPerformance());
+      turn.presentationSuspended=true;
+      // SSE can deliver another sentence while this page is hidden. Capture the
+      // capability now: a later token must never rewrite an already queued ACK.
+      const capability={runId:turn.runId,token:turn.presentationToken,generation:turn.generation,owner:turn.owner};
+      turn.queuedStopToken=capability.token;
+      turn.presentationQueue=turn.presentationQueue.then(()=>this.acknowledgeSeen(turn,true)).then(()=>this.presentationAck(turn,'stopped',capability)).catch(error=>{
+        if(this.disposed||this.turn!==turn)return;
+        this.events.onError(toError(error));
+        if(turn.queuedStopToken===capability.token){
+          turn.queuedStopToken=null;
+          setTimeout(()=>{if(this.turn===turn)this.applyPresentationVisibility();},350);
+        }
+      });
+    }else if(!paused && turn?.presentationSuspended){
+      this.resumePresentation(turn);return;
+    }
+    this.setPresentationPaused(paused);
+  }
+
+  private setPresentationPaused(paused:boolean):void {
+    if(paused===this.presentationPaused)return;
+    const now=Date.now();
+    if(paused)this.presentationPausedAt=now;
+    else if(this.turn){
+      const elapsed=now-this.presentationPausedAt;
+      if(this.turn.disp.doneAt)this.turn.disp.doneAt+=elapsed;
+      if(this.turn.disp.pausedUntil)this.turn.disp.pausedUntil+=elapsed;
+    }
+    this.presentationPaused=paused;
+    this.safe(()=>this.player.setPaused(paused));
+  }
+
+  private resumePresentation(turn:Turn):void {
+    if(this.presentationRetry)return;
+    // The old capability must reacquire the single brain before buffered speech.
+    this.presentationRetry=setTimeout(()=>{
+      this.presentationRetry=null;
+      void turn.presentationQueue.then(async()=>{
+        if(this.turn!==turn || !this.sceneActive || typeof document!=='undefined'&&document.visibilityState==='hidden')return;
+        try{
+          await this.presentationAck(turn,'resume');
+          if(this.turn!==turn)return;
+          turn.presentationSuspended=false;
+          turn.queuedStopToken=null;
+          this.tryStage(stage=>stage.beginPerformance(turn.id));
+          this.setPresentationPaused(false);
+        }catch{
+          if(this.turn===turn && this.sceneActive)this.resumePresentation(turn);
+        }
+      });
+    },350);
+  }
+
+  private presentationAck(turn:Turn,outcome:'completed'|'stopped'|'resume',capability={runId:turn.runId,token:turn.presentationToken,generation:turn.generation,owner:turn.owner}):Promise<void> {
+    if(!capability.runId||!capability.token||capability.generation==null)return Promise.resolve();
+    return acknowledgePresentation(capability.runId,capability.token,capability.generation,outcome,this.seenText(turn),capability.owner);
+  }
+
+  /** Explicit meeting exit flushes observed text before the lease is revoked. */
+  finishMeeting(): Promise<void> {
+    const replayStopped=this.stopReplay();
+    const done=this.turn?this.interruptNow(true):Promise.resolve();
+    if(!this.turn)this.safe(()=>this.player.stop());
+    this.sendQueue=this.sendQueue.then(()=>Promise.all([done,replayStopped]).then(()=>undefined));
+    this.suspendMic();
+    return this.sendQueue;
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    void this.stopReplay();
+    if(this.presentationRetry)clearTimeout(this.presentationRetry);
     this.unsubVolume?.();
+    if(typeof document!=="undefined")document.removeEventListener("visibilitychange",this.visibilityChanged);
     this.interruptNow(false);
     this.stopListening();
     this.safe(() => this.player.dispose());
@@ -479,31 +664,27 @@ export class ChatEngine {
       return Promise.resolve();
     }
     turn.finished = true;
+    turn.imageResult?.(false);turn.imageResult=undefined;
     turn.abort.abort();
     clearInterval(turn.timer);
     turn.inflight = 0;
     this.safe(() => this.player.stop());
     this.turn = null;
-    // 落账以「用户实际看到的文本」为准：backlog / 存档 / 下回合上下文
+    // 落账以「用户实际看到的文本」为准：backlog / 下回合上下文
     // 与回传 backend 的截断值一致（assistant 可空，空则本地也不落账）。
     const seen = this.seenText(turn);
+    this.publishSeen(turn);
     const done = persist
-      ? (turn.generation == null ? sendInterrupt(turn.userText, seen) : sendInterrupt(turn.userText, seen, turn.generation))
+      ? this.acknowledgeSeen(turn,true).then(()=>turn.presentationSuspended?undefined:this.presentationAck(turn,'stopped')).catch(()=>undefined).then(() => turn.runId
+          ? sendInterrupt(turn.userText,seen,turn.generation ?? undefined,turn.runId,turn.owner)
+          : turn.generation == null ? sendInterrupt(turn.userText,seen) : sendInterrupt(turn.userText,seen,turn.generation))
       : Promise.resolve();
-    // 各句已逐句进转写；打断时按「用户实际看到的」重建本轮尾部，
-    // 与回传 backend 的 seen 同源（backend 用同一规则裁剪 DB 里的本轮行）。
-    if (turn.pushed > 0) {
-      this.history.splice(this.history.length - turn.pushed, turn.pushed);
-    }
+    // Keep each durable event's identity. Backlog may group by runId for display,
+    // but collapsing rows here would duplicate them when the ledger page arrives.
     if (seen) {
-      const msg: ChatMessage = {
-        id: `${turn.id}-seen`,
-        role: "assistant",
-        text: seen,
-        at: new Date().toISOString(),
-      };
-      this.history.push(msg);
-      this.events.onAssistantDone(msg);
+      const sentenceIds=new Set(turn.sentences.flatMap(item=>item.message?[item.message.id]:[]));
+      const last=[...this.history].reverse().find(message=>sentenceIds.has(message.id));
+      if (last) this.events.onAssistantDone(last);
     }
     // 表情是回合内状态：回合中止/结束统一复位。
     this.tryStage((st) => st.cancelPerformance());
@@ -513,21 +694,39 @@ export class ChatEngine {
 
   private async runTurn(turn: Turn, cfg: Settings, userText: string): Promise<void> {
     try {
-      for await (const ev of chat(userText, turn.abort.signal, turn.presentation, turn.opening)) {
+      for await (const ev of chat(userText, turn.abort.signal, turn.presentation, turn.opening, turn.id, turn.images?.map(image=>image.id),turn.screenGeneration)) {
         if (this.turn !== turn) return; // 已被打断
         if (ev.t === "sentence") {
+          if(turn.screenGeneration!==undefined&&!turn.text&&ev.text.trim()){this.events.onAssistantStart(turn.id);this.setPhase("thinking");}
+          if(ev.text.trim()){turn.imageResult?.(true);turn.imageResult=undefined;}
           if (ev.generation != null) turn.generation = ev.generation;
+          if(ev.presentationToken)turn.presentationToken=ev.presentationToken;
+          if (ev.runId) {
+            turn.runId = ev.runId;
+            if (turn.userMessage) {
+              turn.userMessage.runId=ev.runId;turn.userMessage.source="meeting";
+              if (ev.userEventId) {turn.userMessage.id=ev.userEventId;turn.userMessage.eventId=ev.userEventId;turn.userMessageId=ev.userEventId;}
+              if (ev.userSeq != null) turn.userMessage.seq=ev.userSeq;
+            }
+          }
           turn.text += ev.text;
-          this.pushSentence(turn, cfg, ev.text, ev.cues);
+          this.pushSentence(turn, cfg, ev.text, ev.cues, ev);
+          if(this.presentationPaused)this.applyPresentationVisibility();
+        } else if(ev.t==='done') {
+          if(ev.generation!=null)turn.generation=ev.generation;
+          if(ev.runId)turn.runId=ev.runId;
+          if(ev.presentationToken)turn.presentationToken=ev.presentationToken;
+          if(this.presentationPaused)this.applyPresentationVisibility();
         } else if (ev.t === "error") {
           throw new ServiceError("llm", "http", 0, ev.message);
         }
       }
     } catch (err) {
-      if (this.turn === turn) this.events.onError(toError(err));
+      if (this.turn === turn) {turn.imageResult?.(false);turn.imageResult=undefined;this.events.onError(toError(err));}
     }
     if (this.turn !== turn) return; // 已被打断，已落句子由 interruptNow 对齐
     if (!turn.text.trim()) {
+      turn.imageResult?.(false);turn.imageResult=undefined;
       // A send is provisional until a real reply arrives. Remove by identity,
       // not text: retries may contain exactly the same words as earlier turns.
       const index = this.history.findIndex((m) => m.id === turn.userMessageId);
@@ -544,30 +743,33 @@ export class ChatEngine {
     cfg: Settings,
     sentence: string,
     cues: PerformanceCue[],
+    identity: SentenceIdentity = {},
   ): void {
     if (turn.finished) return;
-    const item: SentItem = { text: sentence, tts: null, cues, cueIdx: 0 };
+    const item: SentItem = { text: sentence, tts: null, cues, cueIdx: 0, message:null };
     turn.sentences.push(item);
     if (!sentence) return; // Ordered control-only units never enter history or speech.
-    // 句落账即进转写：**流式期间 backlog 就能看到这一句**，不必等回合结束。
-    // id 用「回合 id + 句序」，与重载后按行重建的转写形态一致。
-    const msg: ChatMessage = {
-      id: `${turn.id}-${turn.sentences.length - 1}`,
-      role: "assistant",
-      text: sentence,
-      at: new Date().toISOString(),
+    item.message = {
+      id: identity.eventId || `${turn.id}-${turn.sentences.length - 1}`,
+      ...(identity.eventId ? {eventId:identity.eventId} : {}),
+      ...(identity.seq == null ? {} : {seq:identity.seq}),
+      runId: turn.runId ?? turn.id,source:"meeting",
+      role:"assistant",text:"",at:new Date().toISOString(),
     };
-    turn.pushed += 1;
-    this.history.push(msg);
-    this.events.onSentence(msg);
     if (this.voiceMuted || turn.audioAbort.signal.aborted) return;
     // Voice is optional; missing configuration is a valid text-only mode.
     if (!ttsConfigured(cfg.tts)) return;
-    const tts: TtsItem = { chunks: [], pushed: 0, done: false };
+    cancelWarmup();
+    const tts: TtsItem = { controller: new AbortController(), chunks: [], pushed: 0, done: false };
     item.tts = tts;
     turn.inflight += 1;
 
+    const firstAudio = turn.firstAudio;
+    let releaseFirst: (() => void) | undefined;
+    if (!firstAudio) turn.firstAudio = new Promise(resolve => { releaseFirst = resolve; });
+
     const settle = (err?: unknown): void => {
+      releaseFirst?.();
       tts.done = true;
       turn.inflight -= 1;
       if (err !== undefined) this.reportTtsOnce(turn, toError(err));
@@ -576,24 +778,24 @@ export class ChatEngine {
     };
 
     // 任一条件触发即取消：回合被打断（abort）或语音被关掉（audioAbort）。
-    const signal = AbortSignal.any([turn.abort.signal, turn.audioAbort.signal]);
+    const signal = AbortSignal.any([turn.abort.signal, turn.audioAbort.signal, tts.controller.signal]);
 
-    let req: Promise<void>;
-    try {
-      req = streamSpeech(sentence, {
+    const speak = async () => {
+      if (firstAudio) await firstAudio;
+      if (signal.aborted) return;
+      await streamSpeech(sentence, {
         lang: resolveChatLang(cfg.general),
         signal,
         onSampleRate: (hz) => this.safe(() => this.player.setSampleRate(hz)),
         onChunk: (pcm) => {
+          if (signal.aborted) return;
+          releaseFirst?.();
           tts.chunks.push(pcm);
           this.flushTts(turn);
         },
       });
-    } catch (err) {
-      settle(err);
-      return;
-    }
-    req.then(() => settle(), (err: unknown) => settle(err));
+    };
+    void speak().then(() => settle(), (err: unknown) => settle(err));
   }
 
   private reportTtsOnce(turn: Turn, err: Error): void {
@@ -607,6 +809,7 @@ export class ChatEngine {
    * 未轮到的句先在本地攒着——这样每句音频正好在该句展示时开声，句间停顿天然生效。
    */
   private flushTts(turn: Turn): void {
+    if(this.presentationPaused)return;
     if (this.turn !== turn || turn.finished) return;
     const ss = turn.sentences;
     while (turn.pushIndex < ss.length && turn.pushIndex <= turn.disp.idx) {
@@ -628,6 +831,7 @@ export class ChatEngine {
 
   /** 播放 tick：逐字上屏 → 判切句 → 供 TTS 块 → 判收尾。 */
   private displayTick(turn: Turn): void {
+    if(this.presentationPaused)return;
     if (this.turn !== turn || turn.finished) return;
     this.flushTts(turn);
     const now = performance.now();
@@ -661,6 +865,8 @@ export class ChatEngine {
       turn.disp.emitted = shown;
       this.lastDisplay = shown;
       this.events.onDisplay(shown);
+      this.publishSeen(turn);
+      void this.acknowledgeSeen(turn,turn.disp.reveal >= target);
       if (shown && this.phase === "thinking") this.setPhase("speaking");
     }
 
@@ -669,6 +875,13 @@ export class ChatEngine {
     for (const cue of due.cues) this.fireCue(cue, turn);
 
     // 完整句的播完判定：TTS 开 = 音频播完；TTS 关/本句无音频 = 上屏完 + 按句长驻留。
+    // Give a fully visible sentence a short grace period for its first PCM.
+    // Once skipped, its audio must never interrupt the following sentence.
+    if (active.tts && !active.tts.done && !active.tts.chunks.length &&
+        turn.disp.doneAt > 0 && now - turn.disp.doneAt >= 1500) {
+      active.tts.controller.abort();
+      active.tts = null;
+    }
     const tts = active.tts;
     const hasAudio = !!tts && !(tts.done && tts.chunks.length === 0);
     let ended = false;
@@ -687,14 +900,66 @@ export class ChatEngine {
       turn.disp.idx += 1;
       turn.disp.reveal = 0;
       turn.disp.doneAt = 0;
+      // Equal words in the next event still need their own history entry / ACK.
+      turn.disp.emitted = "";
     }
     this.flushTts(turn);
     this.maybeFinish(turn);
   }
 
+  /** Publish only observed prefixes. Generated but unseen replies are not history. */
+  private publishSeen(turn: Turn): void {
+    const seen = this.seenText(turn);
+    if (!seen) return;
+    if (turn.userMessage && !this.history.some(message => message.id === turn.userMessageId)) {
+      turn.userMessage.runId=turn.runId ?? turn.id;turn.userMessage.source="meeting";
+      this.history.push(turn.userMessage);this.events.onUserMessage(turn.userMessage);
+    }
+    for (let index=0;index<=turn.disp.idx && index<turn.sentences.length;index++) {
+      const item=turn.sentences[index]!;
+      const message=item.message;
+      if (!message) continue;
+      const text=index<turn.disp.idx ? item.text : Array.from(item.text).slice(0,Math.floor(turn.disp.reveal)).join("");
+      if (!text || message.text===text) continue;
+      message.text=text;
+      if (!this.history.some(existing => existing.id===message.id)) {this.history.push(message);turn.pushed++;}
+      this.events.onSentence(message);
+    }
+  }
+
+  private acknowledgeSeen(turn: Turn, force=false): Promise<void> {
+    if (!turn.runId || turn.generation == null) return turn.ackQueue;
+    const seen=this.seenText(turn);
+    if (!force && Date.now()-turn.ackAt<100) return turn.ackQueue;
+    turn.ackText=seen;turn.ackAt=Date.now();
+    if(turn.ackRunning||turn.ackSentText===seen)return turn.ackQueue;
+    const runId=turn.runId,generation=turn.generation;
+    turn.ackRunning=true;
+    turn.ackQueue=(async()=>{
+      let retries=0;
+      // A slow transport consumes the latest cumulative prefix, rather than
+      // queueing an unbounded request for every typewriter frame.
+      while(turn.ackSentText!==turn.ackText){
+        const latest=turn.ackText;
+        try{
+          if(turn.owner)await acknowledgeDisplay(runId,generation,latest,turn.owner);
+          else await acknowledgeDisplay(runId,generation,latest);
+          turn.ackSentText=latest;retries=0;
+        }
+        catch(error){
+          if(retries++<1){await new Promise(resolve=>setTimeout(resolve,100));continue;}
+          if(!this.disposed)this.events.onError(toError(error));
+          break;
+        }
+      }
+    })().finally(()=>{turn.ackRunning=false;});
+    return turn.ackQueue;
+  }
+
   /** 收尾判定：LLM 流完 + TTS 请求全部完成 + 展示队列播完 + （若有音频）player 播空。 */
   private maybeFinish(turn: Turn): void {
     if (this.turn !== turn || turn.finished) return;
+    if (this.presentationPaused || turn.presentationSuspended) return;
     if (!turn.llmDone || turn.inflight > 0) return;
     if (turn.disp.idx < turn.sentences.length) return; // 还有句没播完
     if (turn.pushedAudio && this.playerPlaying()) return;
@@ -703,16 +968,22 @@ export class ChatEngine {
 
   private completeTurn(turn: Turn): void {
     turn.finished = true;
-    clearInterval(turn.timer);
-    this.turn = null;
-    // 各句已在 pushSentence 里逐句落账，这里只发「回合结束」信号
-    if (turn.text.trim()) {
-      const last = [...this.history].reverse().find((m) => m.role === "assistant");
-      if (last) this.events.onAssistantDone(last);
-    }
-    // 表情持续到本次回复结束：回合完成复位。
-    this.tryStage((st) => st.endPerformance(turn.id));
-    this.setPhase("idle");
+    this.publishSeen(turn);
+    void this.acknowledgeSeen(turn,true).then(async()=>{
+      if(this.turn!==turn || this.presentationPaused || turn.presentationSuspended)return;
+      await this.presentationAck(turn,'completed');
+      if(this.turn!==turn)return;
+      clearInterval(turn.timer);
+      this.turn=null;
+      // 各句已在 pushSentence 里逐句落账，这里只发「回合结束」信号。
+      if(turn.text.trim()){
+        const last=[...this.history].reverse().find(message=>message.role==='assistant');
+        if(last)this.events.onAssistantDone(last);
+      }
+      this.tryStage(stage=>stage.endPerformance(turn.id));
+      this.setPhase('idle');
+    }).catch(error=>{if(!this.disposed&&this.turn===turn)this.events.onError(toError(error));})
+      .finally(()=>{if(this.turn===turn)turn.finished=false;});
   }
 
   private playerPlaying(): boolean {
@@ -743,6 +1014,8 @@ export class ChatEngine {
   }
 
   private fireCue(cue: PerformanceCue, turn: Turn): void {
+    if(turn.presentation && this.sceneActive && cue.music)musicDirector.command(cue.music,turn.id);
+    if(turn.presentation && this.sceneActive && cue.mood)musicDirector.cue(cue.mood,turn.id);
     if (turn.presentation) this.tryStage((st) => st.applyCue(cue, turn.id, turn.presentation!.revision));
   }
 

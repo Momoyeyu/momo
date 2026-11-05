@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator } from './fixtures';
 
 async function insideStage(element: Locator) {
   const stage = await element.page().locator('.app-stage').boundingBox();
@@ -49,8 +49,16 @@ test('settings overlays and resource controls remain reachable in a small window
   await insideStage(page.getByRole('dialog'));
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '拓展', exact: true }).click();
+  await page.getByRole('tab', { name: 'MCP', exact: true }).click();
   await page.locator('.ext-panel .list-toolbar .icon-btn').click();
   await insideStage(page.getByRole('dialog'));
+  const mcp = page.getByRole('dialog');
+  const mcpBounds = await mcp.boundingBox();
+  await page.mouse.move(mcpBounds!.x + mcpBounds!.width / 2, mcpBounds!.y + 30);
+  await page.mouse.wheel(0, 10000);
+  await expect.poll(() => mcp.evaluate(el => Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop))).toBeLessThan(2);
+  const mcpLast = await mcp.getByRole('button').last().boundingBox();
+  expect(mcpLast!.y + mcpLast!.height).toBeLessThanOrEqual(mcpBounds!.y + mcpBounds!.height + 1);
   await page.getByRole('button', { name: /从 JSON 填入/ }).click();
   await page.getByRole('dialog').locator('.sel-face').scrollIntoViewIfNeeded();
   await page.getByRole('dialog').locator('.sel-face').click();
@@ -62,7 +70,8 @@ test('settings overlays and resource controls remain reachable in a small window
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('listbox')).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await page.locator('.settings-pane:not([aria-hidden]) .panel').first().locator('.list-toolbar .icon-btn').click();
+  await page.getByRole('tab', { name: 'Live2D', exact: true }).click();
+  await page.getByRole('tabpanel', { name: 'Live2D', exact: true }).locator('.list-toolbar .icon-btn').click();
   await insideStage(page.getByRole('dialog'));
   await page.keyboard.press('Escape');
   await page.locator('.avatar-row').first().click();
@@ -72,6 +81,13 @@ test('settings overlays and resource controls remain reachable in a small window
   await dialog.locator('.avatar-res-row .icon-btn').first().hover();
   await expect(page.getByRole('tooltip')).toHaveCount(0);
   await dialog.getByRole('button', { name: /动作\s*10/ }).click();
-  await dialog.locator('.avatar-res-row').last().scrollIntoViewIfNeeded();
+  const scroll=dialog.locator('.avatar-res-scroll');
+  const scrollBounds=await scroll.boundingBox();
+  await page.mouse.move(scrollBounds!.x+scrollBounds!.width/2,scrollBounds!.y+30);
+  await page.mouse.wheel(0,10000);
+  await expect.poll(()=>scroll.evaluate(el=>Math.abs(el.scrollHeight-el.clientHeight-el.scrollTop))).toBeLessThan(2);
+  const last=await dialog.locator('.avatar-res-row').last().boundingBox();
+  const clip=await scroll.boundingBox();
+  expect(last!.y+last!.height).toBeLessThanOrEqual(clip!.y+clip!.height+1);
   await expect(dialog.getByRole('button', { name: '关闭', exact: true })).toBeInViewport();
 });

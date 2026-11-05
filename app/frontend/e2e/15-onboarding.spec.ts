@@ -1,5 +1,13 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import {waitForChatReady} from './helpers';
+
+async function launch(page: Page) {
+  await page.goto('/');
+  await expect(page.locator('.title-screen')).toBeVisible();
+  await page.locator('.title-menu .menu-item').first().click();
+  await expect(page.locator('.chat-page')).toBeVisible();
+}
+
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -35,10 +43,10 @@ function call(directory: string, path: string, method = 'GET', body?: unknown, o
 }
 async function bridge(page: Page, directory: string, options = {}) {
   await page.route('**/api/**', async route => {
-    const req = route.request(), path = new URL(req.url()).pathname;
+    const req = route.request(), url = new URL(req.url()), path = url.pathname;
     if (path === '/api/probe/llm') return route.fulfill({json: {ok: true, detail: '1ms'}});
-    if (!['/api/onboarding', '/api/onboarding/opening', '/api/state', '/api/chat', '/api/chat/interrupt'].includes(path) && !path.startsWith('/api/checkpoints') && !path.startsWith('/api/memories')) return route.continue();
-    const result = await call(directory, path, req.method(), req.postData() ? req.postDataJSON() : undefined, options);
+    if (!['/api/onboarding', '/api/onboarding/opening', '/api/state', '/api/chat', '/api/chat/interrupt'].includes(path) && !path.startsWith('/api/checkpoints') && !path.startsWith('/api/memories') && !path.startsWith('/api/life') && !path.startsWith('/api/meeting')) return route.continue();
+    const result = await call(directory, path+url.search, req.method(), req.postData() ? req.postDataJSON() : undefined, options);
     if (!page.isClosed()) await route.fulfill({status: result.status, headers: result.headers, contentType: result.contentType, body: result.body});
   });
 }
@@ -57,9 +65,9 @@ test.afterEach(async ({page}) => {
   rmSync(directory, {recursive:true,force:true});
 });
 
-test('first launch speaks first, remembers the name, and does not repeat after reload or new session', async ({page}) => {
+test('first launch speaks first, remembers the name, and does not repeat after reload or meeting again', async ({page}) => {
   await bridge(page, directory);
-  await page.goto('/');
+  await launch(page);
   await expect(page).toHaveURL(/#\/chat$/);
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
   let live = JSON.parse((await call(directory, '/api/checkpoints/live')).body);
@@ -71,18 +79,23 @@ test('first launch speaks first, remembers the name, and does not repeat after r
   expect(JSON.parse((await call(directory, '/api/onboarding')).body).stage).toBe('completed');
   const memories = JSON.parse((await call(directory, '/api/memories')).body);
   expect(JSON.stringify(memories)).toContain('小星');
+  expect(await page.evaluate(()=>sessionStorage.getItem('momo.meeting-owner.v1'))).not.toBeNull();
   await page.reload();
   await expect(page.locator('.subtitle')).toHaveText('你现在想聊什么？');
+  expect(await page.evaluate(()=>sessionStorage.getItem('momo.meeting-owner.v1'))).not.toBeNull();
   live = JSON.parse((await call(directory, '/api/checkpoints/live')).body);
   expect(live.messages.filter((m: {text:string}) => m.text.includes('我叫 momo'))).toHaveLength(1);
-  await call(directory, '/api/checkpoints/live/new', 'POST');
+  const legacyReset = await call(directory, '/api/checkpoints/live/new', 'POST');
+  expect(legacyReset.status).toBe(410);
   await page.goto('/');
   await expect(page).not.toHaveURL(/#\/chat$/);
+  await page.getByRole('button',{name:'启动 boot'}).click();
+  await expect(page.locator('.subtitle')).toHaveText('你现在想聊什么？');
 });
 
 test('refusal ends the first meeting without inventing a memory', async ({page}) => {
   await bridge(page, directory);
-  await page.goto('/');
+  await launch(page);
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
   await waitForChatReady(page);
   await page.locator('.input-row input').fill('暂时不想说，聊聊游戏吧');
@@ -94,7 +107,7 @@ test('refusal ends the first meeting without inventing a memory', async ({page})
 
 test('refresh resumes the current question and model failure can be retried', async ({page}) => {
   await bridge(page, directory);
-  await page.goto('/');
+  await launch(page);
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
   await page.reload();
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
@@ -113,7 +126,7 @@ test('refresh resumes the current question and model failure can be retried', as
 
 test('unconfigured player sees a small connection gate and can continue', async ({page}) => {
   await bridge(page, directory, {configured: false});
-  await page.goto('/');
+  await launch(page);
   const dialog = page.getByRole('dialog', {name:'让 momo 与你相遇'});
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('link', {name:'DeepSeek 开放平台'})).not.toBeVisible();
@@ -137,7 +150,7 @@ test('unconfigured player sees a small connection gate and can continue', async 
 test('a rejected model leaves setup and its draft intact without saving or starting the meeting', async ({page}) => {
   await bridge(page, directory, {configured: false});
   await page.route('**/api/probe/llm', route => route.fulfill({json: {ok: false, detail: 'HTTP 400'}}));
-  await page.goto('/');
+  await launch(page);
   const dialog = page.getByRole('dialog', {name:'让 momo 与你相遇'});
   await dialog.getByRole('textbox', {name:'模型 API 地址', exact:true}).fill('https://preview.test');
   await dialog.getByRole('textbox', {name:'模型名称', exact:true}).fill('Deepseek-chat');
@@ -162,7 +175,7 @@ test('leaving setup during health checking cannot save an obsolete draft', async
     await held;
     await route.fulfill({json:{ok:true,detail:'1ms'}}).catch(()=>{});
   });
-  await page.goto('/');
+  await launch(page);
   await page.locator('#first-meeting-url').fill('https://preview.test');
   await page.locator('#first-meeting-model').fill('obsolete-model');
   const checking=page.waitForRequest('**/api/probe/llm');
@@ -188,7 +201,7 @@ test('real LLM first meeting forms a real editable memory', async ({page}) => {
   test.skip(process.env.MOMO_REAL_ONBOARDING_E2E !== '1', 'opt-in real provider');
   test.setTimeout(120_000);
   await bridge(page, directory, {real: true});
-  await page.goto('/');
+  await launch(page);
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
   await waitForChatReady(page);
   await page.locator('.input-row input').fill('你好 momo，叫我小星就好。');
@@ -208,14 +221,16 @@ test('real LLM first meeting forms a real editable memory', async ({page}) => {
 
 test('typing before the model loads resolves the name without a late scripted intro', async ({page}) => {
   await bridge(page, directory);
+  let releaseModel!:()=>void;
+  const modelGate=new Promise<void>(resolve=>{releaseModel=resolve;});
   await page.route('**/live2d/hiyori/Hiyori.model3.json', async route => {
-    await new Promise(resolve => setTimeout(resolve, 3500));
-    await route.continue();
+    await modelGate;await route.continue();
   });
-  await page.goto('/');
+  await launch(page);
   await waitForChatReady(page);
   await page.locator('.input-row input').fill('叫我小星');
   await page.locator('.input-row input').press('Enter');
+  releaseModel();
   await expect(page.locator('.subtitle')).toHaveText('你现在想聊什么？');
   const live = JSON.parse((await call(directory, '/api/checkpoints/live')).body);
   expect(live.messages.some((m:{text:string}) => m.text.includes('我叫 momo'))).toBe(false);
@@ -235,7 +250,7 @@ test('blocked autoplay falls back to subtitles and finishes the opening', async 
   });
   await bridge(page, directory, {tts:true});
   await page.route('**/api/tts/speech', route => route.fulfill({status:200, headers:{'x-sample-rate':'24000'}, contentType:'application/octet-stream', body:Buffer.alloc(4800, 20)}));
-  await page.goto('/');
+  await launch(page);
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
   await expect(page.getByRole('button', {name:'终止', exact:true})).not.toBeVisible();
   expect(JSON.parse((await call(directory, '/api/onboarding')).body).stage).toBe('asking');
@@ -244,7 +259,7 @@ test('blocked autoplay falls back to subtitles and finishes the opening', async 
 
 test('brand-new installation can save its very first model configuration', async ({page}) => {
   await bridge(page, directory, {pristine:true});
-  await page.goto('/');
+  await launch(page);
   const dialog = page.getByRole('dialog', {name:'让 momo 与你相遇'});
   await expect(dialog).toBeVisible();
   await dialog.getByRole('textbox', {name:'模型 API 地址', exact:true}).fill('https://preview.test');
@@ -252,4 +267,29 @@ test('brand-new installation can save its very first model configuration', async
   await dialog.getByRole('button', {name:'开始相遇'}).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？');
+});
+
+test('refresh continues an opening from its acknowledged prefix without repeating or losing words',async({page})=>{
+  await bridge(page,directory);
+  const state=JSON.parse((await call(directory,'/api/state')).body);
+  state.settings.general.textSpeed=0;
+  await call(directory,'/api/state','PUT',state);
+  let openings=0;
+  page.on('request',request=>{if(new URL(request.url()).pathname==='/api/onboarding/opening')openings++;});
+  await launch(page);
+  await expect.poll(async()=>JSON.parse((await call(directory,'/api/life/live')).body).messages.map((message:{text:string})=>message.text).join('').length).toBeGreaterThan(0);
+  await page.evaluate(()=>{
+    Object.defineProperty(document,'visibilityState',{configurable:true,get:()=> 'hidden'});
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const partial=JSON.parse((await call(directory,'/api/life/live')).body).messages.map((message:{text:string})=>message.text).join('');
+  expect(partial.length).toBeLessThan('啊，你来了。……我叫 momo。我该怎么称呼你呀？'.length);
+  await page.reload();
+  await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？',{timeout:20000});
+  await expect.poll(async()=>JSON.parse((await call(directory,'/api/life/live')).body).messages.map((message:{text:string})=>message.text).join('')).toBe('啊，你来了。……我叫 momo。我该怎么称呼你呀？');
+  expect(openings).toBe(2);
+  await page.reload();
+  await expect(page.locator('.subtitle')).toHaveText('我该怎么称呼你呀？',{timeout:20000});
+  await page.waitForTimeout(300);
+  expect(openings).toBe(2);
 });

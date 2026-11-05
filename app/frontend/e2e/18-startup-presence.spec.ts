@@ -1,22 +1,27 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 
 async function fixture(page: Page, waitForState: Promise<void> = Promise.resolve(), language = 'zh', firstLaunch = false) {
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
+    if(url.pathname.startsWith('/api/meeting/'))return route.fulfill(url.pathname.endsWith('/leave')?{status:204}:{json:{leaseId:'visual-lease',epoch:1,expiresIn:60}});
     let body: unknown = {};
     if (url.pathname === '/api/state') {
       if (route.request().method() === 'GET') await waitForState;
       body = {settings:{general:{lang:language,voiceInput:false},llm:{url:'',model:'',key:''},tts:{url:'',key:'',voice:'',prompt:''}}};
     }
-    if (url.pathname === '/api/checkpoints/live') body = {summary:'',messages:[]};
+    if (url.pathname === '/api/intro') body = {phase:firstLaunch?'setup':'completed',languageConfirmed:false,configurationValid:false};
+    if (url.pathname === '/api/life/history') body = {summary:'',messages:[],hasMore:false,nextBefore:null};
     if (url.pathname === '/api/onboarding') body = {stage:firstLaunch?'new':'completed',busy:false,generation:0,configured:false};
     if (url.pathname === '/api/checkpoints' || url.pathname === '/api/memories') body = [];
+    if (url.pathname === '/api/resources/status') body = {asr:{ready:true},embedding:{state:'ready'},index:{state:'ready'}};
+    if (url.pathname === '/api/social/accounts') body = {accounts:[],providers:[]};
+    if (url.pathname === '/api/social/accounts/retired/records') body = {records:[]};
     await route.fulfill({json:body});
   });
 }
 
 for (const asset of ['/stage/stage-room.jpg', '/live2d/hiyori/Hiyori.model3.json']) {
-test(`first launch prepares ${asset} before a visible crossfade, then opens configuration`, async ({page}, info) => {
+test(`title crossfades independently of ${asset}, then settings guidance is available`, async ({page}, info) => {
   await fixture(page, Promise.resolve(), 'zh', true);
   let releaseRoom!:()=>void;
   const room = new Promise<void>(resolve=>{releaseRoom=resolve;});
@@ -34,20 +39,20 @@ test(`first launch prepares ${asset} before a visible crossfade, then opens conf
     requestAnimationFrame(sample);
   });
   await page.goto('/', {waitUntil:'domcontentloaded'});
-  await expect(page.locator('.chat-page')).toBeAttached();
+  await expect(page.locator('.title-screen')).toBeAttached();
   await expect.poll(()=>requested).toBe(true);
-  // A slow local image must not be revealed as an empty / abruptly changing room.
-  await page.waitForTimeout(500);
-  await expect(page.locator('#startup')).toHaveCSS('opacity','1');
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  releaseRoom();
+  // A room resource cannot hold the title startup or implicitly Boot momo.
   await expect(page.locator('#startup')).toHaveCount(0);
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.locator('.title-screen')).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   const frames=await page.evaluate(()=>(window as unknown as {__startupFrames:{time:number;opacity:number;inert:boolean;setup:boolean}[]}).__startupFrames);
   const fading=frames.filter(frame=>frame.opacity>.01&&frame.opacity<.99);
   expect(fading.length).toBeGreaterThan(12);
   expect(fading.at(-1)!.time-fading[0].time).toBeGreaterThan(400);
   expect(fading.every(frame=>frame.inert&&!frame.setup)).toBe(true);
+  releaseRoom();
+  await page.locator('[data-intro=settings]').click();
+  await expect(page.locator('.settings-page')).toBeVisible();
   await info.attach('startup-crossfade-frames',{body:JSON.stringify(frames),contentType:'application/json'});
   await page.screenshot({path:info.outputPath('first-launch-ready.png')});
 });
@@ -59,7 +64,9 @@ test('unavailable first-launch artwork falls back without trapping the configura
   await page.route('**/stage/stage-room.jpg', route=>route.abort());
   await page.goto('/');
   await expect(page.locator('#startup')).toHaveCount(0);
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.locator('.title-screen')).toBeVisible();
+  await page.locator('[data-intro=settings]').click();
+  await expect(page.locator('.settings-page')).toBeVisible();
 });
 
 test('a stalled model has a bounded startup wait', async ({page}) => {
@@ -70,7 +77,9 @@ test('a stalled model has a bounded startup wait', async ({page}) => {
   try {
     await page.goto('/', {waitUntil:'domcontentloaded'});
     await expect(page.locator('#startup')).toHaveCount(0, {timeout:6000});
-    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.locator('.title-screen')).toBeVisible();
+    await page.locator('[data-intro=settings]').click();
+    await expect(page.locator('.settings-page')).toBeVisible();
   } finally { release(); }
 });
 
@@ -82,10 +91,10 @@ test('static presence precedes React; real startup stages animate then release t
   const restoring=new Promise<void>(resolve=>{restore=resolve;});
   await fixture(page,restoring);
   await page.addInitScript(()=>{
-    const target=window as unknown as {__startupReady:boolean;__TAURI_INTERNALS__:unknown};
+    const target=window as unknown as {__startupReady:boolean;momoDesktop:unknown};
     target.__startupReady=false;
-    target.__TAURI_INTERNALS__={invoke:async()=>{
-      if(!target.__startupReady)throw 'Backend is starting';
+    target.momoDesktop={getRuntime:async()=>{
+      while(!target.__startupReady) await new Promise(resolve=>setTimeout(resolve,50));
       return {baseUrl:location.origin,token:'synthetic-startup-test'};
     }};
   });
@@ -114,7 +123,7 @@ test('static presence precedes React; real startup stages animate then release t
 test('failed native startup stops the scene, hides private errors, and retries successfully', async ({page},info)=>{
   await fixture(page);
   await page.addInitScript(()=>{
-    (window as unknown as {__TAURI_INTERNALS__:unknown}).__TAURI_INTERNALS__={invoke:async()=>{
+    (window as unknown as {momoDesktop:unknown}).momoDesktop={getRuntime:async()=>{
       if(!sessionStorage.getItem('startup-failed-once')){
         sessionStorage.setItem('startup-failed-once','yes');
         throw 'private runtime failure: token=must-not-appear';

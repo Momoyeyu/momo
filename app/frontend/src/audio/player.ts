@@ -1,3 +1,4 @@
+import {ambient} from './ambient';
 // TTS 下行播放：s16le 24kHz mono → AudioWorklet(public/worklets/pcm-player.js)
 // 环形缓冲排播；worklet 上报输出 RMS → 平滑 → onMouthOpen(0..1) 驱动口型；
 // 队列播空上报 drain → onDrain。
@@ -32,6 +33,7 @@ export class TtsPlayer {
   private mouth = 0;
   private _playing = false;
   private volume = 1;
+  private paused = false;
   /** 当前音频采样率（GPT-SoVITS 随模型版本变化，由 TTS 响应头决定）。 */
   private rate = 24000;
 
@@ -66,10 +68,19 @@ export class TtsPlayer {
     this._playing = true;
   }
 
+  /** Keep queued PCM and its sample cursor when the meeting scene is hidden. */
+  setPaused(paused: boolean): void {
+    this.paused=paused;
+    this.node?.port.postMessage({type:"pause",paused});
+    if(paused)ambient.speech(this,false);
+    if(paused){this.mouth=0;this.onMouthOpen?.(0);}
+  }
+
   /** barge-in / stop：清空播放缓冲并立即静音，口型复位。 */
   stop(): void {
     this.pending = [];
     this.node?.port.postMessage({ type: "clear" });
+    ambient.speech(this,false);
     this._playing = false;
     this.mouth = 0;
     this.onMouthOpen?.(0);
@@ -123,6 +134,7 @@ export class TtsPlayer {
     }
     const node = new AudioWorkletNode(ctx, "pcm-player");
     node.port.onmessage = (ev: MessageEvent<WorkletOutMsg>) => this.onWorkletMsg(ev.data);
+    node.port.postMessage({type:"pause",paused:this.paused});
     const gain = ctx.createGain();
     gain.gain.value = this.volume;
     node.connect(gain);
@@ -139,13 +151,15 @@ export class TtsPlayer {
 
   private onWorkletMsg(msg: WorkletOutMsg): void {
     if (!msg) return;
-    if (msg.type === "rms") {
+    if (msg.type === "rms" && !this.paused) {
+      ambient.speech(this,(msg.rms??0)>.001 && this.volume>0);
       const target = Math.min(1, (msg.rms ?? 0) * MOUTH_GAIN);
       const k = target > this.mouth ? MOUTH_ATTACK : MOUTH_RELEASE;
       this.mouth += (target - this.mouth) * k;
       this.onMouthOpen?.(this.mouth);
     } else if (msg.type === "drain") {
-      this._playing = false;
+      ambient.speech(this,false);
+    this._playing = false;
       this.mouth = 0;
       this.onMouthOpen?.(0);
       this.onDrain?.();

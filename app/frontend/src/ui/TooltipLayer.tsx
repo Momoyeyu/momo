@@ -4,22 +4,46 @@ import "../styles/controls.css";
 
 /** One transient layer, outside transformed pages and scroll containers. */
 export default function TooltipLayer() {
+  const [expanded, setExpanded] = useState(false);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const bubble = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const trigger = (target: EventTarget | null) => target instanceof Element
-      ? target.closest<HTMLElement>(".tip[data-tip]") : null;
-    const over = (event: MouseEvent) => setAnchor(trigger(event.target));
+      ? target.closest<HTMLElement>(".tip[data-tip],button[data-tip]") : null;
+    let timer:ReturnType<typeof setTimeout>;
+    // Treat the trigger, the card and its transparent bridge as one hover region.
+    // A background mouseover must not bypass the delayed close on mouseout.
+    const closeSoon = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setAnchor(null), 300);
+    };
+    const over = (event: MouseEvent) => {
+      if(event.target instanceof Node&&bubble.current?.contains(event.target)){
+        clearTimeout(timer);
+        return;
+      }
+      const next = trigger(event.target);
+      if(next){ clearTimeout(timer); setAnchor(next); }
+      else closeSoon();
+    };
     const out = (event: MouseEvent) => {
       const next = trigger(event.relatedTarget);
-      setAnchor(previous => next === previous ? previous : null);
+      if(event.relatedTarget instanceof Node&&bubble.current?.contains(event.relatedTarget))return;
+      if(next)return;
+      closeSoon();
     };
     const focus = (event: FocusEvent) => {
+      clearTimeout(timer);
       const el = trigger(event.target);
       if (el?.matches(":focus-visible")) setAnchor(el);
     };
-    const hide = () => setAnchor(null);
-    const key = (event: KeyboardEvent) => { if (event.key === "Escape") hide(); };
+    const hide = (event?:Event) => {
+      if(event?.target instanceof Node&&bubble.current?.contains(event.target))return;
+      if(event instanceof FocusEvent&&event.relatedTarget instanceof Node&&bubble.current?.contains(event.relatedTarget))return;
+      clearTimeout(timer);
+      setAnchor(null);
+    };
+    const key = (event: KeyboardEvent) => { if (event.key === "Escape") setAnchor(null); };
     document.addEventListener("mouseover", over);
     document.addEventListener("mouseout", out);
     document.addEventListener("focusin", focus);
@@ -29,6 +53,7 @@ export default function TooltipLayer() {
     document.addEventListener("keydown", key);
     window.addEventListener("resize", hide);
     return () => {
+      clearTimeout(timer);
       document.removeEventListener("mouseover", over);
       document.removeEventListener("mouseout", out);
       document.removeEventListener("focusin", focus);
@@ -39,6 +64,7 @@ export default function TooltipLayer() {
       window.removeEventListener("resize", hide);
     };
   }, []);
+  useEffect(()=>setExpanded(false),[anchor]);
   useLayoutEffect(() => {
     const el = bubble.current;
     if (!anchor || !el) return;
@@ -52,15 +78,20 @@ export default function TooltipLayer() {
     const top = preferBelow
       ? (below + b.height <= bounds.bottom - 8 ? below : above)
       : (above >= bounds.top + 8 ? above : below);
-    const left = anchor.classList.contains("tip-l") ? a.left
+    const sideRail = !!anchor.closest(".chat-toolbar");
+    const railTop = a.top + (a.height - b.height) / 2;
+    const left = sideRail ? a.left - b.width - 12 : anchor.classList.contains("tip-l") ? a.left
       : anchor.classList.contains("tip-r") ? a.right - b.width : a.left + (a.width - b.width) / 2;
     el.style.left = `${Math.max(bounds.left + 8, Math.min(left, bounds.right - b.width - 8))}px`;
-    el.style.top = `${Math.max(bounds.top + 8, Math.min(top, bounds.bottom - b.height - 8))}px`;
+    el.style.top = `${Math.max(bounds.top + 8, Math.min(sideRail ? railTop : top, bounds.bottom - b.height - 8))}px`;
+    el.dataset.side = sideRail ? "left" : top >= a.bottom ? "bottom" : "top";
     el.style.visibility = "visible";
-  }, [anchor]);
+  }, [anchor,expanded]);
   return anchor?.isConnected && anchor.dataset.tip ? createPortal(
-    <div key={anchor.dataset.tip} ref={bubble} role="tooltip" className="tooltip-bubble" style={{ visibility: "hidden" }}>
-      {anchor.dataset.tip}
+    <div key={anchor.dataset.tip} ref={bubble} role={anchor.dataset.tipDetail?"dialog":"tooltip"} aria-label={anchor.dataset.tip} className="tooltip-bubble" style={{ visibility: "hidden" }}>
+      <span>{anchor.dataset.tip}</span>
+      {anchor.dataset.tipDetail&&<button type="button" className="tooltip-help" aria-expanded={expanded} aria-label={anchor.dataset.tip} onClick={()=>setExpanded(v=>!v)}>?</button>}
+      {expanded&&<p className="tooltip-detail">{anchor.dataset.tipDetail}</p>}
     </div>, document.body,
   ) : null;
 }

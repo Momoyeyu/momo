@@ -2,12 +2,12 @@ import { runtime } from "./services/runtime";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import {refreshIntro} from "./services/introClient";
 import { bootPersist, getSettings } from "./lib/store";
 import { startupPresence } from "./startup/presence";
-import { liveTranscript } from "./services/checkpointClient";
+import { historyPage } from "./services/lifeClient";
 import { loadTranscript } from "./chat/engineInstance";
 import "./styles/base.css";
-import { firstMeetingStatus } from "./services/onboardingClient";
 
 const startup = startupPresence();
 startup.language(getSettings().general.lang);
@@ -27,20 +27,13 @@ void runtime()
   .then(() => { startup.stage("restoring"); return bootPersist(); })
   .then(() => { startup.language(getSettings().general.lang); })
   .then(() =>
-    liveTranscript()
+    historyPage()
       .then((t) => {
         if (t.messages.length) loadTranscript(t.messages);
       })
       .catch(() => {}),
   )
-  .then(async () => {
-    const meeting = await firstMeetingStatus();
-    if (meeting && ["new", "asking", "clarifying"].includes(meeting.stage) &&
-        (!location.hash || ["#/title", "#title", "#/chat"].includes(location.hash))) {
-      // Replace rather than push: the title screen is not a prior first-launch step.
-      history.replaceState(null, "", `${location.pathname}${location.search}#/chat`);
-    }
-  })
+  .then(refreshIntro)
   .then(() => {
     createRoot(document.getElementById("root")!).render(
       <StrictMode>

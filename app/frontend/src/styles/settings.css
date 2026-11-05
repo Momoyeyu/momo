@@ -97,7 +97,8 @@
   z-index: 1;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  /* The horizontal track is transformed, never a scroll container. */
+  overflow: clip;
 }
 
 /* 四面板常驻横排，translateX 切换；时长/缓动与 stab-thumb 严格一致。 */
@@ -132,6 +133,114 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* 拓展分类各占一整页；二级滑块沿用设置页的节奏与金色材质。 */
+.extension-settings {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.extension-tabs {
+  position: relative;
+  display: flex;
+  flex: none;
+  margin-bottom: 20px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md, 12px);
+  background: var(--chrome);
+  isolation: isolate;
+}
+
+.extension-tab-thumb {
+  position: absolute;
+  inset: 4px auto 4px 4px;
+  width: calc((100% - 8px) / 3);
+  border: 1px solid var(--line-strong);
+  border-radius: calc(var(--r-md, 12px) - 4px);
+  background: var(--accent-soft);
+  transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: none;
+}
+
+.extension-tabs > button {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: calc(var(--r-md, 12px) - 4px);
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.extension-tabs > button:hover,
+.extension-tabs > button:active {
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent-strong);
+}
+
+.extension-tabs > button.active {
+  color: var(--accent-strong);
+}
+
+.extension-tabs > button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.extension-viewport {
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+}
+
+.extension-track {
+  display: flex;
+  align-items: stretch;
+  min-height: 100%;
+  transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.extension-pane {
+  display: flex;
+  flex: 0 0 100%;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+.extension-panel {
+  flex: 1;
+  min-height: 360px;
+}
+
+.extension-pane .official-plugins {
+  margin-bottom: 0;
+}
+
+.extension-pane .social-cards {
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+}
+
+.extension-pane .social-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 184px;
+}
+
+.extension-pane .social-card-bottom {
+  margin-top: auto;
 }
 
 /* --- 双栏内容区：两列等宽、面板拉伸等高 --- */
@@ -457,7 +566,7 @@
 .dialog-preview .dialog-box {
   width: 100%;
   min-height: 96px;
-  padding: 18px 18px 12px;
+  padding: 12px 16px;
   pointer-events: none;
 }
 
@@ -665,7 +774,9 @@
 /* 动效弱化：滑块与滑轨瞬移落位（网格旋转在 GridBackdrop 内自行处理）。 */
 @media (prefers-reduced-motion: reduce) {
   .stab-thumb,
-  .settings-track {
+  .settings-track,
+  .extension-tab-thumb,
+  .extension-track {
     transition: none;
   }
 }
@@ -704,3 +815,15 @@
   line-height: 1.5;
 }
 .builtin-resource-notice p { margin: 0; }
+
+/* Direct sound controls balance the language/dialogue column without nested modals. */
+.general-columns { align-items: stretch; }
+.general-columns .opt-row { padding-block: 10px; }
+.general-columns .col-foot { margin-top: 8px; padding-top: 0; }
+.sound-preview-action { display:flex; justify-content:flex-end; padding-top:16px; }
+@media(max-width: 760px) { .general-columns { grid-template-columns: 1fr; } }
+.general-language .opt-list { display:grid; grid-template-columns:1fr 1fr; gap:32px; }
+.general-language .opt-row { padding-block:6px; border:0; }
+.general-language .opt-group { margin-top:0; }
+.general-language { padding-block:14px; }
+@media(max-width:760px) { .general-language .opt-list { grid-template-columns:1fr; gap:0; } }

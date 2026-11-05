@@ -1,3 +1,6 @@
+import Button from '../../ui/Button';
+import {ambient} from '../../audio/ambient';
+import {useIntro} from "../../services/introClient";
 import DataTransfer from "./DataTransfer";
 // 「通用」tab：界面语言与对话语言、语音输入/输出、对话框透明度与速度、对话框预览。
 // 原先这些都挤在 Settings.tsx 里，状态与补丁函数一并搬过来。
@@ -16,6 +19,8 @@ import DialogPreview from "./DialogPreview";
 
 export default function GeneralTab() {
   const t = useT();
+  const intro=useIntro();
+  const guided=!!intro.data && intro.data.phase!=="completed";
   const settings = useSyncExternalStore(subscribe, getState).settings;
 
   const [voiceMuted, setVoiceMuted] = useState(getChatEngine().muted);
@@ -39,20 +44,13 @@ export default function GeneralTab() {
     });
   };
 
-  // ---- 拓展 · MCP ----
-
 
   return (
 <div className="general-settings">
-<div className="settings-cols">
-{/* 左栏：语言 / 语音两个独立面板，与右栏「对话框设置」同级；
-    末块吃掉剩余高度，两栏总高因此对齐 */}
-<div className="settings-stack">
-{/* panel-raised：面板里的下拉展开时要盖住下面的「语音设置」 */}
-<section className="panel settings-col panel-raised">
+<section className="panel settings-col panel-raised general-language">
   <h3 className="opt-group">{t("settings.groups.lang")}</h3>
   <div className="opt-list">
-  <FieldRow label={t("settings.langLabel")}>
+  <div data-intro="language"><FieldRow label={t("settings.langLabel")}>
     <Select
       value={settings.general.lang}
       options={LANGS.map((l) => ({
@@ -66,9 +64,9 @@ export default function GeneralTab() {
       }
     />
   </FieldRow>
-  <FieldRow label={t("settings.chatLang")}>
+  </div><div inert={guided} aria-disabled={guided}><FieldRow label={t("settings.chatLang")}>
     <Select
-      value={settings.general.chatLang}
+      value={guided ? "auto" : settings.general.chatLang}
       options={[
         { value: "auto", label: t("settings.langAuto") },
         ...LANGS.map((l) => ({
@@ -82,9 +80,10 @@ export default function GeneralTab() {
         })
       }
     />
-  </FieldRow>
+  </FieldRow></div>
   </div>
 </section>
+<div className="settings-cols general-columns">
 
 <section className="panel settings-col">
   <h3 className="opt-group">{t("settings.groups.voice")}</h3>
@@ -117,10 +116,15 @@ export default function GeneralTab() {
       onChange={(v) => patchGeneral({ voiceVolume: v })}
     />
   </FieldRow>
+  <FieldRow label={t("settings.sfxVolume")}><Slider value={settings.general.sfxVolume??35} onChange={v=>patchGeneral({sfxVolume:v})}/></FieldRow>
+  <FieldRow label={t("settings.musicVolume")}><Slider value={settings.general.musicVolume??22} onChange={v=>patchGeneral({musicVolume:v})}/></FieldRow>
+  <FieldRow label={t("settings.soundPalette")}><Select value={settings.general.soundPalette??'warm'} options={[{value:'warm',label:t('settings.soundWarm')},{value:'glass',label:t('settings.soundGlass')}]} onChange={v=>patchGeneral({soundPalette:v as 'warm'|'glass'})}/></FieldRow>
+  <div className="sound-preview-action"><Button variant="ghost" size="sm" onClick={()=>ambient.sound('complete')}>{t('settings.soundPreview')}</Button></div>
   </div>
 </section>
-</div>
-{/* 对话框设置子组：三滑块 + 预览同组联动，预览钉在面板底缘。 */}
+
+
+{/* 对话框预览紧跟控制项，与声音面板并列。 */}
 <section className="panel settings-col">
   <h3 className="opt-group">
     {t("settings.groups.dialog")}
@@ -144,7 +148,6 @@ export default function GeneralTab() {
       onChange={(v) => patchGeneral({ sentenceSpeed: v })}
     />
   </FieldRow>
-  {/* 原在左栏；归到对话框设置后两栏高度也更均衡 */}
   <FieldRow label={t("settings.showStatus")}>
     <Switch
       on={settings.general.showStatus}

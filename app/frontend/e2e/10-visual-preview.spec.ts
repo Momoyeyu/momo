@@ -1,14 +1,15 @@
-import { test, expect } from '@playwright/test';
+import {bootChat} from './helpers';
+import { test, expect } from './fixtures';
 
 for (const lang of ['zh', 'en', 'ja']) {
   test(`visual preview keeps aligned controls and local fonts (${lang})`, async ({ page, request }) => {
     const state = await (await request.get('/api/state')).json();
     state.settings.general = { ...state.settings.general, lang, chatLang: 'auto', voiceInput: false };
     await page.route('**/api/state', route => route.fulfill({ json: state }));
-    await page.route('**/api/checkpoints/live', route => route.fulfill({ json: { summary: '', messages: [] } }));
+    await page.route('**/api/life/history**', route => route.fulfill({ json: { summary: '', messages: [] } }));
     const fontErrors: string[] = [];
     page.on('response', r => { if (r.url().includes('/fonts/') && !r.ok()) fontErrors.push(r.url()); });
-    await page.goto('/#/chat');
+    await bootChat(page);
     await page.evaluate(() => document.fonts.ready);
     await expect(page.locator('.dialog-box')).toHaveAttribute('lang', lang);
     const uiFont = await page.locator('.dialog-box').evaluate(el => getComputedStyle(el).fontFamily);
@@ -17,8 +18,11 @@ for (const lang of ['zh', 'en', 'ja']) {
       await page.setViewportSize(viewport);
       const dialog = await page.locator('.dialog-box').boundingBox();
       const toolbar = await page.locator('.chat-toolbar').boundingBox();
-      expect(Math.abs(dialog!.x - toolbar!.x)).toBeLessThan(1);
-      expect(Math.abs(dialog!.width - toolbar!.width)).toBeLessThan(1);
+      expect(toolbar!.width).toBeLessThan(60);
+      expect(toolbar!.height).toBeGreaterThan(toolbar!.width);
+      expect(dialog!.x + dialog!.width + 12).toBeLessThan(toolbar!.x);
+      expect(toolbar!.y).toBeGreaterThanOrEqual(0);
+      expect(toolbar!.y + toolbar!.height).toBeLessThanOrEqual(viewport.height);
       const input = await page.locator('.input-row input').boundingBox();
       expect(input!.width).toBeGreaterThan(100);
       expect(input!.y + input!.height).toBeLessThanOrEqual(viewport.height);

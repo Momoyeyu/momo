@@ -26,6 +26,9 @@ class LlmConfig(TypedDict):
     key: str
     model: str
     thinking: bool
+    vision: NotRequired[bool]
+    contextWindow: NotRequired[int]
+    maxOutputTokens: NotRequired[int]
 
 
 class TtsConfig(TypedDict):
@@ -61,6 +64,9 @@ class GeneralSettings(TypedDict):
     textSpeed: int
     sentenceSpeed: int
     voiceVolume: int
+    sfxVolume: NotRequired[int]
+    musicVolume: NotRequired[int]
+    soundPalette: NotRequired[Literal["warm", "glass"]]
     showStatus: bool
     voiceInput: bool
 
@@ -148,7 +154,16 @@ class StoredMessage(TypedDict):
 
     role: Role
     text: str
+    voices: NotRequired[list[str]]
+    images: NotRequired[list[dict[str, Any]]]
     at: str
+    seq: NotRequired[int]
+    eventId: NotRequired[str]
+    runId: NotRequired[str]
+    source: NotRequired[str]
+    externalMessageId: NotRequired[str | None]
+    accountId: NotRequired[str]
+    peerId: NotRequired[str]
 
 
 class CheckpointMeta(TypedDict):
@@ -220,7 +235,7 @@ class ChatMessage(TypedDict):
     """
 
     role: ChatRole
-    content: str | None
+    content: str | list[dict[str, Any]] | None
     reasoning_content: NotRequired[str]  # Ephemeral provider context, never stored.
     tool_calls: NotRequired[list[ToolCall]]
     tool_call_id: NotRequired[str]
@@ -257,6 +272,8 @@ class PerformanceCue(TypedDict):
     id: str
     offset: int
     expression: NotRequired[ExpressionCue | None]
+    music: NotRequired[Literal["next", "auto", "title", "connection", "daily", "night", "uplift", "comfort"]]
+    mood: NotRequired[Literal["neutral", "bright", "quiet", "comfort"]]
     motion: NotRequired[str]
 
 

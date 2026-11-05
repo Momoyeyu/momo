@@ -1,4 +1,4 @@
-// 对话框骨架：铭牌（探出左上）+ 单句字幕；输入行等其余内容由调用方作 children。
+// 终端对话框：内收的身份/状态行 + 提示符与单句字幕；输入行由 children 提供。
 //
 // 两处复用，页面差异刻意留在各自 CSS：
 //   - 对话页：外层 .dialog-zone 负责贴底定位与入场动画，children 是输入行；
@@ -7,6 +7,7 @@
 // 骨架样式（.dialog-box / .nameplate-row / .nameplate / .subtitle）在 styles/chat.css——
 // 与封装前一致，页面仍各自 import 自己那份 CSS，这里不额外引样式以免改变打包顺序。
 import type { ReactNode } from "react";
+import TerminalPrompt from '../ui/TerminalPrompt';
 
 export default function DialogBox({
   name,
@@ -14,6 +15,9 @@ export default function DialogBox({
   status,
   children,
   lang,
+  handle,
+  collapsed=false,
+  typing=false,
 }: {
   /** 铭牌文案（说话人显示名，见 backend/resources/soul.md）。 */
   name: string;
@@ -24,14 +28,21 @@ export default function DialogBox({
   /** 字幕之后的附加内容（对话页的输入行）。 */
   children?: ReactNode;
   lang?: string;
+  handle?: ReactNode;
+  collapsed?: boolean;
+  typing?: boolean;
 }) {
   return (
     <div className="dialog-box" lang={lang}>
-      <div className="nameplate-row">
+      {handle}
+      <div className="nameplate-row" inert={collapsed}>
         <div className="nameplate">{name}</div>
         {status}
       </div>
-      <div className="subtitle">{text}</div>
+      <div className="subtitle" inert={collapsed}>
+        <span className="terminal-output-prompt" aria-hidden="true"><TerminalPrompt/></span>
+        <span className="terminal-output-text">{text}{typing&&<span className="dialog-terminal-cursor" aria-hidden="true"/>}</span>
+      </div>
       {children}
     </div>
   );

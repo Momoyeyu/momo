@@ -1,121 +1,46 @@
-// 主页：左侧品牌与菜单、右侧剪影（悬停饰标、错峰入场）。
-// 菜单：开始（开新会话：live 快照进 auto 槽后清空）/ 继续（读最新档进对话页，
-// 无存档置灰）/ 读档 / 设置。
-// 存档入口只在对话页——标题页没有可保存的现场。
-
-import { useEffect, useState } from "react";
-import { navigate } from "../router";
-import { useT } from "../i18n";
-import {
-  listCheckpoints,
-  loadCheckpoint,
-  newSession,
-} from "../services/checkpointClient";
-import { resyncPassthrough } from "../lib/store";
-import { loadTranscript } from "../chat/engineInstance";
+// 回到同一个 momo。进入见面不清空记录，也不恢复另一条时间线。
+import {navigate} from "../router";
+import {useT} from "../i18n";
+import TerminalTagline from "../components/TerminalTagline";
 import EcgCanvas from "../components/EcgCanvas";
 import Button from "../ui/Button";
-import type { CheckpointMeta } from "../lib/types";
 import {PRESENCE_URL,TITLE_PRESENCE} from "../lib/presenceTransition";
 import "../styles/title.css";
+import {introSnapshot,verifyIntro} from "../services/introClient";
+import {useState} from "react";
+import {enterMeeting,leaveMeeting,meetingSnapshot} from "../services/meetingClient";
+import {warmVoice} from "../services/ttsWarmup";
+import {getChatEngine} from "../chat/engineInstance";
 
-export default function Title() {
+export default function Title({active}: {active:boolean}) {
   const t = useT();
-  const [saves, setSaves] = useState<CheckpointMeta[] | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    listCheckpoints()
-      .then(setSaves)
-      .catch(() => setSaves([]));
-  }, []);
-
-  // 最新档：updatedAt 最大的槽（含 auto）——继续 = 回到最近一次现场。
-  const latest =
-    saves && saves.length
-      ? saves.reduce((a, b) => (a.updatedAt >= b.updatedAt ? a : b))
-      : null;
-
-  // 开始新会话：live 非空先由 backend 快照进 auto 槽，然后清空现场。
-  const start = async (): Promise<void> => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await newSession();
-      await resyncPassthrough();
-      loadTranscript([]);
-      navigate("chat");
-    } catch {
-      setBusy(false);
-    }
-  };
-
-  const cont = async (): Promise<void> => {
-    if (!latest || busy) return;
-    setBusy(true);
-    try {
-      const save = await loadCheckpoint(latest.id);
-      await resyncPassthrough(); // 掐掉在途防抖写并重拉 passthrough
-      loadTranscript(save.messages ?? []);
-      navigate("chat");
-    } catch {
-      setBusy(false);
-    }
-  };
-
-  const items: {
-    key: string;
-    labelKey: string;
-    hint: string;
-    disabled?: boolean;
-    onClick: () => void;
-  }[] = [
-    {
-      key: "start",
-      labelKey: "title.start",
-      hint: "start",
-      disabled: busy,
-      onClick: () => void start(),
-    },
-    {
-      key: "continue",
-      labelKey: "title.continue",
-      hint: "continue",
-      disabled: !latest || busy,
-      onClick: () => void cont(),
-    },
-    {
-      key: "load",
-      labelKey: "checkpoint.load",
-      hint: "load",
-      onClick: () => navigate("checkpoint", { checkpointMode: "load" }),
-    },
-    {
-      key: "config",
-      labelKey: "title.config",
-      hint: "config",
-      onClick: () => navigate("settings"),
-    },
+  const [starting,setStarting]=useState(false);
+  const [failed,setFailed]=useState(false);
+  const boot=async()=>{setStarting(true);setFailed(false);try{if(introSnapshot().data?.phase!=="completed")await verifyIntro();await leaveMeeting(getChatEngine().finishMeeting());await enterMeeting();if(!getChatEngine().muted)warmVoice();navigate('chat');}catch{setFailed(true);}finally{setStarting(false);}};
+  const items = [
+    {key: "boot", labelKey: "title.start", hint: "boot", onClick: () => void boot()},
+    {key: "config", labelKey: "title.config", hint: "config", onClick: () => navigate("settings")},
   ];
 
   return (
-    <div className="title-screen">
+    <div data-intro="celebration" className="title-screen">
       <EcgCanvas />
       <img className="title-presence" src={PRESENCE_URL} style={{left:`${TITLE_PRESENCE.left*100}%`,top:`${TITLE_PRESENCE.top*100}%`,width:`${TITLE_PRESENCE.width*100}%`}} width="1024" height="1536" alt="" aria-hidden="true" decoding="async" />
       <header className="title-brand">
         <h1 className="title-logo" aria-label="momo"><img className="title-brand-mark" src="/brand/momo-mark.svg" alt="" /><img className="title-brand-wordmark" src="/brand/momo-wordmark.svg" alt="momo" /></h1>
         <div className="title-rule" />
-        <p className="title-tagline">{t("title.tagline")}</p>
+        <TerminalTagline key={t("title.tagline")} text={t("title.tagline")} active={active}/>
       </header>
 
       <nav className="title-menu">
         {items.map((m, i) => (
           <Button
             key={m.key}
+            data-intro={m.key === "config" ? "settings" : "boot"}
             className="menu-item"
             style={{ animationDelay: `${0.12 + i * 0.08}s` }}
-            disabled={m.disabled}
             onClick={m.onClick}
+            disabled={starting}
           >
             <span className="mi-orn" />
             <span className="mi-label">{t(m.labelKey)}</span>
@@ -123,6 +48,7 @@ export default function Title() {
           </Button>
         ))}
       </nav>
+      {failed && <p className="title-boot-error" role="alert">{t(meetingSnapshot().reason==='owned'?'meeting.ownerUnavailable':'meeting.unavailable')}</p>}
     </div>
   );
 }

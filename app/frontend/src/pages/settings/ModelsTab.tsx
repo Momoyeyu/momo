@@ -5,13 +5,17 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useT } from "../../i18n";
 import { getState, subscribe, update } from "../../lib/store";
 import type { Settings as SettingsData } from "../../lib/types";
-import { probeLlm, probeTts } from "../../services/probe";
+import { probeLlm } from "../../services/probe";
 import { uploadRefAudio } from "../../services/ttsClient";
+import { auditionVoice, invalidateWarmup, warmVoice } from "../../services/ttsWarmup";
+import { useRoute } from "../../router";
 import type { ProbeResult } from "../../services/probe";
 import Button from "../../ui/Button";
 import FieldRow from "../../ui/FieldRow";
 import Hint from "../../ui/Hint";
 import Switch from "../../ui/Switch";
+import {introRestricted,verifyIntro,useIntro} from "../../services/introClient";
+import {probeVision,visionStatus} from "../../services/visionClient";
 import { supportsThinking } from "../../lib/thinking";
 
 type EndpointSection = "llm" | "tts";
@@ -33,9 +37,32 @@ function urlError(sec: EndpointSection, url: string): boolean {
 }
 
 
-export default function ModelsTab() {
+export default function ModelsTab({ active }: { active: boolean }) {
   const t = useT();
+  const intro=useIntro();
   const settings = useSyncExternalStore(subscribe, getState).settings;
+
+  const audition = useRef<AbortController | null>(null);
+  const voiceEdited = useRef(false);
+  const route = useRoute();
+  useEffect(() => () => audition.current?.abort(), [route, active]);
+
+  const signature=JSON.stringify([settings.llm.url,settings.llm.key,settings.llm.model]);
+  const [visionCheck,setVisionCheck]=useState({signature:'',verified:false,running:false,detail:''});
+  useEffect(()=>{
+    const abort=new AbortController();
+    setVisionCheck({signature,verified:false,running:false,detail:''});
+    void visionStatus(settings.llm,abort.signal).then(result=>{if(!abort.signal.aborted)setVisionCheck(value=>value.signature===signature?{...value,verified:result.verified}:value);}).catch(()=>{});
+    return()=>abort.abort();
+  },[signature]);
+  const checkVision=async()=>{
+    const captured=signature,cfg={...settings.llm};
+    setVisionCheck(value=>({...value,running:true,detail:''}));
+    try{
+      const result=await probeVision(cfg);
+      setVisionCheck(value=>value.signature===captured?{...value,verified:result.ok,detail:result.ok?'vision.verified':result.detail==='not verified'?'vision.notVerified':'vision.checkFailed',running:false}:value);
+    }catch{setVisionCheck(value=>value.signature===captured?{...value,detail:'vision.checkFailed',running:false}:value);}
+  };
 
   const [showKey, setShowKey] = useState<Record<EndpointSection, boolean>>({
     llm: false,
@@ -49,10 +76,20 @@ export default function ModelsTab() {
 
   const PROBES: Record<
     EndpointSection,
-    (s: SettingsData) => Promise<ProbeResult>
+    (s: SettingsData) => Promise<ProbeResult | undefined>
   > = {
-    llm: (s) => probeLlm(s.llm),
-    tts: (s) => probeTts(s.tts),
+    llm: async (s) => {
+      if(!introRestricted())return probeLlm(s.llm);
+      try{await verifyIntro();return {ok:true,detail:"1ms"};}catch{return {ok:false,detail:"invalid response"};}
+    },
+    tts: () => {
+      audition.current?.abort();
+      const controller = new AbortController();
+      audition.current = controller;
+      return auditionVoice(controller.signal)
+        .then(result => controller.signal.aborted ? undefined : result)
+        .catch(() => controller.signal.aborted ? undefined : { ok: false, detail: "failed" });
+    },
   };
 
   // 探测结果直接显示在按钮上，固定展示 PROBE_HOLD_MS 后复原；期间不可再点。
@@ -70,6 +107,7 @@ export default function ModelsTab() {
     setProbes((p) => ({ ...p, [sec]: "running" }));
     void PROBES[sec](settings).then((r) => {
       setProbes((p) => ({ ...p, [sec]: r }));
+      if (!r) return;
       clearTimeout(probeTimers.current[sec]);
       probeTimers.current[sec] = window.setTimeout(() => {
         setProbes((p) => {
@@ -95,7 +133,7 @@ export default function ModelsTab() {
       既不透传后端的原始错误串，也不显示 provider 名（"gpt-sovits" 之类属于内部实现）。 */
   const probeLabel = (sec: EndpointSection): { text: string; cls: string } => {
     const r = probes[sec];
-    if (!r) return { text: t("settings.test"), cls: "" };
+    if (!r) return { text: t(sec === "tts" ? "settings.audition" : "settings.test"), cls: "" };
     if (r === "running") return { text: "…", cls: "probe-info" };
     if (r.ok) {
       const ms = /^(\d+)ms$/.exec(r.detail);
@@ -128,9 +166,11 @@ export default function ModelsTab() {
     setUploadErr("");
     try {
       const res = await uploadRefAudio(file);
-      update({
-        settings: { ...settings, tts: { ...settings.tts, voice: res.name } },
-      });
+      const current = getState().settings;
+      audition.current?.abort();
+      invalidateWarmup();
+      update({settings: { ...current, tts: { ...current.tts, voice: res.name } }});
+      warmVoice();
     } catch (err) {
       setUploadErr((err as Error).message || String(err));
     } finally {
@@ -178,8 +218,13 @@ export default function ModelsTab() {
 
   // 返回目标与来源页一致：chat 进来回 chat，其余回 title。
   const patchEndpoint = (sec: EndpointSection, key: string, v: string): void => {
+    if (sec === "tts") {
+      audition.current?.abort();
+      invalidateWarmup();
+      voiceEdited.current = true;
+    }
     update({
-      settings: { ...settings, [sec]: { ...settings[sec], [key]: v, ...(sec === "llm" && key === "url" && !supportsThinking(v) ? { thinking: false } : {}) } },
+      settings: { ...settings, [sec]: { ...settings[sec], [key]: v, ...(sec === "llm" ? {vision:false} : {}), ...(sec === "llm" && key === "url" && !supportsThinking(v) ? { thinking: false } : {}) } },
     });
   };
 
@@ -204,7 +249,7 @@ export default function ModelsTab() {
   return (
 <div className="settings-cols">
 {/* 两张卡片均为四行，共用标签、控件和底部对齐线。 */}
-<section className="panel settings-col opt-list">
+<section data-intro="llm" className="panel settings-col opt-list">
   <h3 className="opt-group">
     {t("settings.groups.llm")}
     <Hint text={t("settings.llmHint")} side="down" />
@@ -221,7 +266,7 @@ export default function ModelsTab() {
       onChange={(e) => patchEndpoint("llm", "model", e.target.value)}
     />
   </FieldRow>
-  <FieldRow label={t("settings.thinking")} hint={t("settings.thinkingHint")}>
+  <div inert={!!intro.data && intro.data.phase!=="completed"}><FieldRow label={t("settings.thinking")} hint={t("settings.thinkingHint")}>
     <Switch
       on={settings.llm.thinking && supportsThinking(settings.llm.url)}
       disabled={!supportsThinking(settings.llm.url)}
@@ -231,8 +276,20 @@ export default function ModelsTab() {
       })}
     />
   </FieldRow>
+</div>
+  <div inert={!!intro.data && intro.data.phase!=="completed"}>
+    <FieldRow label={t('vision.label')} hint={t('vision.hint')}>
+      <div className="vision-status">
+        <Switch on={!!settings.llm.vision} disabled={!settings.llm.vision&&(!visionCheck.verified||visionCheck.running)} title={t('vision.label')} onChange={vision=>update({settings:{...settings,llm:{...settings.llm,vision}}})}/>
+        <Button variant="ghost" size="sm" disabled={visionCheck.running||!settings.llm.url.trim()||!settings.llm.model.trim()} onClick={()=>void checkVision()} title={visionCheck.detail?t(visionCheck.detail):t('vision.verify')} aria-label={t('vision.verify')}>{visionCheck.running?'…':visionCheck.verified?'✓':t('settings.test')}</Button>
+        {visionCheck.detail&&<Hint text={t(visionCheck.detail)} side="down"/>}
+      </div>
+    </FieldRow>
+  </div>
 </section>
-<section className="panel settings-col opt-list">
+<section onBlur={() => {
+  if (voiceEdited.current) { voiceEdited.current = false; warmVoice(); }
+}} data-intro="tts" className="panel settings-col opt-list">
   <h3 className="opt-group">
     {t("settings.groups.tts")}
     <Hint text={t("settings.ttsHint")} side="down" />
