@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "633f02e53d9dd967006e138f195920810fd242b5",
+  "revision": "74089070b563eda12d9ff92c91bbf77640b94d80",
   "checks": [
-    "backend 733 passed; frontend 247 passed; typecheck/build passed"
+    "backend 737 passed; native baseline smoke passed before resource additions"
   ],
   "files": {
     "app/.env.example": {
@@ -198,7 +198,12 @@
     },
     "app/backend/app/core/plugin_host.py": {
       "source": "backend/app/core/plugin_host.py",
-      "sha256": "6fc25551be300900a4912f8e0b02441f3c67d0ad833af929dde77848c16a29e6",
+      "sha256": "4ee01eb1d3a93e8cc6a1d529d970192d58289a2c6fe49c82d359474b2a608b55",
+      "mode": 33188
+    },
+    "app/backend/app/core/qq_install.py": {
+      "source": "backend/app/core/qq_install.py",
+      "sha256": "6feacf7be749fa9709929ca01addcc0fea065235f73055acc8050f8b19f82b92",
       "mode": 33188
     },
     "app/backend/app/core/sentences.py": {
@@ -223,7 +228,7 @@
     },
     "app/backend/app/main.py": {
       "source": "backend/app/main.py",
-      "sha256": "511fbedcd943fadc974664c1a5ec68d02291e71157400a3cfde7f60c7eb3461b",
+      "sha256": "b25426f5b18f396a42aa73a4de25412414729d69f65f4378507dfebb63206ff8",
       "mode": 33188
     },
     "app/backend/app/models/__init__.py": {
@@ -343,7 +348,7 @@
     },
     "app/backend/app/services/minecraft_attach.py": {
       "source": "backend/app/services/minecraft_attach.py",
-      "sha256": "5a834016e8b562cc6c1565ebb199d1f54701b55fb9d3240b82ab9c09e0960282",
+      "sha256": "1dc6129395cc5406631b9cdddca636628dbb4af0bddd92e67d673ca2c672179b",
       "mode": 33188
     },
     "app/backend/app/services/native_control.py": {
@@ -688,7 +693,7 @@
     },
     "app/backend/tests/test_minecraft_attach.py": {
       "source": "backend/tests/test_minecraft_attach.py",
-      "sha256": "824976d90e1779fb36638d3f1d7a727475cead5446ffe70dbee9b1f043b2d9d3",
+      "sha256": "9958ff0bbae02e61c3d10ab60a23356a5aedf3f3d56350b88d6f8c393f2354a9",
       "mode": 33188
     },
     "app/backend/tests/test_native_control.py": {
@@ -759,6 +764,11 @@
     "app/backend/tests/test_qq_full_policy.py": {
       "source": "backend/tests/test_qq_full_policy.py",
       "sha256": "1b8d455eac4a2e0ae0d91cd06855be90851e9e56b12060985374f738565f20a8",
+      "mode": 33188
+    },
+    "app/backend/tests/test_qq_install.py": {
+      "source": "backend/tests/test_qq_install.py",
+      "sha256": "51908be6991f96c9c1a514f4216938f8cdcaa1272f69483b0bc13f4f7d82c046",
       "mode": 33188
     },
     "app/backend/tests/test_qq_managed_connection.py": {
@@ -4052,13 +4062,6 @@
       "mode": 33188
     }
   },
-  "deleted": [
-    "app/frontend/e2e/05-checkpoint.spec.ts",
-    "app/frontend/src/lib/checkpointGrid.test.ts",
-    "app/frontend/src/lib/checkpointGrid.ts",
-    "app/frontend/src/pages/Checkpoint.tsx",
-    "app/frontend/src/services/checkpointClient.ts",
-    "app/frontend/src/styles/checkpoint.css"
-  ],
+  "deleted": [],
   "bootstrapRevision": "13022fbf859dda454258b299e96b81284b3d3d59"
 }
