@@ -34,8 +34,10 @@ test("reads live preference with authenticated request, retaining language on fa
     request,
   );
   assert.equal((await texts()).quit, "終了");
+  assert.equal((await texts()).returnToChat, "会話に戻る");
   value = "en";
   assert.equal((await texts()).quit, "Quit");
+  assert.equal((await texts()).disableClickThrough, "Disable click-through");
   value = "unsupported";
   assert.equal((await texts()).quit, "Quit");
   value = null;

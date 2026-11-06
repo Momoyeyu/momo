@@ -12,6 +12,8 @@ const messages = {
     help: "Check that this installation contains its runtime resources and that its data directory is not in use.",
     retry: "Retry",
     quit: "Quit",
+    returnToChat: "Return to chat",
+    disableClickThrough: "Disable click-through",
   },
   zh: {
     cancel: "取消",
@@ -23,6 +25,8 @@ const messages = {
     help: "请检查安装是否包含运行资源，并确认数据目录未被其他进程占用。",
     retry: "重试",
     quit: "退出",
+    returnToChat: "返回对话",
+    disableClickThrough: "关闭鼠标穿透",
   },
   ja: {
     cancel: "キャンセル",
@@ -35,6 +39,8 @@ const messages = {
     help: "必要な実行リソースがインストールされていることと、データディレクトリが使用中でないことを確認してください。",
     retry: "再試行",
     quit: "終了",
+    returnToChat: "会話に戻る",
+    disableClickThrough: "クリック透過を解除",
   },
 };
 export type DialogTexts = typeof messages.en;

@@ -1,4 +1,16 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, protocol } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  protocol,
+  Tray,
+  nativeImage,
+  screen,
+  globalShortcut,
+} from "electron";
+import { WindowModeController } from "./window-mode.ts";
 import { createDialogTexts } from "./dialog-locale.ts";
 import type { RuntimeConnection } from "../contracts.ts";
 import path from "node:path";
@@ -29,6 +41,8 @@ const dataRoot = process.env.MOMO_DESKTOP_DATA_DIR
 app.setPath("userData", dataRoot);
 let backend: BackendProcess | undefined;
 let window: BrowserWindow | undefined;
+let modes: WindowModeController | undefined;
+let tray: Tray | undefined;
 let quitting = false;
 let endpoint = "";
 let connection: RuntimeConnection | undefined;
@@ -37,9 +51,15 @@ let getTexts = createDialogTexts("en", () => connection);
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on("second-instance", () => {
+    modes?.recover();
     if (window?.isMinimized()) window.restore();
     window?.show();
     window?.focus();
+  });
+  app.on("activate", () => modes?.recover());
+  app.on("will-quit", () => {
+    globalShortcut.unregisterAll();
+    tray?.destroy();
   });
   app.on("window-all-closed", () => app.quit());
   app.on("before-quit", (event) => {
@@ -63,6 +83,68 @@ else {
         ? process.resourcesPath
         : path.join(app.getAppPath(), "resources");
       window = createWindow(getTexts);
+      modes = new WindowModeController(
+        window,
+        () => screen.getDisplayMatching(window!.getBounds()).workArea,
+        (state) => window?.webContents.send("momo:window-state", state),
+      );
+      for (const [channel, count, handler] of [
+        ["momo:get-window-state", 0, () => modes!.getState()],
+        ["momo:set-window-mode", 1, (value: unknown) => modes!.setMode(value)],
+        [
+          "momo:set-pet-click-through",
+          1,
+          (value: unknown) => modes!.setClickThrough(value),
+        ],
+      ] as const)
+        ipcMain.handle(channel, (event, ...args) => {
+          if (
+            !window ||
+            args.length !== count ||
+            !trustedFrame(
+              event.sender.id,
+              window.webContents.id,
+              event.senderFrame?.url ?? "",
+              event.senderFrame === window.webContents.mainFrame,
+            )
+          )
+            throw Error("Window access denied");
+          return handler(args[0]);
+        });
+      const icon = nativeImage.createEmpty();
+      tray = new Tray(icon);
+      tray.setTitle("momo");
+      tray.setToolTip("momo");
+      const openTrayMenu = () => {
+        void getTexts()
+          .then((texts) => {
+            if (!tray || tray.isDestroyed()) return;
+            tray.popUpContextMenu(
+              Menu.buildFromTemplate([
+                { label: texts.returnToChat, click: () => modes?.recover() },
+                {
+                  label: texts.disableClickThrough,
+                  click: () => modes?.setClickThrough(false),
+                },
+                { type: "separator" },
+                { label: texts.quit, click: () => app.quit() },
+              ]),
+            );
+          })
+          .catch(() => console.warn("Desktop menu unavailable"));
+      };
+      tray.on("click", openTrayMenu);
+      tray.on("right-click", openTrayMenu);
+      tray.on("double-click", () => modes?.recover());
+      if (
+        !globalShortcut.register("CommandOrControl+Shift+M", () =>
+          modes?.recover(),
+        )
+      )
+        console.warn(
+          "Desktop recovery shortcut unavailable; use the momo menu or Dock to return to chat",
+        );
+      window.webContents.on("did-finish-load", () => modes?.recover());
       registerProtocol(
         path.join(app.getAppPath(), "frontend/dist"),
         () => endpoint,

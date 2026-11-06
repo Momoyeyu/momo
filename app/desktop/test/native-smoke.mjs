@@ -219,6 +219,16 @@ try {
       .status,
     204,
   );
+  // Enable only the activity capability in this disposable profile. No capture or OS grant.
+  assert.equal(
+    (
+      await api("/api/extensions/activities", {
+        method: "PATCH",
+        body: JSON.stringify({ id: "computer", enabled: true }),
+      })
+    ).status,
+    200,
+  );
   await quit();
   // Seed a completed intro in this disposable profile only; no production bypass endpoint.
   execFileSync("python3", [
@@ -242,6 +252,93 @@ c.commit()`,
   await expect(page.locator(".chat-page")).not.toHaveAttribute("inert", "", {
     timeout: 30000,
   });
+  const meetingBeforePet = await page.evaluate(() =>
+    sessionStorage.getItem("momo.meeting-owner.v1"),
+  );
+  assert.ok(JSON.parse(meetingBeforePet ?? "null")?.leaseId);
+  const canvasBeforePet = await page.locator("canvas").first().elementHandle();
+  assert.ok(canvasBeforePet);
+  const windowSession = await page.context().newCDPSession(page);
+  const originalWindow = await windowSession.send("Browser.getWindowForTarget");
+  await page.getByRole("button", { name: "进入桌面", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => window.momoDesktop.getWindowState()))
+    .toEqual({ mode: "pet", clickThrough: false });
+  await expect(page.locator("html")).toHaveClass(/desktop-pet/);
+  const checkPetLayout = async () =>
+    page.evaluate(() => {
+      const box = document
+        .querySelector(".dialog-box")
+        ?.getBoundingClientRect();
+      const transparent = [
+        document.documentElement,
+        document.body,
+        document.querySelector("#root"),
+        document.querySelector(".app-stage"),
+      ].every(
+        (element) =>
+          element &&
+          getComputedStyle(element).backgroundColor === "rgba(0, 0, 0, 0)",
+      );
+      return {
+        transparent,
+        fits:
+          !!box &&
+          box.width > 0 &&
+          box.height > 0 &&
+          box.left >= 0 &&
+          box.top >= 0 &&
+          box.right <= innerWidth + 1 &&
+          box.bottom <= innerHeight + 1,
+      };
+    });
+  await expect.poll(checkPetLayout).toEqual({ transparent: true, fits: true });
+  assert.equal(
+    await canvasBeforePet.evaluate(
+      (canvas) =>
+        canvas.isConnected && canvas === document.querySelector("canvas"),
+    ),
+    true,
+  );
+  assert.equal(
+    await page.evaluate(() => sessionStorage.getItem("momo.meeting-owner.v1")),
+    meetingBeforePet,
+  );
+  assert.equal(
+    (await (await api("/api/computer/native/status")).json()).active,
+    false,
+  );
+  await page.screenshot({
+    path: path.join(evidence, "desktop-pet.png"),
+    omitBackground: true,
+  });
+  await page.getByRole("button", { name: "返回 chat", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => window.momoDesktop.getWindowState()))
+    .toEqual({ mode: "chat", clickThrough: false });
+  await expect
+    .poll(
+      async () =>
+        (
+          await windowSession.send("Browser.getWindowBounds", {
+            windowId: originalWindow.windowId,
+          })
+        ).bounds,
+    )
+    .toEqual(originalWindow.bounds);
+  assert.equal(
+    await canvasBeforePet.evaluate(
+      (canvas) =>
+        canvas.isConnected && canvas === document.querySelector("canvas"),
+    ),
+    true,
+  );
+  assert.equal(
+    await page.evaluate(() => sessionStorage.getItem("momo.meeting-owner.v1")),
+    meetingBeforePet,
+  );
+  await canvasBeforePet.dispose();
+  await windowSession.detach();
   await page.locator(".input-row input").fill("native smoke");
   await expect(page.locator(".input-row input")).toHaveValue("native smoke");
   await expect(
@@ -389,6 +486,7 @@ c.commit()`,
     path.join(evidence, "result.json"),
     JSON.stringify(
       {
+        desktopPetSameRendererAndLease: true,
         freshIntro: true,
         isolatedRestart: true,
         auth: true,

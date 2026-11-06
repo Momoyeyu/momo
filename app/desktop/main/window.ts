@@ -17,6 +17,8 @@ export function createWindow(getTexts: () => Promise<DialogTexts>) {
     minWidth: 960,
     minHeight: 540,
     show: false,
+    transparent: true,
+    titleBarStyle: "hidden",
     backgroundColor: "#18151f",
     title: "momo",
     webPreferences: {
