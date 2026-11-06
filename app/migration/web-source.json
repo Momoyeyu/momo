@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "80dbeb1daac6ac16814cf8749341366d1f3ba4b6",
+  "revision": "e268ee5a9140d67ae7bc076b590cf8d3e3be2709",
   "checks": [
-    "Backend 40 tests; Minecraft host 4; frontend notice 4; TypeScript passed; installed smoke findings documented; package pending"
+    "Backend relevant 40 and screen regression 32; host4; frontend4 plus types; no package installation"
   ],
   "files": {
     "app/.env.example": {
@@ -823,7 +823,7 @@
     },
     "app/backend/tests/test_screen_reaction.py": {
       "source": "backend/tests/test_screen_reaction.py",
-      "sha256": "be366f555811976f27d8dd57683511b80c8a63351526634adfc30b1e68e31b9e",
+      "sha256": "40f781505569933db8098bb3d2f4e1e3b18f4d316d4e1650326a7c0b3966a059",
       "mode": 33188
     },
     "app/backend/tests/test_sentences.py": {
