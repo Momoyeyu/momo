@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "7e190f22e44dd146a4d629c96afd38553727bbc6",
+  "revision": "006c6a0b1a6e80f508242b1f8cf94b2d1720c2e6",
   "checks": [
-    "QQ login state translations: typecheck and four dictionary tests passed"
+    "Targeted owner-attention/native regression: 30 passed; extended related suite: 45 passed"
   ],
   "files": {
     "app/.env.example": {
@@ -293,12 +293,12 @@
     },
     "app/backend/app/services/computer.py": {
       "source": "backend/app/services/computer.py",
-      "sha256": "097c01826238237e313bc3cc57a4badcf79345325bd9c0d2ab0a6fe9e2ac94d8",
+      "sha256": "b8117bb34825d0abcfef3179640192a2e80b68826e69cf75d490c48611052f0c",
       "mode": 33188
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "42bb9ad29dea279e1cc9bea5faade46ad6a260f21038a6d5b5414381eda8ed40",
+      "sha256": "358e56d9725c0198e9a4a1cec9df94496634f010b6718cec314656928749df84",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -353,7 +353,7 @@
     },
     "app/backend/app/services/native_control.py": {
       "source": "backend/app/services/native_control.py",
-      "sha256": "2515a6cccc5e57e905a0b79f5592d0ee765ebaa2998a64ed71978a8866c0cb34",
+      "sha256": "5072995bb0334b6980b54ae2ceeeceb6bf78d7efcc84fea46035a9ce5a1a3a0d",
       "mode": 33188
     },
     "app/backend/app/services/onboarding.py": {
@@ -583,7 +583,7 @@
     },
     "app/backend/tests/test_computer.py": {
       "source": "backend/tests/test_computer.py",
-      "sha256": "4bfde177a88d79ea817024d6bc01c07ca7b5625572b309cd8eb429dc5c65bf4e",
+      "sha256": "4911839ab659f27fb5432576a8ea767b32b696bb84c9f3ef077236c6f65c4830",
       "mode": 33188
     },
     "app/backend/tests/test_computer_tools.py": {
@@ -664,6 +664,11 @@
     "app/backend/tests/test_llm_stream.py": {
       "source": "backend/tests/test_llm_stream.py",
       "sha256": "f37d277d7c4704e231a4983d900f85a8a6a91b26a9543c11120d77f2db42296c",
+      "mode": 33188
+    },
+    "app/backend/tests/test_local_computer_attention.py": {
+      "source": "backend/tests/test_local_computer_attention.py",
+      "sha256": "97e02c608368c9a52cf7a2b4ade1c780847e9a6bdeb5789f42106a09a31806f8",
       "mode": 33188
     },
     "app/backend/tests/test_local_embedding.py": {
