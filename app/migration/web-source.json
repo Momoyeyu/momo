@@ -1,11 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "14c142d1a414bcbe8a938e6cf950ac287531885a",
+  "revision": "80dbeb1daac6ac16814cf8749341366d1f3ba4b6",
   "checks": [
-    "backend-focused:119 passed",
-    "frontend:248 passed; typecheck passed",
-    "isolated UI:approval,stop-retry,activity-tabs,pet-continuity,3-language layouts"
+    "Backend 40 tests; Minecraft host 4; frontend notice 4; TypeScript passed; installed smoke findings documented; package pending"
   ],
   "files": {
     "app/.env.example": {
@@ -300,7 +298,7 @@
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "b0ee2f029439ad9a9decd08413d968be8ec2d7392383fb82377f2e30db780444",
+      "sha256": "f4ead9fa4a6ebadb1ace08da7942de8b836a0e5007c5c15c6baeb058d474a477",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -345,7 +343,7 @@
     },
     "app/backend/app/services/minecraft.py": {
       "source": "backend/app/services/minecraft.py",
-      "sha256": "aff858808c10b1a70f1d318ed730f5ff45169901052c3a3a446c04b897646887",
+      "sha256": "b66eaa6dd9f1257181f89ed3095497da6eeed28adddc73841f83d0c9ede2d6fb",
       "mode": 33188
     },
     "app/backend/app/services/minecraft_attach.py": {
@@ -670,7 +668,7 @@
     },
     "app/backend/tests/test_local_computer_attention.py": {
       "source": "backend/tests/test_local_computer_attention.py",
-      "sha256": "8bb0be06c9f3880e5e80ba75cae278fe097d129064088901faca2b39a046f2e1",
+      "sha256": "4ee40ed3fdc3501f7c13380dbf4af3f8fce286b3f9201a3a0461bc06cc2627a9",
       "mode": 33188
     },
     "app/backend/tests/test_local_embedding.py": {
@@ -695,7 +693,7 @@
     },
     "app/backend/tests/test_minecraft.py": {
       "source": "backend/tests/test_minecraft.py",
-      "sha256": "859f64e0ea3a1b94473866ccd0de1f128bc3b73349154be3cb67b0844cf24468",
+      "sha256": "ab5ce7e87fd1fdf8dc8bfc027ae0001c3f043f85ba4ab5edfb7bc8c5ec6d6ee1",
       "mode": 33188
     },
     "app/backend/tests/test_minecraft_attach.py": {
@@ -2980,7 +2978,7 @@
     },
     "app/frontend/src/i18n/en.ts": {
       "source": "frontend/src/i18n/en.ts",
-      "sha256": "50d1fbed15fa704e666eedc263423bb8d35fb014ccc4556e5474bce3e7d3653e",
+      "sha256": "ef3694f101bee1dcdf6218b363efa035b340155213b5aa0eaa1a7bf531b9871f",
       "mode": 33188
     },
     "app/frontend/src/i18n/index.ts": {
@@ -2990,7 +2988,7 @@
     },
     "app/frontend/src/i18n/ja.ts": {
       "source": "frontend/src/i18n/ja.ts",
-      "sha256": "a7c80d52b5e3b58a6e5a94500fd7dbbce0a05e2359ae6dc21038051f2e0abb9d",
+      "sha256": "43862203126e623230beed8a482df8464325cdf188b1df2b8bcb56e8eb1371ee",
       "mode": 33188
     },
     "app/frontend/src/i18n/lang.test.ts": {
@@ -3000,7 +2998,7 @@
     },
     "app/frontend/src/i18n/zh.ts": {
       "source": "frontend/src/i18n/zh.ts",
-      "sha256": "fd934808528c9a97cd94a4a33cdf9fa81e300538214c5f1452abf64dba5bd61d",
+      "sha256": "c29d91117b9c5ebe9af2b7cc1a8862a2deb4e91ab23dfa734c9b0fdb1ee6910e",
       "mode": 33188
     },
     "app/frontend/src/lib/asr.ts": {
@@ -3325,7 +3323,17 @@
     },
     "app/frontend/src/pages/settings/NativeCompanion.tsx": {
       "source": "frontend/src/pages/settings/NativeCompanion.tsx",
-      "sha256": "1d27a9d2e00156b6988429683c299ee7c97f5f429925be6a2d98790b49b122f7",
+      "sha256": "bfa24ee763d80d609ad87db97f6de43be781c0f5c9f40601163db8af77f717b7",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/NativeWindowNotice.test.tsx": {
+      "source": "frontend/src/pages/settings/NativeWindowNotice.test.tsx",
+      "sha256": "457a53cac7f8c8b7b9d7cbea11956600ad7468a7f832460ad7c1c81a32fe5627",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/NativeWindowNotice.tsx": {
+      "source": "frontend/src/pages/settings/NativeWindowNotice.tsx",
+      "sha256": "3552dad0f46f081188d1b5244ef4de002321ccabc009857f112c5bfa328c28b5",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/OfficialPlugins.tsx": {
