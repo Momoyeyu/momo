@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "006c6a0b1a6e80f508242b1f8cf94b2d1720c2e6",
+  "revision": "44a93d404323acedb4f23ca49e41be9c5d12eafc",
   "checks": [
-    "Targeted owner-attention/native regression: 30 passed; extended related suite: 45 passed"
+    "Screen reaction mock explicit hold state: 6 passed; runtime unchanged from006c6a0"
   ],
   "files": {
     "app/.env.example": {
@@ -823,7 +823,7 @@
     },
     "app/backend/tests/test_screen_reaction.py": {
       "source": "backend/tests/test_screen_reaction.py",
-      "sha256": "c30920f9fdf1231a1ef38817507587f3100809a38a9f72f424463aaeb94bda43",
+      "sha256": "be366f555811976f27d8dd57683511b80c8a63351526634adfc30b1e68e31b9e",
       "mode": 33188
     },
     "app/backend/tests/test_sentences.py": {
