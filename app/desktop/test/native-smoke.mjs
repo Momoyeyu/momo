@@ -258,8 +258,15 @@ c.commit()`,
   assert.ok(JSON.parse(meetingBeforePet ?? "null")?.leaseId);
   const canvasBeforePet = await page.locator("canvas").first().elementHandle();
   assert.ok(canvasBeforePet);
-  const windowSession = await page.context().newCDPSession(page);
-  const originalWindow = await windowSession.send("Browser.getWindowForTarget");
+  // Electron does not expose Chrome's Browser.getWindowForTarget CDP command.
+  const windowBounds = () =>
+    page.evaluate(() => ({
+      x: screenX,
+      y: screenY,
+      width: outerWidth,
+      height: outerHeight,
+    }));
+  const originalWindow = await windowBounds();
   await page.getByRole("button", { name: "进入桌面", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => window.momoDesktop.getWindowState()))
@@ -316,16 +323,7 @@ c.commit()`,
   await expect
     .poll(() => page.evaluate(() => window.momoDesktop.getWindowState()))
     .toEqual({ mode: "chat", clickThrough: false });
-  await expect
-    .poll(
-      async () =>
-        (
-          await windowSession.send("Browser.getWindowBounds", {
-            windowId: originalWindow.windowId,
-          })
-        ).bounds,
-    )
-    .toEqual(originalWindow.bounds);
+  await expect.poll(windowBounds).toEqual(originalWindow);
   assert.equal(
     await canvasBeforePet.evaluate(
       (canvas) =>
@@ -338,7 +336,6 @@ c.commit()`,
     meetingBeforePet,
   );
   await canvasBeforePet.dispose();
-  await windowSession.detach();
   await page.locator(".input-row input").fill("native smoke");
   await expect(page.locator(".input-row input")).toHaveValue("native smoke");
   await expect(
