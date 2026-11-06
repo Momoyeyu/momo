@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "fe3f7cc253603b5c4c21bafd6d0fc1ac709a4cd2",
+  "revision": "7e190f22e44dd146a4d629c96afd38553727bbc6",
   "checks": [
-    "shared backend 737 passed; 15 shell tests and packaged baseline smoke passed"
+    "QQ login state translations: typecheck and four dictionary tests passed"
   ],
   "files": {
     "app/.env.example": {
@@ -2953,12 +2953,12 @@
     },
     "app/frontend/src/i18n/dict.test.ts": {
       "source": "frontend/src/i18n/dict.test.ts",
-      "sha256": "6c9d8bf3eff178caa7d1c294baccdb726086ceabd9fff1361d74e0f8f432d6a3",
+      "sha256": "08cb08dc25677bb4921eabfd46a078b9e03aea84a32d3c5d8685eeb64d085463",
       "mode": 33188
     },
     "app/frontend/src/i18n/en.ts": {
       "source": "frontend/src/i18n/en.ts",
-      "sha256": "117cd726caae3e4d00fc42b8a0bf25d48bcbdab6bf3dd0b9418ae4a857b615bd",
+      "sha256": "6afb25d0f78b1f8ee12e8bb93360c4413d4de050114938d12e1fb65fa536acf1",
       "mode": 33188
     },
     "app/frontend/src/i18n/index.ts": {
@@ -2968,7 +2968,7 @@
     },
     "app/frontend/src/i18n/ja.ts": {
       "source": "frontend/src/i18n/ja.ts",
-      "sha256": "764d31c85da0be3f2d27769a85c02c0085d571956db93540e3e95a1ce9c5eeb7",
+      "sha256": "5545de7bad9e80cb4322e78e19db7d07404b8ad81dca0782a20c445eed2feb86",
       "mode": 33188
     },
     "app/frontend/src/i18n/lang.test.ts": {
@@ -2978,7 +2978,7 @@
     },
     "app/frontend/src/i18n/zh.ts": {
       "source": "frontend/src/i18n/zh.ts",
-      "sha256": "1dcf03b6bee5db6d218e1225d825e9eb7a74073b3d8847152a60beaadb64afe5",
+      "sha256": "2ae677feb757b17af7127edab2a3c45defab14140128290ab1c11c41284cc9bd",
       "mode": 33188
     },
     "app/frontend/src/lib/asr.ts": {

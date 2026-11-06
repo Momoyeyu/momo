@@ -54,3 +54,6 @@ Native dialogs now follow the existing authenticated `settings.general.lang` (zh
 Manual installed-app checks: microphone entered listening and stopped successfully; desktop plugin discovered existing windows after enabling. This does not establish real transcription accuracy, screen capture/input authorization, denial recovery or sleep/resume. No application control was performed and the desktop plugin was restored to disabled.
 
 Updated candidate native smoke passed (isolated profile, synthetic model, backup SQLite/IndexedDB round trip, lifecycle and auth). The initial run exceeded the previous 15 s reload wait; rerun with a 45 s bound passed. Failure screenshot/text diagnostics were added; no product workaround or relaxed data assertions. Updated app installed at `/Applications/momo.app`; old app copy removed.
+
+
+QQ real-account follow-up: the user scanned the installed app's QR code. Login was verified, receive/reply permissions were enabled, and incoming private text received a delivered reply identifying QQ correctly. The phone automatically opened and showed the latest conversation. No contact/history/media/group permissions were enabled for this text-only test. The transient untranslated preparing status was fixed upstream in 7e190f2 and promoted through the manifest; shared CI passed.
