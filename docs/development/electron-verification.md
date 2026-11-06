@@ -27,7 +27,7 @@ The native test creates and deletes its own profile. Its model is a local synthe
 
 ## Measurements and limits
 
-Measured on MacBook Air `Mac16,12`, 24 GiB RAM. Startup is process launch → title DOM visible, not a formal interactive-ready benchmark. CPU/RSS samples aggregate the owned process tree using `ps`, three samples per scene one second apart; they include active animation/startup and are not steady-state measurements. Raw evidence is retained locally under `.workbuddy/electron-smoke/` and `.workbuddy/017/evidence/`.
+Measured on MacBook Air `Mac16,12`, 24 GiB RAM. Startup is process launch → title DOM visible, not a formal interactive-ready benchmark. CPU/RSS samples aggregate the owned process tree using `ps`, three samples per scene one second apart; they include active animation/startup and are not steady-state measurements. The initial raw `.workbuddy/017/evidence/` and installer were removed during user-authorized storage cleanup. Historical results above are summaries, not currently available raw attachments.
 
 Real microphone/recording/accessibility system prompts and denial recovery, sleep/resume, real QQ messaging, Minecraft/application control, full audio/media/i18n regression and a clean machine without developer tools remain unverified in this migration. Third-party redistribution qualification and Developer ID signing/notarization remain release work. Windows process-tree behavior is not yet implemented/validated as a supported platform.
 
@@ -40,4 +40,17 @@ Real microphone/recording/accessibility system prompts and denial recovery, slee
 - Normalized Forge-copied absolute symlinks in two passes, validated complete chains, and used one resource list including QQ.
 - Retained the native Edit menu for clipboard shortcuts; removed Tauri/WDIO/duplicate packaging paths.
 
-Heavy builds/model tests ran in the task-owned Mac Studio directory. Its Swift CLT module conflict required only the small helper to be compiled locally with an explicit macOS 14 target. Artifacts and logs are collected before remote cleanup. The preserved tauri-consolidation checkout is untouched.
+Heavy builds/model tests ran in the task-owned Mac Studio directory. Its Swift CLT module conflict required only the small helper to be compiled locally with an explicit macOS 14 target. Artifacts and logs are collected before remote cleanup. The old tauri-consolidation checkout was later removed with explicit user authorization after verifying its source exists in remote Git history.
+
+
+## macOS experience follow-up — 2026-11-06
+
+The user deferred Developer ID signing/notarization and formal distribution; these are not acceptance blockers for the local experience candidate. Windows still follows macOS acceptance.
+
+Native dialogs now follow the existing authenticated `settings.general.lang` (zh/en/ja), with OS language fallback before backend readiness and cached language when unavailable. The lookup is bounded to 750 ms and introduces no renderer bridge or alternate settings store. English diagnostic logging remains separate from translated UI.
+
+18 shell tests passed, including current UI language changes, authentication, fallback and timeout. Forge packaged the updated shell on Mac Studio; packaged frontend/migration and all 4,702 runtime files/links match the previous installation. Strict/deep ad-hoc signature verification passed. Remote task artifacts were removed after transfer.
+
+Manual installed-app checks: microphone entered listening and stopped successfully; desktop plugin discovered existing windows after enabling. This does not establish real transcription accuracy, screen capture/input authorization, denial recovery or sleep/resume. No application control was performed and the desktop plugin was restored to disabled.
+
+Updated candidate native smoke passed (isolated profile, synthetic model, backup SQLite/IndexedDB round trip, lifecycle and auth). The initial run exceeded the previous 15 s reload wait; rerun with a 45 s bound passed. Failure screenshot/text diagnostics were added; no product workaround or relaxed data assertions. Updated app installed at `/Applications/momo.app`; old app copy removed.

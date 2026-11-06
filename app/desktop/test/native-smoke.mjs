@@ -343,9 +343,15 @@ c.commit()`,
       }),
   );
   page.once("dialog", (dialog) => void dialog.accept());
-  const reloaded = page.waitForEvent("load");
+  const reloaded = page.waitForEvent("load", { timeout: 45000 });
   await page.locator('input[type=file][accept=".zip"]').setInputFiles(backup);
-  await reloaded;
+  try {
+    await reloaded;
+  } catch (error) {
+    await page.screenshot({ path: path.join(evidence, "import-failure.png") });
+    console.error("Backup import UI:", await page.locator("body").innerText());
+    throw error;
+  }
   await expect
     .poll(async () =>
       (await (await api("/api/memories")).json()).some(

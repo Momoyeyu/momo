@@ -8,7 +8,9 @@ import {
 import path from "node:path";
 import { trustedFrame, mediaPermission } from "./security.ts";
 
-export function createWindow() {
+import type { DialogTexts } from "./dialog-locale.ts";
+
+export function createWindow(getTexts: () => Promise<DialogTexts>) {
   const window = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -35,15 +37,17 @@ export function createWindow() {
   );
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https:\/\//.test(url))
-      void dialog
-        .showMessageBox(window, {
-          type: "question",
-          message: new URL(url).hostname,
-          detail: url,
-          buttons: ["Cancel", "Open in browser"],
-          defaultId: 0,
-          cancelId: 0,
-        })
+      void getTexts()
+        .then((texts) =>
+          dialog.showMessageBox(window, {
+            type: "question",
+            message: new URL(url).hostname,
+            detail: url,
+            buttons: [texts.cancel, texts.open],
+            defaultId: 0,
+            cancelId: 0,
+          }),
+        )
         .then((result) => {
           if (result.response === 1) void shell.openExternal(url);
         });
@@ -105,10 +109,11 @@ export function createWindow() {
             callback(null);
             return;
           }
+          const texts = await getTexts();
           const selection = await dialog.showMessageBox(window, {
             type: "question",
-            message: "Choose a screen or window to share",
-            buttons: ["Cancel", ...sources.map((source) => source.name)],
+            message: texts.share,
+            buttons: [texts.cancel, ...sources.map((source) => source.name)],
             defaultId: 0,
             cancelId: 0,
             noLink: true,

@@ -1,4 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol } from "electron";
+import { createDialogTexts } from "./dialog-locale.ts";
+import type { RuntimeConnection } from "../contracts.ts";
 import path from "node:path";
 import { BackendProcess } from "./backend.ts";
 import { resourcePaths } from "./resources.ts";
@@ -29,6 +31,8 @@ let backend: BackendProcess | undefined;
 let window: BrowserWindow | undefined;
 let quitting = false;
 let endpoint = "";
+let connection: RuntimeConnection | undefined;
+let getTexts = createDialogTexts("en", () => connection);
 
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
@@ -47,6 +51,7 @@ else {
   void app
     .whenReady()
     .then(async () => {
+      getTexts = createDialogTexts(app.getLocale(), () => connection);
       Menu.setApplicationMenu(
         Menu.buildFromTemplate([
           { role: "appMenu" },
@@ -57,7 +62,7 @@ else {
       const root = app.isPackaged
         ? process.resourcesPath
         : path.join(app.getAppPath(), "resources");
-      window = createWindow();
+      window = createWindow(getTexts);
       registerProtocol(
         path.join(app.getAppPath(), "frontend/dist"),
         () => endpoint,
@@ -86,19 +91,22 @@ else {
             resourcesDir: resources.models,
             onFailure: () => {
               if (!quitting && window)
-                void dialog
-                  .showMessageBox(window, {
-                    type: "error",
-                    message: "momo runtime stopped",
-                    detail:
-                      "Restart momo to reconnect. No activities will resume automatically.",
-                    buttons: ["Quit"],
-                  })
+                void getTexts()
+                  .then((texts) =>
+                    dialog.showMessageBox(window!, {
+                      type: "error",
+                      message: texts.stopped,
+                      detail: texts.reconnect,
+                      buttons: [texts.quit],
+                    }),
+                  )
                   .then(() => app.quit());
             },
           });
           const runtime = await backend.start();
           endpoint = runtime.baseUrl;
+          connection = runtime;
+          await getTexts();
           await window.loadURL("momo://app/index.html");
           return;
         } catch (error) {
@@ -108,14 +116,13 @@ else {
           );
           await backend?.stop();
           backend = undefined;
+          connection = undefined;
+          const texts = await getTexts();
           const result = await dialog.showMessageBox({
             type: "error",
-            message: "momo could not start",
-            detail:
-              error instanceof Error
-                ? error.message
-                : "Check the bundled runtime resources and data directory.",
-            buttons: ["Retry", "Quit"],
+            message: texts.failed,
+            detail: texts.help,
+            buttons: [texts.retry, texts.quit],
             defaultId: 0,
             cancelId: 1,
           });
@@ -126,13 +133,17 @@ else {
         }
       }
     })
-    .catch(async () => {
+    .catch(async (error) => {
+      console.error(
+        "momo initialization failed:",
+        error instanceof Error ? error.message : "Unknown initialization error",
+      );
+      const texts = await getTexts();
       await dialog.showMessageBox({
         type: "error",
-        message: "momo could not start",
-        detail:
-          "Check that this installation contains its runtime resources and that its data directory is not in use.",
-        buttons: ["Quit"],
+        message: texts.failed,
+        detail: texts.help,
+        buttons: [texts.quit],
       });
       app.quit();
     });
