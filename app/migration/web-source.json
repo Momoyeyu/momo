@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "44a93d404323acedb4f23ca49e41be9c5d12eafc",
+  "revision": "8b4ecf4813afb596cc4bda91ee663fa3b0bffdc2",
   "checks": [
-    "Screen reaction mock explicit hold state: 6 passed; runtime unchanged from006c6a0"
+    "49 focused backend passed; host 8 passed/1 installed-helper skipped; two race regressions fail without fix"
   ],
   "files": {
     "app/.env.example": {
@@ -298,7 +298,7 @@
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "358e56d9725c0198e9a4a1cec9df94496634f010b6718cec314656928749df84",
+      "sha256": "53ab12a92cd9f880a63516b18477779438bb326a53531f967a719c435806afe6",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -353,7 +353,7 @@
     },
     "app/backend/app/services/native_control.py": {
       "source": "backend/app/services/native_control.py",
-      "sha256": "5072995bb0334b6980b54ae2ceeeceb6bf78d7efcc84fea46035a9ce5a1a3a0d",
+      "sha256": "57c7b02ecb6bddfdf2ce92a1d17442cda82a2c8a29b2abcd75e21571ed3a5857",
       "mode": 33188
     },
     "app/backend/app/services/onboarding.py": {
@@ -588,7 +588,7 @@
     },
     "app/backend/tests/test_computer_tools.py": {
       "source": "backend/tests/test_computer_tools.py",
-      "sha256": "cabe9a8ad7b30424f9190a138264cc9ef9e827760003d10ddef44365583ab977",
+      "sha256": "6afd5df08ef3162e726871e0f5a0a136a76f582157efc2b5dc363f19c9124351",
       "mode": 33188
     },
     "app/backend/tests/test_context_policy.py": {
@@ -668,7 +668,7 @@
     },
     "app/backend/tests/test_local_computer_attention.py": {
       "source": "backend/tests/test_local_computer_attention.py",
-      "sha256": "97e02c608368c9a52cf7a2b4ade1c780847e9a6bdeb5789f42106a09a31806f8",
+      "sha256": "818b907d27713cc3c2d912b97ae024f247c214bb56941d3f3ad9e2352e511751",
       "mode": 33188
     },
     "app/backend/tests/test_local_embedding.py": {
@@ -3903,7 +3903,7 @@
     },
     "app/plugin-host/src/index.mjs": {
       "source": "plugin-host/src/index.mjs",
-      "sha256": "2759259361d4feb2131be0b82674157d5892e19df97981f28ac4692bd89a5ed7",
+      "sha256": "c40c422fa189795631600e40e369ec135fe88b9c1c80f926abc1deca142f5c7f",
       "mode": 33188
     },
     "app/plugin-host/src/minecraft-adapter.mjs": {
@@ -3913,7 +3913,7 @@
     },
     "app/plugin-host/src/native-control.mjs": {
       "source": "plugin-host/src/native-control.mjs",
-      "sha256": "64991f93c9cc7c516f83344d066d5ac1551c9070d839e7a4584fd81426919ae3",
+      "sha256": "c11c80307fa3b2df3a99d212c7d7ad8eb8bc43f9bb802fe7ac820840629f247c",
       "mode": 33188
     },
     "app/plugin-host/src/plugin-manifest.mjs": {
@@ -3983,7 +3983,7 @@
     },
     "app/plugin-host/test/native-control.test.mjs": {
       "source": "plugin-host/test/native-control.test.mjs",
-      "sha256": "50d73e80e4f9207be7404cd51a4dc7b118f1a04cf4386b4a849fa425faa26b2c",
+      "sha256": "f58a680c056be942d6b777c04d2823440adecbbc09ed206f409f683037f3f745",
       "mode": 33188
     },
     "app/plugin-host/test/plugin-disposal.test.mjs": {
@@ -3998,7 +3998,7 @@
     },
     "app/plugin-host/test/protocol.test.mjs": {
       "source": "plugin-host/test/protocol.test.mjs",
-      "sha256": "9a21857dbf96aad57409dbb2e8d741f391ee48960d1730ace8c86ba8e718e88a",
+      "sha256": "291ed125fdb3d576a02b97e02c22b579110a10ecc86ed1f4f3558e517ea20f84",
       "mode": 33188
     },
     "app/plugin-host/test/qq-actions-host.test.mjs": {
