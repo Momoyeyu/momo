@@ -28,3 +28,9 @@ Inspected AIRI's website and local desktop source: `apps/stage-tamagotchi/src/ma
 - Temporary Electron window with the production WindowModeController verified enabling/disabling click-through, underlying test-window input and recovery after stopping region reports. This is not the installed package.
 - The computer-use driver's synthetic drag left Electron's native cursor unchanged. Actual drag distance therefore remains an installed/manual smoke item; browser event routing and host movement/clamping were verified separately.
 - Do not reinstall for each visual edit. Consolidate this source with pending observation/input fixes. 006/017 remain open until the installed candidate passes remaining smoke checks.
+
+## Installed candidate — 2026-11-07
+
+User requested a consolidated reinstall. Runtime `d010203` / shared source `c61d98e` was built with Forge on Mac Studio, verified with codesign, and installed at `/Applications/momo.app`. Frozen E5/ASR/resource smoke, 29 shell tests and isolated packaged native smoke passed (startup, same-renderer pet mode, expand dialogue, return to chat, backup restore, singleton and exit cleanup). Installed UI confirmed folded dialogue and the vertical rail, with existing chat data preserved. Real cursor drag distance and renewed screen/accessibility permissions remain unverified; user resumed interacting, so no permission reset was attempted. Evidence: `/tmp/momo-pet-candidate-d010203/evidence/`.
+
+The requested lower toolbar position is a subsequent shared-source change for the next consolidated install; it is not in this installed candidate. Permission guidance can request microphone access and open macOS privacy settings when needed, but the complete screen/accessibility guidance has not been added in this update.

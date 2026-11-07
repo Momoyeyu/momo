@@ -272,6 +272,19 @@ c.commit()`,
     .poll(() => page.evaluate(() => window.momoDesktop.getWindowState()))
     .toEqual({ mode: "pet", clickThrough: false });
   await expect(page.locator("html")).toHaveClass(/desktop-pet/);
+  await expect(page.locator(".chat-page")).toHaveClass(/pet-dialog-collapsed/);
+  await expect(page.locator(".dialog-drawer")).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "展开对话框", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: path.join(evidence, "desktop-pet-folded.png"),
+    omitBackground: true,
+  });
+  await page.getByRole("button", { name: "展开对话框", exact: true }).click();
+  await expect(page.locator(".chat-page")).not.toHaveClass(
+    /pet-dialog-collapsed/,
+  );
   const checkPetLayout = async () =>
     page.evaluate(() => {
       const box = document
