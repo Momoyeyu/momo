@@ -25,3 +25,26 @@ test("installation rejects ad-hoc and identifier-only identity", () => {
     ),
   );
 });
+
+const {
+  resolveCodeSigningIdentity,
+} = require("../../desktop/packaging/signing.cjs");
+test("code-signing policy lookup rejects missing and ambiguous identities", () => {
+  const a = "A".repeat(40),
+    b = "B".repeat(40);
+  const line = `1) ${a} "momo Local Development"`;
+  assert.equal(resolveCodeSigningIdentity(line, "momo Local Development"), a);
+  assert.equal(resolveCodeSigningIdentity(line, a.toLowerCase()), a);
+  assert.throws(() =>
+    resolveCodeSigningIdentity(
+      "0 valid identities found",
+      "momo Local Development",
+    ),
+  );
+  assert.throws(() =>
+    resolveCodeSigningIdentity(
+      `${line}\n2) ${b} "momo Local Development"`,
+      "momo Local Development",
+    ),
+  );
+});

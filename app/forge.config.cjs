@@ -1,5 +1,5 @@
 const path = require("node:path");
-const { signingOptions } = require("./desktop/packaging/signing.cjs");
+const { validatedSigningOptions } = require("./desktop/packaging/signing.cjs");
 const {
   normalizeResourceLinks,
   resourceNames,
@@ -15,7 +15,7 @@ module.exports = {
     appCategoryType: "public.app-category.games",
     asar: true,
     // CSC_NAME=- is only for remote staging; sign locally before installation.
-    osxSign: signingOptions(process.env.CSC_NAME),
+    osxSign: validatedSigningOptions(process.env.CSC_NAME),
     icon: path.join(__dirname, "desktop/assets/icon"),
     extraResource: resourceNames.map((name) =>
       path.join(__dirname, "resources", name),

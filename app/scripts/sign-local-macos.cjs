@@ -3,7 +3,7 @@ const { execFileSync } = require("node:child_process");
 const { existsSync, realpathSync } = require("node:fs");
 const path = require("node:path");
 const {
-  signingOptions,
+  validatedSigningOptions,
   assertStableRequirement,
 } = require("../desktop/packaging/signing.cjs");
 
@@ -44,7 +44,7 @@ async function main() {
   const installed = "/Applications/momo.app";
   if (app === installed || app.startsWith("/Applications/"))
     throw new Error("Sign a staging copy, never the installed app");
-  const options = signingOptions(process.env.CSC_NAME);
+  const options = validatedSigningOptions(process.env.CSC_NAME);
   if (options.identity === "-")
     throw new Error("Ad-hoc candidates cannot be installed");
   const { sign } = await import("@electron/osx-sign");
