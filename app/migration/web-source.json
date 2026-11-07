@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "14c7ee852a98d20ec040d5e8d56016ddcc38ff62",
+  "revision": "2ff32cc0b71472f31263167a5b030cdc6527d616",
   "checks": [
-    "252 frontend tests; 3 locale pet E2E; 44 backend focused tests and full-suite fixture correction verified; 31 shell tests"
+    "node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.json"
   ],
   "files": {
     "app/.env.example": {
@@ -1103,7 +1103,7 @@
     },
     "app/frontend/e2e/46-desktop-pet.spec.ts": {
       "source": "frontend/e2e/46-desktop-pet.spec.ts",
-      "sha256": "4433c2c1674cf14f44bb285ec9868e7d0c9d4e558da0268b78a563763d9caddb",
+      "sha256": "a8e5914b6cb822b0abfa851e62806c2d73ef03798da9f18e1c3773a585fb7763",
       "mode": 33188
     },
     "app/frontend/e2e/47-sound-inline.spec.ts": {
@@ -2883,7 +2883,7 @@
     },
     "app/frontend/src/components/DesktopObservation.tsx": {
       "source": "frontend/src/components/DesktopObservation.tsx",
-      "sha256": "f3708c991c9162f7c988fec51142b56129b4387557654465bf01597b0c9d4b8c",
+      "sha256": "a958a460f7891aaab85edac788e518a8b10bc845868691bdb96daf42847978c1",
       "mode": 33188
     },
     "app/frontend/src/components/DesktopPetControls.tsx": {
@@ -2983,7 +2983,7 @@
     },
     "app/frontend/src/i18n/en.ts": {
       "source": "frontend/src/i18n/en.ts",
-      "sha256": "5b876e6527b7e79a12b7ba5e947a0eef399326cefc53f685bf7e1dea11fd460b",
+      "sha256": "d72d0a50a92b69cfa91506cedd6368270b9fc554a17d08c07597268dbf48def5",
       "mode": 33188
     },
     "app/frontend/src/i18n/index.ts": {
@@ -2993,7 +2993,7 @@
     },
     "app/frontend/src/i18n/ja.ts": {
       "source": "frontend/src/i18n/ja.ts",
-      "sha256": "aef52fd744e9d0728a73de0e3c9d8c6c59bfb4d4f4c586d5dd345fd4a546a705",
+      "sha256": "fe60151810c7e14059e31c7c0d173ba6f7fe49447199170d10382a1131813ac5",
       "mode": 33188
     },
     "app/frontend/src/i18n/lang.test.ts": {
@@ -3003,7 +3003,7 @@
     },
     "app/frontend/src/i18n/zh.ts": {
       "source": "frontend/src/i18n/zh.ts",
-      "sha256": "16e50ca5d5336af50aebad0b7a62c44b3fc9209087d1c35e92e40cba11ff9cfa",
+      "sha256": "59726b1204ed931951c57b3c02120b13d3ca1d54efda04570d7460ac0fdbdd07",
       "mode": 33188
     },
     "app/frontend/src/lib/asr.ts": {
@@ -3663,7 +3663,7 @@
     },
     "app/frontend/src/styles/desktop-pet.css": {
       "source": "frontend/src/styles/desktop-pet.css",
-      "sha256": "d29068f89d8913f16b28991e1118f922b085bd24c53c81874678594db24e36c0",
+      "sha256": "86a1b847c3f40bde0c6be23dd121eca7408174796fcd6858a80a669bd9670cd3",
       "mode": 33188
     },
     "app/frontend/src/styles/images.css": {
@@ -3823,7 +3823,7 @@
     },
     "app/frontend/src/ui/icons.ts": {
       "source": "frontend/src/ui/icons.ts",
-      "sha256": "7fc98e02bb130356cebb8053029cadaf1952ac41342dc58461c853e4a8feed05",
+      "sha256": "1f76cfd2135f26d6e8bb91b53870a284dad733fb44d9dcb6451745d592aba65c",
       "mode": 33188
     },
     "app/frontend/tsconfig.json": {
