@@ -31,4 +31,10 @@
 
 新包与 helper 均绑定固定证书。安装后的 TCC 日志仍指向旧 ad-hoc requirement，确认首次迁移确有必要；已退出应用并通过 `tccutil reset ScreenCapture dev.momo.electron`、`tccutil reset Accessibility dev.momo.electron` 仅撤销 momo 的旧记录。新的系统授权正在等待用户确认，尚未宣称跨更新继承通过。旧安装包及远端构建目录已清理，只保留当前安装和最新 pre-install profile。
 
+## 2026-11-08 首次迁移完成
+
+用户已给当前固定签名安装版重新添加录屏与辅助功能授权，系统设置两项均为开启。从已安装 momo 的桌宠应用面板执行只读窗口发现后，TCC 于 00:46:54 的同一请求链确认 `kTCCServiceScreenCapture`、`kTCCServiceAccessibility` preflight 均返回 `authValue=2`、`error=(null)`，本轮无旧签名不匹配；窗口标题正常返回。未进行真实截图上传或点击输入，检查结束后回标题待机。未重新打包/安装。
+
+首次授权迁移已完成；跨版本 TCC 继承仍留到下一次正常更新验证，不为验签重复替换用户安装。后续禁止重置这些有效授权，除非新的实际证据证明需要恢复。
+
 参考：[Apple TN3127](https://developer.apple.com/documentation/technotes/tn3127-inside-code-signing-requirements)、[Apple TN2206](https://developer.apple.com/library/archive/technotes/tn2206/)。
