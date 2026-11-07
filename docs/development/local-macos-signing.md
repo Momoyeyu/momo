@@ -21,4 +21,10 @@
 
 这是本机体验版身份，不是 Developer ID、notarization 或公开发行方案。证书的信任仅限当前用户的 code-signing policy；不是通用 TLS 根证书。
 
+## 2026-11-07 验证
+
+固定身份已导入本机 login 钥匙串；临时 PEM 私钥已清理，仅保留公开证书。两个内容不同的测试 Mach-O 使用同一证书签署后，requirement 都绑定相同证书与 bundle ID，并通过交叉验证。33 项 shell 测试、三语桌宠浏览器回归及两仓 CI 通过。此处尚不代表首次授权后跨安装包的 TCC 继承已实测通过。
+
+首次签名若系统要求 codesign 使用私钥，由用户在钥匙串提示确认；不读取登录密码、不降低整个钥匙串的访问限制。不在开发机的签名脚本里设置全应用私钥访问。
+
 参考：[Apple TN3127](https://developer.apple.com/documentation/technotes/tn3127-inside-code-signing-requirements)、[Apple TN2206](https://developer.apple.com/library/archive/technotes/tn2206/)。
