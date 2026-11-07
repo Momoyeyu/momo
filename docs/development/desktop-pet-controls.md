@@ -38,3 +38,11 @@ Clicking/typing remains a window-bound, separately approved activity. The applic
 The rail sits just above the dialogue, with 28px centered buttons. Panel/list scroll containers have independent bounded height. Both participate in click-through protection. Closing the panel restores window width without stopping observation or changing input grants. Read-only capture cannot create an input version or binding; stopping input does not stop looking. Pause/Home/focus/plugin disable invalidate pending pixels. Web sharing retains the browser's mandatory source picker and uses its existing shared-frame path.
 
 Validation: three-locale browser smoke at 360×520 and 320×440 plus the expanded side panel; independent observation/input, scrolling, panel/avatar separation, framing, folding and recovery. See the current installation report for packaged smoke evidence; browser fixtures alone do not prove real screen interpretation.
+
+## Installed revision 5275cde / shared 14c7ee8
+
+- Consolidated macOS package installed at `/Applications/momo.app`; launch verified at the title screen. User profile retained with a pre-install snapshot.
+- Backend: 806 passed / 3 skipped. Frontend: 252 passed. Shell: 31 passed. Three-language desktop pet browser smoke passed; screenshots inspected.
+- Packaged smoke passed locally with disposable data: startup, boot, utility-panel opening/closing, folded/expanded dialogue, stable Live2D canvas and lease, transparent layout, return-to-chat, backup/restore and owned-process shutdown. No user recording grant or model screenshot upload was exercised by this smoke.
+- Remote host compiled and packaged the candidate. Its GUI smoke had no renderer target; the same signed package passed local smoke. The Swift build used a task-local VFS overlay to mask a duplicate SwiftBridging module map in the remote toolchain, without modifying system SDK files.
+- Looking never creates a momo application grant. Real OS recording/input acceptance and the remaining 006–008/017 end-to-end scope are distinct from this UI/package regression; these plans are not marked done by this patch.

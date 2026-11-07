@@ -281,8 +281,14 @@ c.commit()`,
   });
   await expect(observation).toBeVisible();
   await expect(
-    observation.getByRole("button", { name: "操作应用", exact: true }),
+    observation
+      .locator("footer")
+      .getByRole("button", { name: "操作应用", exact: true }),
   ).toBeDisabled();
+  await page.screenshot({
+    path: path.join(evidence, "desktop-utility.png"),
+    omitBackground: true,
+  });
   await observation
     .getByRole("button", { name: "关闭配置", exact: true })
     .click();
