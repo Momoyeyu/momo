@@ -1,9 +1,10 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "e268ee5a9140d67ae7bc076b590cf8d3e3be2709",
+  "revision": "c61d98ec206bd7ac49a8df9d9eabd0b8bed5d5d7",
   "checks": [
-    "Backend relevant 40 and screen regression 32; host4; frontend4 plus types; no package installation"
+    "desktop pet trilingual two-size browser regression passed",
+    "frontend typecheck and 29 shell tests passed"
   ],
   "files": {
     "app/.env.example": {
@@ -253,7 +254,7 @@
     },
     "app/backend/app/services/app_permissions.py": {
       "source": "backend/app/services/app_permissions.py",
-      "sha256": "aed3150f0aa12bf812f3cd2efe044944e182be9db0eb8377ae26d769b9e01017",
+      "sha256": "3f607bd78f8874b956e60ec533779b4990f38f528bbb73004e3a6bda5306f20c",
       "mode": 33188
     },
     "app/backend/app/services/archive.py": {
@@ -288,7 +289,7 @@
     },
     "app/backend/app/services/compress.py": {
       "source": "backend/app/services/compress.py",
-      "sha256": "99071b1bc9c5729bd000585320c1559eeb1501400f4fafbce629ee4cd29064e0",
+      "sha256": "85ab1ed2503dc7bbc1c08b48e98ff20af7477926fb32557fe8f7437b12dbbc8c",
       "mode": 33188
     },
     "app/backend/app/services/computer.py": {
@@ -303,7 +304,7 @@
     },
     "app/backend/app/services/context_policy.py": {
       "source": "backend/app/services/context_policy.py",
-      "sha256": "ea1b831431f80055cd094e19be42eb2f9749df3721b44f880fb270ef20de2870",
+      "sha256": "93807969b27a4b5b21aa7bdad84d255d4a937e9ece94fe053cc656e630a834f0",
       "mode": 33188
     },
     "app/backend/app/services/coordinator.py": {
@@ -353,7 +354,7 @@
     },
     "app/backend/app/services/native_control.py": {
       "source": "backend/app/services/native_control.py",
-      "sha256": "35d79c1fe966cd9b6c8fe6ebe70fefaec05d4e23db6bc851e4759b02016e80b3",
+      "sha256": "3f827e1f04f22ab105e8c49ef70fbbbf580b796313f28994757a99c52319080c",
       "mode": 33188
     },
     "app/backend/app/services/onboarding.py": {
@@ -578,7 +579,7 @@
     },
     "app/backend/tests/test_checkpoint.py": {
       "source": "backend/tests/test_checkpoint.py",
-      "sha256": "2d01c20ae36ec86284c7d5ead03607d7a243bb8a13d662b0eb0245e51b059a7c",
+      "sha256": "fcedb25cb98f6cbe1028afd98d41425862477810fc0a6f74a4ac7f3ff925b68a",
       "mode": 33188
     },
     "app/backend/tests/test_computer.py": {
@@ -593,7 +594,7 @@
     },
     "app/backend/tests/test_context_policy.py": {
       "source": "backend/tests/test_context_policy.py",
-      "sha256": "873edb6404a572906adbc240ff567ad644668777b8f30f746ed22ba64b85822f",
+      "sha256": "528e5a5c721cc1b4279b13b0fe6bede6feea6c06890225f6d2472c90b218b836",
       "mode": 33188
     },
     "app/backend/tests/test_context_scenarios.py": {
@@ -703,7 +704,7 @@
     },
     "app/backend/tests/test_native_control.py": {
       "source": "backend/tests/test_native_control.py",
-      "sha256": "9f6edbc5a323c7bc4061fc1ce18d47dd41d0bd7b9772a3698a92f2a6f7b364b3",
+      "sha256": "d73b386f442a486e049fc6bec0d0706370822398081489f951fc7d7f01201370",
       "mode": 33188
     },
     "app/backend/tests/test_native_thinking.py": {
@@ -1103,7 +1104,7 @@
     },
     "app/frontend/e2e/46-desktop-pet.spec.ts": {
       "source": "frontend/e2e/46-desktop-pet.spec.ts",
-      "sha256": "be108cfbf8f2d4aefd1404db6a3bb011283bcc88ca6c928c30d7f2badbe6e946",
+      "sha256": "5ea68e5ecd6a8cc282d56412c0a89af4f04d9e9a8ebda853bb1bff39babf19fe",
       "mode": 33188
     },
     "app/frontend/e2e/47-sound-inline.spec.ts": {
@@ -2738,7 +2739,7 @@
     },
     "app/frontend/src/App.tsx": {
       "source": "frontend/src/App.tsx",
-      "sha256": "6d736735aeaa65098b21520314bc04bc877c09dd2be0b7fe56561b584cdb5fac",
+      "sha256": "f7ea48fbc88a1c4ca17549eaea9f326c1114bc3b7cbd04fd7d6b9352121704ba",
       "mode": 33188
     },
     "app/frontend/src/api/schema.d.ts": {
@@ -2883,7 +2884,7 @@
     },
     "app/frontend/src/components/DesktopPetControls.tsx": {
       "source": "frontend/src/components/DesktopPetControls.tsx",
-      "sha256": "18df7d4c2c26e3194f248f789fbcef7535855ea108b9e7ecb757055a6e9cb14e",
+      "sha256": "0d4a52dba55273c9dfcea9faeef6f28875160d9f7587d926fc7ef72976a7f45b",
       "mode": 33188
     },
     "app/frontend/src/components/DetailModal.test.tsx": {
@@ -2978,7 +2979,7 @@
     },
     "app/frontend/src/i18n/en.ts": {
       "source": "frontend/src/i18n/en.ts",
-      "sha256": "ef3694f101bee1dcdf6218b363efa035b340155213b5aa0eaa1a7bf531b9871f",
+      "sha256": "a6a5854c85c489d8c19d323e16bf0d905c99d0e2b7b9b332a49f18e091a5c5ad",
       "mode": 33188
     },
     "app/frontend/src/i18n/index.ts": {
@@ -2988,7 +2989,7 @@
     },
     "app/frontend/src/i18n/ja.ts": {
       "source": "frontend/src/i18n/ja.ts",
-      "sha256": "43862203126e623230beed8a482df8464325cdf188b1df2b8bcb56e8eb1371ee",
+      "sha256": "3ca8e693e99ffd21d7aa35541cfe3693a59dc86da985b66a5c76c35c7cc02469",
       "mode": 33188
     },
     "app/frontend/src/i18n/lang.test.ts": {
@@ -2998,7 +2999,7 @@
     },
     "app/frontend/src/i18n/zh.ts": {
       "source": "frontend/src/i18n/zh.ts",
-      "sha256": "c29d91117b9c5ebe9af2b7cc1a8862a2deb4e91ab23dfa734c9b0fdb1ee6910e",
+      "sha256": "4fee9745defb32e89a65519b48a80832789a9f22bd82ae528e134019924ad136",
       "mode": 33188
     },
     "app/frontend/src/lib/asr.ts": {
@@ -3218,7 +3219,7 @@
     },
     "app/frontend/src/live2d/stage.ts": {
       "source": "frontend/src/live2d/stage.ts",
-      "sha256": "f2570253a86908c2fd17cf260174b9d338cc8a036882b827bb3bb96d0b5b3e61",
+      "sha256": "526cfdf3d3df3199b52173d2360efd5fbe75fe75a9e0004193697371446b1404",
       "mode": 33188
     },
     "app/frontend/src/main.tsx": {
@@ -3233,7 +3234,7 @@
     },
     "app/frontend/src/pages/Chat.tsx": {
       "source": "frontend/src/pages/Chat.tsx",
-      "sha256": "83d0fe2ffd496bf3c61188b3adea064f7f2356a9e9e6630d2dafdb7f1898d5be",
+      "sha256": "8fff4e2ad4b9df9b56d08b10fef4b65684c15efbb85e8821969c08200bf7c26a",
       "mode": 33188
     },
     "app/frontend/src/pages/ExtensionActivities.tsx": {
@@ -3323,7 +3324,7 @@
     },
     "app/frontend/src/pages/settings/NativeCompanion.tsx": {
       "source": "frontend/src/pages/settings/NativeCompanion.tsx",
-      "sha256": "bfa24ee763d80d609ad87db97f6de43be781c0f5c9f40601163db8af77f717b7",
+      "sha256": "bd760121d82031221536dfc25b4e5f5603349a5f64960beed7ddd1f316446c4b",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/NativeWindowNotice.test.tsx": {
@@ -3478,7 +3479,7 @@
     },
     "app/frontend/src/services/desktopWindow.ts": {
       "source": "frontend/src/services/desktopWindow.ts",
-      "sha256": "85dd0e0fadf5c010f2482bf6cbed36451ffc96cc25e0b5291807b3616abe3226",
+      "sha256": "6ef0d684ff605191483870d308f629ce3e26bc5571922431d9543855b67759c5",
       "mode": 33188
     },
     "app/frontend/src/services/extClient.ts": {
@@ -3658,7 +3659,7 @@
     },
     "app/frontend/src/styles/desktop-pet.css": {
       "source": "frontend/src/styles/desktop-pet.css",
-      "sha256": "e98f6e719825701529099c71efd5003155cdaf4c9e66323ef79442b5f42d1c0c",
+      "sha256": "150b3217696b25230acfe4591e05079e754498c07298d02f9868d36c4c82f179",
       "mode": 33188
     },
     "app/frontend/src/styles/images.css": {

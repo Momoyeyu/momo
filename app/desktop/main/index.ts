@@ -87,9 +87,17 @@ else {
         window,
         () => screen.getDisplayMatching(window!.getBounds()).workArea,
         (state) => window?.webContents.send("momo:window-state", state),
+        () => screen.getCursorScreenPoint(),
       );
+      window.once("closed", () => modes?.dispose());
       for (const [channel, count, handler] of [
         ["momo:get-window-state", 0, () => modes!.getState()],
+        ["momo:drag-pet-window", 1, (value: unknown) => modes!.dragPet(value)],
+        [
+          "momo:set-pet-hit-regions",
+          1,
+          (value: unknown) => modes!.setInteractiveRegions(value),
+        ],
         ["momo:set-window-mode", 1, (value: unknown) => modes!.setMode(value)],
         [
           "momo:set-pet-click-through",

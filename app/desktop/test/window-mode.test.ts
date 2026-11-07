@@ -114,3 +114,91 @@ test("pet bounds and minimum size fit a small remaining display", () => {
   assert.deepEqual(win.getBounds(), { x: 20, y: 30, width: 280, height: 400 });
   assert.ok(calls.some((c) => c[0] === "min" && c[1] === 280 && c[2] === 400));
 });
+
+test("click-through excludes controls, follows dragged window and fails open if renderer stalls", () => {
+  const { win, calls } = fixture();
+  let clock = 100,
+    point = { x: 0, y: 0 };
+  const c = new WindowModeController(
+    win,
+    () => ({ x: 0, y: 0, width: 1440, height: 900 }),
+    () => {},
+    () => point,
+    () => clock,
+  );
+  c.setMode("pet");
+  const bounds = win.getBounds();
+  const regions = [{ x: 0.8, y: 0, width: 0.2, height: 0.6 }];
+  c.setInteractiveRegions(regions);
+  point = { x: bounds.x + 50, y: bounds.y + 100 };
+  c.setClickThrough(true);
+  assert.deepEqual(calls.at(-1), ["ignore", true]);
+  point = { x: bounds.x + 330, y: bounds.y + 100 };
+  c.refreshPointer();
+  assert.deepEqual(calls.at(-1), ["ignore", false]);
+  // Movement uses current window bounds, not cached screen coordinates.
+  win.setBounds({ ...bounds, x: bounds.x - 300 });
+  c.refreshPointer();
+  assert.deepEqual(calls.at(-1), ["ignore", true]);
+  clock += 1001;
+  c.refreshPointer();
+  assert.deepEqual(calls.at(-1), ["ignore", false]);
+  c.setInteractiveRegions(regions);
+  assert.deepEqual(calls.at(-1), ["ignore", true]);
+  c.setInteractiveRegions([]);
+  assert.deepEqual(calls.at(-1), ["ignore", false]);
+  c.setClickThrough(false);
+  c.dispose();
+});
+
+test("malformed hit regions cannot poison native hit testing", () => {
+  const { controller: c } = fixture();
+  for (const value of [
+    null,
+    {},
+    [{ x: NaN, y: 0, width: 1, height: 1 }],
+    [{ x: -1, y: 0, width: 1, height: 1 }],
+    [{ x: 0.8, y: 0, width: 0.4, height: 1 }],
+    Array(65).fill({ x: 0, y: 0, width: 1, height: 1 }),
+  ]) {
+    assert.throws(() => c.setInteractiveRegions(value));
+  }
+});
+
+test("pet drag uses native cursor deltas, clamps to work area and ends cleanly", () => {
+  const { win } = fixture();
+  let point = { x: 100, y: 100 };
+  const c = new WindowModeController(
+    win,
+    () => ({ x: 0, y: 0, width: 1440, height: 900 }),
+    () => {},
+    () => point,
+  );
+  c.dragPet("start");
+  point = { x: 150, y: 200 };
+  c.dragPet("move");
+  assert.equal(win.getBounds().x, 40);
+  c.setMode("pet");
+  const before = win.getBounds();
+  c.dragPet("start");
+  point = { x: 50, y: 100 };
+  c.dragPet("move");
+  assert.equal(win.getBounds().x, before.x - 100);
+  assert.equal(win.getBounds().y, before.y - 100);
+  c.dragPet("end");
+  point = { x: 10, y: 10 };
+  c.dragPet("move");
+  assert.equal(win.getBounds().x, before.x - 100);
+  c.dragPet("start");
+  point = { x: -9999, y: -9999 };
+  c.dragPet("move");
+  assert.equal(win.getBounds().x, 0);
+  assert.equal(win.getBounds().y, 0);
+  c.setClickThrough(true);
+  c.dragPet("start");
+  point = { x: 200, y: 200 };
+  c.dragPet("move");
+  assert.equal(win.getBounds().x, 0);
+  assert.throws(() => c.dragPet("unknown"));
+  c.dispose();
+});
