@@ -37,4 +37,12 @@ The requested lower toolbar position is a subsequent shared-source change for th
 
 ## Direct observation entry
 
-The next candidate promotes shared `5f19eeb`: removes Chat's duplicate Extensions menu, places observation start/stop and target selection on the pet rail, and groups browser/game activity controls in that desktop context. Low-frequency behavior/input options remain disclosed inside the panel; plugin configuration and grants stay in Settings. Three-locale small-window observation flow and two plugin-library layout regressions passed. The lowered toolbar position is included in this candidate.
+Candidate `518e461` promotes shared `5f19eeb`: removes Chat's duplicate Extensions menu, places observation start/stop and target selection on the pet rail, and groups browser/game activity controls in that desktop context. Low-frequency behavior/input options remain disclosed inside the panel; plugin configuration and grants stay in Settings. Three-locale small-window observation flow and two plugin-library layout regressions passed. The lowered toolbar position is included in this candidate.
+
+## Direct observation installed — 2026-11-07
+
+Installed runtime `518e461` / shared `5f19eeb` at `/Applications/momo.app`. Signature verification, 29 shell tests, three-locale observation E2E, two plugin-layout regressions and isolated packaged native smoke passed. The packaged smoke now checks the observation entry, disabled start before target selection, and closing the panel. Actual installed UI was inspected: Chat has desktop/phone entries without the duplicate Extensions menu; pet rail opens observation directly, with secondary application controls and browser/game activities folded. The lower rail position is included.
+
+The installed app reports missing screen-recording permission. No TCC reset, repeated authorization or real target control was performed. Actual capture/input and native drag-distance acceptance remain pending in 006/017; this UI/install check does not mark them complete.
+
+Existing profile/configuration/saves were retained. Deleted the previous 1.9 GB app, obsolete pre-install profile copy and this task's 4.2 GB remote build tree; a scan of system/user Applications, temporary and Trash locations found only `/Applications/momo.app`. Kept one latest pre-install profile snapshot (no app bundle). Test evidence: `~/Documents/momo-backups/2026-11-07/observation-518e461/evidence/`.
