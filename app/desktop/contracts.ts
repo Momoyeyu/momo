@@ -5,8 +5,10 @@ export interface RuntimeConnection {
 export interface WindowState {
   mode: "chat" | "pet";
   clickThrough: boolean;
+  panel?: { width: number; petWidth: number };
 }
 export interface DesktopBridge {
+  setPetPanel(open: boolean): Promise<WindowState>;
   dragPetWindow(phase: "start" | "move" | "end"): Promise<void>;
   setPetHitRegions(
     regions: { x: number; y: number; width: number; height: number }[],

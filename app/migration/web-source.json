@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "5f19eeb08237047ab20270567ddcb3542804440a",
+  "revision": "14c7ee852a98d20ec040d5e8d56016ddcc38ff62",
   "checks": [
-    "frontend typecheck; 3 locale observation E2E; 2 plugin layout E2E"
+    "252 frontend tests; 3 locale pet E2E; 44 backend focused tests and full-suite fixture correction verified; 31 shell tests"
   ],
   "files": {
     "app/.env.example": {
@@ -68,7 +68,7 @@
     },
     "app/backend/app/api/computer.py": {
       "source": "backend/app/api/computer.py",
-      "sha256": "549d2712a618b48bfe64e00bd35af0804cc8291796966759bf86a22dec030f95",
+      "sha256": "3bb094decfd20adfbac251963c2b3fe2f856ab9b2d7c14d5de48a5b865171065",
       "mode": 33188
     },
     "app/backend/app/api/extensions.py": {
@@ -293,12 +293,12 @@
     },
     "app/backend/app/services/computer.py": {
       "source": "backend/app/services/computer.py",
-      "sha256": "b8117bb34825d0abcfef3179640192a2e80b68826e69cf75d490c48611052f0c",
+      "sha256": "bbfc4f6b2b29df65b1bdf5a587adcf5ada0b24a2e539c0bc5c0a98d2e4df2598",
       "mode": 33188
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "f4ead9fa4a6ebadb1ace08da7942de8b836a0e5007c5c15c6baeb058d474a477",
+      "sha256": "055a74b1cbd2b2a8dbd6bdac60b620f889db81e6dc3671d025b2654d324493bf",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -353,7 +353,7 @@
     },
     "app/backend/app/services/native_control.py": {
       "source": "backend/app/services/native_control.py",
-      "sha256": "3f827e1f04f22ab105e8c49ef70fbbbf580b796313f28994757a99c52319080c",
+      "sha256": "9f3c90cdf05eaab5a4ea3328c0a0d98a2e6f20a43c8e59452ddb9e3206065070",
       "mode": 33188
     },
     "app/backend/app/services/onboarding.py": {
@@ -433,7 +433,7 @@
     },
     "app/backend/openapi.json": {
       "source": "backend/openapi.json",
-      "sha256": "caeb016b17b92ca62ec7c7104536e1e8c1ce93c1d97a1838cdbb457543b7692b",
+      "sha256": "362f9bfaaa07e4dab5287482ae3f149f77d9c71abeb1f2d6295914fd544fbfe8",
       "mode": 33188
     },
     "app/backend/pyproject.toml": {
@@ -583,12 +583,12 @@
     },
     "app/backend/tests/test_computer.py": {
       "source": "backend/tests/test_computer.py",
-      "sha256": "4911839ab659f27fb5432576a8ea767b32b696bb84c9f3ef077236c6f65c4830",
+      "sha256": "0d934c1b29f51f2957058d824bbe6f88ecc7b48270a94b03f90962390b047bda",
       "mode": 33188
     },
     "app/backend/tests/test_computer_tools.py": {
       "source": "backend/tests/test_computer_tools.py",
-      "sha256": "e1de86eb2a5a5bf2cd748b0c8a3839867c6b7f8c470e24350ab93e941affbaf8",
+      "sha256": "565961e289fab8e5538f221b1229f3a2eecca75520cb70785d9a9402705d0507",
       "mode": 33188
     },
     "app/backend/tests/test_context_policy.py": {
@@ -668,7 +668,7 @@
     },
     "app/backend/tests/test_local_computer_attention.py": {
       "source": "backend/tests/test_local_computer_attention.py",
-      "sha256": "4ee40ed3fdc3501f7c13380dbf4af3f8fce286b3f9201a3a0461bc06cc2627a9",
+      "sha256": "142197e86875b34dc431b355368b11d6f05aa70582a6ef9aac6acd14a610abcc",
       "mode": 33188
     },
     "app/backend/tests/test_local_embedding.py": {
@@ -703,7 +703,7 @@
     },
     "app/backend/tests/test_native_control.py": {
       "source": "backend/tests/test_native_control.py",
-      "sha256": "d73b386f442a486e049fc6bec0d0706370822398081489f951fc7d7f01201370",
+      "sha256": "120dbfabce12706765f49d8c9165b42c894e76e298325858cb5c8d8a6824af38",
       "mode": 33188
     },
     "app/backend/tests/test_native_thinking.py": {
@@ -1103,7 +1103,7 @@
     },
     "app/frontend/e2e/46-desktop-pet.spec.ts": {
       "source": "frontend/e2e/46-desktop-pet.spec.ts",
-      "sha256": "69870218ef47ac42767e62fd27475f41bba0c8b1feed5998fe64442ef5e62fac",
+      "sha256": "4433c2c1674cf14f44bb285ec9868e7d0c9d4e558da0268b78a563763d9caddb",
       "mode": 33188
     },
     "app/frontend/e2e/47-sound-inline.spec.ts": {
@@ -2738,17 +2738,17 @@
     },
     "app/frontend/src/App.tsx": {
       "source": "frontend/src/App.tsx",
-      "sha256": "f7ea48fbc88a1c4ca17549eaea9f326c1114bc3b7cbd04fd7d6b9352121704ba",
+      "sha256": "15b82d1b18b0a57e253850d27f8f3679a23320bac1d3a52d763804ba498c217c",
       "mode": 33188
     },
     "app/frontend/src/api/schema.d.ts": {
       "source": "frontend/src/api/schema.d.ts",
-      "sha256": "762eba5039d29b0e7f1ac83f0ae53a5289b6e6674c3c7ce45b6c9f5645b35364",
+      "sha256": "38490c680653709ce8017ae9874cecc5eefc77cb03c69d6f53ec51558c1ba533",
       "mode": 33188
     },
     "app/frontend/src/api/schema.sha256": {
       "source": "frontend/src/api/schema.sha256",
-      "sha256": "44ca3bc6f06b796980a0a59eae609fb47c6429da1efd4edaba9afc9cc25d39ba",
+      "sha256": "ee0ecad4d45d13d8c42ca84fa3f6d03380480e70762f904b14bf12b576471f77",
       "mode": 33188
     },
     "app/frontend/src/api/schema.test.ts": {
@@ -2883,12 +2883,12 @@
     },
     "app/frontend/src/components/DesktopObservation.tsx": {
       "source": "frontend/src/components/DesktopObservation.tsx",
-      "sha256": "192dea68a5340e591dbaa007adf70c5308aa700867d1b84b44a923df4d4c8771",
+      "sha256": "f3708c991c9162f7c988fec51142b56129b4387557654465bf01597b0c9d4b8c",
       "mode": 33188
     },
     "app/frontend/src/components/DesktopPetControls.tsx": {
       "source": "frontend/src/components/DesktopPetControls.tsx",
-      "sha256": "4d7b1f7b9413082737e2a51eeb31a1e01e314fdedf0d5ba00c42bcc4d6bb0c4c",
+      "sha256": "d546ce17ffa9cd61227467e87da0608c117fe25805c7e2157b790cf81b3829ec",
       "mode": 33188
     },
     "app/frontend/src/components/DetailModal.test.tsx": {
@@ -2983,7 +2983,7 @@
     },
     "app/frontend/src/i18n/en.ts": {
       "source": "frontend/src/i18n/en.ts",
-      "sha256": "5d49f51dc009ba6e8ee94af46bca3b6c71f64804eee74b7e34933d6acffa8429",
+      "sha256": "5b876e6527b7e79a12b7ba5e947a0eef399326cefc53f685bf7e1dea11fd460b",
       "mode": 33188
     },
     "app/frontend/src/i18n/index.ts": {
@@ -2993,7 +2993,7 @@
     },
     "app/frontend/src/i18n/ja.ts": {
       "source": "frontend/src/i18n/ja.ts",
-      "sha256": "609f82553b32156b3e893137f13d999aa974351e5b4c7d7d311195125dbf515d",
+      "sha256": "aef52fd744e9d0728a73de0e3c9d8c6c59bfb4d4f4c586d5dd345fd4a546a705",
       "mode": 33188
     },
     "app/frontend/src/i18n/lang.test.ts": {
@@ -3003,7 +3003,7 @@
     },
     "app/frontend/src/i18n/zh.ts": {
       "source": "frontend/src/i18n/zh.ts",
-      "sha256": "3d7a1cfd582d3de2c1448eb42e9a357d789ae857bc7ed6ac60ae18be52d11bdc",
+      "sha256": "16e50ca5d5336af50aebad0b7a62c44b3fc9209087d1c35e92e40cba11ff9cfa",
       "mode": 33188
     },
     "app/frontend/src/lib/asr.ts": {
@@ -3328,7 +3328,7 @@
     },
     "app/frontend/src/pages/settings/NativeCompanion.tsx": {
       "source": "frontend/src/pages/settings/NativeCompanion.tsx",
-      "sha256": "cbef4f4ed84bbe7cad52535bad8f12d4c34c369af7114873365b046aa6ac16cb",
+      "sha256": "d54140e6ca87cdc6b730b57f59658d88c86ac053d9ba82a0fbde903bd529d48b",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/NativeWindowNotice.test.tsx": {
@@ -3468,7 +3468,7 @@
     },
     "app/frontend/src/services/computerClient.ts": {
       "source": "frontend/src/services/computerClient.ts",
-      "sha256": "9078213c7bdafbf50fc1b30b30fff9b39022a84096f4076462045a8012347c1d",
+      "sha256": "0eb12cd253468839290769e3d1c9ea1cc3721c8612f023e7954279214f91768d",
       "mode": 33188
     },
     "app/frontend/src/services/dataTransfer.test.ts": {
@@ -3483,7 +3483,7 @@
     },
     "app/frontend/src/services/desktopWindow.ts": {
       "source": "frontend/src/services/desktopWindow.ts",
-      "sha256": "6ef0d684ff605191483870d308f629ce3e26bc5571922431d9543855b67759c5",
+      "sha256": "fe703651d5a97a0af4d8b0cb5d1a82904e65494c7c91c2db724252fd27b748d7",
       "mode": 33188
     },
     "app/frontend/src/services/extClient.ts": {
@@ -3663,7 +3663,7 @@
     },
     "app/frontend/src/styles/desktop-pet.css": {
       "source": "frontend/src/styles/desktop-pet.css",
-      "sha256": "97375246169bc9b46871ad0b42b0efc3f89f580d2edd0605fbf4649e15feb90a",
+      "sha256": "d29068f89d8913f16b28991e1118f922b085bd24c53c81874678594db24e36c0",
       "mode": 33188
     },
     "app/frontend/src/styles/images.css": {
@@ -3928,7 +3928,7 @@
     },
     "app/plugin-host/resources/native-control/control.swift": {
       "source": "plugin-host/resources/native-control/control.swift",
-      "sha256": "7ddf6c99b93ca67c529ca08f2adae4b9726fcc9f1fc3c8242080d19844bff008",
+      "sha256": "87abd6066cb1a86f1d4142438dbd6d8ed68f49f518346ef7070371b507d945f2",
       "mode": 33188
     },
     "app/plugin-host/src/channels.mjs": {
@@ -3938,7 +3938,7 @@
     },
     "app/plugin-host/src/host.mjs": {
       "source": "plugin-host/src/host.mjs",
-      "sha256": "bd872df5f11e2047bb63ce425d81cd7b269b98889cb7e7d49246519bc1b898e9",
+      "sha256": "c65d8595cd5caec4302428435f0d845dd18785bcf95493af1334ce5cc69a7436",
       "mode": 33188
     },
     "app/plugin-host/src/index.mjs": {
@@ -3953,7 +3953,7 @@
     },
     "app/plugin-host/src/native-control.mjs": {
       "source": "plugin-host/src/native-control.mjs",
-      "sha256": "c11c80307fa3b2df3a99d212c7d7ad8eb8bc43f9bb802fe7ac820840629f247c",
+      "sha256": "da19e40317b1e8d4a4a04ace3e96189a03496bfd817485251dc33236be4cdf20",
       "mode": 33188
     },
     "app/plugin-host/src/plugin-manifest.mjs": {
@@ -4023,7 +4023,7 @@
     },
     "app/plugin-host/test/native-control.test.mjs": {
       "source": "plugin-host/test/native-control.test.mjs",
-      "sha256": "f58a680c056be942d6b777c04d2823440adecbbc09ed206f409f683037f3f745",
+      "sha256": "488cd48d7e05b47cf00e173f6745ac1300f4bdd8a18aeff9b6897995a0a995ea",
       "mode": 33188
     },
     "app/plugin-host/test/plugin-disposal.test.mjs": {

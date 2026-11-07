@@ -202,3 +202,35 @@ test("pet drag uses native cursor deltas, clamps to work area and ends cleanly",
   assert.throws(() => c.dragPet("unknown"));
   c.dispose();
 });
+
+test("utility panel preserves avatar position, closes at its moved location and resets for chat", () => {
+  const { controller: c, win } = fixture();
+  c.setMode("pet");
+  const pet = win.getBounds();
+  c.setPanel(true);
+  const expanded = win.getBounds();
+  assert.equal(expanded.width, pet.width + 292);
+  assert.equal(expanded.x + 292, pet.x);
+  assert.deepEqual(c.getState().panel, { width: 292, petWidth: 360 });
+  win.setBounds({ ...expanded, x: expanded.x - 20 });
+  c.setPanel(false);
+  assert.equal(win.getBounds().width, 360);
+  assert.equal(win.getBounds().x, pet.x - 20);
+  c.setPanel(true);
+  c.setMode("chat");
+  assert.equal(c.getState().panel, undefined);
+  assert.throws(() => c.setPanel("true"));
+});
+
+test("utility panel fits work area without changing avatar width", () => {
+  const { controller: c, win, area } = fixture();
+  c.setMode("pet");
+  Object.assign(area, { width: 600 });
+  win.setBounds({ x: 0, y: 0, width: 360, height: 520 });
+  c.setPanel(true);
+  assert.equal(win.getBounds().x, 0);
+  assert.equal(win.getBounds().width, 600);
+  assert.equal(c.getState().panel?.petWidth, 360);
+  c.setPanel(false);
+  assert.equal(win.getBounds().x, 240);
+});

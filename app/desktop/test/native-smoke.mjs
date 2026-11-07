@@ -274,14 +274,14 @@ c.commit()`,
   await expect(page.locator("html")).toHaveClass(/desktop-pet/);
   await expect(page.locator(".chat-page")).toHaveClass(/pet-dialog-collapsed/);
   await expect(page.locator(".dialog-drawer")).toBeHidden();
-  await page.getByRole("button", { name: "观察桌面", exact: true }).click();
+  await page.getByRole("button", { name: "操作应用", exact: true }).click();
   const observation = page.getByRole("dialog", {
-    name: "观察桌面",
+    name: "操作应用",
     exact: true,
   });
   await expect(observation).toBeVisible();
   await expect(
-    observation.getByRole("button", { name: "开始观察", exact: true }),
+    observation.getByRole("button", { name: "操作应用", exact: true }),
   ).toBeDisabled();
   await observation
     .getByRole("button", { name: "关闭配置", exact: true })

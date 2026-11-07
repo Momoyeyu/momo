@@ -92,6 +92,7 @@ else {
       window.once("closed", () => modes?.dispose());
       for (const [channel, count, handler] of [
         ["momo:get-window-state", 0, () => modes!.getState()],
+        ["momo:set-pet-panel", 1, (value: unknown) => modes!.setPanel(value)],
         ["momo:drag-pet-window", 1, (value: unknown) => modes!.dragPet(value)],
         [
           "momo:set-pet-hit-regions",

@@ -80,6 +80,33 @@ export class WindowModeController {
     this.changed(this.getState());
     return this.getState();
   }
+  /** Add a utility column beside the avatar, preserving its size and screen position. */
+  setPanel(open: unknown): WindowState {
+    if (typeof open !== "boolean") throw Error("Invalid panel state");
+    if (this.state.mode !== "pet") return this.getState();
+    if (open === Boolean(this.state.panel)) return this.getState();
+    this.dragOrigin = undefined;
+    const bounds = this.window.getBounds(),
+      area = this.workArea();
+    const petWidth = this.state.panel?.petWidth ?? bounds.width;
+    const width = open ? Math.min(292, Math.max(0, area.width - petWidth)) : 0;
+    const avatarX = bounds.x + (this.state.panel?.width ?? 0);
+    this.window.setBounds({
+      ...bounds,
+      width: petWidth + width,
+      x: Math.max(
+        area.x,
+        Math.min(avatarX - width, area.x + area.width - petWidth - width),
+      ),
+    });
+    if (open) this.state.panel = { width, petWidth };
+    else delete this.state.panel;
+    // Geometry changed: fail open until the renderer renews protected regions.
+    this.regions = [];
+    this.refreshPointer();
+    this.changed(this.getState());
+    return this.getState();
+  }
   setClickThrough(value: unknown): WindowState {
     if (typeof value !== "boolean" || (value && this.state.mode !== "pet"))
       throw Error("Invalid click-through state");

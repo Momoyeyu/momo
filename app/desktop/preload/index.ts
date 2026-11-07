@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { DesktopBridge } from "../contracts.ts";
 const bridge: DesktopBridge = Object.freeze({
+  setPetPanel: (open: boolean) =>
+    ipcRenderer.invoke("momo:set-pet-panel", open),
   dragPetWindow: (phase: "start" | "move" | "end") =>
     ipcRenderer.invoke("momo:drag-pet-window", phase),
   setPetHitRegions: (

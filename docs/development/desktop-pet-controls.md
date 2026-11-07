@@ -29,20 +29,12 @@ Inspected AIRI's website and local desktop source: `apps/stage-tamagotchi/src/ma
 - The computer-use driver's synthetic drag left Electron's native cursor unchanged. Actual drag distance therefore remains an installed/manual smoke item; browser event routing and host movement/clamping were verified separately.
 - Do not reinstall for each visual edit. Consolidate this source with pending observation/input fixes. 006/017 remain open until the installed candidate passes remaining smoke checks.
 
-## Installed candidate — 2026-11-07
+## Desktop scene actions (2026-11-07, revised)
 
-User requested a consolidated reinstall. Runtime `d010203` / shared source `c61d98e` was built with Forge on Mac Studio, verified with codesign, and installed at `/Applications/momo.app`. Frozen E5/ASR/resource smoke, 29 shell tests and isolated packaged native smoke passed (startup, same-renderer pet mode, expand dialogue, return to chat, backup restore, singleton and exit cleanup). Installed UI confirmed folded dialogue and the vertical rail, with existing chat data preserved. Real cursor drag distance and renewed screen/accessibility permissions remain unverified; user resumed interacting, so no permission reset was attempted. Evidence: `/tmp/momo-pet-candidate-d010203/evidence/`.
+Looking is a sense, not application control. With the desktop plugin and vision enabled, `screen_observe` captures the composited display containing the pointer on demand. No momo authorization dialog, window selection, or manual Start is required. The rail's screen icon pauses/resumes looking; a separate icon enables optional reactions. Missing macOS recording permission opens the system permission flow once, with explicit retry available; it never grants permission itself.
 
-The requested lower toolbar position is a subsequent shared-source change for the next consolidated install; it is not in this installed candidate. Permission guidance can request microphone access and open macOS privacy settings when needed, but the complete screen/accessibility guidance has not been added in this update.
+Clicking/typing remains a window-bound, separately approved activity. The application icon opens a compact scrollable utility panel beside the avatar. The transparent host widens on the left while keeping the avatar anchored. Browser/game are icon tabs, not more nested settings. QQ stays in the phone; plugin installation and persistent input grants remain in Settings.
 
-## Direct observation entry
+The rail sits just above the dialogue, with 28px centered buttons. Panel/list scroll containers have independent bounded height. Both participate in click-through protection. Closing the panel restores window width without stopping observation or changing input grants. Read-only capture cannot create an input version or binding; stopping input does not stop looking. Pause/Home/focus/plugin disable invalidate pending pixels. Web sharing retains the browser's mandatory source picker and uses its existing shared-frame path.
 
-Candidate `518e461` promotes shared `5f19eeb`: removes Chat's duplicate Extensions menu, places observation start/stop and target selection on the pet rail, and groups browser/game activity controls in that desktop context. Low-frequency behavior/input options remain disclosed inside the panel; plugin configuration and grants stay in Settings. Three-locale small-window observation flow and two plugin-library layout regressions passed. The lowered toolbar position is included in this candidate.
-
-## Direct observation installed — 2026-11-07
-
-Installed runtime `518e461` / shared `5f19eeb` at `/Applications/momo.app`. Signature verification, 29 shell tests, three-locale observation E2E, two plugin-layout regressions and isolated packaged native smoke passed. The packaged smoke now checks the observation entry, disabled start before target selection, and closing the panel. Actual installed UI was inspected: Chat has desktop/phone entries without the duplicate Extensions menu; pet rail opens observation directly, with secondary application controls and browser/game activities folded. The lower rail position is included.
-
-The installed app reports missing screen-recording permission. No TCC reset, repeated authorization or real target control was performed. Actual capture/input and native drag-distance acceptance remain pending in 006/017; this UI/install check does not mark them complete.
-
-Existing profile/configuration/saves were retained. Deleted the previous 1.9 GB app, obsolete pre-install profile copy and this task's 4.2 GB remote build tree; a scan of system/user Applications, temporary and Trash locations found only `/Applications/momo.app`. Kept one latest pre-install profile snapshot (no app bundle). Test evidence: `~/Documents/momo-backups/2026-11-07/observation-518e461/evidence/`.
+Validation: three-locale browser smoke at 360×520 and 320×440 plus the expanded side panel; independent observation/input, scrolling, panel/avatar separation, framing, folding and recovery. See the current installation report for packaged smoke evidence; browser fixtures alone do not prove real screen interpretation.
