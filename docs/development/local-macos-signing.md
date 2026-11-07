@@ -27,4 +27,8 @@
 
 首次签名若系统要求 codesign 使用私钥，由用户在钥匙串提示确认；不读取登录密码、不降低整个钥匙串的访问限制。不在开发机的签名脚本里设置全应用私钥访问。
 
+固定签名安装记录：runtime `af5ee40` / shared `2ff32cc` 已通过安装产物 smoke（临时 profile、Boot/Chat/Settings、桌宠及侧栏、备份恢复、进程退出），随后替换 `/Applications/momo.app` 并实际验证观察开关和返回标题。签名工具的策略兼容修复 `d8c210d` 使用 `security find-identity -v -p codesigning` 精确匹配证书指纹，避免 osx-sign 的通用策略查询漏掉仅受 code-signing 信任的证书；34 项 shell 测试和 CI 通过。
+
+新包与 helper 均绑定固定证书。安装后的 TCC 日志仍指向旧 ad-hoc requirement，确认首次迁移确有必要；已退出应用并通过 `tccutil reset ScreenCapture dev.momo.electron`、`tccutil reset Accessibility dev.momo.electron` 仅撤销 momo 的旧记录。新的系统授权正在等待用户确认，尚未宣称跨更新继承通过。旧安装包及远端构建目录已清理，只保留当前安装和最新 pre-install profile。
+
 参考：[Apple TN3127](https://developer.apple.com/documentation/technotes/tn3127-inside-code-signing-requirements)、[Apple TN2206](https://developer.apple.com/library/archive/technotes/tn2206/)。
