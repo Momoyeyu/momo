@@ -378,16 +378,27 @@ c.commit()`,
   await expect(page.locator(".dialog-drawer")).toBeVisible();
   await page.getByRole("button", { name: "半身", exact: true }).click();
   await page.getByRole("button", { name: "返回 chat", exact: true }).click();
-  await expect.poll(async()=>{
-    const snapshot=await (await api("/api/state")).json();
-    return snapshot.settings.general.petCloseUp;
-  }).toBe(true);
+  await expect
+    .poll(async () => {
+      const snapshot = await (await api("/api/state")).json();
+      return snapshot.settings.general.petCloseUp;
+    })
+    .toBe(true);
   await page.reload();
-  await expect(page.getByRole("button", { name: "进入桌面", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "进入桌面", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "进入桌面", exact: true }).click();
-  await expect(page.locator(".desktop-pet-controls").getByRole("button", { name: "全身", exact: true })).toBeVisible();
+  await expect(
+    page
+      .locator(".desktop-pet-controls")
+      .getByRole("button", { name: "全身", exact: true }),
+  ).toBeVisible();
   await expect(page.locator(".dialog-drawer")).toBeVisible();
-  await page.screenshot({path:path.join(evidence,"desktop-preferences-restored.png"),omitBackground:true});
+  await page.screenshot({
+    path: path.join(evidence, "desktop-preferences-restored.png"),
+    omitBackground: true,
+  });
   await page.getByRole("button", { name: "返回 chat", exact: true }).click();
   await page.locator(".input-row input").fill("native smoke");
   await expect(page.locator(".input-row input")).toHaveValue("native smoke");
