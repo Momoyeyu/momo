@@ -39,10 +39,10 @@ The rail sits just above the dialogue, with 28px centered buttons. Panel/list sc
 
 Validation: three-locale browser smoke at 360×520 and 320×440 plus the expanded side panel; independent observation/input, scrolling, panel/avatar separation, framing, folding and recovery. See the current installation report for packaged smoke evidence; browser fixtures alone do not prove real screen interpretation.
 
-## Installed revision 5275cde / shared 14c7ee8
+## Switch and level persistence (2026-11-08)
 
-- Consolidated macOS package installed at `/Applications/momo.app`; launch verified at the title screen. User profile retained with a pre-install snapshot.
-- Backend: 806 passed / 3 skipped. Frontend: 252 passed. Shell: 31 passed. Three-language desktop pet browser smoke passed; screenshots inspected.
-- Packaged smoke passed locally with disposable data: startup, boot, utility-panel opening/closing, folded/expanded dialogue, stable Live2D canvas and lease, transparent layout, return-to-chat, backup/restore and owned-process shutdown. No user recording grant or model screenshot upload was exercised by this smoke.
-- Remote host compiled and packaged the candidate. Its GUI smoke had no renderer target; the same signed package passed local smoke. The Swift build used a task-local VFS overlay to mask a duplicate SwiftBridging module map in the remote toolchain, without modifying system SDK files.
-- Looking never creates a momo application grant. Real OS recording/input acceptance and the remaining 006–008/017 end-to-end scope are distinct from this UI/package regression; these plans are not marked done by this patch.
+- General settings now retain chat/pet framing separately, pet dialog folding, TTS mute, microphone intent, mouse pass-through, and explicit phone visibility. Automatic phone reveal or temporary hiding does not replace the user's choice. Live2D settings preview framing remains temporary.
+- Native/browser interaction and Minecraft chat/move choices are saved as the next request's defaults; they do not grant access, attach a target, or resume an operation.
+- Proactive reactions, screen-observation preference and focus persist in database metadata, including backup/restore. Returning to title, lease expiry or process restart still stops activity and discards captured pixels; it does not reset the user's switches.
+- General preferences use a synchronous local pending-field journal before the debounced API save. Only unacknowledged fields replay on restart; acknowledged fields cannot override a later restore. Failed saves retain the pending choices. API credentials are not journaled.
+- Window movement, open utility dialogs, selected application targets and pending approvals remain session state. Microphone capture only resumes in active chat after Boot; mouse pass-through only resumes in pet mode with toolbar hit-region support.

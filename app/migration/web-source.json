@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "92484975e57dd11807a889251fbdab6be85de263",
+  "revision": "54f6f266da834ece762bb53f55c0d60a74b824b2",
   "checks": [
     "node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.json"
   ],
@@ -68,7 +68,7 @@
     },
     "app/backend/app/api/computer.py": {
       "source": "backend/app/api/computer.py",
-      "sha256": "3bb094decfd20adfbac251963c2b3fe2f856ab9b2d7c14d5de48a5b865171065",
+      "sha256": "0747f93a454543495d445317a5313b5e3bb6081c00822233a4b3cb634a40c33f",
       "mode": 33188
     },
     "app/backend/app/api/extensions.py": {
@@ -293,7 +293,7 @@
     },
     "app/backend/app/services/computer.py": {
       "source": "backend/app/services/computer.py",
-      "sha256": "bbfc4f6b2b29df65b1bdf5a587adcf5ada0b24a2e539c0bc5c0a98d2e4df2598",
+      "sha256": "dbaa1371c5d888367a299a69074a3e5925daf37bc2f19faf630984f6f3116e50",
       "mode": 33188
     },
     "app/backend/app/services/computer_tools.py": {
@@ -308,7 +308,7 @@
     },
     "app/backend/app/services/coordinator.py": {
       "source": "backend/app/services/coordinator.py",
-      "sha256": "841accd875df9489b5b266a4a80197d566d48b978eb0fe236bf649882134f9ca",
+      "sha256": "12bb66479473512866a53e9fb9b7a540f6be9032d9afa08b9dc198258675ca3f",
       "mode": 33188
     },
     "app/backend/app/services/dialogue_input.py": {
@@ -583,7 +583,7 @@
     },
     "app/backend/tests/test_computer.py": {
       "source": "backend/tests/test_computer.py",
-      "sha256": "0d934c1b29f51f2957058d824bbe6f88ecc7b48270a94b03f90962390b047bda",
+      "sha256": "9de7e82ce8f45bea8b07876d0c723806b436db80c6a587fc3308d9f1a895c943",
       "mode": 33188
     },
     "app/backend/tests/test_computer_tools.py": {
@@ -613,7 +613,7 @@
     },
     "app/backend/tests/test_coordinator.py": {
       "source": "backend/tests/test_coordinator.py",
-      "sha256": "f9fa3b68682211e773f5b254a980731ffa09eb8655963dfdc152632446eac286",
+      "sha256": "b0029748af26bd2dacc134078f0a47ba85a74f5e49ae5aeb98f76686084ef8ca",
       "mode": 33188
     },
     "app/backend/tests/test_coordinator_edges.py": {
@@ -843,7 +843,7 @@
     },
     "app/backend/tests/test_social_attention.py": {
       "source": "backend/tests/test_social_attention.py",
-      "sha256": "504141c0bc34d577686bf2775aa1e054e788f3532d2f17bf78508595eb56a875",
+      "sha256": "c2ba78dfa75f0f368afcffe920bc5a067e773e06a49ece6ce971312741303e29",
       "mode": 33188
     },
     "app/backend/tests/test_social_media.py": {
@@ -1103,7 +1103,7 @@
     },
     "app/frontend/e2e/46-desktop-pet.spec.ts": {
       "source": "frontend/e2e/46-desktop-pet.spec.ts",
-      "sha256": "6b53fabc204f430912e3ef047bcff21a515fe3db9840f98d6b4dc8a124c93435",
+      "sha256": "95bb4eebdd3935881d59b8ad40810b43c9177329611e728b802f009257e2d369",
       "mode": 33188
     },
     "app/frontend/e2e/47-sound-inline.spec.ts": {
@@ -2738,7 +2738,7 @@
     },
     "app/frontend/src/App.tsx": {
       "source": "frontend/src/App.tsx",
-      "sha256": "15b82d1b18b0a57e253850d27f8f3679a23320bac1d3a52d763804ba498c217c",
+      "sha256": "e2b75ef48519df1e373ffaa6dca4954e63a2064c5ce1e855e1e8266d19cf7189",
       "mode": 33188
     },
     "app/frontend/src/api/schema.d.ts": {
@@ -2818,12 +2818,12 @@
     },
     "app/frontend/src/chat/chatEngine.test.ts": {
       "source": "frontend/src/chat/chatEngine.test.ts",
-      "sha256": "0f2b76ab252a403eebfbc9273a4708501dec23670d7fc9c849937166b3a98998",
+      "sha256": "48644716cbea8b64ae4671995380c77f4227b54066a28c26809c76cfe7426e9b",
       "mode": 33188
     },
     "app/frontend/src/chat/chatEngine.ts": {
       "source": "frontend/src/chat/chatEngine.ts",
-      "sha256": "bef4ec0e43c731d40f80c6fde73f0aca9b3edfed5700f385d75e3f8e4f43f30b",
+      "sha256": "b0a5291558c1d6698f206071e321bb97b9c1b6e0dda748d1bcab4da0c88ed970",
       "mode": 33188
     },
     "app/frontend/src/chat/cueScheduler.test.ts": {
@@ -2938,7 +2938,7 @@
     },
     "app/frontend/src/components/PhoneSurface.tsx": {
       "source": "frontend/src/components/PhoneSurface.tsx",
-      "sha256": "3f3742676b82475a6cc642d874fa408e156e2b4af75953c30b9e8fea38f173cb",
+      "sha256": "50343c719c7199c64b6ffc331dcf4222f75f07cea26d6c1ebf7c20de98dff7b4",
       "mode": 33188
     },
     "app/frontend/src/components/ProactiveResponseToggle.tsx": {
@@ -3118,12 +3118,12 @@
     },
     "app/frontend/src/lib/store.transfer.test.ts": {
       "source": "frontend/src/lib/store.transfer.test.ts",
-      "sha256": "d650c9feb3c9c07c5fafb5c791642c4cd421ed239d2bc9b977d364db54370838",
+      "sha256": "5e6689d5fe29c6ca3edec800f4726b82cfc4a3b923c94d2dd361bc119a17201b",
       "mode": 33188
     },
     "app/frontend/src/lib/store.ts": {
       "source": "frontend/src/lib/store.ts",
-      "sha256": "041a4ac8bd44c26fbf98e30b84aaa338dd11029eef9fbe27ac0ff3fdd8ab3d20",
+      "sha256": "2978e4532445567aa09c9bb857260fe3cd2d0a646653fd8554824b76d4c668af",
       "mode": 33188
     },
     "app/frontend/src/lib/thinking.ts": {
@@ -3133,7 +3133,7 @@
     },
     "app/frontend/src/lib/types.ts": {
       "source": "frontend/src/lib/types.ts",
-      "sha256": "95a019c838ced088c1378551d1587b84ffa6813e1dd83fce547a58e59f178ea0",
+      "sha256": "a51abd29023e88ba6b7b1c5df0e5175211c69dff680013d8c677b0e6c71064d9",
       "mode": 33188
     },
     "app/frontend/src/live2d/RoomBackground.tsx": {
@@ -3243,7 +3243,7 @@
     },
     "app/frontend/src/pages/Chat.tsx": {
       "source": "frontend/src/pages/Chat.tsx",
-      "sha256": "c578a5d51f8cc4a193ac1cae915b758d9a69f46103c0c843fedcb78973b2f98a",
+      "sha256": "f0ba79e00df8ab4e6061b1a86585fd9f04980baa647524c149a0fcc37e0f51fe",
       "mode": 33188
     },
     "app/frontend/src/pages/ExtensionActivities.tsx": {
@@ -3318,12 +3318,12 @@
     },
     "app/frontend/src/pages/settings/GeneralTab.tsx": {
       "source": "frontend/src/pages/settings/GeneralTab.tsx",
-      "sha256": "d803fb2f9b2f2dc56644fe5ee1a37669c79847648374f73afcc5000da63166f8",
+      "sha256": "0641f8d3584ac03f616abb9771741088c076f3560db3e7855783defe5a399b6a",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/MinecraftCompanion.tsx": {
       "source": "frontend/src/pages/settings/MinecraftCompanion.tsx",
-      "sha256": "556a72cb3a9a92a34977e3a78dc1843d4d01e347af3d1f9f1ec63c2613b845d3",
+      "sha256": "0d32734806105badddb72148d47450afc2fc71d7c93dc7f3e9e2c908bfe0f3b7",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/ModelsTab.tsx": {
@@ -3333,7 +3333,7 @@
     },
     "app/frontend/src/pages/settings/NativeCompanion.tsx": {
       "source": "frontend/src/pages/settings/NativeCompanion.tsx",
-      "sha256": "d54140e6ca87cdc6b730b57f59658d88c86ac053d9ba82a0fbde903bd529d48b",
+      "sha256": "e1c9bc18651a1cd977228a79cd278ff67b550a261976dd9bae11184bd8e0ec4a",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/NativeWindowNotice.test.tsx": {
@@ -3488,7 +3488,7 @@
     },
     "app/frontend/src/services/desktopWindow.ts": {
       "source": "frontend/src/services/desktopWindow.ts",
-      "sha256": "fe703651d5a97a0af4d8b0cb5d1a82904e65494c7c91c2db724252fd27b748d7",
+      "sha256": "c492d4fe81b9a47a88b5718a6257c9609a2d98e8c5d0f8d217f4cef0b4988b1d",
       "mode": 33188
     },
     "app/frontend/src/services/extClient.ts": {
