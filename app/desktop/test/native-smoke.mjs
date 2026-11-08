@@ -267,11 +267,17 @@ c.commit()`,
       height: outerHeight,
     }));
   const originalWindow = await windowBounds();
+  const proactive = page.getByRole("button", { name: "主动回应", exact: true });
+  await expect(proactive).toBeVisible();
+  await expect(proactive).toHaveAttribute("aria-pressed", "false");
+  const proactiveShape = await proactive.locator("svg").innerHTML();
   await page.getByRole("button", { name: "进入桌面", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => window.momoDesktop.getWindowState()))
     .toEqual({ mode: "pet", clickThrough: false });
   await expect(page.locator("html")).toHaveClass(/desktop-pet/);
+  await expect(proactive).toBeVisible();
+  assert.equal(await proactive.locator("svg").innerHTML(), proactiveShape);
   await expect(page.locator(".chat-page")).toHaveClass(/pet-dialog-collapsed/);
   await expect(page.locator(".dialog-drawer")).toBeHidden();
   await page.getByRole("button", { name: "操作应用", exact: true }).click();

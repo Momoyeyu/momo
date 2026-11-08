@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "2ff32cc0b71472f31263167a5b030cdc6527d616",
+  "revision": "92484975e57dd11807a889251fbdab6be85de263",
   "checks": [
     "node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.json"
   ],
@@ -1103,7 +1103,7 @@
     },
     "app/frontend/e2e/46-desktop-pet.spec.ts": {
       "source": "frontend/e2e/46-desktop-pet.spec.ts",
-      "sha256": "a8e5914b6cb822b0abfa851e62806c2d73ef03798da9f18e1c3773a585fb7763",
+      "sha256": "6b53fabc204f430912e3ef047bcff21a515fe3db9840f98d6b4dc8a124c93435",
       "mode": 33188
     },
     "app/frontend/e2e/47-sound-inline.spec.ts": {
@@ -2883,7 +2883,7 @@
     },
     "app/frontend/src/components/DesktopObservation.tsx": {
       "source": "frontend/src/components/DesktopObservation.tsx",
-      "sha256": "a958a460f7891aaab85edac788e518a8b10bc845868691bdb96daf42847978c1",
+      "sha256": "96fb1b7dd3b70c3a96241ff25474961ed645034adb554e4bb0e103ecf035e10d",
       "mode": 33188
     },
     "app/frontend/src/components/DesktopPetControls.tsx": {
@@ -2939,6 +2939,11 @@
     "app/frontend/src/components/PhoneSurface.tsx": {
       "source": "frontend/src/components/PhoneSurface.tsx",
       "sha256": "3f3742676b82475a6cc642d874fa408e156e2b4af75953c30b9e8fea38f173cb",
+      "mode": 33188
+    },
+    "app/frontend/src/components/ProactiveResponseToggle.tsx": {
+      "source": "frontend/src/components/ProactiveResponseToggle.tsx",
+      "sha256": "71b2541d2b23d8234bbd1650fab8380483640635d73e8f34f2c965bd728709bc",
       "mode": 33188
     },
     "app/frontend/src/components/ResourcePreview.tsx": {
@@ -3238,7 +3243,7 @@
     },
     "app/frontend/src/pages/Chat.tsx": {
       "source": "frontend/src/pages/Chat.tsx",
-      "sha256": "8fff4e2ad4b9df9b56d08b10fef4b65684c15efbb85e8821969c08200bf7c26a",
+      "sha256": "c578a5d51f8cc4a193ac1cae915b758d9a69f46103c0c843fedcb78973b2f98a",
       "mode": 33188
     },
     "app/frontend/src/pages/ExtensionActivities.tsx": {
@@ -3468,7 +3473,7 @@
     },
     "app/frontend/src/services/computerClient.ts": {
       "source": "frontend/src/services/computerClient.ts",
-      "sha256": "0eb12cd253468839290769e3d1c9ea1cc3721c8612f023e7954279214f91768d",
+      "sha256": "981023f28526f1ac3a5bd23e308cb19a8958bdb15005958d531859d7be5d7c33",
       "mode": 33188
     },
     "app/frontend/src/services/dataTransfer.test.ts": {
@@ -3626,6 +3631,11 @@
       "sha256": "03699b89d049d7e1a963b8b441b76ebb84aa571b94327a81a01d1247fb39117a",
       "mode": 33188
     },
+    "app/frontend/src/services/useComputerReactions.ts": {
+      "source": "frontend/src/services/useComputerReactions.ts",
+      "sha256": "8328fb1c85e0c0a73867b60a7342e8965980118ea45e4b5ad8c1de180382ba04",
+      "mode": 33188
+    },
     "app/frontend/src/services/visionClient.ts": {
       "source": "frontend/src/services/visionClient.ts",
       "sha256": "fc4f6494ffb1dad5c6e7edc7f136abf0182cfed1fa893fa1d4d33cf4d571220f",
@@ -3648,7 +3658,7 @@
     },
     "app/frontend/src/styles/chat.css": {
       "source": "frontend/src/styles/chat.css",
-      "sha256": "a1bf09b6ce9dc3621c94e695c2bcd0ed9a731d9e68da0b75053d2137cbbd88da",
+      "sha256": "865986b16f2f1a966ea3f2ce8ea4e144f5c7d1f09918a1cd3ca2671c512f1e25",
       "mode": 33188
     },
     "app/frontend/src/styles/controls.css": {
@@ -3823,7 +3833,7 @@
     },
     "app/frontend/src/ui/icons.ts": {
       "source": "frontend/src/ui/icons.ts",
-      "sha256": "1f76cfd2135f26d6e8bb91b53870a284dad733fb44d9dcb6451745d592aba65c",
+      "sha256": "a2223e2008e8d2af651c12f6cbd854af5e40f1b7180d513a10a3e4f2a60ffa26",
       "mode": 33188
     },
     "app/frontend/tsconfig.json": {
