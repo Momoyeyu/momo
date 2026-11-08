@@ -46,3 +46,11 @@ Validation: three-locale browser smoke at 360×520 and 320×440 plus the expande
 - Proactive reactions, screen-observation preference and focus persist in database metadata, including backup/restore. Returning to title, lease expiry or process restart still stops activity and discards captured pixels; it does not reset the user's switches.
 - General preferences use a synchronous local pending-field journal before the debounced API save. Only unacknowledged fields replay on restart; acknowledged fields cannot override a later restore. Failed saves retain the pending choices. API credentials are not journaled.
 - Window movement, open utility dialogs, selected application targets and pending approvals remain session state. Microphone capture only resumes in active chat after Boot; mouse pass-through only resumes in pet mode with toolbar hit-region support.
+
+### Installed verification (2026-11-09)
+
+Installed runtime `5141ea0`, shared source `54f6f26`; native smoke formatting-only follow-up `19563e5`. Same local signing identity and designated requirement as the preceding installation; no TCC reset or permission dialogs. All 255 frontend tests, 94 targeted backend tests, 34 shell tests, three-language browser regression and packaged native smoke passed. Both repository CI runs passed.
+
+The actual `/Applications/momo.app` was launched, switched to half-body with the dialog expanded, fully quit, reopened, Booted and returned to pet mode: half-body and expanded dialog were both retained. The restored layout was visually checked. No screenshot transmission or real application input was performed for this preference check.
+
+Evidence: `~/Documents/momo-backups/2026-11-09/preferences-5141ea0/`. Only the latest installed app remains; the previous installed bundle, staging copy and this task's remote build directory were removed. The latest pre-update data snapshot remains at `/tmp/momo-preinstall-preferences-5141ea0/profile`.
