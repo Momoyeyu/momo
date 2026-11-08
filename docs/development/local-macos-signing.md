@@ -38,3 +38,9 @@
 首次授权迁移已完成；跨版本 TCC 继承仍留到下一次正常更新验证，不为验签重复替换用户安装。后续禁止重置这些有效授权，除非新的实际证据证明需要恢复。
 
 参考：[Apple TN3127](https://developer.apple.com/documentation/technotes/tn3127-inside-code-signing-requirements)、[Apple TN2206](https://developer.apple.com/library/archive/technotes/tn2206/)。
+
+## 2026-11-08 固定身份更新继承验证
+
+安装 runtime `3dcccac` / shared `9248497`：主动回应使用独立气泡星芒图标，chat 与桌宠共用一层开关和单个观察调度，TTS 喇叭独立。三语界面回归、25 项对话引擎、34 项桌面壳测试、两仓 CI 和安装产物 smoke 通过；实际安装界面已核对两种模式的入口、对齐和返回标题。
+
+候选与旧安装版的 designated requirement 校验通过（`inheritedIdentity=true`），安装后没有重置或重新添加 TCC。22:26:26 的已安装 helper 请求链 `84904.1`（ScreenCapture）、`84904.2`（Accessibility）归属 `dev.momo.electron`，均返回 `authValue=2`、`error=(null)`，窗口发现正常。这次实际更新已验证两项系统授权继承；没有执行真实截图上传或应用输入。安装完成后保留唯一 `/Applications/momo.app` 和最新 pre-install profile，清理旧包及本轮远程构建目录。
