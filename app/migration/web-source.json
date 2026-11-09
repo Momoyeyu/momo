@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "ca1d1298ece47721dc69e3eed4fc51d0c61050aa",
+  "revision": "805c189bebd4cbb12868c261aef57d698353847e",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -786,7 +786,7 @@
     },
     "app/backend/tests/test_qq_runtime_api.py": {
       "source": "backend/tests/test_qq_runtime_api.py",
-      "sha256": "69f7b19d1d869b217d797e95b469155e6332e8ed754d1f6ededcb97696c75397",
+      "sha256": "e3c16bf9a59bb6c5697e9a7d042ff05a8108a8e080eb672a76e98c269c5852a4",
       "mode": 33188
     },
     "app/backend/tests/test_qq_runtime_startup.py": {
