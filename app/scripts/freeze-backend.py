@@ -6,6 +6,7 @@ No user data or source tree is copied to the installed resource directory.
 from pathlib import Path
 import subprocess
 import shutil
+import sys
 
 app = Path(__file__).resolve().parents[1]
 backend = app / 'backend'
@@ -25,6 +26,6 @@ if dest.exists():
     shutil.rmtree(dest)
 (app / 'resources/momo-backend').rename(dest)
 if __import__('os').name == 'nt':
-    subprocess.run([str(python), str(app / 'scripts/prepare-windows.py')], check=True)
+    subprocess.run([str(python), str(app / 'scripts/prepare-windows.py'), *sys.argv[1:]], check=True)
     subprocess.run([str(python), str(app / 'scripts/audit-windows.py'), str(app / 'resources')], check=True)
 print(f'Frozen backend: {dest}')

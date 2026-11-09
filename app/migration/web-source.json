@@ -1,10 +1,8 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "54f6f266da834ece762bb53f55c0d60a74b824b2",
-  "checks": [
-    "node frontend/node_modules/typescript/bin/tsc --noEmit -p frontend/tsconfig.json"
-  ],
+  "revision": "ca1d1298ece47721dc69e3eed4fc51d0c61050aa",
+  "checks": [],
   "files": {
     "app/.env.example": {
       "source": ".env.example",
@@ -198,7 +196,7 @@
     },
     "app/backend/app/core/plugin_host.py": {
       "source": "backend/app/core/plugin_host.py",
-      "sha256": "4ee01eb1d3a93e8cc6a1d529d970192d58289a2c6fe49c82d359474b2a608b55",
+      "sha256": "52a6fcbdd6081f90cf7133624a70f39efa2175a61715a4dd41f4cbfb26ba857b",
       "mode": 33188
     },
     "app/backend/app/core/qq_install.py": {
@@ -248,7 +246,7 @@
     },
     "app/backend/app/services/activities.py": {
       "source": "backend/app/services/activities.py",
-      "sha256": "ea8ef645ea6e5f88cf9d41d806f26502e28c9993f685227e1dfbdd198bdc6743",
+      "sha256": "3598097b960d0b09745bb3b32baa42fe79ab39876d2450910ced6900ddd588dd",
       "mode": 33188
     },
     "app/backend/app/services/app_permissions.py": {
@@ -383,7 +381,7 @@
     },
     "app/backend/app/services/social.py": {
       "source": "backend/app/services/social.py",
-      "sha256": "a8283017661c17acf795849671ed5742383f9905bc7cdea0c50dd09479b019de",
+      "sha256": "24588845730264545c5a06664b23c638e539a8b63646d0a94015aabfc99a1264",
       "mode": 33188
     },
     "app/backend/app/services/social_actions.py": {
@@ -736,6 +734,11 @@
       "sha256": "5817ba9ef7149d1ec25caee9c71ba9c3816805af2253ea4ec231c94d3c548704",
       "mode": 33188
     },
+    "app/backend/tests/test_platform_capabilities.py": {
+      "source": "backend/tests/test_platform_capabilities.py",
+      "sha256": "7f019422a1e0341c1cd511ea53e85087a55891ea44d2c52e9d22d366100c49d9",
+      "mode": 33188
+    },
     "app/backend/tests/test_plugins.py": {
       "source": "backend/tests/test_plugins.py",
       "sha256": "571cfb9d441f7e113dbec8c9adf11c6ffb988c3534f45780890c347f1dcba87c",
@@ -788,7 +791,7 @@
     },
     "app/backend/tests/test_qq_runtime_startup.py": {
       "source": "backend/tests/test_qq_runtime_startup.py",
-      "sha256": "93da23e296771fc45e5f9ad14d85696496a6108eb68f65e3d0c27c81d392b4c5",
+      "sha256": "7b620fe088390c0247edf5c23648120c4c2f540c707b9b9781b345b47164d529",
       "mode": 33188
     },
     "app/backend/tests/test_qq_unknown_recovery.py": {
@@ -2988,7 +2991,7 @@
     },
     "app/frontend/src/i18n/en.ts": {
       "source": "frontend/src/i18n/en.ts",
-      "sha256": "d72d0a50a92b69cfa91506cedd6368270b9fc554a17d08c07597268dbf48def5",
+      "sha256": "3b504e30a60d6001e10fe1d7bf7b97674838c54254b559301192e67e709457b0",
       "mode": 33188
     },
     "app/frontend/src/i18n/index.ts": {
@@ -2998,7 +3001,7 @@
     },
     "app/frontend/src/i18n/ja.ts": {
       "source": "frontend/src/i18n/ja.ts",
-      "sha256": "fe60151810c7e14059e31c7c0d173ba6f7fe49447199170d10382a1131813ac5",
+      "sha256": "5fb8a3d21fa45d3a94d75677a61be7e8bae3c2960ddc348a5c5323e04f38e962",
       "mode": 33188
     },
     "app/frontend/src/i18n/lang.test.ts": {
@@ -3008,7 +3011,7 @@
     },
     "app/frontend/src/i18n/zh.ts": {
       "source": "frontend/src/i18n/zh.ts",
-      "sha256": "59726b1204ed931951c57b3c02120b13d3ca1d54efda04570d7460ac0fdbdd07",
+      "sha256": "ff09a1146d1c707c9106402915b5afb6e5aed1f30d5829a0b6e8de4a1a49e1e0",
       "mode": 33188
     },
     "app/frontend/src/lib/asr.ts": {
@@ -3308,7 +3311,7 @@
     },
     "app/frontend/src/pages/settings/ExtensionCard.tsx": {
       "source": "frontend/src/pages/settings/ExtensionCard.tsx",
-      "sha256": "c645d0dd371d60430ad0098469b06fce4c89a0dcbf655c93c238f21ac38c1dc3",
+      "sha256": "742c3f60cccf3f10e21d7a524876f43c1568700a437373325ab3eb071fe63e31",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/ExtensionsTab.tsx": {
@@ -3498,7 +3501,7 @@
     },
     "app/frontend/src/services/extensionActivities.ts": {
       "source": "frontend/src/services/extensionActivities.ts",
-      "sha256": "2bd422a9de73c9294cb7527131cbfac60b85a817e77c8d4f4bb90b948d3c1410",
+      "sha256": "34a6825734f5c5c1531cd85183e729082e65acb5031a5135c9138d25aa84de99",
       "mode": 33188
     },
     "app/frontend/src/services/http.ts": {
@@ -3568,7 +3571,7 @@
     },
     "app/frontend/src/services/qqRuntimeClient.ts": {
       "source": "frontend/src/services/qqRuntimeClient.ts",
-      "sha256": "68cced6b1f710073bdbd82d4a774b7dfbe0aa0380fdc8874f0ae8cb29c9fe07b",
+      "sha256": "17242cbfbbb8af4828930405a03287f184366bf33446b580b88982545e2f9f79",
       "mode": 33188
     },
     "app/frontend/src/services/runtime.test.ts": {

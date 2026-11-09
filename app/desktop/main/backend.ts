@@ -1,4 +1,8 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import {
+  execFileSync,
+  spawn,
+  type ChildProcessWithoutNullStreams,
+} from "node:child_process";
 import { randomBytes } from "node:crypto";
 import type { RuntimeConnection } from "../contracts.ts";
 
@@ -162,8 +166,15 @@ export class BackendProcess {
     clearTimeout(timer);
     if (child.pid) {
       try {
-        if (process.platform === "win32") child.kill("SIGKILL");
-        else process.kill(-child.pid, "SIGKILL");
+        if (process.platform === "win32") {
+          // Only the owned PID tree; never terminate unrelated processes by name.
+          if (child.exitCode === null && child.signalCode === null)
+            execFileSync(
+              "taskkill.exe",
+              ["/PID", String(child.pid), "/T", "/F"],
+              { stdio: "ignore", windowsHide: true },
+            );
+        } else process.kill(-child.pid, "SIGKILL");
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
       }

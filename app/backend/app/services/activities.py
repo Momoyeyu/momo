@@ -1,12 +1,21 @@
 """Persistent availability, separate from temporary activity permissions."""
 import json
 import os
+import sys
 import tempfile
 import threading
 from ..core import state
 
 IDS = ('computer', 'browser', 'minecraft')
 _lock = threading.RLock()
+
+
+def supported(key):
+    if not os.environ.get("MOMO_DESKTOP_TOKEN"):
+        return True
+    if key == "minecraft" and sys.platform == "win32":
+        return False
+    return not (sys.platform != "darwin" and key in ("computer", "browser"))
 
 
 def snapshot():
@@ -16,7 +25,8 @@ def snapshot():
         except (OSError, ValueError):
             data = {}
         if not isinstance(data, dict): data = {}
-        return {'enabled': {key: data.get(key) is True for key in IDS}}
+        return {'enabled': {key: data.get(key) is True and supported(key) for key in IDS},
+                'supported': {key: supported(key) for key in IDS}}
 
 
 def require_enabled(key):
@@ -27,6 +37,8 @@ def require_enabled(key):
 def set_enabled(key, enabled):
     if key not in IDS or type(enabled) is not bool:
         raise ValueError('Invalid activity plugin')
+    if enabled and not supported(key):
+        raise ValueError('Activity is not supported on this platform')
     with _lock:
         data = snapshot()['enabled']
         data[key] = enabled

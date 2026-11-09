@@ -13,6 +13,26 @@ if sys.platform != 'win32':
 app = Path(__file__).resolve().parents[1]
 backend = app / 'resources/backend'
 internal = backend / '_internal'
+# Offline rebuilds may reuse a previously audited redistributable closure only.
+if len(sys.argv) == 3 and sys.argv[1] == '--audited-runtime':
+    source = Path(sys.argv[2])
+    manifest = json.loads((source / 'licenses/windows-runtime-provenance.json').read_text())
+    licenses = backend / 'licenses'
+    licenses.mkdir(exist_ok=True)
+    for record in manifest['files']:
+        name = record['name']
+        if Path(name).name != name or not name.lower().endswith('.dll'):
+            raise RuntimeError('Invalid redistributable filename')
+        dll = source / '_internal' / name
+        if hashlib.sha256(dll.read_bytes()).hexdigest() != record['sha256']:
+            raise RuntimeError('Audited redistributable checksum mismatch')
+        shutil.copy2(dll, internal / name)
+        shutil.copy2(dll, backend / name)
+    shutil.copy2(Path(sys.base_prefix) / 'LICENSE.txt', licenses / 'Python-LICENSE.txt')
+    for name in ['Visual-Studio-REDIST.txt', 'windows-runtime-provenance.json']:
+        shutil.copy2(source / 'licenses' / name, licenses / name)
+    print('Staged hash-verified audited Microsoft redistributables')
+    raise SystemExit(0)
 vswhere = Path(os.environ['ProgramFiles(x86)']) / 'Microsoft Visual Studio/Installer/vswhere.exe'
 installation = Path(subprocess.check_output([str(vswhere), '-latest', '-products', '*',
     '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64',

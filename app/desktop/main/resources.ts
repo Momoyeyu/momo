@@ -21,8 +21,12 @@ export function resourcePaths(root: string) {
       root,
       "plugin-host/resources/minecraft/momo-fabric-companion-0.1.0.jar",
     ),
-    path.join(root, "helpers/momo-native-control"),
-    path.join(root, "qq/manifest.json"),
+    ...(process.platform === "darwin"
+      ? [
+          path.join(root, "helpers/momo-native-control"),
+          path.join(root, "qq/manifest.json"),
+        ]
+      : []),
     path.join(models, "resource-manifest.json"),
     path.join(models, "live2d/live2dcubismcore.min.js"),
   ];
