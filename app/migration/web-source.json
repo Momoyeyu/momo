@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "805c189bebd4cbb12868c261aef57d698353847e",
+  "revision": "0a4c03c6f090c387d7f6b784b82ddfe65eed9fa1",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -1371,7 +1371,7 @@
     },
     "app/frontend/public/brand/momo-presence-v2.webp": {
       "source": "frontend/public/brand/momo-presence-v2.webp",
-      "sha256": "38ab93ada714de4982115ee8d2f322da576f01a90781af4bc03d40e8ad3ff3aa",
+      "sha256": "5719df4ca2e0e56996468084db616ae0b453d4fe171dadf38ce6f885eb91731f",
       "mode": 33188
     },
     "app/frontend/public/brand/momo-wordmark.svg": {

@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-23",
-  "status": "website-approved-app-adaptation-awaiting-review",
+  "date": "2026-11-10",
+  "status": "shared-production-silhouette-with-logo-hair-ornament",
   "tool": "OpenAI built-in image_gen; tool-managed model version not exposed",
   "source": "momo-presence-v2.png",
   "dimensions": [
@@ -8,21 +8,21 @@
     1536
   ],
   "alpha": true,
-  "sha256": "c100531583a35ba253c00cb124d85c0a7518bb0a4c8c948aaf5f4351200be310",
+  "sha256": "e449026dc74e0938c617848949d9c0a2f6b5bf58e4f5a553b75177436b28122f",
   "derivatives": [
     {
       "file": "site/docs/public/brand/momo-presence-v2.webp",
-      "sha256": "38ab93ada714de4982115ee8d2f322da576f01a90781af4bc03d40e8ad3ff3aa",
-      "bytes": 867754
+      "sha256": "5719df4ca2e0e56996468084db616ae0b453d4fe171dadf38ce6f885eb91731f",
+      "bytes": 1138940
     },
     {
       "file": "app/frontend/public/brand/momo-presence-v2.webp",
-      "sha256": "38ab93ada714de4982115ee8d2f322da576f01a90781af4bc03d40e8ad3ff3aa",
-      "bytes": 867754
+      "sha256": "5719df4ca2e0e56996468084db616ae0b453d4fe171dadf38ce6f885eb91731f",
+      "bytes": 1138940
     }
   ],
-  "transform": "Lossless WebP encoding; alpha and visible composites identical on ink/ivory. Fully transparent RGB may be normalized by the encoder.",
-  "scope": "Approved C silhouette shared by website, README and macOS title/startup; app ASCII chat entry awaits joint 010/013 review.",
+  "transform": "image_gen hair ornament edit adopted only within x546,y190,width136,height146 with 22px feather. All RGBA outside this rectangle unchanged. WebP lossless -exact encoding.",
+  "scope": "Website, README, game title/startup, ASCII transition and phone wallpaper share this silhouette. Live2D unchanged.",
   "previous_candidates": [
     {
       "source": "momo-presence-v1.png",

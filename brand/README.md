@@ -8,4 +8,4 @@ These are the source SVGs. Application/site copies must remain byte-identical. G
 
 ## Original character candidate
 
-The abstract mark and wordmark remain the compact brand identity. The optional paper-cut character is separate promotional artwork and does not replace the selected Live2D model. The website currently evaluates a revised three-ink background character; the previous README and decorative game candidate has not yet been replaced. Unifying those uses follows art-direction review. See [candidate images and provenance](../docs/assets/mascot/README.md).
+The abstract mark and wordmark remain the compact brand identity. The optional paper-cut character is separate promotional artwork and does not replace the selected Live2D model. Website, README and decorative game surfaces now share the same three-ink character. The 2026-11-10 revision adds the brand mark as the viewer-right temple hair ornament while preserving the rest of the silhouette. See [candidate images and provenance](../docs/assets/mascot/README.md).
