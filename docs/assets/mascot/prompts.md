@@ -34,4 +34,4 @@ Precise production edit of this original momo cut-paper silhouette. Keep exactly
 
 ## 2026-11-10 localized logo ornament
 
-Built-in image_gen received the original transparent portrait and the user annotated screenshot. Instruction: replace only the existing viewer-right temple diamond clasp with the gold-and-ivory momo swirl logo; retain pose, face shadow, hair, garment, canvas and transparency. To enforce unchanged surroundings, only the localized feathered head region was adopted; all other original RGBA retained. Full-color prototype sheets are local ignored concept references, not distributed assets.
+Built-in image_gen received the original transparent portrait and the user annotated screenshot. Instruction: replace only the existing viewer-right temple diamond clasp with the gold-and-ivory momo swirl logo; retain pose, face shadow, hair, garment, canvas and transparency. To enforce unchanged surroundings, only the localized feathered head region was adopted; all other original RGBA retained. Full-color prototype sheets are versioned concept references in docs/character, not runtime assets.

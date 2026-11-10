@@ -54,5 +54,3 @@ site/docs/.vitepress/cache/
 app/.desktop/
 app/out/
 
-# Private original-character production sheets; not shipped or published.
-/docs/local-character-design/
