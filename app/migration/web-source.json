@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "3c222be7964c297798eb81e225272eb8569d0026",
+  "revision": "f212c4c0f6e22dbe38ad07a83c123b60f9562247",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -286,7 +286,7 @@
     },
     "app/backend/app/services/compress.py": {
       "source": "backend/app/services/compress.py",
-      "sha256": "85ab1ed2503dc7bbc1c08b48e98ff20af7477926fb32557fe8f7437b12dbbc8c",
+      "sha256": "a374956dda19d62af401cc5f21a0ee40f53e0e0103f45ece6763ca6d4c3e574a",
       "mode": 33188
     },
     "app/backend/app/services/computer.py": {
@@ -296,12 +296,12 @@
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "905ff79695ce3cfa2bc2a4993012aaa77226e875491f53fb85b09245486468f7",
+      "sha256": "2e1e6cc11f34324b43b855524c37a6118f8e043dc38d31af0471b6c653ca359c",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
       "source": "backend/app/services/context_policy.py",
-      "sha256": "93807969b27a4b5b21aa7bdad84d255d4a937e9ece94fe053cc656e630a834f0",
+      "sha256": "72b5be9a63ef62ff930c15ef271e6eb05977504bc5e587de61635ff1304cccbb",
       "mode": 33188
     },
     "app/backend/app/services/coordinator.py": {
@@ -411,7 +411,7 @@
     },
     "app/backend/app/services/turn.py": {
       "source": "backend/app/services/turn.py",
-      "sha256": "ec3b82d5966bf776ae4c69b4078173f4a482d43ba2a0a4e8b095a91ec73e4f7d",
+      "sha256": "adb20b2a9a91091aefcb3fcb49c356036ddeba53761430f39542248d8c33ee6f",
       "mode": 33188
     },
     "app/backend/app/services/turn_context.py": {
@@ -421,7 +421,7 @@
     },
     "app/backend/app/services/vision.py": {
       "source": "backend/app/services/vision.py",
-      "sha256": "4bca3ba61568590b7c131c2f10ce2775e0c4193b6e21a4e2a31d78f2acece4de",
+      "sha256": "d6b46e7d538933416a5994b644d8e9a8084963acefde8cbd2fbb959ab11a6366",
       "mode": 33188
     },
     "app/backend/desktop.py": {
@@ -586,7 +586,7 @@
     },
     "app/backend/tests/test_computer_tools.py": {
       "source": "backend/tests/test_computer_tools.py",
-      "sha256": "565961e289fab8e5538f221b1229f3a2eecca75520cb70785d9a9402705d0507",
+      "sha256": "e7cd5dbe17b1738682e99180e0b2ce86c4d5dd02c7ffd4c122b1ca7a51739a19",
       "mode": 33188
     },
     "app/backend/tests/test_context_policy.py": {
@@ -876,7 +876,7 @@
     },
     "app/backend/tests/test_turn_context.py": {
       "source": "backend/tests/test_turn_context.py",
-      "sha256": "bdcec970daf849adb07826d214c6b6b14d1c184b8d020ad2bb504ceb96764059",
+      "sha256": "604d62fbbe564cabe21bc3fc4800c942bb54b08daac5a9fa7d2a75096e287001",
       "mode": 33188
     },
     "app/backend/tests/test_vision.py": {
