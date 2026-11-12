@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "9bc316f11ec7577bc4e5bf6f2aba8afd7f86523a",
+  "revision": "57e57fdf9c217e981f621f1e9ffdb1454829a81d",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -3896,7 +3896,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java",
-      "sha256": "4477345e7ec68cb968fb3a705f17d76748f683fb26447b86f2328e4cc03b1859",
+      "sha256": "024681c6a4e7c5d0b3d17aa746727ce21687e3ada01553aa745c0cd46088d866",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/resources/fabric.mod.json": {
