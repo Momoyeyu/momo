@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "ea6c6f36255c61481cd95d9d90bedd37199f62f6",
+  "revision": "303aeade0ca13123243c427fc70f1421dc727bba",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -3896,7 +3896,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java",
-      "sha256": "56d69a33c3029db69ac0eccc880aede8ba568a1704931eca646156394bb58f50",
+      "sha256": "87e55ce6707648bb96e084cbc9d69b13bb183a1b08fbd184c92531d8fb59e977",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/mixin/GameplayInputAccess.java": {
@@ -3906,7 +3906,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/mixin/GameplayInputMixin.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/mixin/GameplayInputMixin.java",
-      "sha256": "09870dda01052f4412f39c84290868552c96ddf18d2711632c7f4b975368f4ac",
+      "sha256": "b38695492a4ced6f1fa80c3f74915afac52792bf7035054259312b2754b49ecf",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/resources/fabric.mod.json": {
