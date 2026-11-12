@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "2e7dc8b5276659ca0b50fcc67f4ec500e1487d60",
+  "revision": "f28c24e05ee0d93a7c563afe7de654a6ed659ea0",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -181,7 +181,7 @@
     },
     "app/backend/app/core/maintenance.py": {
       "source": "backend/app/core/maintenance.py",
-      "sha256": "e6ee3b28563dc1b3357f307fd77d32e606107bee49c1399bb397f6fbcfdfcb1a",
+      "sha256": "ae31a0c3fea4d7a783fdbe734c268a4f930bdc4059dbb4030f88186aa47a3dbb",
       "mode": 33188
     },
     "app/backend/app/core/mcp.py": {
@@ -296,7 +296,7 @@
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "588aefc492f7edc9f46134c5b08dcb77006f8eaf4e4ebe0792af40960b02065e",
+      "sha256": "905ff79695ce3cfa2bc2a4993012aaa77226e875491f53fb85b09245486468f7",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -411,7 +411,7 @@
     },
     "app/backend/app/services/turn.py": {
       "source": "backend/app/services/turn.py",
-      "sha256": "ff75be7b9ee80603572cfe253c531874e55341f02a00115f5867ad9ab35d39e3",
+      "sha256": "ec3b82d5966bf776ae4c69b4078173f4a482d43ba2a0a4e8b095a91ec73e4f7d",
       "mode": 33188
     },
     "app/backend/app/services/turn_context.py": {
@@ -631,7 +631,7 @@
     },
     "app/backend/tests/test_desktop.py": {
       "source": "backend/tests/test_desktop.py",
-      "sha256": "11f8dc36c1feb7439ee6d261e0b1adf0e8c97df4831151843403ea9685b66f21",
+      "sha256": "90ced848c03e3e399c9be27de9a73de038c33d4eba32520c192121b4d0db7758",
       "mode": 33188
     },
     "app/backend/tests/test_embedding_model.py": {
@@ -2891,7 +2891,7 @@
     },
     "app/frontend/src/components/DesktopPetControls.tsx": {
       "source": "frontend/src/components/DesktopPetControls.tsx",
-      "sha256": "d546ce17ffa9cd61227467e87da0608c117fe25805c7e2157b790cf81b3829ec",
+      "sha256": "53eabfd84238300b6cd4f5d47c5049254b492cbb876466a16ab76a31cfbfce05",
       "mode": 33188
     },
     "app/frontend/src/components/DetailModal.test.tsx": {
@@ -2991,7 +2991,7 @@
     },
     "app/frontend/src/i18n/en.ts": {
       "source": "frontend/src/i18n/en.ts",
-      "sha256": "864471c1050d6762f37e86815efd975ece98d17e0e204fe6eec3a1041b398d3d",
+      "sha256": "84f4adac680fa0f498308910cf21aeef9fd4f73b1eb1166a2c48d1be0e7d2292",
       "mode": 33188
     },
     "app/frontend/src/i18n/index.ts": {
@@ -3001,7 +3001,7 @@
     },
     "app/frontend/src/i18n/ja.ts": {
       "source": "frontend/src/i18n/ja.ts",
-      "sha256": "b7080604e1a8c7446136ee651fd3f7e0f0817f23bd06fd0b715eb28e125e93a1",
+      "sha256": "8cb2a9e97eaf82239d84ed5e135f3161818ffeabb886996b34b05c37362b064c",
       "mode": 33188
     },
     "app/frontend/src/i18n/lang.test.ts": {
@@ -3011,7 +3011,7 @@
     },
     "app/frontend/src/i18n/zh.ts": {
       "source": "frontend/src/i18n/zh.ts",
-      "sha256": "c77d054e4ea107cb5e6426edf82b44bb586b10d115963dd69a021dd494e30ced",
+      "sha256": "910974c05bdcbe7637ba223ff8e8103363986270a0749d72b07401bc9b8a1985",
       "mode": 33188
     },
     "app/frontend/src/lib/asr.ts": {
@@ -3346,7 +3346,7 @@
     },
     "app/frontend/src/pages/settings/NativeWindowNotice.tsx": {
       "source": "frontend/src/pages/settings/NativeWindowNotice.tsx",
-      "sha256": "3552dad0f46f081188d1b5244ef4de002321ccabc009857f112c5bfa328c28b5",
+      "sha256": "2d82d351d006f32b61611f7f0e4ac1f9722ac1644156271f0ab178d473118f51",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/OfficialPlugins.tsx": {
@@ -3491,7 +3491,7 @@
     },
     "app/frontend/src/services/desktopWindow.ts": {
       "source": "frontend/src/services/desktopWindow.ts",
-      "sha256": "c492d4fe81b9a47a88b5718a6257c9609a2d98e8c5d0f8d217f4cef0b4988b1d",
+      "sha256": "c417ae04d739ec82bac2af039d25514550ecd215a541e522d3494342eba69a28",
       "mode": 33188
     },
     "app/frontend/src/services/extClient.ts": {
@@ -3876,7 +3876,7 @@
     },
     "app/plugin-host/minecraft-fabric/README.md": {
       "source": "plugin-host/minecraft-fabric/README.md",
-      "sha256": "ee067513859ed8cbd35e69fbc2d9f1ce036f72eaa8ed356e59518ab0d765cbf0",
+      "sha256": "44c21f678982a9ae31f5edbc4f3881f33691d76f790bd20f9c96e5d91d558d2c",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/build.gradle": {
@@ -3941,7 +3941,7 @@
     },
     "app/plugin-host/resources/native-control/control.swift": {
       "source": "plugin-host/resources/native-control/control.swift",
-      "sha256": "87abd6066cb1a86f1d4142438dbd6d8ed68f49f518346ef7070371b507d945f2",
+      "sha256": "3343e588c5e822dcf7ed0f60b6c2ed4ac9b534334332c19b652f5988cf38b0d0",
       "mode": 33188
     },
     "app/plugin-host/src/channels.mjs": {
@@ -3966,7 +3966,7 @@
     },
     "app/plugin-host/src/native-control.mjs": {
       "source": "plugin-host/src/native-control.mjs",
-      "sha256": "da19e40317b1e8d4a4a04ace3e96189a03496bfd817485251dc33236be4cdf20",
+      "sha256": "239fdccc7cf617a527fb909527275e37bacfd876b12a0aa1789cc742a0193835",
       "mode": 33188
     },
     "app/plugin-host/src/plugin-manifest.mjs": {
@@ -4036,7 +4036,7 @@
     },
     "app/plugin-host/test/native-control.test.mjs": {
       "source": "plugin-host/test/native-control.test.mjs",
-      "sha256": "488cd48d7e05b47cf00e173f6745ac1300f4bdd8a18aeff9b6897995a0a995ea",
+      "sha256": "7b6a7bfe107090abfb4d0f0ab43baa9a8336dd52d90f71d13751307c76e555d2",
       "mode": 33188
     },
     "app/plugin-host/test/plugin-disposal.test.mjs": {

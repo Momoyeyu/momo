@@ -8,8 +8,12 @@ export interface WindowState {
   panel?: { width: number; petWidth: number };
 }
 export interface DesktopBridge {
+  requestSystemPermission(kind: "screen" | "input"): Promise<void>;
   setPetPanel(open: boolean): Promise<WindowState>;
-  dragPetWindow(phase: "start" | "move" | "end"): Promise<void>;
+  dragPetWindow(
+    phase: "start" | "move" | "end",
+    point?: { x: number; y: number },
+  ): Promise<void>;
   setPetHitRegions(
     regions: { x: number; y: number; width: number; height: number }[],
   ): Promise<void>;

@@ -16,7 +16,7 @@ import type { RuntimeConnection } from "../contracts.ts";
 import path from "node:path";
 import { BackendProcess } from "./backend.ts";
 import { resourcePaths } from "./resources.ts";
-import { createWindow } from "./window.ts";
+import { createWindow, requestSystemPermission } from "./window.ts";
 import { registerProtocol } from "./protocol.ts";
 import { trustedFrame } from "./security.ts";
 
@@ -92,6 +92,11 @@ else {
       window.once("closed", () => modes?.dispose());
       for (const [channel, count, handler] of [
         ["momo:get-window-state", 0, () => modes!.getState()],
+        [
+          "momo:request-system-permission",
+          1,
+          (kind: unknown) => requestSystemPermission(kind),
+        ],
         ["momo:set-pet-panel", 1, (value: unknown) => modes!.setPanel(value)],
         ["momo:drag-pet-window", 1, (value: unknown) => modes!.dragPet(value)],
         [

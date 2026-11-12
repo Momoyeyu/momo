@@ -121,7 +121,13 @@ export class WindowModeController {
     this.changed(this.getState());
     return this.getState();
   }
-  dragPet(phase: unknown): void {
+  dragPet(request: unknown): void {
+    if (!request || typeof request !== "object")
+      throw Error("Invalid drag request");
+    const { phase, point: origin } = request as {
+      phase?: unknown;
+      point?: { x: number; y: number };
+    };
     if (phase !== "start" && phase !== "move" && phase !== "end")
       throw Error("Invalid drag phase");
     if (phase === "end") {
@@ -132,7 +138,18 @@ export class WindowModeController {
       return;
     const point = this.cursor();
     if (phase === "start") {
-      this.dragOrigin = { point, bounds: this.window.getBounds() };
+      const bounds = this.window.getBounds();
+      if (
+        origin &&
+        (!Number.isFinite(origin.x) ||
+          !Number.isFinite(origin.y) ||
+          origin.x < bounds.x ||
+          origin.x > bounds.x + bounds.width ||
+          origin.y < bounds.y ||
+          origin.y > bounds.y + bounds.height)
+      )
+        throw Error("Invalid drag origin");
+      this.dragOrigin = { point: origin ?? point, bounds };
       return;
     }
     if (!this.dragOrigin) return;

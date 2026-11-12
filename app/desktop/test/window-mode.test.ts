@@ -174,32 +174,32 @@ test("pet drag uses native cursor deltas, clamps to work area and ends cleanly",
     () => {},
     () => point,
   );
-  c.dragPet("start");
+  c.dragPet({ phase: "start" });
   point = { x: 150, y: 200 };
-  c.dragPet("move");
+  c.dragPet({ phase: "move" });
   assert.equal(win.getBounds().x, 40);
   c.setMode("pet");
   const before = win.getBounds();
-  c.dragPet("start");
+  c.dragPet({ phase: "start" });
   point = { x: 50, y: 100 };
-  c.dragPet("move");
+  c.dragPet({ phase: "move" });
   assert.equal(win.getBounds().x, before.x - 100);
   assert.equal(win.getBounds().y, before.y - 100);
-  c.dragPet("end");
+  c.dragPet({ phase: "end" });
   point = { x: 10, y: 10 };
-  c.dragPet("move");
+  c.dragPet({ phase: "move" });
   assert.equal(win.getBounds().x, before.x - 100);
-  c.dragPet("start");
+  c.dragPet({ phase: "start" });
   point = { x: -9999, y: -9999 };
-  c.dragPet("move");
+  c.dragPet({ phase: "move" });
   assert.equal(win.getBounds().x, 0);
   assert.equal(win.getBounds().y, 0);
   c.setClickThrough(true);
-  c.dragPet("start");
+  c.dragPet({ phase: "start" });
   point = { x: 200, y: 200 };
-  c.dragPet("move");
+  c.dragPet({ phase: "move" });
   assert.equal(win.getBounds().x, 0);
-  assert.throws(() => c.dragPet("unknown"));
+  assert.throws(() => c.dragPet({ phase: "unknown" }));
   c.dispose();
 });
 
@@ -233,4 +233,28 @@ test("utility panel fits work area without changing avatar width", () => {
   assert.equal(c.getState().panel?.petWidth, 360);
   c.setPanel(false);
   assert.equal(win.getBounds().x, 240);
+});
+
+test("pet drag keeps the pointer-down origin when IPC arrives after cursor movement", () => {
+  const { win } = fixture();
+  let cursor = { x: 1200, y: 600 };
+  const controller = new WindowModeController(
+    win,
+    () => ({ x: 0, y: 0, width: 1440, height: 900 }),
+    () => {},
+    () => cursor,
+  );
+  controller.setMode("pet");
+  const before = win.getBounds();
+  const origin = { x: before.x + 120, y: before.y + 150 };
+  cursor = { x: origin.x - 90, y: origin.y - 80 };
+  controller.dragPet({ phase: "start", point: origin });
+  controller.dragPet({ phase: "move" });
+  assert.equal(win.getBounds().x, before.x - 90);
+  assert.equal(win.getBounds().y, before.y - 80);
+  controller.dragPet({ phase: "end" });
+  assert.throws(() =>
+    controller.dragPet({ phase: "start", point: { x: NaN, y: 0 } }),
+  );
+  controller.dispose();
 });

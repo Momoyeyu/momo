@@ -1,10 +1,14 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { DesktopBridge } from "../contracts.ts";
 const bridge: DesktopBridge = Object.freeze({
+  requestSystemPermission: (kind: "screen" | "input") =>
+    ipcRenderer.invoke("momo:request-system-permission", kind),
   setPetPanel: (open: boolean) =>
     ipcRenderer.invoke("momo:set-pet-panel", open),
-  dragPetWindow: (phase: "start" | "move" | "end") =>
-    ipcRenderer.invoke("momo:drag-pet-window", phase),
+  dragPetWindow: (
+    phase: "start" | "move" | "end",
+    point?: { x: number; y: number },
+  ) => ipcRenderer.invoke("momo:drag-pet-window", { phase, point }),
   setPetHitRegions: (
     regions: { x: number; y: number; width: number; height: number }[],
   ) => ipcRenderer.invoke("momo:set-pet-hit-regions", regions),

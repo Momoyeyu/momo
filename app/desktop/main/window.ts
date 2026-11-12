@@ -138,3 +138,16 @@ export function createWindow(getTexts: () => Promise<DialogTexts>) {
   window.once("ready-to-show", () => window.show());
   return window;
 }
+
+export async function requestSystemPermission(kind: unknown): Promise<void> {
+  if (process.platform !== "darwin")
+    throw Error("System permission setup is unavailable");
+  if (kind !== "input" && kind !== "screen")
+    throw Error("Invalid system permission");
+  if (kind === "input") systemPreferences.isTrustedAccessibilityClient(true);
+  const pane =
+    kind === "input" ? "Privacy_Accessibility" : "Privacy_ScreenCapture";
+  await shell.openExternal(
+    "x-apple.systempreferences:com.apple.preference.security?" + pane,
+  );
+}
