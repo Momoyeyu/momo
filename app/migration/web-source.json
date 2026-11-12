@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "fd0bdf0cdaccd2aa854fa8f46448fe59e5c98acf",
+  "revision": "9bc316f11ec7577bc4e5bf6f2aba8afd7f86523a",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -296,7 +296,7 @@
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "c5e3a4071e4e699c1815e1f2ca9d2fba82d90bb9297589ef907df115cb82f81d",
+      "sha256": "251dff2dece9f7668a97412f7eb5e6e7f7e25e190e662e9dd58ffd673e09da67",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -586,7 +586,7 @@
     },
     "app/backend/tests/test_computer_tools.py": {
       "source": "backend/tests/test_computer_tools.py",
-      "sha256": "3cb3060821c95a32d4c3b48e8925c3452ffcbb53af9fd9dd1ca5218e0bb6eb24",
+      "sha256": "67ac7f2ce97ad92292b4c901e1f89eaa818331a09599724732497db3221cf950",
       "mode": 33188
     },
     "app/backend/tests/test_context_policy.py": {
@@ -3896,7 +3896,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java",
-      "sha256": "78c6c41a79b059ac8d15c1874e4fa7c334e22025cdc36c147929b7af4430da2b",
+      "sha256": "4477345e7ec68cb968fb3a705f17d76748f683fb26447b86f2328e4cc03b1859",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/resources/fabric.mod.json": {
