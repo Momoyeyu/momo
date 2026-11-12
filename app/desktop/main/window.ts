@@ -27,6 +27,9 @@ export function createWindow(getTexts: () => Promise<DialogTexts>) {
       sandbox: true,
       nodeIntegration: false,
       webSecurity: true,
+      // Companion activity and its owner heartbeat continue behind other apps.
+      // Chromium's background timer throttling must not expire that lease.
+      backgroundThrottling: false,
     },
   });
   const trusted = (url: string) =>
