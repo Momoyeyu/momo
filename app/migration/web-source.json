@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "f212c4c0f6e22dbe38ad07a83c123b60f9562247",
+  "revision": "3ee67024e291341499003243399ff6685366f09d",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -296,7 +296,7 @@
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "2e1e6cc11f34324b43b855524c37a6118f8e043dc38d31af0471b6c653ca359c",
+      "sha256": "c8218cc0ce558d9238266d98a734d315faf570251820e33a9e02452d28c32dc2",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -351,7 +351,7 @@
     },
     "app/backend/app/services/native_control.py": {
       "source": "backend/app/services/native_control.py",
-      "sha256": "9f3c90cdf05eaab5a4ea3328c0a0d98a2e6f20a43c8e59452ddb9e3206065070",
+      "sha256": "d85d455fd51563f5898a0425c39ffb10d861613680e76f081ca123b5c2a0693a",
       "mode": 33188
     },
     "app/backend/app/services/onboarding.py": {
@@ -701,7 +701,7 @@
     },
     "app/backend/tests/test_native_control.py": {
       "source": "backend/tests/test_native_control.py",
-      "sha256": "120dbfabce12706765f49d8c9165b42c894e76e298325858cb5c8d8a6824af38",
+      "sha256": "1e82df4411a36ae55bdb0c3e11c8b6ea022e1bcb28dcd6a03cf3d5a611fb8ed4",
       "mode": 33188
     },
     "app/backend/tests/test_native_thinking.py": {
