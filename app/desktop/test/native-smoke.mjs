@@ -500,6 +500,10 @@ c.commit()`,
         };
       }),
   );
+  // Match the actual restore button: export must finish before starting import.
+  await expect(
+    page.getByRole("button", { name: "恢复备份", exact: true }),
+  ).toBeEnabled();
   page.once("dialog", (dialog) => void dialog.accept());
   const reloaded = page.waitForEvent("load", { timeout: 45000 });
   await page.locator('input[type=file][accept=".zip"]').setInputFiles(backup);

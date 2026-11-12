@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "305cbc1422e0b0b93dcb3d84900e778b6792e466",
+  "revision": "6e8dee84594275a2d79e17d7fd0d22347dda35e7",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -291,12 +291,12 @@
     },
     "app/backend/app/services/computer.py": {
       "source": "backend/app/services/computer.py",
-      "sha256": "dbaa1371c5d888367a299a69074a3e5925daf37bc2f19faf630984f6f3116e50",
+      "sha256": "5612637b7d32e5df08f774940d3cf415da39cb5b560fe68d8bd5344760b85a39",
       "mode": 33188
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "251dff2dece9f7668a97412f7eb5e6e7f7e25e190e662e9dd58ffd673e09da67",
+      "sha256": "8c129a13a6c186a82709dadbd5cff57754d385ee25c57887db34b9dbb0e7f43c",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -586,7 +586,7 @@
     },
     "app/backend/tests/test_computer_tools.py": {
       "source": "backend/tests/test_computer_tools.py",
-      "sha256": "67ac7f2ce97ad92292b4c901e1f89eaa818331a09599724732497db3221cf950",
+      "sha256": "bba410825e3729e68801c8c0db483f3e5842760759d793d0a8c750351976ebde",
       "mode": 33188
     },
     "app/backend/tests/test_context_policy.py": {
@@ -4135,9 +4135,6 @@
       "mode": 33188
     }
   },
-  "deleted": [
-    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/GameplayInputAccess.java",
-    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/GameplayInputMixin.java"
-  ],
+  "deleted": [],
   "bootstrapRevision": "13022fbf859dda454258b299e96b81284b3d3d59"
 }
