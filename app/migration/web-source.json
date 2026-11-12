@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "0a4c03c6f090c387d7f6b784b82ddfe65eed9fa1",
+  "revision": "2e7dc8b5276659ca0b50fcc67f4ec500e1487d60",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -96,7 +96,7 @@
     },
     "app/backend/app/api/minecraft.py": {
       "source": "backend/app/api/minecraft.py",
-      "sha256": "7134355f6625e52bb7bc95fac62dec8b72b2a15e87620c348913b0a3a37c5ace",
+      "sha256": "7f42da4be09ff996b2494ed9c1839e01dd441ba67e7ec52edf4b10e0af200d72",
       "mode": 33188
     },
     "app/backend/app/api/native_control.py": {
@@ -296,7 +296,7 @@
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "055a74b1cbd2b2a8dbd6bdac60b620f889db81e6dc3671d025b2654d324493bf",
+      "sha256": "588aefc492f7edc9f46134c5b08dcb77006f8eaf4e4ebe0792af40960b02065e",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -341,7 +341,7 @@
     },
     "app/backend/app/services/minecraft.py": {
       "source": "backend/app/services/minecraft.py",
-      "sha256": "b66eaa6dd9f1257181f89ed3095497da6eeed28adddc73841f83d0c9ede2d6fb",
+      "sha256": "be6d806a10eea820556c567c5224588cf41f62c24e4cb632c41f8d00cb477b20",
       "mode": 33188
     },
     "app/backend/app/services/minecraft_attach.py": {
@@ -431,7 +431,7 @@
     },
     "app/backend/openapi.json": {
       "source": "backend/openapi.json",
-      "sha256": "362f9bfaaa07e4dab5287482ae3f149f77d9c71abeb1f2d6295914fd544fbfe8",
+      "sha256": "e2b693818f91eba92fecc84b2a39e79aa45639abfb34a12e21b8eecc643c6aea",
       "mode": 33188
     },
     "app/backend/pyproject.toml": {
@@ -691,7 +691,7 @@
     },
     "app/backend/tests/test_minecraft.py": {
       "source": "backend/tests/test_minecraft.py",
-      "sha256": "ab5ce7e87fd1fdf8dc8bfc027ae0001c3f043f85ba4ab5edfb7bc8c5ec6d6ee1",
+      "sha256": "15af41a6e207bd25c2f7be6eeafa564050dd7c58c040d6bb0ded0426412a26b7",
       "mode": 33188
     },
     "app/backend/tests/test_minecraft_attach.py": {
@@ -2746,12 +2746,12 @@
     },
     "app/frontend/src/api/schema.d.ts": {
       "source": "frontend/src/api/schema.d.ts",
-      "sha256": "38490c680653709ce8017ae9874cecc5eefc77cb03c69d6f53ec51558c1ba533",
+      "sha256": "23e913d12d219a18aa028d68ae11253b5d851e3d4859bed888fc5dc4c1a26ebe",
       "mode": 33188
     },
     "app/frontend/src/api/schema.sha256": {
       "source": "frontend/src/api/schema.sha256",
-      "sha256": "ee0ecad4d45d13d8c42ca84fa3f6d03380480e70762f904b14bf12b576471f77",
+      "sha256": "6a83cd4910ec053fd64dfc789f523b7acc3fbf14f53d8feefc3323f0cea35eed",
       "mode": 33188
     },
     "app/frontend/src/api/schema.test.ts": {
@@ -2991,7 +2991,7 @@
     },
     "app/frontend/src/i18n/en.ts": {
       "source": "frontend/src/i18n/en.ts",
-      "sha256": "3b504e30a60d6001e10fe1d7bf7b97674838c54254b559301192e67e709457b0",
+      "sha256": "864471c1050d6762f37e86815efd975ece98d17e0e204fe6eec3a1041b398d3d",
       "mode": 33188
     },
     "app/frontend/src/i18n/index.ts": {
@@ -3001,7 +3001,7 @@
     },
     "app/frontend/src/i18n/ja.ts": {
       "source": "frontend/src/i18n/ja.ts",
-      "sha256": "5fb8a3d21fa45d3a94d75677a61be7e8bae3c2960ddc348a5c5323e04f38e962",
+      "sha256": "b7080604e1a8c7446136ee651fd3f7e0f0817f23bd06fd0b715eb28e125e93a1",
       "mode": 33188
     },
     "app/frontend/src/i18n/lang.test.ts": {
@@ -3011,7 +3011,7 @@
     },
     "app/frontend/src/i18n/zh.ts": {
       "source": "frontend/src/i18n/zh.ts",
-      "sha256": "ff09a1146d1c707c9106402915b5afb6e5aed1f30d5829a0b6e8de4a1a49e1e0",
+      "sha256": "c77d054e4ea107cb5e6426edf82b44bb586b10d115963dd69a021dd494e30ced",
       "mode": 33188
     },
     "app/frontend/src/lib/asr.ts": {
@@ -3136,7 +3136,7 @@
     },
     "app/frontend/src/lib/types.ts": {
       "source": "frontend/src/lib/types.ts",
-      "sha256": "a51abd29023e88ba6b7b1c5df0e5175211c69dff680013d8c677b0e6c71064d9",
+      "sha256": "d90b2ade35bc8292d3a856cecf349c6528e7285c6cf8363d4ab6a068a900dc35",
       "mode": 33188
     },
     "app/frontend/src/live2d/RoomBackground.tsx": {
@@ -3326,7 +3326,7 @@
     },
     "app/frontend/src/pages/settings/MinecraftCompanion.tsx": {
       "source": "frontend/src/pages/settings/MinecraftCompanion.tsx",
-      "sha256": "0d32734806105badddb72148d47450afc2fc71d7c93dc7f3e9e2c908bfe0f3b7",
+      "sha256": "46107199b15c9d1d21f4954b681197bde3fafa4182b2cf75556f2f40c795004b",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/ModelsTab.tsx": {
@@ -3896,7 +3896,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java",
-      "sha256": "3531f7229d03361efcd0a52f0dfddd4cb001d9b1d1cc58cd74569fa42b467055",
+      "sha256": "3450f5b58af4b399cf282be813b47308cc19f8fb1ebf9f93842ebdf246b16156",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/resources/fabric.mod.json": {
@@ -3951,7 +3951,7 @@
     },
     "app/plugin-host/src/host.mjs": {
       "source": "plugin-host/src/host.mjs",
-      "sha256": "c65d8595cd5caec4302428435f0d845dd18785bcf95493af1334ce5cc69a7436",
+      "sha256": "1c69b139a2283bf8548e042b2d1a78a59b6eb6fb27b67e289c2ad86a7c84569e",
       "mode": 33188
     },
     "app/plugin-host/src/index.mjs": {
@@ -3961,7 +3961,7 @@
     },
     "app/plugin-host/src/minecraft-adapter.mjs": {
       "source": "plugin-host/src/minecraft-adapter.mjs",
-      "sha256": "b81e71980181b9ada07abb9d1b862a06c5da3c4b371b62da41be598434f06fc0",
+      "sha256": "5d50191383b475dcc32fb958a6a2fcdd66cd47a42ae105d2204552245c1df1ae",
       "mode": 33188
     },
     "app/plugin-host/src/native-control.mjs": {
@@ -4031,7 +4031,7 @@
     },
     "app/plugin-host/test/minecraft-adapter.test.mjs": {
       "source": "plugin-host/test/minecraft-adapter.test.mjs",
-      "sha256": "992f2fa8a53281b7b7ae7c3c31a4a0a92a97976e494416e8623c26ad896f33f8",
+      "sha256": "6695c9e210cc0dd5a3a77cd668bdf1b893cb6a4096da181b9e44f53ddca6ead5",
       "mode": 33188
     },
     "app/plugin-host/test/native-control.test.mjs": {
