@@ -1,3 +1,24 @@
+# Electron macOS experience verification
+
+## Current acceptance — 2026-11-13
+
+This section supersedes the historical pending entries below. Current shared business revision: `ea6c6f3`; Electron shell revision: `992b143`. The local development certificate and designated requirement remain stable across the installed update; no TCC reset was used for this batch.
+
+| Plan | Actual verification | Status |
+| --- | --- | --- |
+| 006 | Installed pet drag moved (-45,-40) logical pixels; full/half body, collapse/expand, click-through with usable toolbar, same renderer/lease and persisted preferences; real model screen reading | Accepted macOS experience scope |
+| 008 | Existing Chrome form filled/submitted by model; existing Safari focused, input clicked, SafariMouseOK typed, Apply clicked and result read by model; independently confirmed rendered page | Accepted macOS experience scope |
+| 007 | Existing Fabric 1.21.1 player/world, no new account/client. Actual model menu navigation, movement, mining and dirt pickup verified. Autonomous wood/crafting acceptance still running | Open |
+| 017 | Current stable-signed bundle installed; actual frozen E5/sqlite-vec and SenseVoice/VAD; isolated installed lifecycle, intro, single-instance, pet preferences, chat/settings/Home, SQLite + IndexedDB backup round trip, exit cleanup | Accepted macOS experience scope |
+
+The backend suite passed **824 tests, 3 skipped**. Previous unchanged frontend suite passed 255 tests; plugin host 301 passed / 1 skipped; shell 36 passed. Both repositories' last installed predecessors passed CI; current shared and desktop revisions passed CI. Passing mocks does not substitute for the real browser/game observations above.
+
+Corrections from actual operation: pointer coordinates on every drag event; measured provider prefix budget and post-receipt image fitting; focused AX window title/geometry identity; real AX hit-testing rather than remote-control/Dock overlay rectangles; HID pointer routing; renderer background throttling disabled to preserve owner heartbeats; game background input through vanilla Minecraft handlers; game binding excludes competing desktop capture; aim selects a freshly observed visible block and rejects reuse after movement/action. Permissions, observation expiry, exact target checks and stop barriers remain enforced.
+
+The restore smoke now waits for the restore button to become enabled, matching the real UI. Setting its hidden file input during export bypassed the disabled button and raced the export modal; the corrected full smoke passed without changing the product restore behavior.
+
+Real model tests use a disposable profile with the user's configured model/API and a declared 64K test context window, plus local fixture pages and the existing temporary game world. The default user profile/API is unchanged. Raw API credentials/screenshots are not committed. Candidate, copied staging bundle and final installed bundle were each verified sequentially with strict/deep codesign checks before obsolete installs were removed. Formal Developer ID/notarization, clean-machine certification, Windows acceptance and long-term performance characterization remain separate follow-ups as agreed by the user.
+
 # Electron 017 macOS candidate — 2026-11-06
 
 Status: implemented local macOS arm64 candidate; product acceptance pending. Windows follows macOS acceptance. This is not a notarized release.

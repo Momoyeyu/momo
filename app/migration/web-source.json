@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "6e8dee84594275a2d79e17d7fd0d22347dda35e7",
+  "revision": "ea6c6f36255c61481cd95d9d90bedd37199f62f6",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -96,7 +96,7 @@
     },
     "app/backend/app/api/minecraft.py": {
       "source": "backend/app/api/minecraft.py",
-      "sha256": "7f42da4be09ff996b2494ed9c1839e01dd441ba67e7ec52edf4b10e0af200d72",
+      "sha256": "ea0ac2e9dbed18b53b4fa127b25d1b0deb49a057250bcacbf90753defdb3e6d7",
       "mode": 33188
     },
     "app/backend/app/api/native_control.py": {
@@ -296,7 +296,7 @@
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "8c129a13a6c186a82709dadbd5cff57754d385ee25c57887db34b9dbb0e7f43c",
+      "sha256": "aa1b58e216f206598ac9a0b3fb31f79c6367dcaac32b0e762e86c5ca2f132a11",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -3976,7 +3976,7 @@
     },
     "app/plugin-host/src/minecraft-adapter.mjs": {
       "source": "plugin-host/src/minecraft-adapter.mjs",
-      "sha256": "5d50191383b475dcc32fb958a6a2fcdd66cd47a42ae105d2204552245c1df1ae",
+      "sha256": "f6dcdf810230657f54a656f428df2d7fea576b3d6c6ad19bee8b69325f8ad416",
       "mode": 33188
     },
     "app/plugin-host/src/native-control.mjs": {
@@ -4046,7 +4046,7 @@
     },
     "app/plugin-host/test/minecraft-adapter.test.mjs": {
       "source": "plugin-host/test/minecraft-adapter.test.mjs",
-      "sha256": "6695c9e210cc0dd5a3a77cd668bdf1b893cb6a4096da181b9e44f53ddca6ead5",
+      "sha256": "6e780abbd98df00225de755bcaca1f42c2f75ab274eb2d8276a43f19dc9152d6",
       "mode": 33188
     },
     "app/plugin-host/test/native-control.test.mjs": {
