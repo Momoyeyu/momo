@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "134c1cac585d42426ec1f2f46af6a5d6223d8cd8",
+  "revision": "305cbc1422e0b0b93dcb3d84900e778b6792e466",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -3896,17 +3896,17 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java",
-      "sha256": "3e2495e7a95ad983ca0a33a482bd9493b1bd48e6fa461982aba64703f6d9224e",
+      "sha256": "56d69a33c3029db69ac0eccc880aede8ba568a1704931eca646156394bb58f50",
       "mode": 33188
     },
-    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/GameplayInputAccess.java": {
-      "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/GameplayInputAccess.java",
-      "sha256": "1f26fceb4f9aea98836e93b17088ecfaeb30da62caf8e9e983c05eaed017442c",
+    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/mixin/GameplayInputAccess.java": {
+      "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/mixin/GameplayInputAccess.java",
+      "sha256": "65b821084f7d7bd30512f97b7e82bcaa7294b5e7abd9cafcde5e3915db92cab2",
       "mode": 33188
     },
-    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/GameplayInputMixin.java": {
-      "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/GameplayInputMixin.java",
-      "sha256": "7590a0fcfdf547f2fa7b0809ca84bda6d107549460a9b2f475a501880e34d755",
+    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/mixin/GameplayInputMixin.java": {
+      "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/mixin/GameplayInputMixin.java",
+      "sha256": "09870dda01052f4412f39c84290868552c96ddf18d2711632c7f4b975368f4ac",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/resources/fabric.mod.json": {
@@ -3916,7 +3916,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/resources/momo-companion.mixins.json": {
       "source": "plugin-host/minecraft-fabric/src/main/resources/momo-companion.mixins.json",
-      "sha256": "034dd3fcf5d6107ca80cf6a177db6b09e27487c28c813239802eb208236e901d",
+      "sha256": "6520ba3810b4507e46084a8adbc8267b9a15994e752368545f059ed095fba587",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/BoundedPathSmoke.java": {
@@ -4135,6 +4135,9 @@
       "mode": 33188
     }
   },
-  "deleted": [],
+  "deleted": [
+    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/GameplayInputAccess.java",
+    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/GameplayInputMixin.java"
+  ],
   "bootstrapRevision": "13022fbf859dda454258b299e96b81284b3d3d59"
 }
