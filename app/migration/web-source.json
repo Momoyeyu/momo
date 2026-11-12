@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "303aeade0ca13123243c427fc70f1421dc727bba",
+  "revision": "21529eb916a6cf180fecfe5ea0822e77e6a363e3",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -3896,7 +3896,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java",
-      "sha256": "87e55ce6707648bb96e084cbc9d69b13bb183a1b08fbd184c92531d8fb59e977",
+      "sha256": "67aad7184d34d9564f5650bcc0349e24bb313f2ea884df0d9f7cea533c4a7170",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/mixin/GameplayInputAccess.java": {
