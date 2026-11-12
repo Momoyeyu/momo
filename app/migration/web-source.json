@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "8de7095566be8d3bb23533e00a5b6ffbf27ebddc",
+  "revision": "46c821e206e22143846e392e20a39fbd15777024",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -3941,7 +3941,7 @@
     },
     "app/plugin-host/resources/native-control/control.swift": {
       "source": "plugin-host/resources/native-control/control.swift",
-      "sha256": "2f739280fde1cb95def45ff7b30d6218745718173b681ac5c6b4a578977c7d77",
+      "sha256": "89d6fb8b2f5992e0283a48d3590a7faea8cfb532137b950fc7da78fb03bbcb3b",
       "mode": 33188
     },
     "app/plugin-host/src/channels.mjs": {
