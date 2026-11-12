@@ -2,7 +2,7 @@
 
 ## Current acceptance — 2026-11-13
 
-This section supersedes the historical pending entries below. Current shared business revision: `21529eb`; Electron shell revision: `992b143`. The local development certificate and designated requirement remain stable across the installed update; no TCC reset was used for this batch.
+This section supersedes the historical pending entries below. Installed shared runtime revision: `21529eb`; Electron shell revision: `992b143`. The subsequent `de945b7` promotion only synchronizes generated API contracts/types and does not change installed runtime behavior. The local development certificate and designated requirement remain stable across the installed update; no TCC reset was used for this batch.
 
 | Plan | Actual verification | Status |
 | --- | --- | --- |
@@ -11,11 +11,11 @@ This section supersedes the historical pending entries below. Current shared bus
 | 007 | Existing Fabric 1.21.1 player/world, no new account/client. Actual model menu/movement/mining/pickup, 2 logs → 8 planks → 1 crafting table + 4 planks, and chat stop verified with bounded instructions. Combat/eating and long-goal autonomy remain unverified | Open |
 | 017 | Current stable-signed bundle installed; actual frozen E5/sqlite-vec and SenseVoice/VAD; isolated installed lifecycle, intro, single-instance, pet preferences, chat/settings/Home, SQLite + IndexedDB backup round trip, exit cleanup | Accepted macOS experience scope |
 
-The backend suite passed **824 tests, 3 skipped**. Previous unchanged frontend suite passed 255 tests; plugin host 301 passed / 1 skipped; shell 36 passed. Both repositories' last installed predecessors passed CI; current shared and desktop revisions passed CI. Passing mocks does not substitute for the real browser/game observations above.
+The backend suite passed **824 tests, 3 skipped**. Previous unchanged frontend suite passed 255 tests; plugin host 301 passed / 1 skipped; shell 36 passed. Shared revision `de945b7` passed CI. The previous desktop run failed only on the stale generated OpenAPI snapshot; the synchronized desktop contracts await the final CI run. Passing mocks does not substitute for the real browser/game observations above.
 
 Corrections from actual operation: pointer coordinates on every drag event; measured provider prefix budget and post-receipt image fitting; focused AX window title/geometry identity; real AX hit-testing rather than remote-control/Dock overlay rectangles; HID pointer routing; renderer background throttling disabled to preserve owner heartbeats; game background input through vanilla Minecraft handlers; game binding excludes competing desktop capture; aim selects a freshly observed visible block and rejects reuse after movement/action; nearby drops are bounded and distinguish visibility. Background play now suppresses automatic pause during its lease without altering the serialized player preference. Permissions, observation expiry, exact target checks and stop barriers remain enforced.
 
-The restore smoke now waits for the restore button to become enabled, matching the real UI. Setting its hidden file input during export bypassed the disabled button and raced the export modal; the corrected full smoke passed without changing the product restore behavior.
+The restore smoke now waits for the export busy dialog to close, clicks the enabled Restore button, and supplies the ZIP through the resulting file chooser. Setting its hidden file input during export bypassed the disabled button and raced the export modal; the corrected full installed smoke passed without changing the product restore behavior.
 
 Real model tests use a disposable profile with the user's configured model/API and a declared 64K test context window, plus local fixture pages and the existing temporary game world. The default user profile/API is unchanged. The game fixture was moved to a surface tree and given daylight/peaceful difficulty for bounded operation checks; no items were inserted and no world blocks were edited offline. Successful model goals were split into short instructions; autonomous exploration failed and is not accepted as complete. Raw API credentials/screenshots are not committed. Candidate, copied staging bundle and final installed bundle were each verified sequentially with strict/deep codesign checks before obsolete installs were removed. Formal Developer ID/notarization, clean-machine certification, Windows acceptance and long-term performance characterization remain separate follow-ups as agreed by the user.
 

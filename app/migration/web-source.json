@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "21529eb916a6cf180fecfe5ea0822e77e6a363e3",
+  "revision": "de945b7f5b462cd509b8cff4043d8dce98a2443c",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -431,7 +431,7 @@
     },
     "app/backend/openapi.json": {
       "source": "backend/openapi.json",
-      "sha256": "e2b693818f91eba92fecc84b2a39e79aa45639abfb34a12e21b8eecc643c6aea",
+      "sha256": "db801f85887952182de46fe9dbfc62eeb5cae89f0d536ca2a629be8ee33a32d4",
       "mode": 33188
     },
     "app/backend/pyproject.toml": {
@@ -2746,12 +2746,12 @@
     },
     "app/frontend/src/api/schema.d.ts": {
       "source": "frontend/src/api/schema.d.ts",
-      "sha256": "23e913d12d219a18aa028d68ae11253b5d851e3d4859bed888fc5dc4c1a26ebe",
+      "sha256": "d8a3b03503916291e353b62769699acb4894100c3114a48c02abcfb4c7342c68",
       "mode": 33188
     },
     "app/frontend/src/api/schema.sha256": {
       "source": "frontend/src/api/schema.sha256",
-      "sha256": "6a83cd4910ec053fd64dfc789f523b7acc3fbf14f53d8feefc3323f0cea35eed",
+      "sha256": "ca61fcc16d8cbe0c9d921f09ef50e7f7c8b6869c001e3e5f975abbd0d0d3ab94",
       "mode": 33188
     },
     "app/frontend/src/api/schema.test.ts": {

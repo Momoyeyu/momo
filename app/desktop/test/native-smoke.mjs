@@ -504,9 +504,12 @@ c.commit()`,
   await expect(
     page.getByRole("button", { name: "恢复备份", exact: true }),
   ).toBeEnabled();
+  await expect(page.locator("dialog.data-transfer-busy")).toBeHidden();
   page.once("dialog", (dialog) => void dialog.accept());
   const reloaded = page.waitForEvent("load", { timeout: 45000 });
-  await page.locator('input[type=file][accept=".zip"]').setInputFiles(backup);
+  const chooser = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "恢复备份", exact: true }).click();
+  await (await chooser).setFiles(backup);
   try {
     await reloaded;
   } catch (error) {
