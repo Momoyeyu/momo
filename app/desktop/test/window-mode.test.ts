@@ -258,3 +258,24 @@ test("pet drag keeps the pointer-down origin when IPC arrives after cursor movem
   );
   controller.dispose();
 });
+
+test("pet drag uses each event coordinate when native cursor sampling lags", () => {
+  const { win } = fixture();
+  const controller = new WindowModeController(
+    win,
+    () => ({ x: 0, y: 0, width: 1440, height: 900 }),
+    () => {},
+    () => ({ x: 0, y: 0 }),
+  );
+  controller.setMode("pet");
+  const before = win.getBounds(),
+    start = { x: before.x + 120, y: before.y + 150 };
+  controller.dragPet({ phase: "start", point: start });
+  controller.dragPet({
+    phase: "move",
+    point: { x: start.x - 45, y: start.y - 40 },
+  });
+  assert.equal(win.getBounds().x, before.x - 45);
+  assert.equal(win.getBounds().y, before.y - 40);
+  controller.dispose();
+});

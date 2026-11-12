@@ -1,7 +1,7 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "f28c24e05ee0d93a7c563afe7de654a6ed659ea0",
+  "revision": "3c222be7964c297798eb81e225272eb8569d0026",
   "checks": [],
   "files": {
     "app/.env.example": {
@@ -2891,7 +2891,7 @@
     },
     "app/frontend/src/components/DesktopPetControls.tsx": {
       "source": "frontend/src/components/DesktopPetControls.tsx",
-      "sha256": "53eabfd84238300b6cd4f5d47c5049254b492cbb876466a16ab76a31cfbfce05",
+      "sha256": "30a7a4b21a9286b8ac28ebb1682f0556aa9d1b3f5be599380f8cb770147e9060",
       "mode": 33188
     },
     "app/frontend/src/components/DetailModal.test.tsx": {

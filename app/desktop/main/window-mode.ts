@@ -136,7 +136,9 @@ export class WindowModeController {
     }
     if (this.state.mode !== "pet" || this.state.clickThrough || !this.cursor)
       return;
-    const point = this.cursor();
+    if (origin && (!Number.isFinite(origin.x) || !Number.isFinite(origin.y)))
+      throw Error("Invalid drag point");
+    const point = origin ?? this.cursor();
     if (phase === "start") {
       const bounds = this.window.getBounds();
       if (
