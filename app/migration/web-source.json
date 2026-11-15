@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "ace7fd3294ee1bc0121cbc85a53759a9c560a628",
+  "revision": "cc130a8cf78e34131e6f018e4661c90f1e0c3141",
   "checks": [
-    "Exact shared CI 43766608454 passed; Python954, Node329, Fabric24tasks; native targeted regressions passed, full autonomy/install still pending"
+    "Exact shared CI 43769836420 passed; Python957 from backend cwd; Java24tasks; actual component bytes unchanged, newest source receipt verified; full autonomy/install remain pending"
   ],
   "files": {
     "app/.env.example": {
@@ -343,7 +343,7 @@
     },
     "app/backend/app/services/minecraft.py": {
       "source": "backend/app/services/minecraft.py",
-      "sha256": "e7ea3901ddc346eb60c931dabbccdacd05d91f59935aa4425c26c5d752a8b6f7",
+      "sha256": "1b6fd9ce0b2fa59c507d4fa98fbc29116a766b090ae39daaea4f0746d07730e4",
       "mode": 33188
     },
     "app/backend/app/services/minecraft_attach.py": {
@@ -353,7 +353,7 @@
     },
     "app/backend/app/services/minecraft_journal.py": {
       "source": "backend/app/services/minecraft_journal.py",
-      "sha256": "d89802a12e53a254066e98ecc38f0c97c23a124414b20da45638fd4cc522f502",
+      "sha256": "fc131d98639f778514642615e302ca80b31710db3d0a562970d17302690c0f65",
       "mode": 33188
     },
     "app/backend/app/services/native_control.py": {
@@ -713,7 +713,7 @@
     },
     "app/backend/tests/test_minecraft_context.py": {
       "source": "backend/tests/test_minecraft_context.py",
-      "sha256": "ebeecfe3158e7e51500cfeb9c498d52a041e186a6733307f095226ce622ac03f",
+      "sha256": "be8543d63991deb1ab96ba4fe2d490e8afe958c5d51b5cee45b2bde3889b6a8d",
       "mode": 33188
     },
     "app/backend/tests/test_minecraft_dispatch.py": {
