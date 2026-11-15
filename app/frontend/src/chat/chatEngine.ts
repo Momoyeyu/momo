@@ -84,7 +84,9 @@ interface DisplayState {
 }
 
 interface Turn {
-  screenGeneration?:number;
+  screenGeneration?:number | {game:number};
+  /** Game decisions outlive their view; unseen commentary is retired, never replayed. */
+  silentGame: boolean;
   images?: ImageRef[];
   imageResult?: (ok:boolean)=>void;
   presentation: PresentationSnapshot | null;
@@ -358,6 +360,15 @@ export class ChatEngine {
     }).catch(()=>{});
   }
 
+  /** Gameplay events reuse the same serialized inference/display pipeline. */
+  sendGameDecision(generation:number):void {
+    if(this.disposed||this.phase!=="idle"||this.turn||!meetingIdentity())return;
+    this.sendQueue=this.sendQueue.then(async()=>{
+      if(this.phase!=="idle"||this.turn)return;
+      await this.doSend("",false,[],undefined,{game:generation});
+    }).catch(()=>{});
+  }
+
   /** First meeting uses normal pacing / TTS / ACT, without a fictitious user. */
   beginFirstMeeting(): void {
     if (this.disposed || this.openingScheduled || this.phase !== "idle") return;
@@ -365,7 +376,7 @@ export class ChatEngine {
     this.sendQueue = this.sendQueue.then(() => this.doSend("", true)).catch(() => {});
   }
 
-  private async doSend(trimmed: string, opening = false, images: ImageRef[] = [], imageResult?: (ok:boolean)=>void, screenGeneration?:number): Promise<void> {
+  private async doSend(trimmed: string, opening = false, images: ImageRef[] = [], imageResult?: (ok:boolean)=>void, screenGeneration?:number | {game:number}): Promise<void> {
     if (this.disposed) return;
     await this.stopReplay();
     // 新输入隐式打断在途回合（绕过防抖，保证打断一定生效）；
@@ -393,6 +404,7 @@ export class ChatEngine {
 
     const turn: Turn = {
       images, imageResult, screenGeneration,
+      silentGame:typeof screenGeneration==='object'&&this.presentationPaused,
       presentation: null,
       id: newId("m"),
       abort: new AbortController(),
@@ -555,6 +567,12 @@ export class ChatEngine {
   private applyPresentationVisibility():void {
     const paused=!this.sceneActive||typeof document!=="undefined"&&document.visibilityState==="hidden";
     const turn=this.turn;
+    if(turn && typeof turn.screenGeneration==='object' && (paused||turn.silentGame)){
+      this.silenceGame(turn);
+      this.setPresentationPaused(paused);
+      this.maybeFinish(turn);
+      return;
+    }
     if(paused && turn && turn.presentationToken && turn.queuedStopToken!==turn.presentationToken){
       // Stop audio/cues before releasing the brain's presentation ownership.
       this.safe(()=>this.player.setPaused(true));
@@ -612,7 +630,7 @@ export class ChatEngine {
     },350);
   }
 
-  private presentationAck(turn:Turn,outcome:'completed'|'stopped'|'resume',capability={runId:turn.runId,token:turn.presentationToken,generation:turn.generation,owner:turn.owner}):Promise<void> {
+  private presentationAck(turn:Turn,outcome:'completed'|'stopped'|'resume'|'discarded',capability={runId:turn.runId,token:turn.presentationToken,generation:turn.generation,owner:turn.owner}):Promise<void> {
     if(!capability.runId||!capability.token||capability.generation==null)return Promise.resolve();
     return acknowledgePresentation(capability.runId,capability.token,capability.generation,outcome,this.seenText(turn),capability.owner);
   }
@@ -698,7 +716,7 @@ export class ChatEngine {
       for await (const ev of chat(userText, turn.abort.signal, turn.presentation, turn.opening, turn.id, turn.images?.map(image=>image.id),turn.screenGeneration)) {
         if (this.turn !== turn) return; // 已被打断
         if (ev.t === "sentence") {
-          if(turn.screenGeneration!==undefined&&!turn.text&&ev.text.trim()){this.events.onAssistantStart(turn.id);this.setPhase("thinking");}
+          if(turn.screenGeneration!==undefined&&!turn.silentGame&&!turn.text&&ev.text.trim()){this.events.onAssistantStart(turn.id);this.setPhase("thinking");}
           if(ev.text.trim()){turn.imageResult?.(true);turn.imageResult=undefined;}
           if (ev.generation != null) turn.generation = ev.generation;
           if(ev.presentationToken)turn.presentationToken=ev.presentationToken;
@@ -714,6 +732,7 @@ export class ChatEngine {
           this.pushSentence(turn, cfg, ev.text, ev.cues, ev);
           if(this.presentationPaused)this.applyPresentationVisibility();
         } else if(ev.t==='done') {
+          if(ev.suppressed&&typeof turn.screenGeneration==='object')this.silenceGame(turn);
           if(ev.generation!=null)turn.generation=ev.generation;
           if(ev.runId)turn.runId=ev.runId;
           if(ev.presentationToken)turn.presentationToken=ev.presentationToken;
@@ -757,7 +776,7 @@ export class ChatEngine {
       runId: turn.runId ?? turn.id,source:"meeting",
       role:"assistant",text:"",at:new Date().toISOString(),
     };
-    if (this.voiceMuted || turn.audioAbort.signal.aborted) return;
+    if (turn.silentGame || this.voiceMuted || turn.audioAbort.signal.aborted) return;
     // Voice is optional; missing configuration is a valid text-only mode.
     if (!ttsConfigured(cfg.tts)) return;
     cancelWarmup();
@@ -810,7 +829,7 @@ export class ChatEngine {
    * 未轮到的句先在本地攒着——这样每句音频正好在该句展示时开声，句间停顿天然生效。
    */
   private flushTts(turn: Turn): void {
-    if(this.presentationPaused)return;
+    if(this.presentationPaused||turn.silentGame)return;
     if (this.turn !== turn || turn.finished) return;
     const ss = turn.sentences;
     while (turn.pushIndex < ss.length && turn.pushIndex <= turn.disp.idx) {
@@ -832,6 +851,7 @@ export class ChatEngine {
 
   /** 播放 tick：逐字上屏 → 判切句 → 供 TTS 块 → 判收尾。 */
   private displayTick(turn: Turn): void {
+    if(turn.silentGame){this.maybeFinish(turn);return;}
     if(this.presentationPaused)return;
     if (this.turn !== turn || turn.finished) return;
     this.flushTts(turn);
@@ -960,11 +980,42 @@ export class ChatEngine {
   /** 收尾判定：LLM 流完 + TTS 请求全部完成 + 展示队列播完 + （若有音频）player 播空。 */
   private maybeFinish(turn: Turn): void {
     if (this.turn !== turn || turn.finished) return;
+    if(turn.silentGame){if(turn.llmDone)this.discardGamePresentation(turn);return;}
     if (this.presentationPaused || turn.presentationSuspended) return;
     if (!turn.llmDone || turn.inflight > 0) return;
     if (turn.disp.idx < turn.sentences.length) return; // 还有句没播完
     if (turn.pushedAudio && this.playerPlaying()) return;
     this.completeTurn(turn);
+  }
+
+  private discardGamePresentation(turn:Turn):void {
+    turn.finished=true;
+    // This releases speech ownership, not the game task. Only the actually
+    // displayed prefix is committed; a hidden stream never invents dialogue.
+    void turn.presentationQueue.then(()=>this.acknowledgeSeen(turn,true)).then(async()=>{
+      if(this.turn!==turn)return;
+      await this.presentationAck(turn,'discarded');
+      if(this.turn!==turn)return;
+      clearInterval(turn.timer);
+      this.turn=null;
+      this.tryStage(stage=>stage.endPerformance(turn.id));
+      this.setPhase('idle');
+    }).catch(error=>{
+      if(this.disposed||this.turn!==turn)return;
+      this.events.onError(toError(error));
+      // Lost acknowledgements are safe to retry, unlike game side effects.
+      this.presentationRetry=setTimeout(()=>{
+        this.presentationRetry=null;
+        if(this.turn===turn){turn.finished=false;this.maybeFinish(turn);}
+      },350);
+    });
+  }
+
+  private silenceGame(turn:Turn):void {
+    turn.silentGame=true;
+    turn.audioAbort.abort();
+    this.safe(()=>this.player.stop());
+    this.tryStage(stage=>stage.cancelPerformance());
   }
 
   private completeTurn(turn: Turn): void {

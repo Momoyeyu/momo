@@ -7,12 +7,141 @@ dependencies {
  mappings 'net.fabricmc:yarn:1.21.1+build.3:v2'
  modImplementation 'net.fabricmc:fabric-loader:0.16.14'
  modImplementation 'net.fabricmc.fabric-api:fabric-api:0.116.4+1.21.1'
+ modImplementation files('deps/baritone-api-fabric-1.11.3.jar')
+
 }
 java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
 
-tasks.register('pathSmoke', JavaExec) {
+// The pinned upstream is already an intermediary Fabric mod; preserve its nested jars.
+tasks.named('jar') {
+ from('deps/baritone-api-fabric-1.11.3.jar') { into 'META-INF/jars' }
+}
+
+
+
+tasks.register('taskRuntimeSmoke', JavaExec) {
  dependsOn testClasses
  classpath = sourceSets.test.runtimeClasspath
- mainClass = 'dev.momo.BoundedPathSmoke'
+ mainClass = 'dev.momo.task.TaskRuntimeSmoke'
 }
-check.dependsOn pathSmoke
+check.dependsOn taskRuntimeSmoke
+
+tasks.register('taskPlanSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.TaskPlanSmoke'
+}
+check.dependsOn taskPlanSmoke
+
+tasks.named('processResources') {
+ from('../src/minecraft-skills.json') { rename { 'momo-skills.json' } }
+ from('../../scripts/minecraft-resources.json') { into 'META-INF/momo' }
+}
+tasks.register('skillArgumentsSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.SkillArgumentsSmoke'
+}
+check.dependsOn skillArgumentsSmoke
+
+tasks.register('survivalPolicySmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.SurvivalPolicySmoke'
+}
+check.dependsOn survivalPolicySmoke
+
+tasks.register('inventoryEvidenceSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.InventoryEvidenceSmoke'
+}
+check.dependsOn inventoryEvidenceSmoke
+
+tasks.register('pickupLedgerSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.PickupLedgerSmoke'
+}
+check.dependsOn pickupLedgerSmoke
+
+tasks.register('combatOutcomeSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.CombatOutcomeSmoke'
+}
+check.dependsOn combatOutcomeSmoke
+
+tasks.register('blockReceiptsSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.BlockReceiptsSmoke'
+}
+check.dependsOn blockReceiptsSmoke
+
+tasks.register('pauseBarrierSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.PauseBarrierSmoke'
+}
+check.dependsOn pauseBarrierSmoke
+
+tasks.register('controlAdmissionSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.ControlAdmissionSmoke'
+}
+check.dependsOn controlAdmissionSmoke
+
+tasks.register('slotProofSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.SlotProofSmoke'
+}
+check.dependsOn slotProofSmoke
+
+tasks.register('navigationBoundsSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.NavigationBoundsSmoke'
+}
+check.dependsOn navigationBoundsSmoke
+
+tasks.register('sightLandmarksSmoke', JavaExec) {
+ dependsOn testClasses
+ classpath = sourceSets.test.runtimeClasspath
+ mainClass = 'dev.momo.task.SightLandmarksSmoke'
+}
+check.dependsOn sightLandmarksSmoke
+
+// Opt-in development setup. These classes/resources never enter the companion
+// jar or the exact artifact staged by scripts/build-minecraft-component.py.
+sourceSets {
+ fixture { compileClasspath += sourceSets.main.compileClasspath }
+ fixtureTest {
+  compileClasspath += sourceSets.fixture.output + sourceSets.main.compileClasspath
+  runtimeClasspath += sourceSets.fixture.output + sourceSets.main.compileClasspath
+ }
+}
+def fixtureDestination = layout.projectDirectory.dir('../../.workbuddy/007/fixture-build')
+tasks.register('fixtureJar', Jar) {
+ dependsOn fixtureClasses
+ from sourceSets.fixture.output
+ archiveBaseName = 'momo-acceptance-fixtures'
+ archiveClassifier = 'named'
+ destinationDirectory = fixtureDestination
+}
+tasks.register('remapFixtureJar', net.fabricmc.loom.task.RemapJarTask) {
+ dependsOn fixtureJar
+ inputFile = tasks.named('fixtureJar').flatMap { it.archiveFile }
+ archiveBaseName = 'momo-acceptance-fixtures'
+ archiveClassifier = ''
+ destinationDirectory = fixtureDestination
+ addNestedDependencies = false
+}
+tasks.register('fixtureGuardSmoke', JavaExec) {
+ dependsOn fixtureTestClasses
+ classpath = sourceSets.fixtureTest.runtimeClasspath
+ mainClass = 'dev.momo.fixture.FixtureGuardSmoke'
+}
+check.dependsOn fixtureGuardSmoke

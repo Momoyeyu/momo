@@ -59,7 +59,7 @@ export function acknowledgeDisplay(runId: string, generation: number, text: stri
 
 export type ChatEvent =
   | ({ t: "sentence"; no: number; generation?: number; text: string; cues: PerformanceCue[]; at: string } & SentenceIdentity)
-  | { t: "done";runId?:string;generation?:number;presentationToken?:string }
+  | { t: "done";runId?:string;generation?:number;presentationToken?:string;suppressed?:boolean }
   | { t: "error"; message: string };
 
 function isAbortError(e: unknown): boolean {
@@ -87,6 +87,7 @@ function parseEvent(data: string): ChatEvent | null {
       cues?: unknown;
       at?: unknown;
       presentationToken?:unknown;
+      suppressed?:unknown;
     };
     if (j.t === "sentence" && typeof j.text === "string") {
       return {
@@ -104,7 +105,7 @@ function parseEvent(data: string): ChatEvent | null {
         at: typeof j.at === "string" ? j.at : "",
       };
     }
-    if (j.t === "done") return { t: "done",...(typeof j.runId==='string'?{runId:j.runId}:{}),...(typeof j.generation==='number'?{generation:j.generation}:{}),...(typeof j.presentationToken==='string'?{presentationToken:j.presentationToken}:{}) };
+    if (j.t === "done") return { t: "done",...(j.suppressed===true?{suppressed:true}:{}),...(typeof j.runId==='string'?{runId:j.runId}:{}),...(typeof j.generation==='number'?{generation:j.generation}:{}),...(typeof j.presentationToken==='string'?{presentationToken:j.presentationToken}:{}) };
     if (j.t === "error") {
       return {
         t: "error",
@@ -129,14 +130,14 @@ export async function* chat(
   opening = false,
   messageId: string = crypto.randomUUID(),
   images: string[] = [],
-  screenGeneration?: number,
+  screenGeneration?: number | {game:number},
 ): AsyncGenerator<ChatEvent> {
   let res: Response;
   try {
-    res = await runtimeFetch(screenGeneration !== undefined ? "/api/chat/screen-reaction" : opening ? "/api/onboarding/opening" : "/api/chat", {
+    res = await runtimeFetch(typeof screenGeneration === "object" ? "/api/chat/minecraft-decision" : screenGeneration !== undefined ? "/api/chat/screen-reaction" : opening ? "/api/onboarding/opening" : "/api/chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(screenGeneration !== undefined ? {generation:screenGeneration,messageId,presentation,...meetingIdentity()} : { text, images, messageId, presentation, firstMeeting: firstMeetingPending(), ...meetingIdentity() }),
+      body: JSON.stringify(screenGeneration !== undefined ? {generation:typeof screenGeneration === "object" ? screenGeneration.game : screenGeneration,messageId,presentation,...meetingIdentity()} : { text, images, messageId, presentation, firstMeeting: firstMeetingPending(), ...meetingIdentity() }),
       signal: signal ?? null,
     });
   } catch (e) {

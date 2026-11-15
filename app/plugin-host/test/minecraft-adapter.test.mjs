@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createMinecraftAdapter } from '../src/minecraft-adapter.mjs';
+import { createMinecraftAdapter, createMinecraftTransport } from '../src/minecraft-adapter.mjs';
 const permission = { world: 'private-test', account: 'test-account' };
 function fixture() {
   const commands = [];
@@ -40,6 +40,57 @@ test('unverified stop is visible and rejected', async () => {
   assert.equal(adapter.status().stopVerified, false);
 });
 
+test('confirmed process exit releases an unreachable old client without inventing task receipts',async()=>{
+ const adapter=createMinecraftAdapter({authorize:async()=>true,transport:{
+  request:async()=>{throw new Error('Connection refused');},processExited:()=>true,
+ }});
+ const result=await adapter.stop();
+ assert.equal(result.stopVerified,true);
+ assert.equal(result.stopEvidence,'process_exited');
+ assert.deepEqual(result.retiredTasks,[]);
+});
+
+test('exit during a failed request is proof, but an older stop cannot overwrite a newer acknowledgement',async()=>{
+ let exited=false;
+ const gone=createMinecraftAdapter({authorize:async()=>true,transport:{
+  request:async()=>{exited=true;throw new Error('Disconnected');},processExited:()=>exited,
+ }});
+ assert.equal((await gone.stop()).stopEvidence,'process_exited');
+ const pending=[];
+ const adapter=createMinecraftAdapter({authorize:async()=>true,transport:{request:command=>new Promise(resolve=>pending.push({command,resolve}))}});
+ const earlier=adapter.stop();const latest=adapter.stop();
+ pending[1].resolve({...pending[1].command,stopped:true,heldControls:0});
+ await latest;
+ pending[0].resolve({...pending[0].command,stopped:true,heldControls:0});
+ await assert.rejects(earlier,/Late/);
+ assert.equal(adapter.status().stopVerified,true);
+ assert.equal(adapter.status().stopEvidence,'bridge_ack');
+});
+
+test('a live or unidentified process still needs a real stop acknowledgement',async()=>{
+ for(const processExited of [undefined,()=>false]){
+  const adapter=createMinecraftAdapter({authorize:async()=>true,transport:{
+   request:async()=>{throw new Error('Connection refused');},processExited,
+  }});
+  await assert.rejects(adapter.stop(),/Connection refused/);
+  assert.equal(adapter.status().stopVerified,false);
+ }
+});
+
+test('only ESRCH for the selected positive PID proves exit; access denied and unknown PID do not',()=>{
+ const base={port:17649,token:'x'.repeat(40)};
+ const exited=createMinecraftTransport({...base,pid:42,processProbe:(pid,signal)=>{
+  assert.equal(pid,42);assert.equal(signal,0);throw Object.assign(new Error('gone'),{code:'ESRCH'});
+ }});
+ assert.equal(exited.processExited(),true);
+ for(const code of [undefined,'EPERM','EINVAL']){
+  const transport=createMinecraftTransport({...base,pid:42,processProbe:()=>{if(code)throw Object.assign(new Error('uncertain'),{code});}});
+  assert.equal(transport.processExited(),false);
+ }
+ assert.equal(createMinecraftTransport(base).processExited(),false);
+ for(const pid of [0,-1,1.5,'42'])assert.throws(()=>createMinecraftTransport({...base,pid}),/configuration/);
+});
+
 test('gameplay supports combined movement and rejects invalid input before dispatch', async () => {
   const { adapter, commands } = fixture();
   await adapter.observe(permission);
@@ -51,6 +102,19 @@ test('gameplay supports combined movement and rejects invalid input before dispa
   await assert.rejects(adapter.play({ control: 'look', yaw: NaN }, permission), /Invalid gameplay/);
   await assert.rejects(adapter.play({ control: 'forward', held: ['command'] }, permission), /Invalid gameplay/);
   assert.equal(commands.length, count);
+});
+
+test('escape is a normal game key with the same observation and permission checks',async()=>{
+ const {adapter,commands}=fixture();
+ await assert.rejects(adapter.play({control:'screenKey',key:'escape',durationMs:1},permission),/observation/);
+ assert.equal(commands.length,0);
+ await adapter.observe(permission);
+ await adapter.play({control:'screenKey',key:'escape',durationMs:1},permission);
+ assert.equal(commands.at(-1).control,'screenKey');
+ assert.equal(commands.at(-1).key,'escape');
+ const count=commands.length;
+ await assert.rejects(adapter.play({control:'screenKey',key:'command'},permission),/Invalid gameplay/);
+ assert.equal(commands.length,count);
 });
 
 test('aim uses only the latest observed visible block and bounds pitch', async () => {

@@ -10,10 +10,19 @@ import sys
 import platform
 import zipfile
 import argparse
+import json
+import runpy
 
 ROOT = Path(__file__).resolve().parents[1]
 NODE_ARCHIVE = 'node-v24.11.0-darwin-arm64.tar.gz'
 NODE_SHA256 = '0be2ab2816a4fa02d1acff014a434f29f56d8d956f5af6a98b70ced6c5f4d201'
+
+def stage_minecraft_component(root, host):
+    root=Path(root)
+    builder=runpy.run_path(str(root/'scripts/build-minecraft-component.py'))
+    revision=json.loads((root/'migration/web-source.json').read_text())['revision']
+    artifact=root/'plugin-host/minecraft-fabric/build/libs/momo-fabric-companion-0.1.0.jar'
+    return builder['stage_distribution'](artifact,Path(host)/'resources/minecraft',revision)
 
 
 def main():
@@ -54,10 +63,7 @@ def main():
         source = ROOT / 'plugin-host' / name
         if source.is_dir(): shutil.copytree(source,host / name,ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         else: shutil.copy2(source,host / name)
-    mod = ROOT / 'plugin-host/minecraft-fabric/build/libs/momo-fabric-companion-0.1.0.jar'
-    if not mod.is_file(): raise SystemExit('Build plugin-host/minecraft-fabric with Gradle before packaging')
-    (host / 'resources/minecraft').mkdir(exist_ok=True)
-    shutil.copy2(mod, host / 'resources/minecraft' / mod.name)
+    stage_minecraft_component(ROOT,host)
     subprocess.run([shutil.which('npm.cmd' if sys.platform == 'win32' else 'npm') or 'npm','ci','--omit=dev','--ignore-scripts'],cwd=host,check=True)
     helpers=resources / 'helpers'
     helpers.mkdir(exist_ok=True)

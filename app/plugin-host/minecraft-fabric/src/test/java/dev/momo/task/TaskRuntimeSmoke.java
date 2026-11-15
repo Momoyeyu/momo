@@ -1,0 +1,102 @@
+package dev.momo.task;
+
+import java.util.Map;
+
+public final class TaskRuntimeSmoke {
+ static class Work implements TaskRuntime.Work {
+  int starts,stops,pauses,resumes;boolean done,failed;
+  public void start(){starts++;}
+  public TaskRuntime.Step tick(){return failed?TaskRuntime.Step.failed("blocked"):done?TaskRuntime.Step.done(Map.of("actualCount",4)):TaskRuntime.Step.running();}
+  public void pause(){pauses++;}
+  public void resume(){resumes++;}
+  public void stop(){stops++;}
+ }
+ static void check(boolean ok,String why){if(!ok)throw new AssertionError(why);}
+ public static void main(String[] args){
+  TaskRuntime scenes=new TaskRuntime();Work oldScene=new Work();
+  scenes.submit("origin","build","cells","minecraft:overworld",oldScene,0,10000);scenes.tick(1);scenes.stop("scene_changed");
+  check(scenes.snapshot("origin").dimension().equals("minecraft:overworld"),"Retired tasks keep the dimension where their effects actually occurred");
+  try{scenes.submit("origin","build","cells","minecraft:the_nether",new Work(),2,10000);throw new AssertionError("A task ID cannot be rebound to a new dimension");}catch(IllegalArgumentException expected){}
+  check(!scenes.submit("origin","build","cells","minecraft:overworld",new Work(),2,10000),"Same-scene reconciliation remains idempotent");
+  TaskRuntime danger=new TaskRuntime();Work unsafe=new Work(),later=new Work();
+  danger.submit("unsafe","navigate",unsafe,0,10000);danger.submit("later","mine",later,0,10000);danger.tick(1);danger.pause();
+  danger.interrupt("retreated_low_health");danger.resume();danger.tick(2);
+  check(danger.snapshot("unsafe").state().equals("failed")&&danger.snapshot("unsafe").reason().equals("retreated_low_health"),"a survival retreat must be reported as a blocked task rather than silently resume it");
+  check(unsafe.stops==1&&later.starts==0&&danger.snapshot("later").state().equals("cancelled"),"dependent old steps cannot restart after physical safety is recovered");
+  Work revised=new Work();danger.submit("revised","navigate",revised,3,10000);danger.tick(4);
+  check(revised.starts==1,"the same authorized coordinator can submit a revised goal after the interruption");
+  TaskRuntime mealRuntime=new TaskRuntime();
+  Work meal=new Work(){public boolean handlesEating(){return true;}};
+  mealRuntime.submit("meal","eat",meal,0,10000);
+  check(mealRuntime.handlesEating(),"queued explicit eating must not be preempted by a duplicate food reflex");
+  mealRuntime.tick(1);mealRuntime.pause();
+  check(mealRuntime.handlesEating(),"paused meal retains ownership until resume or cancellation");
+  mealRuntime.stop("revoke");mealRuntime.tick(2);
+  check(!mealRuntime.handlesEating(),"revocation removes meal ownership without restarting it");
+  TaskRuntime digging=new TaskRuntime();
+  Work dig=new Work(){public boolean controlsMining(){return true;}};
+  digging.submit("dig","mine",dig,0,10000);check(!digging.controlsMining(),"queued work does not own vanilla mining input");
+  digging.tick(1);check(digging.controlsMining(),"running semantic mining owns input arbitration");
+  digging.pause();check(!digging.controlsMining(),"paused body cannot suppress player input");
+  digging.resume();digging.stop("takeover");check(!digging.controlsMining(),"takeover restores vanilla input");
+  TaskRuntime boundedPlan=new TaskRuntime();
+  check(boundedPlan.submit("full-plan","plan","x".repeat(3000),new Work(),0,10000),"runtime must accept a plan key within the shared 3500 byte contract");
+  TaskRuntime invalid=new TaskRuntime();
+  Work missing=new Work(){public void start(){throw new TaskRuntime.Rejected("target_not_visible");}};
+  invalid.submit("missing","mine",missing,0,10000);invalid.tick(1);
+  check(invalid.snapshot("missing").reason().equals("target_not_visible"),"expected game conditions return a useful reason, not a transport failure");
+  TaskRuntime runtime=new TaskRuntime();Work a=new Work(),b=new Work();
+  runtime.submit("a","mine",a,0,10000);runtime.submit("b","craft",b,0,10000);
+  check(runtime.snapshot("a").state().equals("queued"),"accepted is not success");
+  runtime.tick(1);check(a.starts==1&&b.starts==0,"single physical owner");
+  check(!runtime.submit("a","mine",a,2,10000),"duplicate must not replay");
+  a.done=true;runtime.tick(3);runtime.tick(4);check(b.starts==1,"next skill follows without model round trip");
+  check(runtime.snapshot("a").evidence().get("actualCount").equals(4),"completion carries actual result");
+  runtime.pause();runtime.tick(5);check(b.pauses==1&&runtime.snapshot("b").state().equals("paused"),"pause body");
+  runtime.resume();runtime.tick(6);check(b.resumes==1,"resume same task");
+  runtime.stop("user_takeover");runtime.tick(7);
+  check(b.stops==1&&runtime.snapshot("b").state().equals("cancelled"),"stop terminalizes running body");
+  check(!runtime.events(0).events().isEmpty(),"ordered events available");
+  Work c=new Work();runtime.submit("c","navigate",c,100,1000);runtime.tick(1100);
+  check(c.starts==0&&runtime.snapshot("c").reason().equals("lease_expired"),"expired queued task never starts");
+  Work d=new Work();runtime.submit("d","navigate",d,2000,1000);runtime.tick(2001);
+  runtime.heartbeat(2100,1000);runtime.tick(3050);
+  check(runtime.snapshot("d").state().equals("running"),"heartbeat independent of model");
+  runtime.tick(3100);check(runtime.snapshot("d").state().equals("failed"),"lease expiry releases body");
+  for(int i=0;i<140;i++){Work w=new Work();w.done=true;runtime.submit("j"+i,"craft",w,4000+i,1000);runtime.tick(4000+i);}
+  check(runtime.events(0).gap(),"event cursor gap requires snapshot recovery");
+  TaskRuntime broken=new TaskRuntime();
+  Work stubborn=new Work(){public void stop(){throw new IllegalStateException("device not stopped");}};
+  broken.submit("uncertain","navigate",stubborn,0,1000);broken.tick(1);broken.stop("revoke");
+  check(!broken.stopConfirmed(),"failed native stop must be visible");
+  boolean refused=false;try{broken.submit("unsafe","craft",new Work(),2,1000);}catch(IllegalStateException expected){refused=true;}
+  check(refused,"uncertain physical ownership blocks new tasks");
+  TaskRuntime expiry=new TaskRuntime();Work afterExpiry=new Work();
+  Work neverReleased=new Work(){public void stop(){throw new IllegalStateException("busy");}};
+  expiry.submit("expire","mine",neverReleased,0,10);expiry.tick(1);
+  expiry.submit("later","place",afterExpiry,5,1000);expiry.tick(10);
+  check(afterExpiry.starts==0,"an expiry stop failure blocks dequeue in the same tick");
+  TaskRuntime ids=new TaskRuntime();
+  ids.submit("same","navigate","1,2,3",new Work(),0,1000);
+  boolean conflict=false;try{ids.submit("same","navigate","4,5,6",new Work(),1,1000);}catch(IllegalArgumentException expected){conflict=true;}
+  check(conflict,"same id with different arguments must be rejected");
+  runtime.resetSession();check(runtime.snapshots().isEmpty(),"new authority scope has no old tasks");
+  boolean blockedReset=false;try{broken.resetSession();}catch(IllegalStateException expected){blockedReset=true;}
+  check(blockedReset,"new scope cannot hide an unconfirmed stop");
+  TaskRuntime recovering=new TaskRuntime();
+  Work intermittent=new Work(){public void stop(){stops++;if(stops==1)throw new IllegalStateException("temporarily unavailable");}};
+  recovering.submit("retry","navigate",intermittent,0,1000);recovering.tick(1);recovering.stop("world_left");
+  check(!recovering.stopConfirmed(),"first stop uncertain");
+  recovering.stop("world_left");
+  check(recovering.stopConfirmed(),"stop must retry even after world tick becomes unavailable");
+  TaskRuntime report=new TaskRuntime();
+  Work evolving=new Work(){public Map<String,Object> progress(){return Map.of("skill","craft","ticks",starts);}};
+  report.submit("progress","plan",evolving,0,5000);report.tick(1000);
+  check(report.snapshot("progress").progress().get("skill").equals("craft"),"progress is separate from verified completion evidence");
+  check(report.snapshot("progress").evidence().isEmpty(),"running progress is not a completed result");
+  TaskRuntime idle=new TaskRuntime();idle.notice("manual_takeover");
+  check(idle.events(0).events().get(0).task().reason().equals("manual_takeover"),"manual idle-body takeover must reach the coordinator");
+  check(idle.stopConfirmed(),"a control notice cannot create new work");
+  System.out.println("PASS task queue, evidence, duplicate barrier, pause/resume, stop, heartbeat and event gap");
+ }
+}

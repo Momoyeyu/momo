@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import time
 from unittest.mock import patch
 import pytest
@@ -157,6 +158,19 @@ def test_reaction_downsampling_preserves_original_deadline_and_authorization(mon
         tools._pending.pop('reaction-budget',None);current_run.reset(token)
 
 
+def test_discard_observation_does_not_remove_another_runs_frame():
+    token=current_run.set('discard-this')
+    own,other=object(),object()
+    try:
+        tools._pending['discard-this']=own
+        tools._pending['keep-other']=other
+        tools.discard_observation()
+        assert 'discard-this' not in tools._pending
+        assert tools._pending['keep-other'] is other
+    finally:
+        tools._pending.pop('discard-this',None);tools._pending.pop('keep-other',None);current_run.reset(token)
+
+
 def test_screen_sense_is_available_without_started_observation_or_app_grant():
     from app.services.computer import computer
     with patch.object(tools,'require_local',return_value='r'),patch.object(tools.runtime,'focus',False),patch('app.services.activities.snapshot',return_value={'enabled':{'computer':True}}),patch.object(computer,'desktop_allowed',True),patch.object(computer,'observing',False):
@@ -223,6 +237,13 @@ def test_bound_game_exposes_only_its_observation_lane():
         assert 'minecraft_action' in names
         assert not names & {'screen_observe','computer_targets','computer_request'}
 
+@pytest.mark.parametrize('permissions,allowed',[({'game.observe','game.move'},False),({'game.observe','game.modify'},True)])
+def test_follow_tool_matches_unified_body_authority(permissions,allowed):
+ from app.services.minecraft import minecraft
+ with patch.object(tools,'require_local',return_value='r'),patch.object(minecraft,'binding',{'world':'fixture'}),patch.object(minecraft,'permissions',permissions),patch('app.services.activities.snapshot',return_value={'enabled':{'computer':True,'browser':True,'minecraft':True}}):
+  declaration=next(row['function'] for row in tools.declarations() if row['function']['name']=='minecraft_action')
+  assert ('follow' in declaration['parameters']['properties']['action']['enum']) is allowed
+
 
 def test_desktop_observation_cannot_steal_bound_game_attention():
     from app.services.computer import Computer, ComputerError
@@ -233,3 +254,135 @@ def test_desktop_observation_cannot_steal_bound_game_attention():
             computer.desktop_frame()
         assert not computer.observing
         assert minecraft.binding == {'world':'fixture'}
+
+def test_new_game_observation_retires_only_old_read_snapshot_not_action_receipts():
+ old={'observedAt':123,'x':1,'y':64,'z':2,'visibleEntities':[{'name':'x'*12000}]}
+ calls=[{'id':'read','function':{'name':'minecraft_action','arguments':'{"action":"observe"}'}},
+        {'id':'move','function':{'name':'minecraft_action','arguments':'{"action":"submit"}'}}]
+ messages=[{'role':'assistant','tool_calls':calls},
+           {'role':'tool','tool_call_id':'read','content':json.dumps(old)},
+           {'role':'tool','tool_call_id':'move','content':'{"task":{"state":"succeeded","evidence":{"x":2}}}'}]
+ action=dict(messages[2])
+ tools.retire_game_observations(messages)
+ assert messages[2]==action
+ retired=json.loads(messages[1]['content'])
+ assert retired['observedAt']==123 and retired['x']==1 and retired['superseded']
+ assert 'visibleEntities' not in retired and len(messages[1]['content'])<500
+
+def test_compaction_refresh_does_not_restore_retired_large_game_snapshot():
+ from app.services.turn import ContextMessages
+ event={'role':'system','content':tools.GAME_EVENT_PREFIX+json.dumps({'observedAt':1,'x':2,'visibleEntities':['x'*12000]})}
+ messages=ContextMessages([dict(event)]);messages.base_count=1
+ messages.rebuild=lambda:[dict(event)]
+ tools.retire_game_observations(messages)
+ messages.refresh()
+ assert len(messages[0]['content'])<1000 and 'superseded' in messages[0]['content']
+
+def test_retiring_known_read_keeps_a_conservative_measured_prefix_bound():
+ import copy
+ from app.services.turn import ContextMessages
+ from app.services.context_policy import estimate_request,estimate
+ event={'role':'system','content':tools.GAME_EVENT_PREFIX+json.dumps({'observedAt':1,'x':2,'visibleEntities':['x'*12000]})}
+ messages=ContextMessages([{'role':'system','content':'unchanged'*5000},event])
+ definitions=[{'type':'function','function':{'name':'minecraft_action'}}]
+ messages.usage_anchor=(copy.deepcopy(list(messages)),definitions,5000)
+ tools.retire_game_observations(messages)
+ assert messages.usage_anchor[0]==messages
+ assert messages.usage_anchor[2]>5000, 'replacement text is charged; removed text is not discounted'
+ assert estimate_request(messages,definitions)<estimate(messages,definitions)
+ charged=messages.usage_anchor[2]
+ tools.retire_game_observations(messages)
+ assert messages.usage_anchor[2]==charged, 'idempotent retirement must not charge twice'
+ messages[0]['content']='unmeasured change'
+ tools.retire_game_observations(messages)
+ assert estimate_request(messages,definitions)==estimate(messages,definitions)
+
+def test_game_model_projection_keeps_slot_addresses_and_requests_recipes_on_demand():
+ from app.services.minecraft import Minecraft
+ raw={'observedAt':1,'x':2,'slots':[{'id':0,'item':'minecraft:air','count':0,'components':{}},
+                                   {'id':9,'item':'minecraft:oak_log','count':4,'name':'橡木原木'}],
+      'knownRecipes':[{'id':'minecraft:oak_planks','ingredients':['x'*10000]}],
+      'task':{'state':'failed','evidence':{'blocksBroken':1}}}
+ result=Minecraft.model_observation(raw)
+ assert result['slots']==[{'id':0,'empty':True},raw['slots'][1]]
+ assert 'knownRecipes' not in result and result['recipeQueryAvailable']
+ assert result['task']==raw['task'] and 'knownRecipes' in raw
+
+def test_game_goal_conflict_reports_recovery_instead_of_an_ambiguous_permission_failure():
+ from app.services.minecraft import minecraft,MinecraftError
+ with patch.object(tools,'require_local',return_value='r'),patch.object(minecraft,'update_goal',side_effect=MinecraftError('Live task must settle',code='MINECRAFT_TASKS_ACTIVE')):
+  result=json.loads(tools.execute('minecraft_goal',{}))
+ assert result['code']=='MINECRAFT_TASKS_ACTIVE' and 'cancel' in result['error'].lower()
+
+@pytest.mark.parametrize('arguments',[
+ {'action':'submit','taskId':'work','args':{'steps':[{'skill':'wait','args':{'ticks':20}}]}},
+ {'action':'wait','args':{'ticks':20}},
+ {'action':'play','control':'forward','durationMs':0},
+])
+def test_game_parameter_errors_are_known_before_dispatch(arguments):
+ from app.services.minecraft import minecraft
+ with patch.object(tools,'require_local',return_value='r'),patch.object(minecraft,'execute') as dispatch:
+  reply=json.loads(tools.execute('minecraft_action',arguments))
+ assert reply['code']=='MINECRAFT_INPUT'
+ assert 'skill' in reply['error']
+ dispatch.assert_not_called()
+
+def test_declared_game_escape_key_passes_the_shared_action_schema():
+ from app.services.minecraft import minecraft
+ with patch.object(tools,'require_local',return_value='r'),patch.object(minecraft,'execute',return_value={'sent':True}) as dispatch:
+  reply=json.loads(tools.execute('minecraft_action',{'action':'play','control':'screenKey','key':'escape','durationMs':1}))
+ assert reply=={'sent':True}
+ assert dispatch.call_args.args[1]['key']=='escape'
+
+def test_game_observation_omits_default_slot_metadata_but_preserves_durability_and_food():
+ import copy
+ from app.services.minecraft import Minecraft
+ raw={'slots':[{'id':9,'item':'minecraft:oak_log','count':3,'damage':0,'maxDamage':0,'components':{}},
+               {'id':41,'item':'minecraft:wooden_sword','count':1,'damage':7,'maxDamage':59,'components':{'minecraft:enchantments':'sharpness level 1'}},
+               {'id':36,'item':'minecraft:rotten_flesh','count':3,'damage':0,'maxDamage':0,'components':{'minecraft:food':'nutrition=4, hunger effect'}}]}
+ old=copy.deepcopy(raw);projected=Minecraft.model_observation(raw)
+ assert projected['slots'][0]=={'id':9,'item':'minecraft:oak_log','count':3}
+ assert projected['slots'][1]==raw['slots'][1]
+ assert projected['slots'][2]['components']==raw['slots'][2]['components']
+ assert raw==old
+
+def test_live_game_projection_bounds_metadata_without_losing_vanilla_inventory_addresses():
+ import copy
+ from app.services.minecraft import Minecraft
+ raw={'world':'w','account':'a','observedAt':123456789,'epoch':77,'x':1.123456789,'y':64,'z':2.987654321,'health':17,'food':15,'screen':'world','selectedHotbar':0,
+      'slots':[{'id':i,'item':'minecraft:oak_planks','count':i+1,'name':'橡木木板','components':{'minecraft:enchantments':'long evidence '*70}} for i in range(9,46)],
+      'visibleLandmarks':[{'x':i,'y':65,'z':3,'block':'minecraft:oak_log','distance':i+.123456789} for i in range(24)]}
+ before=copy.deepcopy(raw);projected=Minecraft.model_observation(raw,compact=True)
+ assert len(json.dumps(projected,ensure_ascii=False,separators=(',',':')).encode())<=6000
+ assert [(s['id'],s['item'],s['count']) for s in projected['slots']]==[(s['id'],s['item'],s['count']) for s in raw['slots']]
+ assert projected['observedAt']==raw['observedAt'] and projected['epoch']==77 and projected['health']==17
+ assert projected['detailsAvailable'] and raw==before
+ detail=Minecraft.model_observation(raw,compact=True,query='slot:12')
+ assert detail['slots']==[raw['slots'][3]] and detail['world']=='w'
+ assert Minecraft.model_observation(raw,compact=True,query='details')['slots']==raw['slots']
+
+def test_game_declaration_keeps_semantic_tasks_small_and_manual_controls_on_demand():
+ declaration=tools._minecraft_declaration(['observe','submit','capabilities','play'])['function']
+ assert set(declaration['parameters']['properties'])=={'action','query','taskId','activityId','skill','args','after'}
+ assert 'controls' in declaration['description'] and 'args' in declaration['description']
+
+def test_full_game_catalog_leaves_context_for_goal_and_current_pixels():
+ from pathlib import Path
+ from app.services.minecraft import minecraft
+ definitions=json.loads((Path(__file__).parents[2]/'plugin-host/src/minecraft-skills.json').read_text())
+ with patch.object(minecraft,'capabilities',{'skillDefinitions':definitions}):
+  declaration=tools._minecraft_declaration(['observe','submit','capabilities','play'])
+ assert len(json.dumps(declaration,ensure_ascii=False).encode())<=3000
+ description=declaration['function']['description']
+ assert all(name+'(' in description for name in definitions), 'Keep every actual skill discoverable'
+ assert 'taskId' in description and 'same' in description.lower()
+
+def test_nested_manual_fallback_uses_the_same_validated_input_and_authority():
+ from app.services.minecraft import minecraft
+ with patch.object(tools,'require_local',return_value='r'),patch.object(minecraft,'execute',return_value={'sent':True}) as dispatch:
+  reply=json.loads(tools.execute('minecraft_action',{'action':'play','args':{'control':'screenKey','key':'escape','durationMs':1}}))
+ assert reply=={'sent':True} and dispatch.call_args.args[1]['control']=='screenKey' and dispatch.call_args.args[1]['key']=='escape'
+ with patch.object(tools,'require_local',return_value='r'),patch.object(minecraft,'execute') as dispatch:
+  for args in [{'control':'look','generation':99},{'control':'look','leaseId':'fake'},{'control':'forward','durationMs':0}]:
+   assert json.loads(tools.execute('minecraft_action',{'action':'play','args':args}))['code']=='MINECRAFT_INPUT'
+ dispatch.assert_not_called()

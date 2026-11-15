@@ -28,7 +28,7 @@ class Action(Owner):
     x: float = Field(default=0.5,ge=0,le=1)
     y: float = Field(default=0.5,ge=0,le=1)
     scroll: float = Field(default=0,ge=-10,le=10)
-    key: Literal['enter','backspace','tab','left','right','up','down'] = 'enter'
+    key: Literal['enter','backspace','tab','left','right','up','down','escape'] = 'enter'
     control: Literal['aim','respawn','screenClick','screenScroll','screenText','screenKey','resume','forward','back','left','right','jump','sneak','sprint','look','attack','mine','use','eat','hotbar','inventory','close','slot','quickMove','drop','swapHands'] | None = None
     blockIndex: int = Field(default=0,ge=0,le=7)
     yaw: float = Field(default=0,ge=-180,le=180)
@@ -64,3 +64,33 @@ def sessions(): return invoke(minecraft_attach.sessions)
 def attach(body: Attach): return invoke(minecraft_attach.attach,body.sessionId,body.world,body.account,body.permissions,body.clientId,body.leaseId)
 @router.post('/install')
 def install(body: Install): return invoke(minecraft_attach.install,body.instancePath)
+
+from pydantic import ConfigDict
+class TaskCommand(Owner):
+    model_config = ConfigDict(extra='forbid')
+    generation: int
+    action: Literal['capabilities','recipes','submit','task','events','pause','resume','cancel']
+    taskId: str | None = Field(default=None, pattern=r'^[A-Za-z0-9_-]{1,80}$')
+    activityId: str | None = Field(default=None, pattern=r'^[A-Za-z0-9_-]{1,80}$')
+    skill: str | None = Field(default=None,max_length=32)
+    query: str = Field(default='',max_length=64)
+    args: dict = Field(default_factory=dict)
+    after: int = Field(default=0,ge=0)
+
+@router.post('/tasks')
+def tasks(body: TaskCommand):
+    if body.activityId and body.action!='task':raise HTTPException(422,'Historical activities are read-only')
+    arguments={}
+    if body.action=='submit':
+        if not body.taskId or not body.skill:raise HTTPException(422,'Task ID and skill required')
+        arguments={'taskId':body.taskId,'skill':body.skill,'args':body.args}
+    elif body.action in {'task','cancel'}:
+        if body.action=='cancel' and not body.taskId:raise HTTPException(422,'Task ID required')
+        if body.taskId:arguments={'taskId':body.taskId}
+        if body.activityId:
+            if body.action!='task':raise HTTPException(422,'Historical activities are read-only')
+            arguments['activityId']=body.activityId
+    elif body.action=='events':arguments={'after':body.after}
+    elif body.action=='capabilities' and body.skill:arguments={'skill':body.skill}
+    elif body.action=='recipes':arguments={'query':body.query}
+    return invoke(minecraft.execute,body.action,arguments,body.generation,body.clientId,body.leaseId)

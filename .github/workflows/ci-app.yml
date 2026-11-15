@@ -24,6 +24,7 @@ jobs:
         working-directory: app/plugin-host
       - run: uv sync --frozen
         working-directory: app/backend
+      - run: uv run --project app/backend --frozen python app/scripts/test_prepare_plugin_runtime.py
       - run: uv run --frozen pytest -q
         working-directory: app/backend
       - uses: pnpm/action-setup@v4

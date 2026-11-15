@@ -1,0 +1,9 @@
+# Minecraft 007 desktop delivery
+
+Shared business source is promoted from momo-web revision `68496f96aa44c33d837c55b4b87046207b1ec015` (CI 43759450031 passed). The source ownership manifest is `app/migration/web-source.json`; shared frontend, Python coordination and Cordis/Fabric code must not fork in this repository.
+
+The companion build now requires the pinned Baritone preparer and component builder delivered by that promotion. The builder writes a companion JAR plus `.provenance.json`. Desktop `prepare-plugin-runtime.py` invokes the shared `stage_distribution` validator before copying either file: artifact hash, embedded dependency lock, nested Baritone checksum, license/source notices and shared revision must agree. A stale standalone JAR without its matching receipt cannot be packaged. The manual macOS workflow uses the same preparer/builder, and application CI runs isolated stage regressions.
+
+Validation at this checkpoint: two stage tests failed before the hook existed and passed after implementation, including refusal of another source revision before copying. All 36 desktop shell tests passed. The shared source passed Python 943 tests (three skips), frontend 266, Node 327 (one skip), typecheck, native build and its exact-revision CI. The actual companion digest is recorded in the generated private build receipt, not inferred from its fixed filename.
+
+This is build preparation, not installation or gameplay acceptance. The installed app remains 0.3.1 with its preceding shared revision. Final native gameplay, fixed-signature package creation, installed model/UI smoke and cleanup of task-owned remote staging remain required. Do not reset existing system permissions or mark 007 done based on this promotion.

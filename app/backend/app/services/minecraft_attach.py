@@ -1,5 +1,5 @@
 """Attach to the user's explicitly selected running Fabric client; never launch/login."""
-import json, os, stat, re, shutil, sys
+import json, os, stat, re, sys, tempfile, zipfile
 from pathlib import Path
 import httpx
 from .minecraft import minecraft, MinecraftError
@@ -36,10 +36,14 @@ def inspect(session):
 
 def sessions():
     rows=[]
-    for path in list(DIRECTORY.glob('*.json'))[:16]:
+    # Old JVM session files must not consume the live-client result limit.
+    # Prefer newest files, while bounding both discovery and network probes.
+    candidates=sorted(DIRECTORY.glob('*.json'),key=lambda path:path.lstat().st_mtime_ns,reverse=True)[:256]
+    for path in candidates:
         try:
             value,data=inspect(path.stem)
-            rows.append({'id':path.stem,'pid':value['pid'],'ready':bool(data.get('world')),'world':data.get('world'),'account':data.get('account'),'playerName':data.get('playerName')})
+            rows.append({'id':path.stem,'pid':value['pid'],'ready':bool(data.get('world')),'world':data.get('world'),'account':data.get('account'),'playerName':data.get('playerName'),'worldName':data.get('worldName'),'dimension':data.get('dimension')})
+            if len(rows)>=16:break
         except MinecraftError: continue
     return {'sessions':rows}
 
@@ -47,7 +51,7 @@ def attach(session,world,account,permissions,client,lease):
     minecraft.gate(client,lease)
     value,data=inspect(session)
     if not world or not account or data.get('world')!=world or data.get('account')!=account or 'game.observe' not in permissions: raise MinecraftError('Selected game identity changed')
-    return minecraft.connect(value['port'],value['token'],world,account,permissions,client,lease)
+    return minecraft.connect(value['port'],value['token'],world,account,permissions,client,lease,value['pid'])
 
 def install(instance_path):
     root=Path(instance_path).expanduser()
@@ -58,8 +62,34 @@ def install(instance_path):
     if dest.is_symlink(): raise MinecraftError('Symlink mod directory forbidden')
     dest.mkdir(exist_ok=True)
     target=dest/mod.name
+    updated=False
+    previous=None
+    if target.exists() or target.is_symlink():
+        info=target.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_size>128*1024*1024: raise MinecraftError('Existing mod is not a regular companion resource')
+        if target.read_bytes()==mod.read_bytes(): return {'installed':True,'updated':False,'restartRequired':True}
+        # The explicit install operation may replace our managed companion, never another mod.
+        try:
+            with zipfile.ZipFile(target) as archive:
+                metadata=archive.getinfo('fabric.mod.json')
+                if metadata.file_size>65536: raise ValueError()
+                value=json.loads(archive.read(metadata))
+                if value.get('id')!='momo_companion' or value.get('entrypoints',{}).get('client')!=['dev.momo.CompanionClient']: raise ValueError()
+        except (OSError,ValueError,KeyError,TypeError,AttributeError,zipfile.BadZipFile):
+            raise MinecraftError('Existing file is not the managed momo companion; it was left unchanged') from None
+        previous=(info.st_dev,info.st_ino,info.st_mtime_ns,info.st_size)
+        updated=True
+    fd,temporary=tempfile.mkstemp(prefix='.momo-companion-',suffix='.tmp',dir=dest)
     try:
-        with target.open('xb') as out: out.write(mod.read_bytes())
-    except FileExistsError:
-        if target.is_symlink() or target.read_bytes()!=mod.read_bytes(): raise MinecraftError('Existing mod differs; remove explicitly before installing')
-    return {'installed':True,'restartRequired':True}
+        with os.fdopen(fd,'wb') as out:
+            out.write(mod.read_bytes());out.flush();os.fsync(out.fileno())
+        if updated:
+            current=target.lstat()
+            if (current.st_dev,current.st_ino,current.st_mtime_ns,current.st_size)!=previous: raise MinecraftError('Companion changed during update; retry installation')
+            os.replace(temporary,target)
+        else:
+            # A concurrent file appearing at the destination must not be overwritten.
+            os.link(temporary,target)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+    return {'installed':True,'updated':updated,'restartRequired':True}

@@ -39,8 +39,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - run: gradle --no-daemon build
-        working-directory: app/plugin-host/minecraft-fabric
+      - name: Build locked Minecraft component and provenance
+        run: |
+          python3 app/scripts/prepare-minecraft-runtime.py
+          python3 app/scripts/build-minecraft-component.py --gradle "$(command -v gradle)" --cache "$RUNNER_TEMP/momo-minecraft-gradle"
       - name: Retrieve reviewed QQ resources
         env:
           QQ_ARCHIVE_URL: ${{ inputs.qq_archive_url }}

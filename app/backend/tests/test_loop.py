@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import pytest
 
 from app.core import llm
 from app.services import checkpoint, turn
@@ -317,3 +318,43 @@ def test_failed_request_backlog_stays_clean_when_reloaded(monkeypatch):
     response = client.post("/api/chat", json={"text": "failed request"})
     assert '"t": "error"' in response.text
     assert client.get("/api/checkpoints/live").json()["messages"] == []
+
+def test_game_submission_yields_to_body_then_only_acknowledges(monkeypatch):
+    seen=[]
+    def fake_chat(cfg,messages,tools=None,**kwargs):
+        seen.append(tools)
+        if len(seen)==1:
+            yield {'type':'tool_calls','calls':[_tool_call('minecraft_action','{"action":"submit","taskId":"walk","skill":"navigate","args":{"x":1,"y":64,"z":2}}')]}
+        else:
+            assert tools==[], 'accepted local body must not enter a model polling loop'
+            yield {'type':'text','delta':'我去那边看看。'}
+    monkeypatch.setattr(llm,'chat_stream',fake_chat)
+    monkeypatch.setattr(turn,'run_call',lambda call,ext:{'role':'tool','tool_call_id':call['id'],'content':json.dumps({'accepted':True,'task':{'taskId':'walk','state':'queued','evidence':{}}})})
+    events=list(turn.run_turn('你自己玩一会儿'))
+    assert not [e for e in events if e['t']=='error']
+    assert len(seen)==2
+    assert [e['text'] for e in events if e['t']=='sentence']==['我去那边看看。']
+
+
+@pytest.mark.parametrize('ack',['poll','stop','silent'])
+def test_accepted_game_task_acknowledgement_cannot_dispatch_or_retry(monkeypatch,ack):
+    seen=[];dispatched=[]
+    def provider(cfg,messages,tools=None,**kwargs):
+        seen.append(tools)
+        if len(seen)==1:
+            yield {'type':'tool_calls','calls':[_tool_call('minecraft_action','{"action":"submit","taskId":"walk","skill":"navigate","args":{"x":1,"y":64,"z":2}}')]}
+        else:
+            assert tools==[]
+            if ack!='silent':
+                # Some providers return historical tool syntax even when tools are disabled.
+                yield {'type':'tool_calls','calls':[_tool_call('minecraft_action',json.dumps({'action':'task' if ack=='poll' else 'stop','taskId':'walk'}),'unexpected')]}
+    def dispatch(call,ext):
+        action=json.loads(call['function']['arguments'])['action'];dispatched.append(action)
+        result={'accepted':True,'task':{'taskId':'walk','state':'queued','evidence':{}}} if action=='submit' else {'task':{'taskId':'walk','state':'running'}}
+        return {'role':'tool','tool_call_id':call['id'],'content':json.dumps(result)}
+    monkeypatch.setattr(llm,'chat_stream',provider)
+    monkeypatch.setattr(turn,'run_call',dispatch)
+    events=list(turn.run_turn('去那边看看'))
+    assert dispatched==['submit'], 'An acknowledgement must never poll, cancel or stop a body that is already working'
+    assert len(seen)==2, 'Empty acknowledgements must not become another inference loop'
+    assert not [e for e in events if e['t']=='error']

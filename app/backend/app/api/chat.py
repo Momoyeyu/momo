@@ -118,6 +118,15 @@ def screen_reaction(req: ScreenReactionIn) -> StreamingResponse:
     return _chat(ChatIn(clientId=req.clientId, leaseId=req.leaseId, messageId=req.messageId, presentation=req.presentation), observation=observation)
 
 
+@router.post("/api/chat/minecraft-decision")
+def minecraft_decision(req: ScreenReactionIn) -> StreamingResponse:
+    from ..services.minecraft import minecraft, MinecraftError
+    try: observation=minecraft.claim_decision(req.generation,req.clientId,req.leaseId)
+    except (MinecraftError,CoordinationError,vision.VisionError) as error:raise HTTPException(409,str(error)) from error
+    if observation is None:return StreamingResponse(iter([_sse({"t":"done","suppressed":True})]),media_type="text/event-stream")
+    return _chat(ChatIn(clientId=req.clientId,leaseId=req.leaseId,messageId=req.messageId,presentation=req.presentation),observation=observation)
+
+
 def _chat(req: ChatIn, observation=None) -> StreamingResponse:
     if observation is None and not req.text.strip() and not req.images:
         raise HTTPException(status_code=400, detail="empty text")
@@ -153,6 +162,7 @@ def _chat(req: ChatIn, observation=None) -> StreamingResponse:
         presentation_token = None
         generation = None
         generated = False
+        validate_event = None
         try:
             with runtime.run(inbox["run_id"], client=req.clientId, lease=req.leaseId):
                 runtime.inbox_status(inbox["id"], "processing")
@@ -161,7 +171,11 @@ def _chat(req: ChatIn, observation=None) -> StreamingResponse:
                     from ..services.computer import computer
                     token = current_run.set(inbox["run_id"])
                     try:
-                        observed = computer.stage_reaction(observation["generation"])
+                        if observation.get('kind')=='minecraft':
+                            from ..services.minecraft import minecraft
+                            validate_event=lambda *,refresh=False:minecraft.validate_decision(observation['generation'],observation['decisionRevision'],refresh=refresh)
+                            observed=minecraft.stage_decision(observation['generation'],observation['decisionRevision'])
+                        else:observed = computer.stage_reaction(observation["generation"])
                     finally:
                         current_run.reset(token)
                 iterator = iter(
@@ -171,6 +185,7 @@ def _chat(req: ChatIn, observation=None) -> StreamingResponse:
                         first_meeting=req.firstMeeting,
                         run_id=inbox["run_id"],
                         observation=observed,
+                        validate_event=validate_event,
                     )
                 )
                 while True:
@@ -184,12 +199,16 @@ def _chat(req: ChatIn, observation=None) -> StreamingResponse:
                     finally:
                         current_run.reset(token)
                     if observation is not None:
-                        from ..services.computer import computer, ComputerError
-                        with computer.lock:
-                            computer.gate()
-                            if (computer.generation != observation["generation"] or not computer.observing
-                                    or not computer.proactive or not computer.reactions):
-                                raise ComputerError("computer.revoked")
+                        token=current_run.set(inbox["run_id"])
+                        try:
+                            if observation.get('kind')=='minecraft':
+                                validate_event(refresh=True)
+                            else:
+                                from ..services.computer import computer, ComputerError
+                                with computer.lock:
+                                    computer.gate()
+                                    if (computer.generation != observation["generation"] or not computer.observing or not computer.proactive or not computer.reactions):raise ComputerError("computer.revoked")
+                        finally:current_run.reset(token)
                     if ev["t"] == "error":
                         errored = True
                     if ev["t"] == "sentence" and ev.get("text"):
@@ -198,10 +217,19 @@ def _chat(req: ChatIn, observation=None) -> StreamingResponse:
                         if presentation_token:
                             ev = {**ev, "presentationToken": presentation_token}
                     yield _sse(ev)
+                # A cancelled inner turn can return without one last sentence.
+                # Retire its already streamed presentation rather than letting
+                # the player finish queued speech under an invalid game claim.
+                if validate_event is not None:
+                    token=current_run.set(inbox['run_id'])
+                    try:validate_event(refresh=True)
+                    finally:current_run.reset(token)
                 generated = True
         except Exception as e:  # 兜底：agent 未捕获的异常也走 error 事件
             errored = True
-            yield _sse({"t": "error", "message": str(e), "service": "backend"})
+            if observation is not None and observation.get('kind')=='minecraft' and getattr(e,'code',None)=='MINECRAFT_DECISION_REVOKED':
+                yield _sse({'t':'done','suppressed':True})
+            else:yield _sse({"t": "error", "message": str(e), "service": "backend"})
         finally:
             if iterator is not None:
                 iterator.close()
