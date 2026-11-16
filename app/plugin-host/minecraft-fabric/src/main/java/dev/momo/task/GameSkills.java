@@ -21,8 +21,8 @@ public final class GameSkills {
  public static final List<String> NAMES=List.copyOf(SkillArguments.contract().keySet());
  private GameSkills(){}
  static TaskRuntime.Work consumeFood(){return new Skill("eat",new JsonObject());}
- static TaskRuntime.Work rawMine(JsonObject args,boolean protectedSupport){var work=new Skill("mine",args.deepCopy());work.protectSupport=protectedSupport;return work;}
- static TaskRuntime.Work gatherMine(JsonObject args){SkillArguments.validate("mine",args);return PreparedMineSkill.create(args,true);}
+ static TaskRuntime.Work rawMine(JsonObject args,boolean protectedSupport,Vec3d observedPoint){var work=new Skill("mine",args.deepCopy());work.protectSupport=protectedSupport;work.observedPoint=observedPoint;return work;}
+ static TaskRuntime.Work gatherMine(JsonObject args,Vec3d observedPoint){SkillArguments.validate("mine",args);return PreparedMineSkill.create(args,true,observedPoint);}
  public static TaskRuntime.Work create(String skill,JsonObject args){
   SkillArguments.validate(skill,args);
   if(skill.equals("gather"))return new GatherSkill(args);
@@ -30,7 +30,7 @@ public final class GameSkills {
   if(skill.equals("eat"))return new EatSkill();
   if(skill.equals("selectItem"))return new SelectItemSkill(args);
   if(skill.equals("placeNearby"))return new NearbyPlacementSkill(args);
-  if(skill.equals("build"))return new BuilderSkill(args);
+  if(skill.equals("build"))return BuildScene.create(args);
   if(skill.equals("plan")){
    var work=new ArrayList<TaskPlan.Node>();
    for(var value:args.getAsJsonArray("steps")){
@@ -66,7 +66,7 @@ public final class GameSkills {
   boolean placeSent,inventoryPending,buttonPending,protectSupport,swimming;String placedItem;int verifiedActions;
   net.minecraft.client.world.ClientWorld proofWorld;int proofHandler;long slotBoundary;SlotProof slotProof;
   Map<String,Object> verifiedGain=Map.of(),verifiedSlots=Map.of();
-  InteractionOutcome interaction;SeenTarget<BlockPos> seenTarget;
+  InteractionOutcome interaction;SeenTarget<BlockPos> seenTarget;Vec3d observedPoint;
   Skill(String skill,JsonObject args){this.skill=skill;this.args=args;ownedScreen=c.currentScreen;}
   public void start(){
    if(c.player==null||c.world==null||c.interactionManager==null)throw new TaskRuntime.Rejected("world_unavailable");
@@ -77,7 +77,13 @@ public final class GameSkills {
     boolean surface=skill.equals("navigate")&&args.has("height")&&args.get("height").getAsString().equals("surface");
     pos=surface&&!args.has("y")?new BlockPos(integer(args,"x",-30000000,30000000),c.player.getBlockY(),integer(args,"z",-30000000,30000000)):position(args);
     if(!c.world.isChunkLoaded(pos)||!NavigationBounds.within(c.player.getX(),c.player.getY(),c.player.getZ(),pos.getX(),pos.getY(),pos.getZ(),surface))throw new TaskRuntime.Rejected("outside_known_terrain");
-    if(!skill.equals("navigate")&&!visible(pos))throw new TaskRuntime.Rejected("target_not_visible");
+    if(!skill.equals("navigate")&&!visible(pos)){
+     if(skill.equals("mine")&&BlockSight.visibleAbsence(c,pos)){
+      BlockReceipts.CURRENT.observeAbsence(c.world,c.player.getUuidAsString(),c.world.getRegistryKey().getValue().toString(),pos.getX(),pos.getY(),pos.getZ());
+      throw new TaskRuntime.Rejected("target_absent");
+     }
+     throw new TaskRuntime.Rejected("target_not_visible");
+    }
     if(!skill.equals("navigate")){beforeState=c.world.getBlockState(pos).toString();beforeBlock=Registries.BLOCK.getId(c.world.getBlockState(pos).getBlock()).toString();blockBoundary=BlockReceipts.CURRENT.cursor();}
    }
    if(Set.of("follow","interactEntity","attack").contains(skill)){
@@ -166,7 +172,10 @@ public final class GameSkills {
      if(!swimToward(entity,entity.getEyePos()))approach(entity.getBlockPos(),20);break;
     case "mine":
      var mined=BlockReceipts.CURRENT.after(c.world,pos.getX(),pos.getY(),pos.getZ(),blockBoundary);
-     if(mined!=null&&!mined.block().equals(beforeBlock))return done(Map.of("block",beforeState,"x",pos.getX(),"y",pos.getY(),"z",pos.getZ(),"after",mined.state(),"serverBlockSeq",mined.seq()));
+     if(mined!=null&&!mined.block().equals(beforeBlock)){
+      BlockReceipts.CURRENT.claimMine(c.world,c.player.getUuidAsString(),c.world.getRegistryKey().getValue().toString(),pos.getX(),pos.getY(),pos.getZ(),blockBoundary,beforeBlock);
+      return done(Map.of("block",beforeState,"x",pos.getX(),"y",pos.getY(),"z",pos.getZ(),"after",mined.state(),"serverBlockSeq",mined.seq(),"serverObservedAt",mined.observedAt()));
+     }
      if(!Registries.BLOCK.getId(c.world.getBlockState(pos).getBlock()).toString().equals(beforeBlock)){
       if(predictedChangeTick==0)predictedChangeTick=ticks;
       if(ticks-predictedChangeTick>100)return TaskRuntime.Step.failed("server_confirmation_missing");
@@ -176,9 +185,10 @@ public final class GameSkills {
      if(protectSupport&&belowFeet(pos))return TaskRuntime.Step.failed("unreachable");
      if(!reachable(pos)){approach(pos,20);break;}haltNavigation();
      if(protectSupport&&belowFeet(pos))return TaskRuntime.Step.failed("unreachable");
-     look(pos.toCenterPos());
+     var miningHit=sightHit(pos);if(miningHit==null)return TaskRuntime.Step.failed("target_not_visible");
+     look(miningHit.getPos());
      if(!PreparedMineSkill.heldSuitable(c,pos))throw new TaskRuntime.Rejected("tool_required");
-     c.interactionManager.updateBlockBreakingProgress(pos,face(pos));c.player.swingHand(Hand.MAIN_HAND);break;
+     c.interactionManager.updateBlockBreakingProgress(pos,miningHit.getSide());c.player.swingHand(Hand.MAIN_HAND);break;
     case "place":
      var built=BlockReceipts.CURRENT.after(c.world,placed.getX(),placed.getY(),placed.getZ(),blockBoundary);
      if(placeSent&&built!=null&&!built.state().equals(beforeState)){
@@ -425,7 +435,7 @@ public final class GameSkills {
   private void haltNavigation(){if(navigating){navigation.stop();navigating=false;}}
   private RaycastContext.ShapeType sightShape(BlockPos target){return c.world.getBlockState(target).getCollisionShape(c.world,target).isEmpty()?RaycastContext.ShapeType.OUTLINE:RaycastContext.ShapeType.COLLIDER;}
   private BlockHitResult sightHit(BlockPos target){
-   return BlockSight.hit(c,target);
+   return BlockSight.hit(c,target,null,observedPoint);
   }
   private boolean visible(BlockPos target){return sightHit(target)!=null;}
   private boolean reachable(BlockPos target){return c.player.canInteractWithBlockAt(target,0)&&(!(c.world.getBlockState(target).getBlock() instanceof net.minecraft.block.BedBlock)||InteractionReach.bedWithin(c.player.getX(),c.player.getY(),c.player.getZ(),target.getX(),target.getY(),target.getZ()))&&visible(target);}

@@ -368,10 +368,13 @@ def test_game_declaration_keeps_semantic_tasks_small_and_manual_controls_on_dema
 
 def test_full_game_catalog_leaves_context_for_goal_and_current_pixels():
  from pathlib import Path
+ from typing import get_args
+ from app.api.minecraft import Action,TaskCommand
  from app.services.minecraft import minecraft
  definitions=json.loads((Path(__file__).parents[2]/'plugin-host/src/minecraft-skills.json').read_text())
  with patch.object(minecraft,'capabilities',{'skillDefinitions':definitions}):
-  declaration=tools._minecraft_declaration(['observe','submit','capabilities','play'])
+  actions=sorted({'stop',*get_args(Action.model_fields['action'].annotation),*get_args(TaskCommand.model_fields['action'].annotation)})
+  declaration=tools._minecraft_declaration(actions)
  assert len(json.dumps(declaration,ensure_ascii=False).encode())<=3000
  description=declaration['function']['description']
  assert all(name+'(' in description for name in definitions), 'Keep every actual skill discoverable'
@@ -386,3 +389,33 @@ def test_nested_manual_fallback_uses_the_same_validated_input_and_authority():
   for args in [{'control':'look','generation':99},{'control':'look','leaseId':'fake'},{'control':'forward','durationMs':0}]:
    assert json.loads(tools.execute('minecraft_action',{'action':'play','args':args}))['code']=='MINECRAFT_INPUT'
  dispatch.assert_not_called()
+
+
+@pytest.mark.parametrize('query',['inventory','terrain','entities','station','chat','slot:12'])
+def test_focused_game_read_returns_fresh_state_without_staging_or_reserving_another_image(query):
+ from app.services.minecraft import minecraft
+ from app.services.context_policy import Budget, estimate
+ raw={'observedAt':time.time()*1000,'world':'w','account':'a','health':20,'slots':[{'id':12,'item':'minecraft:oak_log','count':4}],
+      'visibleBlocks':[{'x':1,'y':64,'z':2,'block':'minecraft:stone'}],'frame':'data:image/png;base64,'+base64.b64encode(pixels()).decode()}
+ with patch.object(tools,'require_local',return_value='state-read'),patch.object(minecraft,'execute',return_value=raw) as execute,patch.object(tools,'stage') as stage:
+  call={'id':'read','function':{'name':'minecraft_action','arguments':json.dumps({'action':'observe','query':query})}}
+  assert tools.capture_budget(call)==[]
+  result=json.loads(tools.execute('minecraft_action',{'action':'observe','query':query}))
+ assert execute.call_args.args[1]=={'frame':False}
+ assert result['observedAt']==raw['observedAt'] and result['health']==20
+ assert not result.get('pixelsFollow') and 'frame' not in result
+ stage.assert_not_called()
+ if query in {'inventory','slot:12'}:assert result['slots'][0]['count']==4
+ if query=='terrain':assert result['visibleBlocks']==raw['visibleBlocks']
+
+
+def test_unfocused_game_observe_still_reserves_and_returns_a_real_image():
+ from app.services.minecraft import minecraft
+ raw={'observedAt':time.time()*1000,'frame':'data:image/png;base64,'+base64.b64encode(pixels()).decode()}
+ with patch.object(tools,'require_local',return_value='visual-read'),patch.object(minecraft,'execute',return_value=raw) as execute,patch.object(tools,'stage') as stage:
+  call={'id':'read','function':{'name':'minecraft_action','arguments':'{"action":"observe"}'}}
+  assert tools.capture_budget(call)
+  result=json.loads(tools.execute('minecraft_action',{'action':'observe'}))
+ assert execute.call_args.args[1]=={'frame':True}
+ assert result['pixelsFollow'] is True
+ stage.assert_called_once()

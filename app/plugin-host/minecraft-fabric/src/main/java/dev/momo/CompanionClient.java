@@ -235,6 +235,7 @@ public final class CompanionClient implements ClientModInitializer {
    }
    case "events" -> {
     var events=gson.toJsonTree(tasks.events(command.get("after").getAsLong())).getAsJsonObject();
+    events.add("blockFacts",gson.toJsonTree(dev.momo.task.BlockReceipts.CURRENT.facts(client.world,client.player.getUuidAsString())));
     events.add("chat",gson.toJsonTree(dev.momo.task.GameChat.CURRENT.notification(client.world)));result.add("events",events);
    }
    case "heartbeat" -> {long now=System.nanoTime()/1000000,lease=command.get("leaseMs").getAsLong();tasks.heartbeat(now,lease);controlLease.renew(now,lease);result.addProperty("active",tasks.active());result.addProperty("controlPaused",pauseBarrier.isPaused());result.addProperty("suspended",suspended(client));}
@@ -255,11 +256,14 @@ public final class CompanionClient implements ClientModInitializer {
    case "observe" -> {
     sceneObservationRequired=false;
     taskWorld=world;taskAccount=account;taskWorldInstance=client.world;
-    capture.accept(net.minecraft.client.util.ScreenshotRecorder.takeScreenshot(client.getFramebuffer()));
+    boolean pixels=!command.has("frame")||command.get("frame").getAsBoolean();
+    if(pixels)capture.accept(net.minecraft.client.util.ScreenshotRecorder.takeScreenshot(client.getFramebuffer()));
+    result.addProperty("pixelsCaptured",pixels);
     GameObservation.append(client,result);
     result.add("survival",new Gson().toJsonTree(survival.progress()));result.addProperty("gameTick",client.world.getTime());
     result.addProperty("clientFps",client.getCurrentFps());
     result.addProperty("observedAt", System.currentTimeMillis());
+    result.addProperty("playerName",client.player.getName().getString());
     result.addProperty("x",client.player.getX()); result.addProperty("y",client.player.getY()); result.addProperty("z",client.player.getZ());
     result.addProperty("yaw",client.player.getYaw()); result.addProperty("pitch",client.player.getPitch());
     result.addProperty("screen",client.currentScreen==null?"world":

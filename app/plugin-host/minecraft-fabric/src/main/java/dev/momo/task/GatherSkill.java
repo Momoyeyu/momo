@@ -17,8 +17,9 @@ public final class GatherSkill implements TaskRuntime.Work {
  private TaskRuntime.Work child;private BlockPos target,origin,foliage;
  private int baseline,observedCount,totalRays,ticks,scan,idle,clearedLeaves;private String phase="search",lastFailure="",dimension="";
  private BlockPos lastPosition;private net.minecraft.client.world.ClientWorld searchWorld;
+ private final GatherSearch search=new GatherSearch();private float searchYaw;
  public GatherSkill(JsonObject args){item=SkillArguments.resourceId(args.get("item").getAsString());requested=args.get("count").getAsInt();}
- public void start(){if(c.player==null||c.world==null)throw new TaskRuntime.Rejected("world_unavailable");if(!Registries.ITEM.containsId(net.minecraft.util.Identifier.of(item)))throw new TaskRuntime.Rejected("item_unknown");if(origin==null){baseline=observedCount=count();origin=lastPosition=c.player.getBlockPos();searchWorld=c.world;dimension=c.world.getRegistryKey().getValue().toString();}scan=idle=0;lastFailure="";foliage=null;phase="search";}
+ public void start(){if(c.player==null||c.world==null)throw new TaskRuntime.Rejected("world_unavailable");if(!Registries.ITEM.containsId(net.minecraft.util.Identifier.of(item)))throw new TaskRuntime.Rejected("item_unknown");if(origin==null){baseline=observedCount=count();origin=lastPosition=c.player.getBlockPos();searchYaw=c.player.getYaw();searchWorld=c.world;dimension=c.world.getRegistryKey().getValue().toString();}scan=idle=0;lastFailure="";foliage=null;phase="search";}
  private int count(){int total=0;for(int i=0;i<c.player.getInventory().size();i++){var stack=c.player.getInventory().getStack(i);if(Registries.ITEM.getId(stack.getItem()).toString().equals(item))total+=stack.getCount();}return total;}
  public TaskRuntime.Step tick(){
   if(++ticks>2400)return fail("gather_timeout");
@@ -62,16 +63,24 @@ public final class GatherSkill implements TaskRuntime.Work {
     continue;
    }
    if(state.isToolRequired()&&!c.player.getAbilities().creativeMode){boolean suitable=false;for(int i=0;i<36;i++)if(c.player.getInventory().getStack(i).isSuitableFor(state))suitable=true;if(!suitable){lastFailure="tool_required";blocked.put(pos.toImmutable(),ticks+200);continue;}}
-   target=pos.toImmutable();var args=new JsonObject();args.addProperty("x",pos.getX());args.addProperty("y",pos.getY());args.addProperty("z",pos.getZ());begin("mine",args);return TaskRuntime.Step.running();
+   target=pos.toImmutable();var args=new JsonObject();args.addProperty("x",pos.getX());args.addProperty("y",pos.getY());args.addProperty("z",pos.getZ());begin("mine",args,hit.getPos());return TaskRuntime.Step.running();
   }
   if(scan>=512){
    if(foliage!=null){target=foliage;foliage=null;clearedLeaves++;var args=new JsonObject();args.addProperty("x",target.getX());args.addProperty("y",target.getY());args.addProperty("z",target.getZ());begin("mine",args);scan=0;return TaskRuntime.Step.running();}
+   // A local scan can miss another side of the same hill/canopy. Change
+   // viewpoint a few times through ordinary collision navigation; discovery
+   // still uses only the first visible hit, never a block/resource enumeration.
+   var point=lastFailure.equals("tool_required")?null:search.next(origin.getX(),origin.getZ(),searchYaw);
+   if(point!=null){var args=new JsonObject();args.addProperty("x",point.x());args.addProperty("z",point.z());args.addProperty("height","surface");begin("navigate",args);scan=idle=0;return TaskRuntime.Step.running();}
    return fail(lastFailure.isEmpty()?"source_not_visible":lastFailure);
   }
   return TaskRuntime.Step.running();
  }
  private void begin(String skill,JsonObject args){
-  child=skill.equals("mine")?GameSkills.gatherMine(args):GameSkills.create(skill,args);phase=skill;
+  begin(skill,args,null);
+ }
+ private void begin(String skill,JsonObject args,Vec3d observedPoint){
+  child=skill.equals("mine")?GameSkills.gatherMine(args,observedPoint):GameSkills.create(skill,args);phase=skill;
   try{child.start();}catch(RuntimeException error){child.stop();child=null;lastFailure=TaskRuntime.reason(error,"start_failed");if(target!=null)blocked.put(target,ticks+200);target=null;phase="search";}
  }
  public void pause(){if(child!=null)child.pause();}
@@ -82,6 +91,6 @@ public final class GatherSkill implements TaskRuntime.Work {
  public void stop(){if(child!=null){child.stop();child=null;}}
  private TaskRuntime.Step fail(String reason){lastFailure=reason;return TaskRuntime.Step.failed(reason);}
  private static Map<String,Integer> position(BlockPos pos){return Map.of("x",pos.getX(),"y",pos.getY(),"z",pos.getZ());}
- public Map<String,Object> partialEvidence(){return origin==null?Map.of():Map.of("item",item,"requested",requested,"dimension",dimension,"searchOrigin",position(origin),"lastObservedPosition",position(lastPosition),"countBefore",baseline,"countAfter",observedCount,"searchedRays",totalRays,"searchResult",lastFailure);}
+ public Map<String,Object> partialEvidence(){return origin==null?Map.of():Map.of("item",item,"requested",requested,"dimension",dimension,"searchOrigin",position(origin),"lastObservedPosition",position(lastPosition),"countBefore",baseline,"countAfter",observedCount,"searchedRays",totalRays,"searchMovesAttempted",search.attempts(),"searchResult",lastFailure);}
  public Map<String,Object> progress(){return Map.of("skill","gather","phase",phase,"item",item,"gained",Math.max(0,count()-baseline),"requested",requested);}
 }

@@ -1968,6 +1968,7 @@
             "enum": [
               "capabilities",
               "recipes",
+              "places",
               "submit",
               "task",
               "events",
@@ -2414,6 +2415,12 @@
             "default": "",
             "maxLength": 16,
             "title": "Player",
+            "type": "string"
+          },
+          "query": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Query",
             "type": "string"
           },
           "scroll": {

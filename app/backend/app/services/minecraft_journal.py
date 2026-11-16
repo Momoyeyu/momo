@@ -7,6 +7,8 @@ import json
 import math
 import re
 import uuid
+import time
+from datetime import datetime, timezone
 from ..core import db
 
 STATUSES={'active','paused','completed','abandoned','blocked'}
@@ -17,6 +19,7 @@ def schema():
     with db.tx() as c:
         c.execute('CREATE TABLE IF NOT EXISTS minecraft_goals(scope TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at TEXT NOT NULL)')
         c.execute('CREATE TABLE IF NOT EXISTS minecraft_tasks(scope TEXT NOT NULL,activity TEXT NOT NULL,task_id TEXT NOT NULL,data TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(scope,activity,task_id))')
+        c.execute('CREATE INDEX IF NOT EXISTS minecraft_task_time ON minecraft_tasks(scope,updated_at)')
         # Early development journals used an in-process UI counter. Preserve their
         # facts, but use unique activity identities across subsequent app restarts.
         if 'generation' in {row['name'] for row in c.execute('PRAGMA table_info(minecraft_tasks)')}:
@@ -163,6 +166,9 @@ def record(binding,activity,tasks):
             milestone=_progress(task)
             if milestone is not None:c.execute('UPDATE minecraft_task_goals SET progress=?,updated_at=? WHERE scope=? AND activity=? AND task_id=?',(json.dumps(milestone,ensure_ascii=False),db.now_iso(),scope(binding),activity,task['taskId']))
             changed.append(task)
+    for task in changed:
+        facts=list(_receipt_facts(task,db.now_iso()))
+        for offset in range(0,len(facts),128):apply_block_facts(binding,facts[offset:offset+128])
     return changed
 
 def reconcile(binding, *, activity=None):
@@ -199,7 +205,7 @@ def observe_visit(binding, observation):
     x,y,z=xyz
     landmarks=[]
     samples=[(block,96*96) for block in observation.get('visibleLandmarks',[])[:6]]+[(block,64) for block in observation.get('visibleBlocks',[])[:8]]
-    seen=set()
+    seen=set();observed_positions=set()
     for block,distance_limit in samples:
         if not isinstance(block,dict):continue
         name=block.get('block','')
@@ -207,18 +213,171 @@ def observe_visit(binding, observation):
         if not isinstance(name,str) or len(name)>128 or not re.fullmatch(r'[a-z0-9_.-]+:[a-z0-9_./-]+',name):continue
         if any(type(v) not in (int,float) or not math.isfinite(v) for v in coords):continue
         if sum((v-p)**2 for v,p in zip(coords,xyz))>distance_limit:continue
+        observed_positions.add(tuple(coords))
         if name in {'minecraft:grass_block','minecraft:dirt','minecraft:stone','minecraft:short_grass'}:continue
         identity=(name,*coords)
         if identity in seen:continue
         seen.add(identity);landmarks.append({'block':name,**dict(zip(('x','y','z'),coords))})
-    place={'dimension':dimension,'x':round(x,1),'y':round(y,1),'z':round(z,1),'landmarks':landmarks}
+    captured=observation.get('observedAt')
+    seen_at=(datetime.fromtimestamp(captured/1000,timezone.utc).isoformat()
+             if type(captured) is int and 0<captured<=time.time()*1000+60_000 else db.now_iso())
+    place={'dimension':dimension,'x':round(x,1),'y':round(y,1),'z':round(z,1),'landmarks':landmarks,'observedAt':seen_at}
     schema();key=scope(binding)
     with db.tx() as c:
+        previous=c.execute('SELECT data,updated_at FROM minecraft_places WHERE scope=? AND dimension=? AND chunk_x=? AND chunk_z=?',
+                           (key,dimension,math.floor(x/16),math.floor(z/16))).fetchone()
+        known=[{**block,'seenAt':seen_at} for block in landmarks]
+        if previous:
+            old=json.loads(previous['data'])
+            for block in old.get('knownLandmarks',old.get('landmarks',[]))[:32]:
+                value=_stored_marker(block,previous['updated_at'])
+                if value and tuple(value[k] for k in ('x','y','z')) not in observed_positions:
+                    known.append(value)
+        unique={}
+        for block in known:
+            unique.setdefault(tuple(block[k] for k in ('x','y','z')),block)
+        place['knownLandmarks']=list(unique.values())[:32]
         c.execute('INSERT INTO minecraft_places VALUES(?,?,?,?,?,?) ON CONFLICT(scope,dimension,chunk_x,chunk_z) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at',
                   (key,dimension,math.floor(x/16),math.floor(z/16),json.dumps(place),db.now_iso()))
         c.execute('DELETE FROM minecraft_places WHERE scope=? AND rowid NOT IN (SELECT rowid FROM minecraft_places WHERE scope=? ORDER BY updated_at DESC LIMIT 1024)',(key,key))
 
 def explored(binding,limit=8):
     schema()
-    return [json.loads(row['data']) for row in db.query('SELECT data FROM minecraft_places WHERE scope=? ORDER BY updated_at DESC LIMIT ?',
-                                                       (scope(binding),min(32,max(1,limit))))]
+    return [{k:v for k,v in json.loads(row['data']).items() if k!='knownLandmarks'}
+            for row in db.query('SELECT data FROM minecraft_places WHERE scope=? ORDER BY updated_at DESC LIMIT ?',
+                                (scope(binding),min(32,max(1,limit))))]
+
+
+def _stored_marker(block,at):
+    if not isinstance(block,dict):return None
+    name=block.get('block','');coords=[block.get(k) for k in ('x','y','z')]
+    if not isinstance(name,str) or len(name)>128 or not re.fullmatch(r'[a-z0-9_.-]+:[a-z0-9_./-]+',name):return None
+    if any(type(v) not in (int,float) or not math.isfinite(v) or abs(v)>30_000_000 for v in coords):return None
+    seen=block.get('seenAt',at)
+    if not isinstance(seen,str) or len(seen)>64:seen=at
+    return {'block':name,**dict(zip(('x','y','z'),coords)),'seenAt':seen}
+
+
+def _millis(value):
+    try:
+        stamp=datetime.fromisoformat(value)
+        return stamp.timestamp()*1000 if stamp.tzinfo is not None else None
+    except (ValueError,TypeError,OverflowError):return None
+
+
+def _block_fact(value):
+    if not isinstance(value,dict):return None
+    seq=value.get('seq');server=value.get('serverBlockSeq');at=value.get('observedAt')
+    if type(seq) is not int or not 0<seq<2**63:return None
+    if type(at) is not int or not 0<at<=time.time()*1000+60000:return None
+    source=value.get('source');block=value.get('block');dimension=value.get('dimension')
+    if source=='mined':
+        if type(server) is not int or server<=0:return None
+    elif source=='visible_absence':
+        if type(server) is not int or server!=0 or block!='minecraft:air':return None
+    else:return None
+    if not isinstance(block,str) or not re.fullmatch(r'[a-z0-9_.-]+:[a-z0-9_./-]{1,100}',block):return None
+    if not isinstance(dimension,str) or not re.fullmatch(r'[a-z0-9_.-]+:[a-z0-9_./-]{1,100}',dimension):return None
+    coords=[value.get(k) for k in ('x','y','z')]
+    if any(type(v) is not int for v in coords) or not -64<=coords[1]<=319 or any(abs(coords[i])>30_000_000 for i in (0,2)):return None
+    return {**value,'identity':(dimension,*coords)}
+
+
+def _invalidates(marker,fact):
+    at=_millis(marker.get('seenAt'))
+    return at is not None and at<fact['observedAt'] and marker['block']!=fact['block']
+
+
+def apply_block_facts(binding,facts,*,after=0):
+    """Update place projections from observed effects, never from task intent.
+
+    Keep visit order/timestamps and raw task history. Older delayed facts cannot
+    erase a later observation (including a tree that has actually regrown).
+    """
+    if not isinstance(facts,list) or len(facts)>128:return after
+    valid=[fact for row in facts if (fact:=_block_fact(row)) is not None and fact['seq']>after
+           and ('account' not in fact or fact['account']==binding.get('account'))]
+    if not valid:return after
+    newest={}
+    for fact in valid:
+        old=newest.get(fact['identity'])
+        if old is None or fact['observedAt']>old['observedAt']:newest[fact['identity']]=fact
+    schema();key=scope(binding)
+    with db.tx() as c:
+        for row in c.execute('SELECT rowid,data,updated_at FROM minecraft_places WHERE scope=?',(key,)).fetchall():
+            place=json.loads(row['data']);changed=False
+            for field in ('landmarks','knownLandmarks'):
+                if field not in place:continue
+                kept=[]
+                for block in place[field]:
+                    marker=_stored_marker(block,place.get('observedAt',row['updated_at']))
+                    fact=newest.get((place.get('dimension'),*(marker[k] for k in ('x','y','z')))) if marker else None
+                    if marker and fact and _invalidates(marker,fact):changed=True
+                    else:kept.append(block)
+                place[field]=kept
+            if changed:c.execute('UPDATE minecraft_places SET data=? WHERE rowid=?',(json.dumps(place),row['rowid']))
+    return max(fact['seq'] for fact in valid)
+
+
+def _state_name(value):
+    if not isinstance(value,str) or len(value)>512:return None
+    if re.fullmatch(r'[a-z0-9_.-]+:[a-z0-9_./-]+',value):return value
+    match=re.fullmatch(r'Block\{([a-z0-9_.-]+:[a-z0-9_./-]+)\}(?:\[[^\n]*\])?',value)
+    return match[1] if match else None
+
+
+def _receipt_facts(task,recorded_at):
+    """Read only actual server confirmations, including completed plan steps."""
+    if task.get('state') not in {'succeeded','failed','cancelled'}:return
+    dimension=task.get('dimension');fallback=_millis(recorded_at)
+    def walk(value,depth=0):
+        if depth>6:return
+        if isinstance(value,dict):
+            server=value.get('serverBlockSeq');before=_state_name(value.get('block'));block=_state_name(value.get('after'))
+            if type(server) is int and server>0 and before and block and before!=block:
+                raw={'seq':server,'source':'mined','serverBlockSeq':server,'dimension':dimension,'block':block,
+                     'observedAt':value.get('serverObservedAt',int(fallback) if fallback is not None else 0),
+                     **{k:value.get(k) for k in ('x','y','z')}}
+                if _block_fact(raw) is not None:yield raw
+            for key in ('evidence','steps','result','changes'):
+                if key in value:yield from walk(value[key],depth+1)
+        elif isinstance(value,list):
+            for child in value[:96]:yield from walk(child,depth+1)
+    yield from walk(task)
+
+
+def recall_places(binding,query=''):
+    """Bounded historical sightings from this world/account, never a world read."""
+    if not isinstance(query,str) or len(query)>64:raise ValueError('Invalid place query')
+    schema()
+    rows=db.query('SELECT data,updated_at FROM minecraft_places WHERE scope=? ORDER BY updated_at DESC LIMIT 1024',(scope(binding),))
+    origin=json.loads(rows[0]['data']) if rows else {}
+    points={}
+    for row in rows:
+        place=json.loads(row['data']);dimension=place.get('dimension')
+        if not isinstance(dimension,str):continue
+        for block in place.get('knownLandmarks',place.get('landmarks',[]))[:32]:
+            marker=_stored_marker(block,row['updated_at'])
+            if not marker or query.strip().lower() not in marker['block']:continue
+            identity=(dimension,*(marker[k] for k in ('x','y','z')))
+            marker={**marker,'dimension':dimension}
+            if identity not in points or marker['seenAt']>points[identity]['seenAt']:points[identity]=marker
+    # Legacy journals already hold authoritative mine receipts. Stream them
+    # locally since the oldest candidate sighting; no world query or replay.
+    dates=[at for point in points.values() if (at:=_millis(point['seenAt'])) is not None]
+    if dates:
+        since=datetime.fromtimestamp(min(dates)/1000,timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
+        with db.tx() as c:
+            for row in c.execute('SELECT data,updated_at FROM minecraft_tasks WHERE scope=? AND updated_at>=?',(scope(binding),since)):
+                for raw in _receipt_facts(json.loads(row['data']),row['updated_at']):
+                    fact=_block_fact(raw);identity=fact['identity'];point=points.get(identity)
+                    if point and _invalidates(point,fact):points.pop(identity)
+    def distance(point):
+        return sum((point[k]-origin.get(k,0))**2 for k in ('x','y','z'))
+    result=[];areas=set()
+    for point in sorted(points.values(),key=lambda p:(p['dimension']!=origin.get('dimension'),distance(p))):
+        area=(point['dimension'],math.floor(point['x']/16),math.floor(point['z']/16))
+        if area in areas:continue
+        areas.add(area);result.append(point)
+        if len(result)==6:break
+    return result

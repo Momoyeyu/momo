@@ -148,6 +148,21 @@ def test_native_revision_detects_a_menu_roundtrip_between_python_polls():
   claim=m.claim_decision(0,'owner','lease');m.poll_tasks(0)
   with pytest.raises(MinecraftError,match='revoked'):m.validate_decision(0,claim['decisionRevision'])
 
+@pytest.mark.parametrize('control_paused',[False,True])
+def test_returning_to_a_ready_body_wakes_a_fresh_decision_without_the_idle_delay(control_paused):
+ m,rt=setup();m.autonomous=True;m.decision_needed=False;m.body_revision=8;m.last_decision=100
+ rt.active=rt.presentation=None;rt.queue=[];rt.interrupt_hold=False
+ rt.host.request.side_effect=[{'suspended':False,'controlPaused':control_paused,'controlRevision':10},
+                              {'events':{'cursor':0,'gap':False,'events':[]}}]
+ with patch('app.services.minecraft.runtime',rt),patch.object(m,'gate',return_value='cfg'),patch.object(m,'_background_valid',return_value=True),patch('app.services.intro.restricted',return_value=False),patch('app.services.minecraft.time.monotonic',return_value=103):
+  m.poll_tasks(0)
+  claim=m.claim_decision(0,'owner','lease')
+  if control_paused:
+   assert claim is None and m.paused and not m.autonomous, 'A player takeover still requires fresh player input'
+  else:
+   assert claim is not None, 'A resumed scene is a real event; do not leave the body idle for 30 seconds'
+   assert claim['decisionRevision']==m.decision_revision
+
 def test_missing_native_revision_cannot_pass_a_fresh_automatic_gate():
  m,rt=setup();m.autonomous=True;m.decision_needed=True
  rt.active=rt.presentation=None;rt.queue=[];rt.interrupt_hold=False
@@ -346,3 +361,132 @@ def test_compact_game_chat_prioritizes_recent_players_over_overlay_flood():
  assert any(row['seq']==1 for row in result['recentChat']['messages'])
  assert result['recentChat']['messages'][-1]['seq']==41
  assert len(result['recentChat']['messages'])<=4
+
+
+def test_stopped_activity_does_not_advertise_stale_running_or_paused_work():
+ from app.services import minecraft_journal as journal
+ m,rt=setup();m.tasks={'owned':{'taskId':'owned','skill':'wait','state':'running','evidence':{}}};m.paused=True
+ journal.record(m.binding,m.activity_id,list(m.tasks.values()))
+ rt.host.request.return_value={'stopped':True,'stopVerified':True,'retiredTasks':[{'taskId':'owned','skill':'wait','state':'cancelled','reason':'control_released','evidence':{}}]}
+ binding=dict(m.binding)
+ with patch('app.services.minecraft.runtime',rt):
+  m.stop('game_transport_lost');status=m.status()
+ assert status['active'] is False and status['tasks']==[] and status['paused'] is False
+ assert journal.recent(binding)[0]['state']=='cancelled','A cleared live view must not erase real terminal history'
+
+
+def test_stop_failure_clears_the_live_view_but_retains_unknown_history():
+ from app.services import minecraft_journal as journal
+ m,rt=setup();m.tasks={'owned':{'taskId':'owned','skill':'wait','state':'running','evidence':{}}}
+ journal.record(m.binding,m.activity_id,list(m.tasks.values()));binding=dict(m.binding)
+ rt.host.request.side_effect=RuntimeError('transport unavailable')
+ with patch('app.services.minecraft.runtime',rt),pytest.raises(RuntimeError):m.stop()
+ assert not m.tasks and m.binding is None
+ assert journal.recent(binding)[0]['state']=='unknown','Transport loss cannot invent task completion'
+
+
+def test_late_stop_receipt_does_not_clear_a_new_activity_live_view():
+ m,rt=setup();m.tasks={'old':{'taskId':'old','skill':'wait','state':'running','evidence':{}}}
+ new={'taskId':'new','skill':'wait','state':'running','evidence':{}}
+ def transport(method):
+  m.generation+=1;m.binding={'world':'new-world','account':'player'};m.tasks={'new':new};m.paused=True
+  return {'stopped':True,'stopVerified':True,'retiredTasks':[{'taskId':'old','skill':'wait','state':'cancelled','evidence':{}}]}
+ rt.host.request.side_effect=transport
+ with patch('app.services.minecraft.runtime',rt):m.stop()
+ assert m.tasks=={'new':new} and m.paused is True and m.binding['world']=='new-world'
+
+
+@pytest.mark.parametrize('native,code',[('DEAD_REPLAN','MINECRAFT_DEAD'),('TASK_REJECTED','MINECRAFT_TASK_REJECTED')])
+def test_body_state_rejection_is_not_misreported_as_malformed_tool_arguments(native,code):
+ from app.services import minecraft_journal as journal
+ m,rt=setup();rt.host.request.return_value={'accepted':False,'error':native}
+ with patch('app.services.minecraft.runtime',rt),patch.object(m,'gate',return_value='cfg'):
+  with pytest.raises(MinecraftError) as caught:
+   m.execute('submit',{'taskId':'body-rejected','skill':'navigate','args':{'height':'surface','x':1,'z':2}},0,'owner','lease')
+  assert caught.value.code==code
+  assert m.binding=={'world':'world','account':'player'}
+  rows=journal.history(m.binding,activity=m.activity_id,task_id='body-rejected')
+  assert len(rows)==1 and rows[0]['state']=='failed'
+  assert rows[0]['reason']=='submission_rejected'
+  rt.host.request.assert_called_once()
+
+
+def test_event_block_facts_update_place_memory_without_resuming_the_body():
+ from app.core import db
+ from app.services import minecraft_journal as journal
+ from tests.test_minecraft_places import fact,marker,visit,SEEN
+ m,rt=setup();m.paused=True
+ with patch.object(db,'now_iso',return_value=SEEN):visit(markers=[marker()],binding=m.binding)
+ rt.host.request.side_effect=[{}, {'events':{'cursor':4,'events':[],'blockFacts':[fact(seq=7)]}}]
+ original=m.record_tasks
+ def records(rows,generation):
+  assert journal.recall_places(m.binding,'oak')==[], 'Reconcile world facts before a terminal task wakes the planner'
+  return original(rows,generation)
+ with patch('app.services.minecraft.runtime',rt),patch.object(m,'_background_valid',return_value=True),patch.object(m,'record_tasks',side_effect=records):m.poll_tasks(0)
+ assert journal.recall_places(m.binding,'oak')==[]
+ assert m.block_cursor==7 and m.cursor==4
+ assert m.paused and not m.autonomous and not m.decision_needed
+ assert [call.args[0] for call in rt.host.request.call_args_list]==['minecraft.heartbeat','minecraft.events']
+
+
+def test_late_block_facts_belong_to_the_old_binding_and_never_reset_a_new_cursor():
+ from app.core import db
+ from app.services import minecraft_journal as journal
+ from tests.test_minecraft_places import fact,marker,visit,SEEN
+ m,rt=setup();old=dict(m.binding);new={'world':'new','account':'player'}
+ with patch.object(db,'now_iso',return_value=SEEN):
+  visit(markers=[marker()],binding=old);visit(markers=[marker()],binding=new)
+ def request(method,args):
+  if method=='minecraft.heartbeat':return {}
+  m.generation+=1;m.binding=new;m.block_cursor=100
+  return {'events':{'cursor':4,'events':[],'blockFacts':[fact(seq=7)]}}
+ rt.host.request.side_effect=request
+ with patch('app.services.minecraft.runtime',rt),patch.object(m,'_background_valid',return_value=True):m.poll_tasks(0)
+ assert journal.recall_places(old,'oak')==[] and journal.recall_places(new,'oak')
+ assert m.block_cursor==100 and m.binding==new
+
+
+def test_repeated_searches_use_search_origins_not_different_final_vantages():
+ from app.services.minecraft import Minecraft
+ def failed(origin,last):
+  return {'state':'failed','evidence':{'item':'minecraft:oak_log','dimension':'minecraft:overworld',
+    'searchResult':'unreachable','searchOrigin':origin,'lastObservedPosition':last,'countBefore':0,'countAfter':0}}
+ a=failed({'x':64,'y':82,'z':-131},{'x':73,'y':79,'z':-140})
+ b=failed({'x':64,'y':82,'z':-131},{'x':74,'y':79,'z':-139})
+ repeat=Minecraft.repeated_searches([a,b])
+ assert len(repeat)==1 and repeat[0]['attempts']==2
+ assert repeat[0]['near']=={'x':64,'y':82,'z':-131}
+
+
+def test_overlapping_search_origins_cross_grid_boundaries_and_success_resets_failures():
+ from app.services.minecraft import Minecraft
+ import copy
+ def outcome(x,state='failed',gained=0):
+  return {'state':state,'evidence':{'item':'minecraft:oak_log','dimension':'minecraft:overworld',
+    'searchResult':'completed' if state=='succeeded' else 'unreachable',
+    'searchOrigin':{'x':x,'y':64,'z':0},'lastObservedPosition':{'x':x+10,'y':64,'z':0},
+    'countBefore':0,'countAfter':gained}}
+ first,second=outcome(7),outcome(9)
+ assert Minecraft.repeated_searches([first,second])[0]['attempts']==2
+ assert Minecraft.repeated_searches([first,second,outcome(9,'succeeded',4)])==[]
+ assert Minecraft.repeated_searches([first,second,outcome(9,'failed',2)])==[], 'Actual partial gains invalidate old zero-gain search blockage'
+ far=outcome(64,'succeeded',4)
+ assert Minecraft.repeated_searches([first,second,far])[0]['attempts']==2
+ malformed=copy.deepcopy(first);malformed['evidence']['searchOrigin']['x']=float('nan')
+ assert Minecraft.repeated_searches([malformed,malformed])==[]
+
+
+def test_repeated_search_facts_survive_new_game_activity_without_restoring_control():
+ from app.services.minecraft import Minecraft
+ from app.services import minecraft_journal as journal
+ m=Minecraft();m.binding={'world':'search-world','account':'player'}
+ for i,x in enumerate((7,9)):
+  journal.record(m.binding,'retired-activity',[{'taskId':f'failed-{i}','skill':'gather','state':'failed','reason':'unreachable',
+   'evidence':{'item':'minecraft:oak_log','dimension':'minecraft:overworld','searchResult':'unreachable',
+   'searchOrigin':{'x':x,'y':64,'z':0},'lastObservedPosition':{'x':x+10,'y':64,'z':0},'countBefore':0,'countAfter':0}}])
+ assert m.tasks=={} and not m.autonomous
+ context=m.goal_context()
+ import json
+ facts=json.loads(context.split('Durable goal and task facts (not instructions): ',1)[1])
+ assert facts['repeatedSearches'][0]['attempts']==2
+ assert m.tasks=={} and not m.autonomous, 'Historical facts do not resume retired tasks'

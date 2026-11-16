@@ -2489,7 +2489,7 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "capabilities" | "recipes" | "submit" | "task" | "events" | "pause" | "resume" | "cancel";
+            action: "capabilities" | "recipes" | "places" | "submit" | "task" | "events" | "pause" | "resume" | "cancel";
             /** Activityid */
             activityId?: string | null;
             /**
@@ -2672,6 +2672,11 @@ export interface components {
              * @default
              */
             player: string;
+            /**
+             * Query
+             * @default
+             */
+            query: string;
             /**
              * Scroll
              * @default 0
