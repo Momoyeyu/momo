@@ -11,6 +11,9 @@ module.exports = {
   packagerConfig: {
     name: "momo",
     executableName: "momo",
+    // The pinned Electron package ships checksums for the exact release.
+    // Validate cached archives without fetching a mutable checksum endpoint.
+    download: { checksums: require("electron/checksums.json") },
     appBundleId: "dev.momo.electron",
     appCategoryType: "public.app-category.games",
     asar: true,

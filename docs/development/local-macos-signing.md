@@ -44,3 +44,7 @@
 安装 runtime `3dcccac` / shared `9248497`：主动回应使用独立气泡星芒图标，chat 与桌宠共用一层开关和单个观察调度，TTS 喇叭独立。三语界面回归、25 项对话引擎、34 项桌面壳测试、两仓 CI 和安装产物 smoke 通过；实际安装界面已核对两种模式的入口、对齐和返回标题。
 
 候选与旧安装版的 designated requirement 校验通过（`inheritedIdentity=true`），安装后没有重置或重新添加 TCC。22:26:26 的已安装 helper 请求链 `84904.1`（ScreenCapture）、`84904.2`（Accessibility）归属 `dev.momo.electron`，均返回 `authValue=2`、`error=(null)`，窗口发现正常。这次实际更新已验证两项系统授权继承；没有执行真实截图上传或应用输入。安装完成后保留唯一 `/Applications/momo.app` 和最新 pre-install profile，清理旧包及本轮远程构建目录。
+
+## 007 集中构建的固定输入
+
+Forge 的 Electron 下载校验使用锁定 `electron` npm 包自带的 `checksums.json`，其内容随 pnpm integrity 固定；仍完整校验 Electron ZIP，不关闭校验或依赖临时在线校验文件。远程缓存命中也执行校验。此调整只改变构建输入解析，不改变应用签名身份或运行权限。
