@@ -48,3 +48,13 @@
 ## 007 集中构建的固定输入
 
 Forge 的 Electron 下载校验使用锁定 `electron` npm 包自带的 `checksums.json`，其内容随 pnpm integrity 固定；仍完整校验 Electron ZIP，不关闭校验或依赖临时在线校验文件。远程缓存命中也执行校验。此调整只改变构建输入解析，不改变应用签名身份或运行权限。
+
+## 2026-11-17 007 集中更新
+
+安装 desktop 9b690da / shared 2eb745c；两个精确提交的 CI 成功。通过唯一晋级脚本导入 960 个共享文件，mac-studio 冻结后端、构建前端并 package，本机使用固定身份签名。候选严格验证及原生产物 smoke 通过后，备份最新日常 profile 并替换唯一 /Applications/momo.app。新旧 designated requirement 匹配，未重置 TCC；实际安装版的 native targets preflight 返回录屏与辅助功能均为 true。日常配置语义与本次备份一致，SQLite 完整性通过。
+
+正式 Fabric 组件来源为 shared 2eb745c，SHA256 为 635984c18a6f87bd01b4a41b27b2de0454d62ac308d6071c33f33c2b9939f758，与现有游戏进程字节相同，不需为本次安装重启游戏。实际安装版已调用当前模型 API 并执行游戏动作；原生 UI 的 Boot／chat／Home 和活动结束已有实际证据。
+
+完整 007 尚未通过：自然地形建造仍反复受阻，完整住所未形成；真实模型长跑的测试驱动退出时存在推理占用导致的清理失败，不能记作完整 smoke 通过。原生 Home 后活动确认 inactive，但当时角色已死亡，不补记活体游戏暂停通过。真实 E 接管发生在思考间隙，持续移动中的接管仍需补验。分项证据与后续改进继续在共享源码的 007 计划维护，不以安装成功代替游玩验收。
+
+本轮远端专用构建目录已按 owner marker 清理；旧安装暂存与旧备份已删除，仅保留当前安装和最新 pre-install profile。未发布新的跨平台产物，Windows 仍等待 macOS 验收。
