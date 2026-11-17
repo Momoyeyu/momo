@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "5becac0cde891597af97de267ed6141e8943a075",
+  "revision": "2eb745c38be1bcd74762690f6e4721cf892c2e62",
   "checks": [
-    "docs/development/evidence/007-minecraft.md"
+    "Shared Python 1072 passed, 3 skipped; exact CI 43987033231 success; native build24tasks; real original-world continuation in progress, not accepted"
   ],
   "files": {
     "app/.env.example": {
@@ -98,7 +98,7 @@
     },
     "app/backend/app/api/minecraft.py": {
       "source": "backend/app/api/minecraft.py",
-      "sha256": "6860d1a423653ed0d4781f83ff09ccd6af99aab7c20e41925c5a1428e3837dad",
+      "sha256": "6003766458544e5310c567768ad435b710ef9d3386c714b362cc7ecbfaa12031",
       "mode": 33188
     },
     "app/backend/app/api/native_control.py": {
@@ -298,7 +298,7 @@
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "af4f98e2929f8b99a5cfe9e7a6c5a15b5cb79311e17464bf3b3a76392e2e5192",
+      "sha256": "5f17103197ddd08f1b19e296ae78a1ba0e54a9b281f9a3ff0715a18aa6da550c",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -343,7 +343,7 @@
     },
     "app/backend/app/services/minecraft.py": {
       "source": "backend/app/services/minecraft.py",
-      "sha256": "70b627a27469127e3eba5c24c09a8b2d72268ec278b30768cf11168efa786e69",
+      "sha256": "acf8472453abb17608c16b72d7e1370e8591731520d8d6a4a7f491c00fb7acdb",
       "mode": 33188
     },
     "app/backend/app/services/minecraft_attach.py": {
@@ -353,7 +353,7 @@
     },
     "app/backend/app/services/minecraft_journal.py": {
       "source": "backend/app/services/minecraft_journal.py",
-      "sha256": "ed3388eb4c3979f747c61b14cb18e106c51f980901843c7b3177e49cd74d7b1a",
+      "sha256": "e0501d115d608b8d2eec9bfd9dd18daa9b2aef053a600a6364829b8ccb4154af",
       "mode": 33188
     },
     "app/backend/app/services/native_control.py": {
@@ -423,7 +423,7 @@
     },
     "app/backend/app/services/turn.py": {
       "source": "backend/app/services/turn.py",
-      "sha256": "a20f8db91fe6f15dab37203de3b20290b7d5306e32d2f6245e085435b5d0275f",
+      "sha256": "2cf3d1b390000ab13c81d1dfcecd051f6d79748651e67f0b0259755283eea4fd",
       "mode": 33188
     },
     "app/backend/app/services/turn_context.py": {
@@ -698,7 +698,7 @@
     },
     "app/backend/tests/test_loop.py": {
       "source": "backend/tests/test_loop.py",
-      "sha256": "6c14fb3faffe2a3405a325cefb45da7884a5a0c1d6daa44440218b27898fa53a",
+      "sha256": "518e825fb72a31ce36e99344c40ad2eb0e4f5f38ac01bcd30d99d0ad88aa453a",
       "mode": 33188
     },
     "app/backend/tests/test_memory.py": {
@@ -716,9 +716,14 @@
       "sha256": "047dafdf7206511e11098c6cf15b3942b5605b7340fedfde08afaa6527e1525f",
       "mode": 33188
     },
+    "app/backend/tests/test_minecraft_build_history.py": {
+      "source": "backend/tests/test_minecraft_build_history.py",
+      "sha256": "538d051fbc743782679e724ca3f59c635993eb2e52a7fa105362ee9145d18062",
+      "mode": 33188
+    },
     "app/backend/tests/test_minecraft_context.py": {
       "source": "backend/tests/test_minecraft_context.py",
-      "sha256": "952d9532abb1b3a21a36243001787323d548033eaa5cad447b20460e68affede",
+      "sha256": "58b1bd183281ca7e44fa5b43cfeb53c5d1617b9c110fbe8f0e12c966f4c79b2c",
       "mode": 33188
     },
     "app/backend/tests/test_minecraft_dispatch.py": {
@@ -743,7 +748,7 @@
     },
     "app/backend/tests/test_minecraft_tasks.py": {
       "source": "backend/tests/test_minecraft_tasks.py",
-      "sha256": "c02c19ad4152eed977de36e38637fc80995eac8f9efa0f6f5a062fe800fc1f30",
+      "sha256": "1c3179bdad0a6bb2277884850a2092df697d84a5c46130ef72a52567267f09bc",
       "mode": 33188
     },
     "app/backend/tests/test_native_control.py": {
@@ -3976,14 +3981,29 @@
       "sha256": "d95ff93f30bc2bf496c1dfcd9cb5c6d48b96ee3f35d2738bed10b967b4d13cf5",
       "mode": 33188
     },
+    "app/plugin-host/minecraft-fabric/src/fixture/java/dev/momo/fixture/WorldTransitionFixtures.java": {
+      "source": "plugin-host/minecraft-fabric/src/fixture/java/dev/momo/fixture/WorldTransitionFixtures.java",
+      "sha256": "a82ee661ca1829a60d3cc8a02bf976c275e6819d375471a1f0f2fc4b32c1b257",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/src/fixture/java/dev/momo/fixture/WorldTransitionGuard.java": {
+      "source": "plugin-host/minecraft-fabric/src/fixture/java/dev/momo/fixture/WorldTransitionGuard.java",
+      "sha256": "3d6304c370a1209a25e087465eaa71c0314d5f2b483e49e7518cc8c00ee7239d",
+      "mode": 33188
+    },
     "app/plugin-host/minecraft-fabric/src/fixture/resources/fabric.mod.json": {
       "source": "plugin-host/minecraft-fabric/src/fixture/resources/fabric.mod.json",
-      "sha256": "1ddec7b3401bdc4d1cd0fe1d543af0d40112df12598349c70cc8f87e99f31eea",
+      "sha256": "cd7c9897ba8241ef89fa6d6b13d9232526fc21d2f5b05f5d31a6fbe10a4144b7",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/fixtureTest/java/dev/momo/fixture/FixtureGuardSmoke.java": {
       "source": "plugin-host/minecraft-fabric/src/fixtureTest/java/dev/momo/fixture/FixtureGuardSmoke.java",
-      "sha256": "dee4d0de40561fb9a3ef399cffa91d24a1866e86dd3a12c25e45f1e1059ce2d3",
+      "sha256": "79d23caece4c5ac0a12eda97f10712e53c9afc7005eb9619248746e9f942f327",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/src/fixtureTest/java/dev/momo/fixture/WorldTransitionGuardSmoke.java": {
+      "source": "plugin-host/minecraft-fabric/src/fixtureTest/java/dev/momo/fixture/WorldTransitionGuardSmoke.java",
+      "sha256": "9b8eb3b2a5994bc8b9e0219e775a65326d3159987274680e0bf5f4679a33df76",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/CompanionClient.java": {
@@ -4068,12 +4088,12 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/BuildTask.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/BuildTask.java",
-      "sha256": "08f3f919c96048b9dcf9596e2b05a262c578c788ad5d33528035b4265405b63c",
+      "sha256": "ba9fb9bd5fa35fa90072dcdacbf9166b69f25d1bd354ddd737e12870c93f97c5",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/BuilderSkill.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/BuilderSkill.java",
-      "sha256": "61530da4ca4300cd9c5e3d032325d06b6b1634b482bc87be5004f76aa9a9a295",
+      "sha256": "cf53a32eb9f219e528b3a1fe4e4d0ff822e2a6edbfa5fe85c3448cf865be02db",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/CombatOutcome.java": {
@@ -4083,7 +4103,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/CombatWithdrawal.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/CombatWithdrawal.java",
-      "sha256": "a08f5af0ab1078413837808fe0e75ba434bab6b550c714503f6cc6c98eb1690a",
+      "sha256": "efbc5be150ed0159082ebb83e1e2bc6519738512790d09adcdb4a5b75dc3d655",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/ControlAdmission.java": {
@@ -4099,6 +4119,16 @@
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/EatSkill.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/EatSkill.java",
       "sha256": "6248dc39a86983a915fd6d618ecdfe9a2f27b431fe61d0363afdb7b3fffaa162",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/EscapeMovement.java": {
+      "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/EscapeMovement.java",
+      "sha256": "f081ee2b4ff2a8869e2f7bfee69b27cd826c03c5818d3d247f5eec92976b9d90",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/EscapeRoute.java": {
+      "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/EscapeRoute.java",
+      "sha256": "e50f7fdb50002458eab39015c9c9d5d581c12aba946f6d49d3cc8653d0613519",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/FollowDuration.java": {
@@ -4128,7 +4158,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/GameSkills.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/GameSkills.java",
-      "sha256": "0dfa7ae0eddd3ad9bb4d660f6305689f417387f84eb2829dcee2066f6da6d0ae",
+      "sha256": "00d634d047642e6d85d64738a084c14cc8b14934290de4b1bc7e72f92510b0f1",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/GatherSearch.java": {
@@ -4173,7 +4203,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/ItemSelection.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/ItemSelection.java",
-      "sha256": "fad43d2074a893f6fc9de2ef05dd93deff2a5440ac90f5c1891923662137258b",
+      "sha256": "1bae4d1d84eb5fa9013130193e6ef3533096aca1e23d8d8ee174c4f3f050a0ba",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/MiningToolChoice.java": {
@@ -4233,7 +4263,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/RetreatMemory.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/RetreatMemory.java",
-      "sha256": "b4a31902efdcfc6483b155223463e350f08fd908bc5225197b7da7fecdc493f3",
+      "sha256": "79ccf51f70145280a48aaf5613ecd5e672934856d1c410a767d23b39348a53e6",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/SeenTarget.java": {
@@ -4288,7 +4318,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/SurvivalController.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/SurvivalController.java",
-      "sha256": "553204e17f58d2d6e9061e50a4af68fd7dbd4ffc42dc80bbf91fbb20f6844b00",
+      "sha256": "426954d42b0ab5c2120ab6013a1bbd67c181f7f937d36b73aa54abd65885d61c",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/SurvivalPolicy.java": {
@@ -4309,6 +4339,11 @@
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/ThreatPolicy.java": {
       "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/ThreatPolicy.java",
       "sha256": "e74566ab339f6b5e4e41c09ad59b110be28da934f450128783d3d46519e96363",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/ThreatRange.java": {
+      "source": "plugin-host/minecraft-fabric/src/main/java/dev/momo/task/ThreatRange.java",
+      "sha256": "893c88c2537bc8175177e6b5008665f8b9584ac42531319d84643843c2d0d9df",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/main/java/dev/momo/task/WaterApproach.java": {
@@ -4353,7 +4388,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/BuildTaskSmoke.java": {
       "source": "plugin-host/minecraft-fabric/src/test/java/dev/momo/task/BuildTaskSmoke.java",
-      "sha256": "6621ed35794f2f9d40cd294b10a5c28967da9f8c6e6b103fccc2cb28cfadcaa4",
+      "sha256": "b6fc5cbe50253696afe0e89db7b4c6093d18eef68820e86efe3e8d1f12337fa5",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/CombatOutcomeSmoke.java": {
@@ -4363,7 +4398,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/CombatWithdrawalSmoke.java": {
       "source": "plugin-host/minecraft-fabric/src/test/java/dev/momo/task/CombatWithdrawalSmoke.java",
-      "sha256": "5e2c2b232c0662cb16ce29db19f26bc3e6f5b620f7dfb474ca44bf8d25452469",
+      "sha256": "c59713a13717d748637fb1a2c3cf06dae2a8f9a248e2a4c835ca2e85e70f671e",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/ControlAdmissionSmoke.java": {
@@ -4374,6 +4409,11 @@
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/ControlLifetimeSmoke.java": {
       "source": "plugin-host/minecraft-fabric/src/test/java/dev/momo/task/ControlLifetimeSmoke.java",
       "sha256": "5997dd61ff20b290dbd6e9d1015114f4bcc2d8846c6c4bc944778a7ac9f8b24a",
+      "mode": 33188
+    },
+    "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/EscapeRouteSmoke.java": {
+      "source": "plugin-host/minecraft-fabric/src/test/java/dev/momo/task/EscapeRouteSmoke.java",
+      "sha256": "edcca80a4d5bda731852ac5b6dec07f4c1b7f62f7486c63f3dba644c63dff3a7",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/FollowDurationSmoke.java": {
@@ -4413,7 +4453,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/ItemSelectionSmoke.java": {
       "source": "plugin-host/minecraft-fabric/src/test/java/dev/momo/task/ItemSelectionSmoke.java",
-      "sha256": "52c21bdd216613b256ac09f3924c27247fe28f8fb42233a1eab82a3cbe5f3785",
+      "sha256": "982cc3e1d6912ca6e4d07d2d4913319847ef88edd3b62c856a84a8c1a096b32a",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/MiningToolChoiceSmoke.java": {
@@ -4458,7 +4498,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/RetreatMemorySmoke.java": {
       "source": "plugin-host/minecraft-fabric/src/test/java/dev/momo/task/RetreatMemorySmoke.java",
-      "sha256": "34d54a116317d07f3404c7173434eb3c93c2f528f6de60b43aeb516fded41d7b",
+      "sha256": "743c59cdeac578347ca1335d49a5fe2123cb9089a00e435ef3468a9ca2118ff1",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/SightLandmarksSmoke.java": {
@@ -4488,7 +4528,7 @@
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/SurvivalPolicySmoke.java": {
       "source": "plugin-host/minecraft-fabric/src/test/java/dev/momo/task/SurvivalPolicySmoke.java",
-      "sha256": "81f242a31ccf4639ae9e789b892ee8424b9f49f95d007ed980de0cb4674677b4",
+      "sha256": "e0c83148a3532129f520eb31acfaac181239186f2c7cf9b3c31ff3eb969d582f",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/src/test/java/dev/momo/task/TaskPlanSmoke.java": {
@@ -4583,7 +4623,7 @@
     },
     "app/plugin-host/src/minecraft-skills.mjs": {
       "source": "plugin-host/src/minecraft-skills.mjs",
-      "sha256": "d48344918fbd4aaa76b59260ede6439d99b885e3bf279650c7feab19f5c4044d",
+      "sha256": "78428dc1a6e323a3077596b45dd96a4142c9e3f6f18b7fc1450d4793842673f8",
       "mode": 33188
     },
     "app/plugin-host/src/native-control.mjs": {
@@ -4658,7 +4698,7 @@
     },
     "app/plugin-host/test/minecraft-skills.test.mjs": {
       "source": "plugin-host/test/minecraft-skills.test.mjs",
-      "sha256": "e615efedad0ef42136a9ccc0f0b174b0d480b60a277c8c1a4785c63a032ab333",
+      "sha256": "58327624378b1e38b97ae5fe426ade715f97e4f0b51989fb951924b099a71678",
       "mode": 33188
     },
     "app/plugin-host/test/minecraft-tasks.test.mjs": {

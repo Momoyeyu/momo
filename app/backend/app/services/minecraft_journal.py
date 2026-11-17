@@ -13,6 +13,7 @@ from ..core import db
 
 STATUSES={'active','paused','completed','abandoned','blocked'}
 class DispatchConflict(ValueError):pass
+class RejectedDispatchConflict(DispatchConflict):pass
 def scope(binding):
     return hashlib.sha256(json.dumps(binding,sort_keys=True).encode()).hexdigest()
 def schema():
@@ -28,6 +29,7 @@ def schema():
         c.execute('CREATE TABLE IF NOT EXISTS minecraft_goal_instances(scope TEXT PRIMARY KEY,goal_id TEXT NOT NULL)')
         c.execute('CREATE TABLE IF NOT EXISTS minecraft_task_goals(scope TEXT NOT NULL,activity TEXT NOT NULL,task_id TEXT NOT NULL,goal_id TEXT NOT NULL,progress TEXT,updated_at TEXT NOT NULL,PRIMARY KEY(scope,activity,task_id))')
         c.execute('CREATE INDEX IF NOT EXISTS minecraft_goal_progress ON minecraft_task_goals(scope,goal_id,updated_at DESC)')
+        c.execute('CREATE INDEX IF NOT EXISTS minecraft_goal_intents ON minecraft_task_goals(scope,goal_id)')
         c.execute('CREATE TABLE IF NOT EXISTS minecraft_dispatches(scope TEXT NOT NULL,activity TEXT NOT NULL,task_id TEXT NOT NULL,request TEXT NOT NULL,disposition TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(scope,activity,task_id))')
 
 def prepare_dispatch(binding, activity, command):
@@ -40,7 +42,9 @@ def prepare_dispatch(binding, activity, command):
     with db.tx() as c:
         old=c.execute('SELECT request,disposition FROM minecraft_dispatches WHERE scope=? AND activity=? AND task_id=?',(key,activity,task_id)).fetchone()
         if old:
-            if old['request']!=request:raise DispatchConflict('Task identity conflict')
+            if old['request']!=request:
+                if old['disposition']=='rejected':raise RejectedDispatchConflict('Known rejected task ID; use a new taskId for corrected arguments')
+                raise DispatchConflict('Task identity conflict')
             if old['disposition']=='observed':return False
             if old['disposition']!='rejected':raise DispatchConflict('Task already dispatched; inspect its original receipt without replay')
         now=db.now_iso()
@@ -70,6 +74,42 @@ def history(binding, *, activity=None, task_id=None, limit=12):
     if task_id is not None:where+=' AND t.task_id=?';params.append(task_id)
     rows=db.query('SELECT t.activity,t.data,d.request,d.disposition FROM minecraft_tasks t LEFT JOIN minecraft_dispatches d ON d.scope=t.scope AND d.activity=t.activity AND d.task_id=t.task_id WHERE '+where+' ORDER BY t.updated_at DESC,t.rowid DESC LIMIT ?',(*params,min(64,max(1,limit))))
     return [{**json.loads(row['data']),'activityId':row['activity'],**({'dispatch':row['disposition'],'request':json.loads(row['request'])} if row['request'] else {})} for row in reversed(rows)]
+
+def build_plans(binding, before=None):
+    """Index this goal's immutable intentions, not newly observed world cells."""
+    if before is not None and (type(before) is not int or not 0<before<=2**63-1):raise ValueError('Invalid build history cursor')
+    schema();key=scope(binding)
+    rows=db.query('''SELECT a.rowid AS cursor,d.activity,d.task_id,d.request,d.disposition,t.data
+        FROM minecraft_task_goals a INDEXED BY minecraft_goal_intents
+        JOIN minecraft_dispatches d ON d.scope=a.scope AND d.activity=a.activity AND d.task_id=a.task_id
+        JOIN minecraft_tasks t ON t.scope=d.scope AND t.activity=d.activity AND t.task_id=d.task_id
+        WHERE a.scope=? AND a.goal_id=(SELECT goal_id FROM minecraft_goal_instances WHERE scope=?) AND a.rowid<=?
+        ORDER BY a.rowid DESC LIMIT 129''',(key,key,before if before is not None else 2**63-1))
+    plans=[];scanned=0;last=None
+    for row in rows[:128]:
+        scanned+=1;last=row['cursor']
+        request=json.loads(row['request']);task=json.loads(row['data'])
+        arguments=request.get('args');steps=arguments.get('steps') if isinstance(arguments,dict) else None
+        candidates=[request] if request.get('skill')=='build' else steps[:24] if isinstance(steps,list) else []
+        has_build=(request.get('skill')=='build' or request.get('skill')=='plan' and
+                   (any(isinstance(part,dict) and part.get('skill')=='build' for part in candidates)
+                    or isinstance(steps,dict) and steps.get('skill')=='build'))
+        if not has_build:continue
+        parts=[]
+        for part in candidates:
+            if isinstance(part,dict) and part.get('skill')=='build':
+                arguments=part.get('args');parts.append(arguments.get('cells',[]) if isinstance(arguments,dict) else [])
+        cells=[cell for part in parts if isinstance(part,list) for cell in part[:32]
+               if isinstance(cell,dict) and all(type(cell.get(axis)) is int for axis in ('x','y','z'))]
+        entry={'activityId':row['activity'],'taskId':row['task_id'],'state':task['state'],'dispatch':row['disposition'],
+               'partCount':len(parts),'requestedCells':len(cells),
+               'bounds':{'min':{axis:min(cell[axis] for cell in cells) for axis in ('x','y','z')},
+                         'max':{axis:max(cell[axis] for cell in cells) for axis in ('x','y','z')}} if cells else None}
+        if task.get('dimension'):entry['dimension']=task['dimension']
+        plans.append(entry)
+        if len(plans)==6:break
+    return {'buildPlans':plans,'nextCursor':last-1 if last and last>1 and len(rows)>scanned else None}
+
 def goal(binding):
     schema()
     rows=db.query('SELECT data FROM minecraft_goals WHERE scope=?',(scope(binding),))

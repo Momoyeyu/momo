@@ -11,7 +11,8 @@ public final class SurvivalController {
  private final SurvivalPolicy policy=new SurvivalPolicy();
  private SurvivalPolicy.Mode mode=SurvivalPolicy.Mode.NONE;
  private Vec3d threatPosition;
- private LivingEntity threat;private int savedSlot=-1,ticks;private float escapeYaw;private boolean escapeSafe,combatRetreat;
+ private LivingEntity threat;private int savedSlot=-1,ticks;private boolean combatRetreat;
+ private final EscapeMovement escape=new EscapeMovement();
  private TaskRuntime.Work foodWork,combatWork;private long foodRetryUntil,combatRetryUntil;private String replanReason="";
  private CombatWithdrawal withdrawal=new CombatWithdrawal();
  private final BlastAvoidance blasts=new BlastAvoidance();
@@ -40,19 +41,19 @@ public final class SurvivalController {
     boolean recent=ThreatPolicy.recent(p.getAttacker()==e,p.age-p.getLastAttackedTime(),damage!=null&&damage.getAttacker()==e);
     boolean neutral=e instanceof EndermanEntity||e instanceof PiglinEntity||e instanceof ZombifiedPiglinEntity||e instanceof SpiderEntity&&c.world.isDay();
     boolean aggressive=e instanceof MobEntity mob&&(mob.isAttacking()||mob.getTarget()==p)||e instanceof EndermanEntity enderman&&enderman.isAngry();
-    boolean ranged=e instanceof net.minecraft.entity.ai.RangedAttackMob||e instanceof GhastEntity||e instanceof BlazeEntity||e instanceof GuardianEntity;
+    boolean ranged=ThreatRange.ranged(e);
     return ThreatPolicy.danger(true,e instanceof Monster,neutral,aggressive,recent,ranged,p.squaredDistanceTo(e));
    }).stream().min(java.util.Comparator.comparingDouble(e->e.squaredDistanceTo(p))).orElse(null);
   }
   if(threat==null)threatPosition=null;else if(p.canSee(threat))threatPosition=threat.getPos();
   boolean eating=foodWork!=null||(p.isUsingItem()&&p.getActiveItem().contains(DataComponentTypes.FOOD));
   boolean critical=blasts.active()||p.isInLava()||policy.airCritical(p.getAir(),mode==SurvivalPolicy.Mode.ESCAPE)||(p.isOnFire()&&p.getHealth()<8);
-  boolean hostile=threat!=null&&!retreatMemory.defer(threat.getId(),p.squaredDistanceTo(threatPosition));
+  boolean hostile=threat!=null&&!retreatMemory.defer(threat.getId(),p.squaredDistanceTo(threatPosition),ThreatRange.ranged(threat));
   var desired=policy.choose(true,false,critical,p.getHealth(),p.getHungerManager().getFoodLevel(),foodWork!=null||(System.nanoTime()>=foodRetryUntil&&foodSlot()>=0),eating,hostile);
   desired=policy.forBody(desired,mealOwned||(mode==SurvivalPolicy.Mode.NONE&&eating),combatOwned);
   if(desired==SurvivalPolicy.Mode.DEFEND&&System.nanoTime()<combatRetryUntil)desired=SurvivalPolicy.Mode.NONE;
   if(mode==SurvivalPolicy.Mode.ESCAPE&&combatRetreat&&!critical){
-   String retreat=threat==null||!threat.isAlive()?"retreated_low_health":withdrawal.update(p.getHealth(),p.squaredDistanceTo(threatPosition),ticks);
+   String retreat=threat==null||!threat.isAlive()?"retreated_low_health":withdrawal.update(p.getHealth(),p.squaredDistanceTo(threatPosition),ticks,ThreatRange.ranged(threat));
    if(retreat.equals("retreating"))desired=SurvivalPolicy.Mode.ESCAPE;
    else{if(retreat.equals("retreated_low_health")&&threat!=null)retreatMemory.reachedSafety(threat.getId());replanReason=retreat;desired=SurvivalPolicy.Mode.NONE;}
   }
@@ -68,7 +69,7 @@ public final class SurvivalController {
  }
  public void drive(SurvivalPolicy.Mode desired){
   var c=client();var p=c.player;
-  if(desired!=mode){var selectedThreat=threat;var selectedPosition=threatPosition;stop(false,true);threat=selectedThreat;threatPosition=selectedPosition;mode=desired;savedSlot=p.getInventory().selectedSlot;ticks=0;escapeYaw=p.getYaw();combatRetreat=desired==SurvivalPolicy.Mode.ESCAPE&&p.getHealth()<=6&&threat!=null;if(combatRetreat)withdrawal.update(p.getHealth(),p.squaredDistanceTo(threatPosition),ticks);}
+  if(desired!=mode){var selectedThreat=threat;var selectedPosition=threatPosition;stop(false,true);threat=selectedThreat;threatPosition=selectedPosition;mode=desired;savedSlot=p.getInventory().selectedSlot;ticks=0;combatRetreat=desired==SurvivalPolicy.Mode.ESCAPE&&p.getHealth()<=6&&threat!=null;if(combatRetreat)withdrawal.update(p.getHealth(),p.squaredDistanceTo(threatPosition),ticks,ThreatRange.ranged(threat));}
   ticks++;
   switch(mode){
    case EAT -> {
@@ -90,18 +91,11 @@ public final class SurvivalController {
     }catch(RuntimeException error){settle();replanReason="defense_blocked";combatRetryUntil=System.nanoTime()+5_000_000_000L;}
    }
    case ESCAPE -> {
-    p.setPitch(policy.escapePitch(p.isTouchingWater()&&p.getAir()<250,p.getPitch()));
-    // Evaluate a few nearby collision cells, never hidden resources or global terrain.
-    if(ticks==1||ticks%(blasts.active()?4:20)==0){double best=-Double.MAX_VALUE;escapeSafe=false;for(int i=0;i<8;i++){
-     float yaw=p.getYaw()+i*45;double angle=Math.toRadians(yaw);var pos=BlockPos.ofFloored(p.getX()-Math.sin(angle)*2,p.getY(),p.getZ()+Math.cos(angle)*2);
-     if(!c.world.isChunkLoaded(pos)||!c.world.getBlockState(pos).getCollisionShape(c.world,pos).isEmpty()||c.world.getFluidState(pos).isIn(net.minecraft.registry.tag.FluidTags.LAVA))continue;
-     if(!c.world.getBlockState(pos.down()).isSolidBlock(c.world,pos.down())&&!p.isTouchingWater()&&!p.isInLava())continue;
-     var point=pos.toCenterPos();
+    escape.drive(c,point->{
      double score=blasts.active()?blasts.score(point.x,point.y,point.z):threat==null?0:point.squaredDistanceTo(threatPosition);
-     if(!blasts.active()&&c.world.getFluidState(pos).isIn(net.minecraft.registry.tag.FluidTags.WATER))score+=100;
-     if(score>best){best=score;escapeYaw=yaw;escapeSafe=true;}
-    }}
-    p.setYaw(escapeYaw);c.options.forwardKey.setPressed(escapeSafe);c.options.sprintKey.setPressed(true);c.options.jumpKey.setPressed(p.isTouchingWater()||p.isInLava()||p.horizontalCollision);
+     if(!blasts.active()&&c.world.getFluidState(BlockPos.ofFloored(point)).isIn(net.minecraft.registry.tag.FluidTags.WATER))score+=100;
+     return score;
+    });
    }
    default -> {}
   }
@@ -111,6 +105,7 @@ public final class SurvivalController {
  public void stop(){stop(false);}
  public void stop(boolean preserveScreen){stop(preserveScreen,false);}
  private void stop(boolean preserveScreen,boolean preserveReflexState){
+  escape.reset();
   if(!preserveReflexState){blasts.clear();retreatMemory.clear();}
   var c=client();boolean mealScreen=acceptsScreen(c.currentScreen);
   if(foodWork!=null){foodWork.stop();foodWork=null;}
