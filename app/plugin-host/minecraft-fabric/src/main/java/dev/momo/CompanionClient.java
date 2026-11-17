@@ -38,6 +38,7 @@ public final class CompanionClient implements ClientModInitializer {
  public static void physicalKey(int key,int scan,boolean down){if(instance!=null)instance.physicalKeys.key(key,scan,down);}
  public static void physicalButton(int button,boolean down){if(instance!=null)instance.physicalKeys.button(button,down);}
  public static void physicalInput(){if(instance!=null&&controlling()){instance.physicalAt=System.currentTimeMillis();instance.physicalTakeover=true;}}
+ public static boolean physicalTakeoverPending(){return instance!=null&&instance.physicalTakeover;}
  public static boolean ownsCurrentScreen(){return instance!=null&&instance.ownsScreen(MinecraftClient.getInstance());}
  private boolean ownsScreen(MinecraftClient c){return c.currentScreen!=null&&(c.currentScreen==ownedScreen||requestedInventoryScreen(c)||survival.acceptsScreen(c.currentScreen)||tasks.active()&&tasks.acceptsScreen(c.currentScreen));}
  private boolean requestedInventoryScreen(MinecraftClient c){
@@ -206,7 +207,8 @@ public final class CompanionClient implements ClientModInitializer {
   if(!conflict.isEmpty()){result.addProperty("accepted",false);result.addProperty("error",conflict);return result;}
   switch (type) {
    case "capabilities" -> {
-    result.addProperty("protocol",1);result.addProperty("taskProtocol",1);
+    result.addProperty("protocol",1);result.addProperty("taskProtocol",1);result.addProperty("craftStationPreparation",true);
+    result.addProperty("craftStationPlacement",true);
     result.addProperty("decisionProtocol",1);
     result.addProperty("navigation",BaritoneNavigator.available());result.addProperty("navigationBackend","baritone-1.11.3");
     result.add("skills",gson.toJsonTree(GameSkills.NAMES));result.add("skillDefinitions",dev.momo.task.SkillArguments.contract());

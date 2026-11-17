@@ -25,3 +25,12 @@ After local fixed-identity signing, deep/strict verification and the preceding d
 The latest pre-install private profile clone passed SQLite integrity and matching source hashes. Following installed checks, the old app, local candidate directory and owned remote build root were removed. Only the latest installed app and necessary development resources/one latest private profile backup remain; no private profile or model credentials are part of the distributable.
 
 These checks prove packaging, UI startup and permission inheritance, not full Minecraft acceptance. The original autonomous shelter goal, genuine physical takeover, world-change lifecycle and remaining combat/performance checks still require actual game evidence. 007 remains open.
+
+
+## 2026-11-18 concentrated acceptance build preparation
+
+Promoted the frozen shared revision `5e9e1697bdb108c34dff3be2de103c3e8b4e60a3` through the sole promotion script after its exact CI 44199371391 succeeded. This groups explicit air clearance, bounded construction recovery, surface-height navigation, station preparation and owned-workbench placement, local healing, normal sight-based condition waits and historical-task feedback. Shared business code has no desktop fork.
+
+The promoted snapshot passed all 36 shell tests and both isolated component-stage checks. Its formal companion has SHA256 `dcbe17c42ddda73e18729a74aad4c763f76fa04147e9aa24f68e492426837255`, with matching source provenance and the unchanged pinned Baritone dependency. In the existing vanilla fixture the relative nine-cell construction completed after three ordinary approaches, with nine server receipts and matching inventory consumption; cleanup stopped all input and restored the original world paused. This is not an identical-environment causal A/B comparison or full autonomous-shelter acceptance.
+
+Remote package preparation and subsequent local fixed-identity signing are the next gates. The installed application still contains shared `2eb745c`; no installation or permission reset is claimed here. Full original-goal completion, moving physical takeover and final installed model/UI checks remain open.

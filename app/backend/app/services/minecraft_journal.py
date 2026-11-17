@@ -75,6 +75,21 @@ def history(binding, *, activity=None, task_id=None, limit=12):
     rows=db.query('SELECT t.activity,t.data,d.request,d.disposition FROM minecraft_tasks t LEFT JOIN minecraft_dispatches d ON d.scope=t.scope AND d.activity=t.activity AND d.task_id=t.task_id WHERE '+where+' ORDER BY t.updated_at DESC,t.rowid DESC LIMIT ?',(*params,min(64,max(1,limit))))
     return [{**json.loads(row['data']),'activityId':row['activity'],**({'dispatch':row['disposition'],'request':json.loads(row['request'])} if row['request'] else {})} for row in reversed(rows)]
 
+def _planned_build_cells(arguments):
+    if not isinstance(arguments,dict) or ('cells' in arguments)==('box' in arguments):return []
+    if 'cells' in arguments:return arguments['cells'] if isinstance(arguments['cells'],list) else []
+    box=arguments['box']
+    if not isinstance(box,dict) or set(box)-{'x','y','z','width','height','length','block','mode'}:return []
+    if any(type(box.get(k)) is not int for k in ('x','y','z','width','height','length')):return []
+    x,y,z,w,h,l=(box[k] for k in ('x','y','z','width','height','length'))
+    if not all(1<=size<=16 for size in (w,h,l)) or not (-30000000<=x<=x+w-1<=30000000 and -64<=y<=y+h-1<=319 and -30000000<=z<=z+l-1<=30000000):return []
+    mode=box.get('mode','solid');block=box.get('block')
+    if mode not in ('solid','walls') or not isinstance(block,str) or not 3<=len(block)<=128 or any(ord(c)<32 for c in block):return []
+    count=(w*l-max(0,w-2)*max(0,l-2) if mode=='walls' else w*l)*h
+    if count>32:return []
+    return [{'x':x+dx,'y':y+dy,'z':z+dz,'block':block} for dx in range(w) for dy in range(h) for dz in range(l)
+            if mode!='walls' or dx in (0,w-1) or dz in (0,l-1)]
+
 def build_plans(binding, before=None):
     """Index this goal's immutable intentions, not newly observed world cells."""
     if before is not None and (type(before) is not int or not 0<before<=2**63-1):raise ValueError('Invalid build history cursor')
@@ -98,7 +113,7 @@ def build_plans(binding, before=None):
         parts=[]
         for part in candidates:
             if isinstance(part,dict) and part.get('skill')=='build':
-                arguments=part.get('args');parts.append(arguments.get('cells',[]) if isinstance(arguments,dict) else [])
+                parts.append(_planned_build_cells(part.get('args')))
         cells=[cell for part in parts if isinstance(part,list) for cell in part[:32]
                if isinstance(cell,dict) and all(type(cell.get(axis)) is int for axis in ('x','y','z'))]
         entry={'activityId':row['activity'],'taskId':row['task_id'],'state':task['state'],'dispatch':row['disposition'],
@@ -111,9 +126,13 @@ def build_plans(binding, before=None):
     return {'buildPlans':plans,'nextCursor':last-1 if last and last>1 and len(rows)>scanned else None}
 
 def goal(binding):
+    return goal_snapshot(binding)['goal']
+
+def goal_snapshot(binding):
+    """One read pairs a saved intention with its actual record time."""
     schema()
-    rows=db.query('SELECT data FROM minecraft_goals WHERE scope=?',(scope(binding),))
-    return json.loads(rows[0]['data']) if rows else None
+    rows=db.query('SELECT data,updated_at FROM minecraft_goals WHERE scope=?',(scope(binding),))
+    return {'goal':json.loads(rows[0]['data']),'recordedAt':rows[0]['updated_at']} if rows else {'goal':None,'recordedAt':None}
 
 def validate_goal(value):
     allowed={'title','reason','source','expected','constraints','status','progress','next'}
@@ -152,7 +171,7 @@ def bind_task(binding, activity, task_id):
 
 def _progress(task):
     if task.get('state') not in {'succeeded','failed','cancelled'}:return None
-    gains={};placed={};mined={};positions=[];defeated=set();seen=set();pending=[(task.get('evidence',{}),0)];visited=0
+    gains={};placed={};mined={};cleared={};positions=[];defeated=set();seen=set();pending=[(task.get('evidence',{}),0)];visited=0
     def resource(value):
         if not isinstance(value,str) or len(value)>1200:return None
         match=re.fullmatch(r'(?:Block\{)?([a-z0-9_.-]+:[a-z0-9_./-]+)(?:\}.*)?',value)
@@ -168,25 +187,29 @@ def _progress(task):
         if block and type(sequence) is int and sequence>0 and all(type(row.get(axis)) is int for axis in ('x','y','z')):
             identity=(sequence,*(row[axis] for axis in ('x','y','z')))
             if identity not in seen:
-                seen.add(identity);counts=mined if 'after' in row else placed;counts[block]=counts.get(block,0)+1
-                if 'after' not in row:positions.append({'block':block,**{axis:row[axis] for axis in ('x','y','z')}})
+                seen.add(identity);counts=mined if 'after' in row else cleared if block in {'minecraft:air','minecraft:cave_air','minecraft:void_air'} else placed
+                counts[block]=counts.get(block,0)+1
+                if counts is placed:positions.append({'block':block,**{axis:row[axis] for axis in ('x','y','z')}})
         if row.get('targetAlive') is False and type(row.get('entityId')) is int:defeated.add(row['entityId'])
         pending.extend((value,depth+1) for value in row.values() if isinstance(value,(list,dict)))
-    if not (gains or placed or mined or defeated):return None
+    if not (gains or placed or mined or cleared or defeated):return None
     result={'taskId':task['taskId'],'skill':task.get('skill','plan'),'partial':task['state']!='succeeded'}
     dimension=task.get('dimension')
     if isinstance(dimension,str) and len(dimension)<=128 and re.fullmatch(r'[a-z0-9_.-]+:[a-z0-9_./-]+',dimension):result['dimension']=dimension
     if gains:result['gains']=[{'item':item,'count':count} for item,count in sorted(gains.items())]
     if placed:result['placed']=[{'block':block,'count':count} for block,count in sorted(placed.items())]
     if mined:result['mined']=[{'block':block,'count':count} for block,count in sorted(mined.items())]
+    if cleared:result['cleared']=[{'block':block,'count':count} for block,count in sorted(cleared.items())]
     if positions:result['positions']=positions[-4:]
     if defeated:result['defeated']=len(defeated)
     return result
 
 def progress(binding, limit=8):
     schema();key=scope(binding)
-    rows=db.query('SELECT t.progress FROM minecraft_task_goals t JOIN minecraft_goal_instances g ON g.scope=t.scope AND g.goal_id=t.goal_id WHERE t.scope=? AND t.progress IS NOT NULL ORDER BY t.updated_at DESC,t.rowid DESC LIMIT ?',(key,min(8,max(1,limit))))
-    return [json.loads(row['progress']) for row in reversed(rows)]
+    # The stored index selects milestones. Rebuild the bounded projection from
+    # immutable receipts so older indexes cannot keep reporting placed air.
+    rows=db.query('SELECT r.data FROM minecraft_task_goals t JOIN minecraft_goal_instances g ON g.scope=t.scope AND g.goal_id=t.goal_id JOIN minecraft_tasks r ON r.scope=t.scope AND r.activity=t.activity AND r.task_id=t.task_id WHERE t.scope=? AND t.progress IS NOT NULL ORDER BY t.updated_at DESC,t.rowid DESC LIMIT ?',(key,min(8,max(1,limit))))
+    return [value for row in reversed(rows) if (value:=_progress(json.loads(row['data']))) is not None]
 
 def record(binding,activity,tasks):
     if len(tasks)>4096:raise ValueError('Too many task receipts')

@@ -327,6 +327,16 @@ def test_game_parameter_errors_are_known_before_dispatch(arguments):
  assert 'skill' in reply['error']
  dispatch.assert_not_called()
 
+@pytest.mark.parametrize('action',['submit','cancel','resume'])
+def test_historical_activity_on_a_game_action_explains_the_read_only_field(action):
+ from app.services.minecraft import minecraft
+ arguments={'action':action,'activityId':'old','taskId':'next','skill':'wait','args':{'ticks':20}}
+ with patch.object(tools,'require_local',return_value='r'),patch.object(minecraft,'execute') as dispatch:
+  reply=json.loads(tools.execute('minecraft_action',arguments))
+ assert reply['code']=='MINECRAFT_HISTORY_READ_ONLY'
+ assert 'activityId' in reply['error'] and 'action="task"' in reply['error']
+ dispatch.assert_not_called()
+
 def test_declared_game_escape_key_passes_the_shared_action_schema():
  from app.services.minecraft import minecraft
  with patch.object(tools,'require_local',return_value='r'),patch.object(minecraft,'execute',return_value={'sent':True}) as dispatch:
@@ -366,13 +376,15 @@ def test_game_declaration_keeps_semantic_tasks_small_and_manual_controls_on_dema
  assert set(declaration['parameters']['properties'])=={'action','query','taskId','activityId','skill','args','after'}
  assert 'controls' in declaration['description'] and 'args' in declaration['description']
 
-def test_full_game_catalog_leaves_context_for_goal_and_current_pixels():
+@pytest.mark.parametrize("station_preparation",[False,True])
+@pytest.mark.parametrize("station_placement",[False,True])
+def test_full_game_catalog_leaves_context_for_goal_and_current_pixels(station_preparation,station_placement):
  from pathlib import Path
  from typing import get_args
  from app.api.minecraft import Action,TaskCommand
  from app.services.minecraft import minecraft
  definitions=json.loads((Path(__file__).parents[2]/'plugin-host/src/minecraft-skills.json').read_text())
- with patch.object(minecraft,'capabilities',{'skillDefinitions':definitions}):
+ with patch.object(minecraft,'capabilities',{'skillDefinitions':definitions,'craftStationPreparation':station_preparation,'craftStationPlacement':station_placement}):
   actions=sorted({'stop',*get_args(Action.model_fields['action'].annotation),*get_args(TaskCommand.model_fields['action'].annotation)})
   declaration=tools._minecraft_declaration(actions)
  assert len(json.dumps(declaration,ensure_ascii=False).encode())<=3000
@@ -419,3 +431,23 @@ def test_unfocused_game_observe_still_reserves_and_returns_a_real_image():
  assert execute.call_args.args[1]=={'frame':True}
  assert result['pixelsFollow'] is True
  stage.assert_called_once()
+
+
+@pytest.mark.parametrize('supported',[None,False,'true',True])
+def test_native_workbench_preparation_is_not_advertised_to_old_clients(supported):
+ from app.services.minecraft import minecraft
+ capabilities={'skillDefinitions':{'craft':{'parameters':{'properties':{'recipe':{},'count':{}}}}}}
+ if supported is not None:capabilities['craftStationPreparation']=supported
+ with patch.object(minecraft,'capabilities',capabilities):
+  declaration=tools._minecraft_declaration(['submit','capabilities'])['function']
+ assert ('auto-opens' in declaration['description']) is (supported is True)
+
+@pytest.mark.parametrize('preparation',[False,True])
+@pytest.mark.parametrize('placement',[None,False,'true',True])
+def test_carried_station_is_only_advertised_when_the_body_supports_placement(preparation,placement):
+ from app.services.minecraft import minecraft
+ capabilities={'craftStationPreparation':preparation,'craftStationPlacement':placement,
+               'skillDefinitions':{'craft':{'parameters':{'properties':{'recipe':{},'count':{}}}}}}
+ with patch.object(minecraft,'capabilities',capabilities):
+  description=tools._minecraft_declaration(['submit','capabilities'])['function']['description']
+ assert ('places owned' in description) is (preparation is True and placement is True)
