@@ -12,7 +12,8 @@ function fixture() {
     },
     setMinimumSize: (...a: unknown[]) => calls.push(["min", ...a]),
     setAlwaysOnTop: (v: boolean) => calls.push(["top", v]),
-    setVisibleOnAllWorkspaces: (...args: unknown[]) => calls.push(["spaces", ...args]),
+    setVisibleOnAllWorkspaces: (...args: unknown[]) =>
+      calls.push(["spaces", ...args]),
     setIgnoreMouseEvents: (v: boolean) => calls.push(["ignore", v]),
     setBackgroundColor: (v: string) => calls.push(["background", v]),
     setWindowButtonVisibility: (v: boolean) => calls.push(["buttons", v]),
@@ -55,16 +56,25 @@ test("invalid inputs rejected and chat cannot be made click through", () => {
   assert.throws(() => c.setClickThrough(true));
 });
 
-test("macOS pet follows fullscreen Spaces without explicitly focusing the app", { skip: process.platform !== "darwin" }, () => {
-  const { controller, calls } = fixture();
-  controller.setMode("pet");
-  controller.setMode("chat");
-  assert.deepEqual(calls.filter(([method]) => method === "spaces"), [
-    ["spaces", true, { visibleOnFullScreen: true }],
-    ["spaces", false, { visibleOnFullScreen: false }],
-  ]);
-  assert.ok(!calls.some(([method]) => method === "focus" || method === "show"));
-});
+test(
+  "macOS pet follows fullscreen Spaces without explicitly focusing the app",
+  { skip: process.platform !== "darwin" },
+  () => {
+    const { controller, calls } = fixture();
+    controller.setMode("pet");
+    controller.setMode("chat");
+    assert.deepEqual(
+      calls.filter(([method]) => method === "spaces"),
+      [
+        ["spaces", true, { visibleOnFullScreen: true }],
+        ["spaces", false, { visibleOnFullScreen: false }],
+      ],
+    );
+    assert.ok(
+      !calls.some(([method]) => method === "focus" || method === "show"),
+    );
+  },
+);
 test("recovery clears pet pass-through and emits state", () => {
   const { controller: c, states } = fixture();
   c.setMode("pet");
