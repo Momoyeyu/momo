@@ -9,6 +9,7 @@ export interface WindowState {
 }
 export interface DesktopBridge {
   requestSystemPermission(kind: "screen" | "input"): Promise<void>;
+  setGameOverlay(enabled: boolean): Promise<void>;
   setPetPanel(open: boolean): Promise<WindowState>;
   dragPetWindow(
     phase: "start" | "move" | "end",

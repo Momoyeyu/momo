@@ -1,10 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "1c16b8e81f0bca129c8a559812cafee1ca3a0b80",
+  "revision": "2b41cc2e1668c61c0bbd73b944e65304327fdfcf",
   "checks": [
-    "GitHub CI 44248503185 passed; four desktop pet browser smoke tests passed",
-    "Fabric bytes match the real placement acceptance"
+    "4 isolated desktop pet E2E tests and frontend typecheck passed"
   ],
   "files": {
     "app/.env.example": {
@@ -1164,7 +1163,7 @@
     },
     "app/frontend/e2e/46-desktop-pet.spec.ts": {
       "source": "frontend/e2e/46-desktop-pet.spec.ts",
-      "sha256": "430eeed90f8c9c5f4696f536b270a707d324bed2e9379001930c0a8d37bd624c",
+      "sha256": "feb1fd77be7fbe5e9539b596bcc320b706f022dcb732eed1b8bda38b99654649",
       "mode": 33188
     },
     "app/frontend/e2e/47-sound-inline.spec.ts": {
@@ -2949,7 +2948,7 @@
     },
     "app/frontend/src/components/DesktopPetControls.tsx": {
       "source": "frontend/src/components/DesktopPetControls.tsx",
-      "sha256": "70883b33f1efbc62575e955dc2b168dde0fd4e511d4bd99b472d5c4980eb29aa",
+      "sha256": "1165c62d704f2d2d6dbefcff0a7b31fb16e8b40a63f0dbcfb67105a6ad2a1dcc",
       "mode": 33188
     },
     "app/frontend/src/components/DetailModal.test.tsx": {
@@ -3554,7 +3553,7 @@
     },
     "app/frontend/src/services/desktopWindow.ts": {
       "source": "frontend/src/services/desktopWindow.ts",
-      "sha256": "c417ae04d739ec82bac2af039d25514550ecd215a541e522d3494342eba69a28",
+      "sha256": "398cd7d014567a8b9cf21e4af389c1ec80b0500648ef77479410dce3263c61ca",
       "mode": 33188
     },
     "app/frontend/src/services/extClient.ts": {

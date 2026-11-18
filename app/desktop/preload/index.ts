@@ -3,6 +3,8 @@ import type { DesktopBridge } from "../contracts.ts";
 const bridge: DesktopBridge = Object.freeze({
   requestSystemPermission: (kind: "screen" | "input") =>
     ipcRenderer.invoke("momo:request-system-permission", kind),
+  setGameOverlay: (enabled: boolean) =>
+    ipcRenderer.invoke("momo:set-game-overlay", enabled),
   setPetPanel: (open: boolean) =>
     ipcRenderer.invoke("momo:set-pet-panel", open),
   dragPetWindow: (

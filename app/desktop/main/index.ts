@@ -97,6 +97,11 @@ else {
           1,
           (kind: unknown) => requestSystemPermission(kind),
         ],
+        [
+          "momo:set-game-overlay",
+          1,
+          (value: unknown) => modes!.setGameOverlay(value),
+        ],
         ["momo:set-pet-panel", 1, (value: unknown) => modes!.setPanel(value)],
         ["momo:drag-pet-window", 1, (value: unknown) => modes!.dragPet(value)],
         [

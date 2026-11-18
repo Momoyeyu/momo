@@ -11,7 +11,7 @@ function fixture() {
       bounds = value;
     },
     setMinimumSize: (...a: unknown[]) => calls.push(["min", ...a]),
-    setAlwaysOnTop: (v: boolean) => calls.push(["top", v]),
+    setAlwaysOnTop: (...args: unknown[]) => calls.push(["top", ...args]),
     setVisibleOnAllWorkspaces: (...args: unknown[]) =>
       calls.push(["spaces", ...args]),
     setIgnoreMouseEvents: (v: boolean) => calls.push(["ignore", v]),
@@ -72,6 +72,34 @@ test(
     );
     assert.ok(
       !calls.some(([method]) => method === "focus" || method === "show"),
+    );
+  },
+);
+test(
+  "game overlay raises only the macOS pet and resets on exit",
+  { skip: process.platform !== "darwin" },
+  () => {
+    const { controller, calls } = fixture();
+    controller.setGameOverlay(true);
+    controller.setMode("pet");
+    controller.setGameOverlay(true);
+    controller.setGameOverlay(true);
+    controller.setGameOverlay(false);
+    controller.setGameOverlay(true);
+    controller.setMode("chat");
+    controller.setMode("pet");
+    controller.setGameOverlay(true);
+    assert.deepEqual(
+      calls.filter(([method]) => method === "top"),
+      [
+        ["top", true],
+        ["top", true, "status", 1],
+        ["top", true, "floating"],
+        ["top", true, "status", 1],
+        ["top", false],
+        ["top", true],
+        ["top", true, "status", 1],
+      ],
     );
   },
 );

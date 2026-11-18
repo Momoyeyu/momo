@@ -24,6 +24,7 @@ export class WindowModeController {
   private regions: Rectangle[] = [];
   private regionsAt = 0;
   private ignored = false;
+  private gameOverlay = false;
   private pointerTimer: ReturnType<typeof setInterval> | undefined;
   private dragOrigin:
     | { point: { x: number; y: number }; bounds: Rectangle }
@@ -62,6 +63,7 @@ export class WindowModeController {
       Math.min(pet ? 440 : 540, area.height),
     );
     this.window.setResizable(!pet);
+    this.gameOverlay = false;
     this.window.setAlwaysOnTop(pet);
     this.window.setHasShadow(!pet);
     if (process.platform === "darwin") {
@@ -82,6 +84,20 @@ export class WindowModeController {
     } else this.fitChat(this.chatBounds ?? this.window.getBounds());
     this.changed(this.getState());
     return this.getState();
+  }
+  setGameOverlay(enabled: unknown): void {
+    if (typeof enabled !== "boolean") throw Error("Invalid game overlay state");
+    if (
+      process.platform !== "darwin" ||
+      this.state.mode !== "pet" ||
+      enabled === this.gameOverlay
+    )
+      return;
+    // GLFW fullscreen uses the macOS status level. Keep the pet directly above it
+    // for gameplay, then return to the ordinary floating level.
+    if (enabled) this.window.setAlwaysOnTop(true, "status", 1);
+    else this.window.setAlwaysOnTop(true, "floating");
+    this.gameOverlay = enabled;
   }
   /** Add a utility column beside the avatar, preserving its size and screen position. */
   setPanel(open: unknown): WindowState {
