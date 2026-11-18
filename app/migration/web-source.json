@@ -1,10 +1,10 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "658d62fb8c293141346fa855989024ef4642395b",
+  "revision": "1c16b8e81f0bca129c8a559812cafee1ca3a0b80",
   "checks": [
-    "GitHub CI 44244590398: application and minecraft success",
-    "Formal Fabric 1.21.1 placement receipts and vanilla storage round trip"
+    "GitHub CI 44248503185 passed; four desktop pet browser smoke tests passed",
+    "Fabric bytes match the real placement acceptance"
   ],
   "files": {
     "app/.env.example": {
@@ -1164,7 +1164,7 @@
     },
     "app/frontend/e2e/46-desktop-pet.spec.ts": {
       "source": "frontend/e2e/46-desktop-pet.spec.ts",
-      "sha256": "95bb4eebdd3935881d59b8ad40810b43c9177329611e728b802f009257e2d369",
+      "sha256": "430eeed90f8c9c5f4696f536b270a707d324bed2e9379001930c0a8d37bd624c",
       "mode": 33188
     },
     "app/frontend/e2e/47-sound-inline.spec.ts": {
@@ -2799,7 +2799,7 @@
     },
     "app/frontend/src/App.tsx": {
       "source": "frontend/src/App.tsx",
-      "sha256": "72100eefc3b1da0c2c1296ef09a074553cc3bad01a55a0700fd9c6b3b1cce2bd",
+      "sha256": "51c44e4a5aecdaf0831fdc2954688b0e714bbe99578c3d243107b7db31142564",
       "mode": 33188
     },
     "app/frontend/src/api/schema.d.ts": {
@@ -2944,12 +2944,12 @@
     },
     "app/frontend/src/components/DesktopObservation.tsx": {
       "source": "frontend/src/components/DesktopObservation.tsx",
-      "sha256": "96fb1b7dd3b70c3a96241ff25474961ed645034adb554e4bb0e103ecf035e10d",
+      "sha256": "d2374baa9247c163425cdf0f15d616ae39f3a74ba0c7de796b645a7b6ae23430",
       "mode": 33188
     },
     "app/frontend/src/components/DesktopPetControls.tsx": {
       "source": "frontend/src/components/DesktopPetControls.tsx",
-      "sha256": "30a7a4b21a9286b8ac28ebb1682f0556aa9d1b3f5be599380f8cb770147e9060",
+      "sha256": "70883b33f1efbc62575e955dc2b168dde0fd4e511d4bd99b472d5c4980eb29aa",
       "mode": 33188
     },
     "app/frontend/src/components/DetailModal.test.tsx": {
@@ -3389,7 +3389,7 @@
     },
     "app/frontend/src/pages/settings/MinecraftCompanion.tsx": {
       "source": "frontend/src/pages/settings/MinecraftCompanion.tsx",
-      "sha256": "ba3867679e5f1ec43799d302e6c60b20197e8b6591723e96409b22dafe76da4b",
+      "sha256": "b52744d4d391dab7c0084f095d454709e960ab15c9fb4d8ffb23445121d0eab2",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/ModelsTab.tsx": {
@@ -3604,7 +3604,7 @@
     },
     "app/frontend/src/services/minecraftClient.ts": {
       "source": "frontend/src/services/minecraftClient.ts",
-      "sha256": "20c97c4573e7ae2f37c7f82874ac16357211c3a0e77fa214fa46e650bf3794c0",
+      "sha256": "c244bad15ae186908b89cd6f52fe5b8d259e8162b0d4cb7796cdf038b948fd16",
       "mode": 33188
     },
     "app/frontend/src/services/minecraftFailure.test.ts": {

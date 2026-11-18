@@ -6,6 +6,7 @@ type ModeWindow = Pick<
   | "setBounds"
   | "setMinimumSize"
   | "setAlwaysOnTop"
+  | "setVisibleOnAllWorkspaces"
   | "setIgnoreMouseEvents"
   | "setBackgroundColor"
   | "setWindowButtonVisibility"
@@ -63,8 +64,10 @@ export class WindowModeController {
     this.window.setResizable(!pet);
     this.window.setAlwaysOnTop(pet);
     this.window.setHasShadow(!pet);
-    if (process.platform === "darwin")
+    if (process.platform === "darwin") {
+      this.window.setVisibleOnAllWorkspaces(pet, { visibleOnFullScreen: pet });
       this.window.setWindowButtonVisibility(!pet);
+    }
     this.window.setBackgroundColor(pet ? "#00000000" : "#18151f");
     if (pet) {
       const a = this.workArea();
