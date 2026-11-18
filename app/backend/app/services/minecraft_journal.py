@@ -75,8 +75,31 @@ def history(binding, *, activity=None, task_id=None, limit=12):
     rows=db.query('SELECT t.activity,t.data,d.request,d.disposition FROM minecraft_tasks t LEFT JOIN minecraft_dispatches d ON d.scope=t.scope AND d.activity=t.activity AND d.task_id=t.task_id WHERE '+where+' ORDER BY t.updated_at DESC,t.rowid DESC LIMIT ?',(*params,min(64,max(1,limit))))
     return [{**json.loads(row['data']),'activityId':row['activity'],**({'dispatch':row['disposition'],'request':json.loads(row['request'])} if row['request'] else {})} for row in reversed(rows)]
 
-def _planned_build_cells(arguments):
+def plan_world_point(point, origin):
+    """Project saved local coordinates only; no world read or request mutation."""
+    if not isinstance(point,dict) or not isinstance(origin,dict) or set(origin)!={'x','y','z'} or any(type(origin[k]) is not int for k in origin):return None
+    if not (-30000000<=origin['x']<=30000000 and -64<=origin['y']<=319 and -30000000<=origin['z']<=30000000):return None
+    result=dict(point)
+    for axis in origin:
+        if axis not in point:continue
+        if type(point[axis]) is not int:return None
+        value=point[axis]+origin[axis]
+        if not (-64<=value<=319 if axis=='y' else -30000000<=value<=30000000):return None
+        result[axis]=value
+    return result
+
+def _planned_build_cells(arguments, origin=None, *, relative=False):
     if not isinstance(arguments,dict) or ('cells' in arguments)==('box' in arguments):return []
+    if relative:
+        points=arguments['cells'] if 'cells' in arguments else [arguments['box']]
+        if not isinstance(points,list):return []
+        translated=[]
+        for point in points:
+            world=plan_world_point(point,origin)
+            if world is None or not {'x','y','z'}<=world.keys():return []
+            translated.append(world)
+        if not translated:return []
+        arguments={**arguments,**({'cells':translated} if 'cells' in arguments else {'box':translated[0]})}
     if 'cells' in arguments:return arguments['cells'] if isinstance(arguments['cells'],list) else []
     box=arguments['box']
     if not isinstance(box,dict) or set(box)-{'x','y','z','width','height','length','block','mode'}:return []
@@ -90,9 +113,11 @@ def _planned_build_cells(arguments):
     return [{'x':x+dx,'y':y+dy,'z':z+dz,'block':block} for dx in range(w) for dy in range(h) for dz in range(l)
             if mode!='walls' or dx in (0,w-1) or dz in (0,l-1)]
 
-def build_plans(binding, before=None):
+def build_plans(binding, before=None, *, limit=6, max_bytes=None):
     """Index this goal's immutable intentions, not newly observed world cells."""
     if before is not None and (type(before) is not int or not 0<before<=2**63-1):raise ValueError('Invalid build history cursor')
+    if type(limit) is not int or not 1<=limit<=6:raise ValueError('Invalid build history limit')
+    if max_bytes is not None and (type(max_bytes) is not int or not 1<=max_bytes<=64000):raise ValueError('Invalid build history budget')
     schema();key=scope(binding)
     rows=db.query('''SELECT a.rowid AS cursor,d.activity,d.task_id,d.request,d.disposition,t.data
         FROM minecraft_task_goals a INDEXED BY minecraft_goal_intents
@@ -100,7 +125,7 @@ def build_plans(binding, before=None):
         JOIN minecraft_tasks t ON t.scope=d.scope AND t.activity=d.activity AND t.task_id=d.task_id
         WHERE a.scope=? AND a.goal_id=(SELECT goal_id FROM minecraft_goal_instances WHERE scope=?) AND a.rowid<=?
         ORDER BY a.rowid DESC LIMIT 129''',(key,key,before if before is not None else 2**63-1))
-    plans=[];scanned=0;last=None
+    plans=[];scanned=0;last=None;resume=None
     for row in rows[:128]:
         scanned+=1;last=row['cursor']
         request=json.loads(row['request']);task=json.loads(row['data'])
@@ -111,9 +136,10 @@ def build_plans(binding, before=None):
                     or isinstance(steps,dict) and steps.get('skill')=='build'))
         if not has_build:continue
         parts=[]
+        relative=request.get('skill')=='plan' and isinstance(arguments,dict) and 'origin' in arguments
         for part in candidates:
             if isinstance(part,dict) and part.get('skill')=='build':
-                parts.append(_planned_build_cells(part.get('args')))
+                parts.append(_planned_build_cells(part.get('args'),arguments.get('origin') if relative else None,relative=relative))
         cells=[cell for part in parts if isinstance(part,list) for cell in part[:32]
                if isinstance(cell,dict) and all(type(cell.get(axis)) is int for axis in ('x','y','z'))]
         entry={'activityId':row['activity'],'taskId':row['task_id'],'state':task['state'],'dispatch':row['disposition'],
@@ -121,9 +147,19 @@ def build_plans(binding, before=None):
                'bounds':{'min':{axis:min(cell[axis] for cell in cells) for axis in ('x','y','z')},
                          'max':{axis:max(cell[axis] for cell in cells) for axis in ('x','y','z')}} if cells else None}
         if task.get('dimension'):entry['dimension']=task['dimension']
+        if request.get('skill')=='plan' and isinstance(arguments,dict) and arguments.get('mode')=='preview':entry['previewOnly']=True
+        if max_bytes is not None and len(json.dumps([*plans,entry],ensure_ascii=False).encode())>max_bytes:
+            resume=row['cursor'];break
         plans.append(entry)
-        if len(plans)==6:break
-    return {'buildPlans':plans,'nextCursor':last-1 if last and last>1 and len(rows)>scanned else None}
+        if len(plans)==limit:break
+    return {'buildPlans':plans,'nextCursor':resume if resume is not None else last-1 if last and last>1 and len(rows)>scanned else None}
+
+def build_plan_context(binding):
+    """Recent immutable layout intents, bounded independently of raw history."""
+    index=build_plans(binding,limit=3,max_bytes=1100)
+    result={'buildPlans':list(reversed(index['buildPlans']))}
+    if index['nextCursor'] is not None:result['buildPlanCursor']=index['nextCursor']
+    return result
 
 def goal(binding):
     return goal_snapshot(binding)['goal']
@@ -171,14 +207,14 @@ def bind_task(binding, activity, task_id):
 
 def _progress(task):
     if task.get('state') not in {'succeeded','failed','cancelled'}:return None
-    gains={};placed={};mined={};cleared={};positions=[];defeated=set();seen=set();pending=[(task.get('evidence',{}),0)];visited=0
+    gains={};placed={};mined={};cleared={};positions=[];defeated=set();seen=set();pending=[(task.get('evidence',{}),0)];visited=0;truncated=False
     def resource(value):
         if not isinstance(value,str) or len(value)>1200:return None
         match=re.fullmatch(r'(?:Block\{)?([a-z0-9_.-]+:[a-z0-9_./-]+)(?:\}.*)?',value)
         return match[1] if match and len(match[1])<=128 else None
     while pending and visited<512:
         row,depth=pending.pop();visited+=1
-        if depth>8:continue
+        if depth>8:truncated=True;continue
         if isinstance(row,list):pending.extend((r,depth+1) for r in row);continue
         if not isinstance(row,dict):continue
         item=resource(row.get('item'));before,after=row.get('countBefore'),row.get('countAfter')
@@ -200,7 +236,11 @@ def _progress(task):
     if placed:result['placed']=[{'block':block,'count':count} for block,count in sorted(placed.items())]
     if mined:result['mined']=[{'block':block,'count':count} for block,count in sorted(mined.items())]
     if cleared:result['cleared']=[{'block':block,'count':count} for block,count in sorted(cleared.items())]
-    if positions:result['positions']=positions[-4:]
+    if positions:
+        result['positions']=positions[-4:]
+        result['placementBounds']={side:{axis:reduce(point[axis] for point in positions) for axis in ('x','y','z')}
+                                   for side,reduce in (('min',min),('max',max))}
+        if pending or truncated:result['placementBoundsTruncated']=True
     if defeated:result['defeated']=len(defeated)
     return result
 

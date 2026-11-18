@@ -162,8 +162,16 @@ def compress_once(request=None, tools=None, *, hard=False) -> bool:
         # recent exchanges. Folding more history first may produce a larger
         # summary and repeatedly miss the new visual activity's capacity.
         shortened = _recompress_summary(llm_cfg, request, tools, snapshot, policy)
-        if shortened is not None:
-            return shortened
+        if shortened:
+            return True
+        if shortened is False:
+            # A provider may exhaust its output budget without producing text.
+            # Use the normal complete-turn fold once if its frozen inputs still match.
+            if checkpoint.summary_state() != snapshot:
+                return False
+            if fingerprint(load_state()['settings']['llm']) != fingerprint(llm_cfg):
+                return False
+            policy = Policy(llm_cfg, checkpoint.audience(), tools)
     header = _summary_messages(state, [], request, snapshot)
     header = [m for m in header if not str(m.get('content','')).startswith(turn.SUMMARY_PREFIX)]
     # The previous summary is replaced by the candidate, not retained beside it.
@@ -247,8 +255,34 @@ def _recompress_summary(llm_cfg, request, tools, snapshot, policy):
 
 def _generate_and_publish(llm_cfg, messages, usage, seg, snapshot, gen_n, tools, *, max_summary_bytes=None):
     from . import checkpoint
-    msg = llm.chat_completion(llm_cfg, messages, tools=tools, usage_out=usage, tool_choice="none")
+    # Keep emergency summary text within its output allowance, after the normal
+    # provider validation. The stored reasoning configuration still applies to chat.
+    msg = llm.chat_completion(llm_cfg, messages, tools=tools, usage_out=usage,
+                              tool_choice="none", skip_reasoning=max_summary_bytes is not None)
     new_summary = str(msg.get('content') or '').strip()
+    if (seg and max_summary_bytes is not None and not msg.get('tool_calls')
+            and len(new_summary.encode()) > max_summary_bytes):
+        # Keep the frozen source. Ask for fewer facts instead of truncating the
+        # first answer or loosening the foreground capacity guard.
+        retry_prompt = [
+            {**messages[0], 'content': messages[0]['content']
+             + f' The previous attempt exceeded the byte limit. Use terse phrases. '
+               f'Aim for at most {max_summary_bytes // 8} characters, prioritizing agreements '
+               'and unfinished topics. Omit lower-priority details.'},
+            *messages[1:],
+        ]
+        if (checkpoint.summary_state() != snapshot
+                or fingerprint(load_state()['settings']['llm']) != fingerprint(llm_cfg)
+                or estimate(retry_prompt, tools) > Budget.from_config(llm_cfg).safe):
+            return False
+        retry_usage = {}
+        msg = llm.chat_completion(llm_cfg, retry_prompt, tools=tools, usage_out=retry_usage,
+                                  tool_choice="none", skip_reasoning=True)
+        for key in ('prompt_tokens', 'completion_tokens', 'total_tokens',
+                    'prompt_cache_hit_tokens', 'prompt_cache_miss_tokens'):
+            if key in retry_usage:
+                usage[key] = int(usage.get(key) or 0) + int(retry_usage[key] or 0)
+        new_summary = str(msg.get('content') or '').strip()
     old_size = len(str(snapshot['summary']).encode()) + sum(len(r['text'].encode()) for r in seg)
     if (msg.get('tool_calls') or not new_summary or len(new_summary) > 6000
         or (max_summary_bytes is not None and len(new_summary.encode()) > max_summary_bytes)
