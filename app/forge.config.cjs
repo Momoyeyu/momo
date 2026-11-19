@@ -1,4 +1,5 @@
 const path = require("node:path");
+const { copyFile } = require("node:fs/promises");
 const { validatedSigningOptions } = require("./desktop/packaging/signing.cjs");
 const {
   normalizeResourceLinks,
@@ -24,14 +25,26 @@ module.exports = {
       path.join(__dirname, "resources", name),
     ),
     afterCopyExtraResources: [
-      async ({ buildPath, platform }) =>
-        normalizeResourceLinks(
+      async ({ buildPath, platform }) => {
+        const resources = path.join(
+          buildPath,
+          platform === "darwin" ? "momo.app/Contents/Resources" : "resources",
+        );
+        await normalizeResourceLinks(
           path.join(__dirname, "resources"),
-          path.join(
-            buildPath,
-            platform === "darwin" ? "momo.app/Contents/Resources" : "resources",
-          ),
-        ),
+          resources,
+        );
+        if (platform === "win32") {
+          // The executable needs the validated app-local CRT before it can open
+          // anything under resources.
+          for (const name of ["vcruntime140.dll", "vcruntime140_1.dll"]) {
+            await copyFile(
+              path.join(resources, "backend", "_internal", name),
+              path.join(buildPath, name),
+            );
+          }
+        }
+      },
     ],
     extendInfo: {
       NSMicrophoneUsageDescription:

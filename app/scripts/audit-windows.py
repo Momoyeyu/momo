@@ -21,7 +21,7 @@ for record in provenance['files']:
     assert hashlib.sha256((root / 'backend' / record['name']).read_bytes()).hexdigest() == record['sha256'], record['name']
 if args.installed:
     for name in ['vcruntime140.dll', 'vcruntime140_1.dll']:
-        assert (root / name).read_bytes() == (internal / name).read_bytes(), f'Main executable lacks its own {name}'
+        assert (root.parent / name).read_bytes() == (internal / name).read_bytes(), f'Main executable lacks its own {name}'
 files = [path for path in root.rglob('*') if path.suffix.lower() in {'.dll', '.pyd', '.exe'}]
 names = {path.name.lower() for path in files}
 system = Path(os.environ['SystemRoot']) / 'System32'
