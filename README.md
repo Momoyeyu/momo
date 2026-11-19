@@ -51,9 +51,9 @@ momo 有一份稳定的核心人格，也为共同经历留出空间。我们希
 
 ## 开始相遇
 
-**[下载 macOS 版 momo v0.3.2](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_macos_arm64.dmg)** · [v0.3.2](https://github.com/Momoyeyu/momo/releases/tag/v0.3.2)
+**[下载 macOS 版 momo v0.3.2](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_macos_arm64.dmg)** · [Windows x64](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_windows_x64.zip) · [Linux x64](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_linux_x64.tar.gz)
 
-需 macOS 14+，已在 Apple Silicon Mac 上实机验收。安装包使用本地开发签名，未经 Apple 公证。安装步骤、校验值和已知限制见版本说明。从源码运行请读 [开发指南](docs/development/migration.md)。
+桌面包已在 Apple Silicon Mac、Windows 11 x64 和 Linux Mint 22.3 x64 上验证。Mac 需 macOS 14+，本地开发签名未经 Apple 公证。Linux 包在 glibc 2.39 环境验证。安装和校验见版本说明，从源码运行请读[开发指南](docs/development/migration.md)。
 
 取得体验版后，从三件小事开始：
 
@@ -70,7 +70,7 @@ momo 有一份稳定的核心人格，也为共同经历留出空间。我们希
 | 记录在哪里，怎样备份与迁移 | [备份与迁移](docs/usage/data.md) |
 | 从源码开发、运行与构建 | [开发指南](docs/development/migration.md) · [运行配置](docs/development/configuration.md) |
 
-Windows x64 和 Linux x64 用户可下载 [v0.3.1](https://github.com/Momoyeyu/momo/releases/tag/v0.3.1)。
+Minecraft 陪玩的实机验收范围为 macOS。
 
 ## 一起把这里变得更好
 

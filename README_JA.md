@@ -51,9 +51,9 @@ momoには一貫した核となる性格があり、一緒に過ごした経験�
 
 ## はじめて会うには
 
-**[macOS 版 momo v0.3.2 をダウンロード](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_macos_arm64.dmg)** · [v0.3.2](https://github.com/Momoyeyu/momo/releases/tag/v0.3.2)
+**[macOS 版 momo v0.3.2 をダウンロード](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_macos_arm64.dmg)** · [Windows x64](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_windows_x64.zip) · [Linux x64](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_linux_x64.tar.gz)
 
-macOS 14 以降が必要です。Apple Silicon 搭載の Mac で実機確認済みです。アプリはローカル開発用の署名を使用し、Apple の公証は受けていません。手順やチェックサムはリリース説明、ソースから実行する場合は[開発ガイド](docs/development/migration.md)をご覧ください。
+Apple Silicon 搭載の Mac、Windows 11 x64、Linux Mint 22.3 x64 で動作を確認しました。Mac は macOS 14 以降が必要で、Apple の公証は受けていません。Linux 版は glibc 2.39 で検証しました。手順とチェックサムはリリース説明、ソースからの実行は[開発ガイド](docs/development/migration.md)をご覧ください。
 
 体験版を入手したら、まずは三つの小さなことから。
 
@@ -72,7 +72,7 @@ macOS 14 以降が必要です。Apple Silicon 搭載の Mac で実機確認済�
 
 詳しいガイド本文は現在、中国語の原文です。ウェブサイトとアプリは、中国語・英語・日本語に対応しています。
 
-Windows x64 と Linux x64 版は [v0.3.1](https://github.com/Momoyeyu/momo/releases/tag/v0.3.1) から入手できます。
+Minecraft の同伴プレイは macOS で実機確認済みです。
 
 ## ここを、一緒に育てる
 

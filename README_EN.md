@@ -51,9 +51,9 @@ More natural long-term companionship, with shared experiences making a finer dif
 
 ## Your first meeting
 
-**[Download momo v0.3.2 for macOS](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_macos_arm64.dmg)** · [v0.3.2](https://github.com/Momoyeyu/momo/releases/tag/v0.3.2)
+**[Download momo v0.3.2 for macOS](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_macos_arm64.dmg)** · [Windows x64](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_windows_x64.zip) · [Linux x64](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_linux_x64.tar.gz)
 
-Requires macOS 14 or later. Tested on an Apple Silicon Mac. The app uses a local development signature and is not notarized by Apple. See the release notes for setup, checksums, and known limits. To run from source, read the [development guide](docs/development/migration.md).
+Desktop builds were tested on Apple Silicon macOS, Windows 11 x64, and Linux Mint 22.3 x64. macOS requires version 14 or later and uses a local development signature without Apple notarization. The Linux build was tested with glibc 2.39. See the release notes for setup and checksums, or the [development guide](docs/development/migration.md) for source builds.
 
 Once you have a preview build, start with three small things:
 
@@ -72,7 +72,7 @@ Conversations are sent to the model provider you choose. When speech synthesis i
 
 The detailed guides currently contain the Chinese originals. The website and application offer Chinese, English, and Japanese.
 
-Windows x64 and Linux x64 downloads are available in [v0.3.1](https://github.com/Momoyeyu/momo/releases/tag/v0.3.1).
+Minecraft companion play was verified on macOS.
 
 ## Help make this place better
 
