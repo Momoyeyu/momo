@@ -43,14 +43,17 @@ momo has a consistent core personality, with room for shared experiences. We wan
 | **Memories you can shape** | View, edit, or delete memories, including little things she gets wrong. |
 | **Keep it, or take it with you** | Conversation history, saves, and data export / import for records you can restore. |
 | **Your way to spend time** | Change avatars and motions, switch between 中文 / English / 日本語, and connect trusted extension tools. |
+| **Play Minecraft together** | On macOS, let momo explore, gather, and build with your existing Minecraft Java 1.21.1 Fabric character. The desktop companion stays visible in fullscreen. |
+
+[Listen to Phase & Presence](https://momoyeyu.github.io/momo/en/#soundtrack), six original instrumentals in their full album arrangements.
 
 More natural long-term companionship, with shared experiences making a finer difference to your conversations, is a direction we are still working on. Release notes describe what you can experience now.
 
 ## Your first meeting
 
-**[Download momo v0.2.0](https://github.com/Momoyeyu/momo/releases/tag/v0.2.0)** · [macOS Apple Silicon](https://github.com/Momoyeyu/momo/releases/download/v0.2.0/momo_0.2.0_macos_arm64.dmg) · [Windows x64](https://github.com/Momoyeyu/momo/releases/download/v0.2.0/momo_0.2.0_windows_x64_setup.exe)
+**[Download momo v0.3.2 for macOS](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_macos_arm64.dmg)** · [v0.3.2](https://github.com/Momoyeyu/momo/releases/tag/v0.3.2)
 
-Verified on macOS 14+ (Apple Silicon) and Windows 11 x64. Builds are not developer-signed or notarized; see release notes for installation, checksums and limitations. To run from source, read the [development guide](docs/development/migration.md).
+Requires macOS 14 or later. Tested on an Apple Silicon Mac. The app uses a local development signature and is not notarized by Apple. See the release notes for setup, checksums, and known limits. To run from source, read the [development guide](docs/development/migration.md).
 
 Once you have a preview build, start with three small things:
 
@@ -69,7 +72,7 @@ Conversations are sent to the model provider you choose. When speech synthesis i
 
 The detailed guides currently contain the Chinese originals. The website and application offer Chinese, English, and Japanese.
 
-This release provides **macOS Apple Silicon / Windows x64** installers; see release notes for validation and limitations. **Linux** is not offered. momo is for computers, with no phone or tablet app.
+Windows x64 and Linux x64 downloads are available in [v0.3.1](https://github.com/Momoyeyu/momo/releases/tag/v0.3.1).
 
 ## Help make this place better
 

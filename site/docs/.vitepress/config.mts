@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitepress'
 import { prepareHelp } from '../../scripts/prepare-help.mjs'
 import { copy } from './theme/product-copy.mjs'
+import { prepareSoundtrack } from '../../scripts/prepare-soundtrack.mjs'
 prepareHelp()
+prepareSoundtrack()
 const origin = 'https://momoyeyu.github.io/momo'
 export default defineConfig({
   title: copy.zh.title,

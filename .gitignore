@@ -53,3 +53,6 @@ site/docs/.vitepress/cache/
 
 app/.desktop/
 app/out/
+
+# Website audio is staged from the desktop OST masters.
+site/docs/public/soundtrack/

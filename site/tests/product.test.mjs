@@ -2,6 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
 import { helpLinks, releaseUrl } from '../docs/.vitepress/theme/product-content.mjs'
+import { prepareSoundtrack } from '../scripts/prepare-soundtrack.mjs'
+import { soundtrackTracks } from '../scripts/soundtrack-tracks.mjs'
 import { prepareHelp } from '../scripts/prepare-help.mjs'
 
 test('help is generated from actual usage documents and shipped with the site', () => {
@@ -34,8 +36,19 @@ test('three complete locale dictionaries keep the same product structure', async
   for (const code of Object.keys(languages)) {
     assert.deepEqual(shape(copy[code]), shape(copy.zh), code)
     assert.equal(copy[code].faqs.length, 6)
-    assert.equal(copy[code].horizon.nowItems.length, 4)
+    assert.equal(copy[code].horizon.nowItems.length, 5)
     assert.ok(copy[code].relationship.body.length > 40)
     assert.ok(existsSync(new URL(`../docs${localePath(code)}index.md`, import.meta.url)))
+  }
+})
+
+
+test('the soundtrack stages all six desktop OST tracks byte for byte', () => {
+  prepareSoundtrack()
+  assert.equal(soundtrackTracks.length, 6)
+  for (const [id] of soundtrackTracks) {
+    const name = `${id}-ost.mp3`
+    const file = readFileSync(new URL(`../docs/public/soundtrack/${name}`, import.meta.url))
+    assert.deepEqual(file, readFileSync(new URL(`../../app/frontend/public/audio/${name}`, import.meta.url)))
   }
 })

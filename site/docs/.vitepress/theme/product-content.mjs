@@ -5,3 +5,5 @@ export const helpLinks = Object.freeze({
 })
 // No release assets are published yet. Never invent a platform download URL.
 export const releaseUrl = 'https://github.com/Momoyeyu/momo/releases'
+
+export const latestReleaseUrl = releaseUrl + '/tag/v0.3.2'

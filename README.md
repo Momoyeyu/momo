@@ -43,14 +43,17 @@ momo 有一份稳定的核心人格，也为共同经历留出空间。我们希
 | **记忆由你决定** | 查看、编辑或删除记忆，修正记错的小事。 |
 | **留下与带走** | 对话回顾、存读档和数据导出 / 导入，保留可恢复的相处记录。 |
 | **你的相处方式** | 更换形象、配置动作，在中文 / English / 日本語间切换，连接可信的拓展工具。 |
+| **一起玩 Minecraft** | macOS 上授权后，momo 可以用你已有的 Minecraft Java 1.21.1 Fabric 角色探索、采集和建造。全屏时也能看到桌宠。 |
+
+[在官网试听《Phase & Presence》](https://momoyeyu.github.io/momo/#soundtrack)，收录六首完整的原创器乐曲。
 
 让长期相处更自然、让共同经历带来更细腻的回应，是接下来继续打磨的方向。当前可体验的能力以版本说明为准。
 
 ## 开始相遇
 
-**[下载 momo v0.2.0](https://github.com/Momoyeyu/momo/releases/tag/v0.2.0)** · [macOS Apple Silicon](https://github.com/Momoyeyu/momo/releases/download/v0.2.0/momo_0.2.0_macos_arm64.dmg) · [Windows x64](https://github.com/Momoyeyu/momo/releases/download/v0.2.0/momo_0.2.0_windows_x64_setup.exe)
+**[下载 macOS 版 momo v0.3.2](https://github.com/Momoyeyu/momo/releases/download/v0.3.2/momo_0.3.2_macos_arm64.dmg)** · [v0.3.2](https://github.com/Momoyeyu/momo/releases/tag/v0.3.2)
 
-macOS 14+（Apple Silicon）与 Windows 11 x64 已验证。当前安装包未获开发者签名 / 公证，首次打开可能出现系统安全提示；安装步骤、校验值与限制见版本说明。从源码运行请读 [开发指南](docs/development/migration.md)。
+需 macOS 14+，已在 Apple Silicon Mac 上实机验收。安装包使用本地开发签名，未经 Apple 公证。安装步骤、校验值和已知限制见版本说明。从源码运行请读 [开发指南](docs/development/migration.md)。
 
 取得体验版后，从三件小事开始：
 
@@ -67,7 +70,7 @@ macOS 14+（Apple Silicon）与 Windows 11 x64 已验证。当前安装包未获
 | 记录在哪里，怎样备份与迁移 | [备份与迁移](docs/usage/data.md) |
 | 从源码开发、运行与构建 | [开发指南](docs/development/migration.md) · [运行配置](docs/development/configuration.md) |
 
-本版提供 **macOS Apple Silicon / Windows x64** 安装包，验证范围与限制见版本说明；**Linux** 暂不提供。momo 面向电脑，不提供手机 / 平板应用。
+Windows x64 和 Linux x64 用户可下载 [v0.3.1](https://github.com/Momoyeyu/momo/releases/tag/v0.3.1)。
 
 ## 一起把这里变得更好
 
