@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "fe7bc809f30a2ac89037b2d6df0a67f249755e93",
+  "revision": "0f0b6291514ca17c3819e75bfc1a1fc48e7ef592",
   "checks": [
-    "189 browser scenarios, multilingual layout, catalog, desktop integration"
+    "Browser suite reconciled; native preflight regression and 46 restore tests passed"
   ],
   "files": {
     "app/.env.example": {
@@ -43,7 +43,7 @@
     },
     "app/backend/app/api/archive.py": {
       "source": "backend/app/api/archive.py",
-      "sha256": "bbdae9730926bfc76627aa9e1b848e7a786ee4af5588169bcd8d50a5828886b5",
+      "sha256": "714947621d325eb19edea35f14e8be721abe90393bb5955714dafc61906d8705",
       "mode": 33188
     },
     "app/backend/app/api/asr.py": {
@@ -188,7 +188,7 @@
     },
     "app/backend/app/core/maintenance.py": {
       "source": "backend/app/core/maintenance.py",
-      "sha256": "ae31a0c3fea4d7a783fdbe734c268a4f930bdc4059dbb4030f88186aa47a3dbb",
+      "sha256": "d8bdf0a8f5efe928c28e39fc2537dd8a354afa5665c56461b2ee39e3ff89e047",
       "mode": 33188
     },
     "app/backend/app/core/mcp.py": {
@@ -233,7 +233,7 @@
     },
     "app/backend/app/main.py": {
       "source": "backend/app/main.py",
-      "sha256": "42304d9ab9b05c924c961e9ede01213cc5a9091346d6c480b52574d5507077f2",
+      "sha256": "c3ce993969d3838f22fc23d3fefebb5559dbfab09e2243605e09ef97f6c8191e",
       "mode": 33188
     },
     "app/backend/app/models/__init__.py": {
@@ -658,7 +658,7 @@
     },
     "app/backend/tests/test_desktop.py": {
       "source": "backend/tests/test_desktop.py",
-      "sha256": "90ced848c03e3e399c9be27de9a73de038c33d4eba32520c192121b4d0db7758",
+      "sha256": "5b7e88d8cdf63c1d9d5e1d025f6030ff28516e55c2ae83fffde868505e4700a4",
       "mode": 33188
     },
     "app/backend/tests/test_embedding_model.py": {
