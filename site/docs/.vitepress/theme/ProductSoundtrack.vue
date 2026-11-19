@@ -95,14 +95,23 @@ async function select(index: number) {
   grid-template-columns: 1.2rem minmax(0, 1fr) auto;
   align-items: center;
   column-gap: .7rem;
+  appearance: none;
   width: 100%;
   padding: .65rem .75rem;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
   border-bottom: 1px solid #54474e;
   text-align: start;
   color: inherit;
 }
-.soundtrack-player button:hover,
-.soundtrack-player button[aria-current] { background: #e7be7714; }
+.soundtrack-player button:hover { background: #e7be770d; }
+.soundtrack-player button[aria-current] {
+  background: #e7be7714;
+  box-shadow: inset 2px 0 #e7be77;
+}
+.soundtrack-player button:focus-visible { outline: 2px solid #e7be77; outline-offset: -2px; }
 .track-action { color: #e7be77; }
 .track-duration { color: #d5c5cf; font-variant-numeric: tabular-nums; }
 .soundtrack-player audio { width: 100%; height: 2.5rem; margin-top: .9rem; color-scheme: dark; }

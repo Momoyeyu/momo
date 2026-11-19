@@ -22,7 +22,7 @@ for (const [name, width, height] of [['desktop', 1440, 900], ['mobile', 667, 807
     await expect.poll(() => audio.evaluate(player => player.paused ? 0 : player.duration)).toBeGreaterThan(180)
     await tracks.nth(1).click()
     await expect(tracks.nth(1)).toHaveAttribute('aria-current', 'true')
-    await expect.poll(() => audio.evaluate(player => !player.paused && player.currentSrc.endsWith('connection-ost.mp3'))).toBe(true)
+    await expect.poll(() => audio.evaluate(player => !player.paused && player.duration > 155 && player.currentSrc.endsWith('connection-ost.mp3'))).toBe(true)
     await expect(audio).toHaveCount(1)
     expect(await section.evaluate(el => el.scrollWidth)).toBeLessThanOrEqual(width)
   })
