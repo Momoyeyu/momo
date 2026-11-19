@@ -67,21 +67,24 @@ test("QQ framework link chains relocate before final validation", async () => {
     target = path.join(temp, "target");
   try {
     for (const root of [source, target]) {
-      await mkdir(path.join(root, "qq/Versions/A"), { recursive: true });
-      await writeFile(path.join(root, "qq/Versions/A/library"), "QQ library");
+      await mkdir(path.join(root, "models/Versions/A"), { recursive: true });
+      await writeFile(
+        path.join(root, "models/Versions/A/library"),
+        "QQ library",
+      );
     }
     await symlink(
-      path.join(source, "qq/Versions/Current/library"),
-      path.join(target, "qq/Library"),
+      path.join(source, "models/Versions/Current/library"),
+      path.join(target, "models/Library"),
     );
     await symlink(
-      path.join(source, "qq/Versions/A"),
-      path.join(target, "qq/Versions/Current"),
+      path.join(source, "models/Versions/A"),
+      path.join(target, "models/Versions/Current"),
     );
     await normalizeResourceLinks(source, target);
     await rm(source, { recursive: true });
     assert.equal(
-      await readFile(path.join(target, "qq/Library"), "utf8"),
+      await readFile(path.join(target, "models/Library"), "utf8"),
       "QQ library",
     );
   } finally {

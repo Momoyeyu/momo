@@ -329,7 +329,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/computer/approvals": {
+    "/api/computer/access": {
         parameters: {
             query?: never;
             header?: never;
@@ -337,7 +337,7 @@ export interface paths {
             cookie?: never;
         };
         /** Status */
-        get: operations["status_api_computer_approvals_get"];
+        get: operations["status_api_computer_access_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -346,7 +346,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/computer/approvals/{request_id}/decision": {
+    "/api/computer/access/blocklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Block */
+        put: operations["block_api_computer_access_blocklist_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/computer/access/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Consent */
+        put: operations["consent_api_computer_access_consent_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/computer/access/system": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** System */
+        get: operations["system_api_computer_access_system_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/computer/access/system/{kind}": {
         parameters: {
             query?: never;
             header?: never;
@@ -355,8 +406,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Decision */
-        post: operations["decision_api_computer_approvals__request_id__decision_post"];
+        /** Request System */
+        post: operations["request_system_api_computer_access_system__kind__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -448,23 +499,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/computer/native/resume": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Resume */
-        post: operations["resume_api_computer_native_resume_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/computer/native/start": {
         parameters: {
             query?: never;
@@ -528,23 +562,6 @@ export interface paths {
         /** Targets */
         post: operations["targets_api_computer_native_targets_post"];
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/computer/permissions/{app_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove */
-        delete: operations["remove_api_computer_permissions__app_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1261,6 +1278,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listing */
+        get: operations["listing_api_mods_get"];
+        put?: never;
+        /** Install */
+        post: operations["install_api_mods_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mods/official/{ident}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Official */
+        post: operations["official_api_mods_official__ident__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mods/{ident}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove */
+        delete: operations["remove_api_mods__ident__delete"];
+        options?: never;
+        head?: never;
+        /** Toggle */
+        patch: operations["toggle_api_mods__ident__patch"];
+        trace?: never;
+    };
+    "/api/mods/{ident}/assets/{path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Asset */
+        get: operations["asset_api_mods__ident__assets__path__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/onboarding": {
         parameters: {
             query?: never;
@@ -1895,12 +1982,29 @@ export interface components {
             /** Runid */
             runId?: string | null;
         };
+        /** Block */
+        Block: {
+            /** Blocked */
+            blocked: boolean;
+            /** Bundleid */
+            bundleId: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+        };
         /** Body_frames_api_computer_frames_post */
         Body_frames_api_computer_frames_post: {
             /** File */
             file: string;
             /** Generation */
             generation: number;
+        };
+        /** Body_install_api_mods_post */
+        Body_install_api_mods_post: {
+            /** File */
+            file: string;
         };
         /** Body_upload_api_social_accounts_qq_media_post */
         Body_upload_api_social_accounts_qq_media_post: {
@@ -2027,6 +2131,11 @@ export interface components {
             /** Transport */
             transport?: "managed" | null;
         };
+        /** Consent */
+        Consent: {
+            /** Granted */
+            granted: boolean;
+        };
         /** ContactIn */
         ContactIn: {
             /**
@@ -2052,20 +2161,6 @@ export interface components {
             label?: string | null;
             /** Name */
             name: string;
-        };
-        /** Decision */
-        Decision: {
-            /** Capabilities */
-            capabilities?: ("observe" | "interact")[] | null;
-            /** Clientid */
-            clientId: string;
-            /**
-             * Decision
-             * @enum {string}
-             */
-            decision: "once" | "always" | "deny";
-            /** Leaseid */
-            leaseId: string;
         };
         /** DesktopFrame */
         DesktopFrame: {
@@ -2211,6 +2306,19 @@ export interface components {
             leaseId?: string | null;
             presentation?: components["schemas"]["PresentationIn"] | null;
         };
+        /** Owner */
+        Owner: {
+            /** Clientid */
+            clientId: string;
+            /** Leaseid */
+            leaseId: string;
+            /**
+             * Plugin
+             * @default computer
+             * @enum {string}
+             */
+            plugin: "computer" | "browser";
+        };
         /** OwnerChallengeIn */
         OwnerChallengeIn: {
             /** Peerid */
@@ -2353,21 +2461,6 @@ export interface components {
             restore: boolean;
             /** Runid */
             runId: string;
-        };
-        /** Resume */
-        Resume: {
-            /** Clientid */
-            clientId: string;
-            /** Leaseid */
-            leaseId: string;
-            /**
-             * Plugin
-             * @default computer
-             * @enum {string}
-             */
-            plugin: "computer" | "browser";
-            /** Requestid */
-            requestId: string;
         };
         /** RetiredWaitIn */
         RetiredWaitIn: {
@@ -2517,6 +2610,11 @@ export interface components {
             /** Taskid */
             taskId?: string | null;
         };
+        /** Toggle */
+        Toggle: {
+            /** Enabled */
+            enabled: boolean;
+        };
         /** Update */
         Update: {
             /** Enabled */
@@ -2539,13 +2637,6 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
-        };
-        /** Owner */
-        app__api__app_permissions__Owner: {
-            /** Clientid */
-            clientId: string;
-            /** Leaseid */
-            leaseId: string;
         };
         /** Action */
         app__api__browser__Action: {
@@ -2707,19 +2798,6 @@ export interface components {
              * @default 0
              */
             yaw: number;
-        };
-        /** Owner */
-        app__api__native_control__Owner: {
-            /** Clientid */
-            clientId: string;
-            /** Leaseid */
-            leaseId: string;
-            /**
-             * Plugin
-             * @default computer
-             * @enum {string}
-             */
-            plugin: "computer" | "browser";
         };
         /** Start */
         app__api__native_control__Start: {
@@ -3306,7 +3384,7 @@ export interface operations {
             };
         };
     };
-    status_api_computer_approvals_get: {
+    status_api_computer_access_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -3326,20 +3404,102 @@ export interface operations {
             };
         };
     };
-    decision_api_computer_approvals__request_id__decision_post: {
+    block_api_computer_access_blocklist_put: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                request_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Decision"];
+                "application/json": components["schemas"]["Block"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consent_api_computer_access_consent_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Consent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_api_computer_access_system_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    request_system_api_computer_access_system__kind__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: "screen" | "input";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -3502,40 +3662,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__native_control__Owner"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    resume_api_computer_native_resume_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Resume"];
+                "application/json": components["schemas"]["Owner"];
             };
         };
         responses: {
@@ -3641,42 +3768,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__native_control__Owner"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_api_computer_permissions__app_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                app_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__api__app_permissions__Owner"];
+                "application/json": components["schemas"]["Owner"];
             };
         };
         responses: {
@@ -4940,6 +5032,190 @@ export interface operations {
                 "application/json": components["schemas"]["TaskCommand"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listing_api_mods_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    install_api_mods_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_install_api_mods_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    official_api_mods_official__ident__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ident: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_api_mods__ident__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ident: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_api_mods__ident__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ident: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Toggle"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    asset_api_mods__ident__assets__path__get: {
+        parameters: {
+            query?: {
+                v?: string | null;
+            };
+            header?: never;
+            path: {
+                ident: string;
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

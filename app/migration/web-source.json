@@ -1,14 +1,14 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "2b41cc2e1668c61c0bbd73b944e65304327fdfcf",
+  "revision": "af3892724ae19586c1f3fdf7e02aa6cae887101c",
   "checks": [
-    "4 isolated desktop pet E2E tests and frontend typecheck passed"
+    "Signed Mods, three-language UI checks and disposable-profile tests"
   ],
   "files": {
     "app/.env.example": {
       "source": ".env.example",
-      "sha256": "a7137763f6fc7cf8311393a5b16508f221652b4d8a502f8a68a2a74792c9725d",
+      "sha256": "043928b4e7236ae3cd6b4449f91a304afb4831c99c1889a81502b745074e4e8f",
       "mode": 33188
     },
     "app/backend/.python-version": {
@@ -38,7 +38,7 @@
     },
     "app/backend/app/api/app_permissions.py": {
       "source": "backend/app/api/app_permissions.py",
-      "sha256": "5e73f775afcdbd3ddd3e5046072f6c83b5cb10984d89dd6179910b5382db22a6",
+      "sha256": "cd60e11e7ffffb1f3f7a8bfea82e1e1dafe1d1071270562b8cb82911ebda2bd5",
       "mode": 33188
     },
     "app/backend/app/api/archive.py": {
@@ -68,7 +68,7 @@
     },
     "app/backend/app/api/computer.py": {
       "source": "backend/app/api/computer.py",
-      "sha256": "0747f93a454543495d445317a5313b5e3bb6081c00822233a4b3cb634a40c33f",
+      "sha256": "783bb0d79e9497994d4f38d4c24cc207ba24692771a0210a8bf7cba66b1fb1b8",
       "mode": 33188
     },
     "app/backend/app/api/extensions.py": {
@@ -98,12 +98,17 @@
     },
     "app/backend/app/api/minecraft.py": {
       "source": "backend/app/api/minecraft.py",
-      "sha256": "6003766458544e5310c567768ad435b710ef9d3386c714b362cc7ecbfaa12031",
+      "sha256": "52a048c620a5cd0547181708faf63b244e12483cd546ce5f5385e912ca9f45e1",
+      "mode": 33188
+    },
+    "app/backend/app/api/mods.py": {
+      "source": "backend/app/api/mods.py",
+      "sha256": "8b27e7b251923ed7d37b89f0bf0af8181afff4c7c9ab4216c3b74bb421acbf19",
       "mode": 33188
     },
     "app/backend/app/api/native_control.py": {
       "source": "backend/app/api/native_control.py",
-      "sha256": "3f97897bdb3fe3abd33fca52b55020a90d762d4108f7e1826f015a8d359e0460",
+      "sha256": "a404388ecad252c1a2445bae874a6ce9163d79b908495fb27b4e1ab846e38cd8",
       "mode": 33188
     },
     "app/backend/app/api/onboarding.py": {
@@ -188,7 +193,7 @@
     },
     "app/backend/app/core/mcp.py": {
       "source": "backend/app/core/mcp.py",
-      "sha256": "69720fca6b29d713ae039ef82f8ebccc43e2c59c8b58a9ba8f9340b2bca756b3",
+      "sha256": "577b3b439fd9867801591f55fe8caf36163076064358907b028b6594b6c22e2e",
       "mode": 33188
     },
     "app/backend/app/core/performance.py": {
@@ -198,7 +203,7 @@
     },
     "app/backend/app/core/plugin_host.py": {
       "source": "backend/app/core/plugin_host.py",
-      "sha256": "bef1c87f1a25413fad2b21d0c7d895673b16b8d80837b0b85bd4cc3323494ad5",
+      "sha256": "9336b0006ac507f5cfe6345a2eaf317bc90b71019267e242720497ff469e1b77",
       "mode": 33188
     },
     "app/backend/app/core/qq_install.py": {
@@ -228,7 +233,7 @@
     },
     "app/backend/app/main.py": {
       "source": "backend/app/main.py",
-      "sha256": "b25426f5b18f396a42aa73a4de25412414729d69f65f4378507dfebb63206ff8",
+      "sha256": "42304d9ab9b05c924c961e9ede01213cc5a9091346d6c480b52574d5507077f2",
       "mode": 33188
     },
     "app/backend/app/models/__init__.py": {
@@ -248,17 +253,17 @@
     },
     "app/backend/app/services/activities.py": {
       "source": "backend/app/services/activities.py",
-      "sha256": "3598097b960d0b09745bb3b32baa42fe79ab39876d2450910ced6900ddd588dd",
+      "sha256": "7fca974b9cfa1bf00c142f57e8528846957e823fe965cfb855ff035520681a66",
       "mode": 33188
     },
     "app/backend/app/services/app_permissions.py": {
       "source": "backend/app/services/app_permissions.py",
-      "sha256": "3f607bd78f8874b956e60ec533779b4990f38f528bbb73004e3a6bda5306f20c",
+      "sha256": "2583bb2294c63431fd143f5fa0b390019de5b767c60ae3001a2f6d80f8f01ce5",
       "mode": 33188
     },
     "app/backend/app/services/archive.py": {
       "source": "backend/app/services/archive.py",
-      "sha256": "14b44bb5f3662ce869f7ce77eb305d763f9063550890d9c19828692f41a11144",
+      "sha256": "68087f82d46214d088353f3c9d107b327031116b611857407582af1c7a5377c8",
       "mode": 33188
     },
     "app/backend/app/services/asr.py": {
@@ -268,7 +273,7 @@
     },
     "app/backend/app/services/browser.py": {
       "source": "backend/app/services/browser.py",
-      "sha256": "e353c8081dfaaff17bd854a1583a1975a3ebd747903d73d9e0b93b84e24b45bb",
+      "sha256": "55991f5febfe84edc030c753eceab431f952420611253888e78fb6fb8b7dd7b2",
       "mode": 33188
     },
     "app/backend/app/services/browser_fetch.py": {
@@ -293,12 +298,12 @@
     },
     "app/backend/app/services/computer.py": {
       "source": "backend/app/services/computer.py",
-      "sha256": "5612637b7d32e5df08f774940d3cf415da39cb5b560fe68d8bd5344760b85a39",
+      "sha256": "58cee8642d9e38f68f90e1cf100f2b0469a13744979144adcd1ece429ef1195e",
       "mode": 33188
     },
     "app/backend/app/services/computer_tools.py": {
       "source": "backend/app/services/computer_tools.py",
-      "sha256": "91ed73e9904d8858d1b0856457258221884421b3347674d4b024a6d5fdaa00f0",
+      "sha256": "14581e1264e954ef2f40af0babb16150fa2ca103bcc365efc1f8be30d907241d",
       "mode": 33188
     },
     "app/backend/app/services/context_policy.py": {
@@ -308,7 +313,7 @@
     },
     "app/backend/app/services/coordinator.py": {
       "source": "backend/app/services/coordinator.py",
-      "sha256": "4db3161084683e9699b5aa9e6af248b110ed56c75e261be109bb977468388036",
+      "sha256": "7d77361a453fd859205609d50593067760165b9d09981308496f53f1540478a0",
       "mode": 33188
     },
     "app/backend/app/services/dialogue_input.py": {
@@ -318,7 +323,7 @@
     },
     "app/backend/app/services/extend.py": {
       "source": "backend/app/services/extend.py",
-      "sha256": "ed3e709977f0bcb1fb77ca0b711ded03157be79f497923786d2a7bdb56f0ce61",
+      "sha256": "3466c4af1c2b3e93cc59231d609a7e70f3434b4597daafab735b5ba2c762304c",
       "mode": 33188
     },
     "app/backend/app/services/intro.py": {
@@ -348,7 +353,7 @@
     },
     "app/backend/app/services/minecraft_attach.py": {
       "source": "backend/app/services/minecraft_attach.py",
-      "sha256": "0e1dd59ca3f4fd10eaf2f5c74135b8027005806f5a86d0fbc0d42aa0e2d99c86",
+      "sha256": "5e59d9221dafe567dd04cfc850a11bb2d17cd3f227cfe67c31e7079d594ee695",
       "mode": 33188
     },
     "app/backend/app/services/minecraft_journal.py": {
@@ -356,9 +361,19 @@
       "sha256": "6057ac1f216c1e5dd5ba4533a20e70eed30fcb0c3adb799e135156ac621262fe",
       "mode": 33188
     },
+    "app/backend/app/services/mod_bundle.py": {
+      "source": "backend/app/services/mod_bundle.py",
+      "sha256": "eab823c8cd7ac139a6841b2a7e56e3404ce60280731f02290c637d6eee7d124d",
+      "mode": 33188
+    },
+    "app/backend/app/services/mods.py": {
+      "source": "backend/app/services/mods.py",
+      "sha256": "883671eb7088ee6c039c4911c3a2f2e38807a8b7252d5cb9facdb364bc33b0b4",
+      "mode": 33188
+    },
     "app/backend/app/services/native_control.py": {
       "source": "backend/app/services/native_control.py",
-      "sha256": "d85d455fd51563f5898a0425c39ffb10d861613680e76f081ca123b5c2a0693a",
+      "sha256": "9af731bb0b555c5542482ca70f48e0827efd614cdd1b07d4c32fb46c6e8a99f5",
       "mode": 33188
     },
     "app/backend/app/services/onboarding.py": {
@@ -368,7 +383,7 @@
     },
     "app/backend/app/services/phone.py": {
       "source": "backend/app/services/phone.py",
-      "sha256": "5da7c1971d30ef697542e2169233a20d2cb95caa106770bcfd693c7c4ecb7e4b",
+      "sha256": "36f8a7c5fc3fd76f1f6076ab8c276316c034c41fbd578764e6ca536d911ecfe2",
       "mode": 33188
     },
     "app/backend/app/services/plugins.py": {
@@ -393,12 +408,12 @@
     },
     "app/backend/app/services/social.py": {
       "source": "backend/app/services/social.py",
-      "sha256": "24588845730264545c5a06664b23c638e539a8b63646d0a94015aabfc99a1264",
+      "sha256": "5bee797eee9c2f779bf3291dd1ad4773d597810a1491b4a4807e9002ce9a3cfb",
       "mode": 33188
     },
     "app/backend/app/services/social_actions.py": {
       "source": "backend/app/services/social_actions.py",
-      "sha256": "e6dd9b4612a8d93ef15f911aac7be44e3e047c9a5de0f3c10205d0c5cccfd25e",
+      "sha256": "7820253301d320401f4e31ffb9f2d5e7f547d5b729cb46277a8b131fff251399",
       "mode": 33188
     },
     "app/backend/app/services/social_media.py": {
@@ -408,7 +423,7 @@
     },
     "app/backend/app/services/social_tools.py": {
       "source": "backend/app/services/social_tools.py",
-      "sha256": "30f812f9256b1132d8cae3f479b07fd22b862fe03e0b697d1930ff7fbf62779a",
+      "sha256": "3ee5abe4b75a4fc60047f48cb9e80d19c317292dd8b810eb5c36a73374c18e06",
       "mode": 33188
     },
     "app/backend/app/services/state.py": {
@@ -443,12 +458,12 @@
     },
     "app/backend/openapi.json": {
       "source": "backend/openapi.json",
-      "sha256": "6fb3c6cb587d2037a73f0059b0b148fc888aca7d46b6ba7de48a7cb5da78125e",
+      "sha256": "1231867ad1f6e628c1162adb91e0834769180723c62374a9e0bd6b4a7e5e0642",
       "mode": 33188
     },
     "app/backend/pyproject.toml": {
       "source": "backend/pyproject.toml",
-      "sha256": "e396235cfdacc82013ff309bd86f3de0201a088e93931e5290eae24a7f7b22ad",
+      "sha256": "728bdf620ba219b639886a721473714e7cc1ac9f89d4d889fef75a3d33a51bff",
       "mode": 33188
     },
     "app/backend/resources/README.md": {
@@ -543,7 +558,7 @@
     },
     "app/backend/tests/conftest.py": {
       "source": "backend/tests/conftest.py",
-      "sha256": "81c090d407499ca348faaa61b5e3909032e4731d7fc06fda48da4c6e8900cb8a",
+      "sha256": "041d3a053d41a71e832a7af2dab4dcfa68f320e8bfd33163f486dbb04f500dfd",
       "mode": 33188
     },
     "app/backend/tests/fixtures/embedding_recall.json": {
@@ -563,12 +578,12 @@
     },
     "app/backend/tests/test_activities.py": {
       "source": "backend/tests/test_activities.py",
-      "sha256": "7ec570416469f0b64ad28066ad24ded9e144715e48c2ff5ab61b4c3da19a3e52",
+      "sha256": "95212606483ff5c74a69147d2574cfc91183fe32b7c1d8bfc65e860ab25b6312",
       "mode": 33188
     },
     "app/backend/tests/test_app_permissions.py": {
       "source": "backend/tests/test_app_permissions.py",
-      "sha256": "fe5431461fefe3772394f81e2eef36ccabb22d6a1cac6d02b90d84d9885a6cbe",
+      "sha256": "7110045b22158a7ed1b088c72d28b946513e3b341b95d933944c047b61171190",
       "mode": 33188
     },
     "app/backend/tests/test_asr.py": {
@@ -593,7 +608,7 @@
     },
     "app/backend/tests/test_computer.py": {
       "source": "backend/tests/test_computer.py",
-      "sha256": "9de7e82ce8f45bea8b07876d0c723806b436db80c6a587fc3308d9f1a895c943",
+      "sha256": "5d6c9cdd016fc86308f328bd1c8b64f80de3f29b4587c6057cfa7e154dbcf7ba",
       "mode": 33188
     },
     "app/backend/tests/test_computer_tools.py": {
@@ -623,7 +638,7 @@
     },
     "app/backend/tests/test_coordinator.py": {
       "source": "backend/tests/test_coordinator.py",
-      "sha256": "b0029748af26bd2dacc134078f0a47ba85a74f5e49ae5aeb98f76686084ef8ca",
+      "sha256": "c905c4af637c09c8eec51b293b6a6c891f1346c5e13d60e4927bcbd8d9eea71d",
       "mode": 33188
     },
     "app/backend/tests/test_coordinator_edges.py": {
@@ -683,7 +698,7 @@
     },
     "app/backend/tests/test_local_computer_attention.py": {
       "source": "backend/tests/test_local_computer_attention.py",
-      "sha256": "142197e86875b34dc431b355368b11d6f05aa70582a6ef9aac6acd14a610abcc",
+      "sha256": "5399efa50f833ad66d630dee2675139e6364393148635a54320524818e2b230f",
       "mode": 33188
     },
     "app/backend/tests/test_local_embedding.py": {
@@ -713,12 +728,12 @@
     },
     "app/backend/tests/test_minecraft_attach.py": {
       "source": "backend/tests/test_minecraft_attach.py",
-      "sha256": "047dafdf7206511e11098c6cf15b3942b5605b7340fedfde08afaa6527e1525f",
+      "sha256": "97dfd65aa5679f5942add2b32399aa46c80d94849a4f4bbc3b12d99fe0b8f746",
       "mode": 33188
     },
     "app/backend/tests/test_minecraft_build_history.py": {
       "source": "backend/tests/test_minecraft_build_history.py",
-      "sha256": "0aea9643a747aaba228d74344176a3ff4c44864e8c6945abfccfdd39a7add207",
+      "sha256": "cb41f4fd9314ae0334b04df99e6c878c674cff25b0e78e0f9fd247151625a82c",
       "mode": 33188
     },
     "app/backend/tests/test_minecraft_context.py": {
@@ -743,7 +758,7 @@
     },
     "app/backend/tests/test_minecraft_places.py": {
       "source": "backend/tests/test_minecraft_places.py",
-      "sha256": "1a1e8593bf32bd84c5d90727c3dacfa565b914f1078532a65b572f3fefd6932e",
+      "sha256": "2029684a54db46d5d7744bb015f7511608be4157864572c9df2fa059695852a0",
       "mode": 33188
     },
     "app/backend/tests/test_minecraft_tasks.py": {
@@ -751,9 +766,14 @@
       "sha256": "1c3179bdad0a6bb2277884850a2092df697d84a5c46130ef72a52567267f09bc",
       "mode": 33188
     },
+    "app/backend/tests/test_mods.py": {
+      "source": "backend/tests/test_mods.py",
+      "sha256": "39692e8dd421109e50ae49c552cb4d1d22d52e4cb4d85151b3c3a038cba3b065",
+      "mode": 33188
+    },
     "app/backend/tests/test_native_control.py": {
       "source": "backend/tests/test_native_control.py",
-      "sha256": "1e82df4411a36ae55bdb0c3e11c8b6ea022e1bcb28dcd6a03cf3d5a611fb8ed4",
+      "sha256": "701e44cd055c3f1ac870ae8781c2ad52f484ae44a21d5450d138e287fd34ab86",
       "mode": 33188
     },
     "app/backend/tests/test_native_thinking.py": {
@@ -783,7 +803,7 @@
     },
     "app/backend/tests/test_phone.py": {
       "source": "backend/tests/test_phone.py",
-      "sha256": "5817ba9ef7149d1ec25caee9c71ba9c3816805af2253ea4ec231c94d3c548704",
+      "sha256": "70afd8b3cf4d577c0f830b06dfc57c2ef16677af6632493ba75f47d8b2b5183a",
       "mode": 33188
     },
     "app/backend/tests/test_platform_capabilities.py": {
@@ -818,17 +838,17 @@
     },
     "app/backend/tests/test_qq_actions_integration.py": {
       "source": "backend/tests/test_qq_actions_integration.py",
-      "sha256": "713aa4da9013e02fc64df273514a85134df3a8b655b69560c5672d50166bbf25",
+      "sha256": "517cfbee92a354c40499f0caedb5798d866ec62152b3488a20feab51e2a6ae44",
       "mode": 33188
     },
     "app/backend/tests/test_qq_boot_restore.py": {
       "source": "backend/tests/test_qq_boot_restore.py",
-      "sha256": "853a3d9daa57930e8006e6128f4673f94aa2d18713ecd08b3819d616f521c728",
+      "sha256": "8922aa7d03f235a93c2e03639e98899bbb052d1a7c0ff95c1fddf3e4035fc770",
       "mode": 33188
     },
     "app/backend/tests/test_qq_full_policy.py": {
       "source": "backend/tests/test_qq_full_policy.py",
-      "sha256": "1b8d455eac4a2e0ae0d91cd06855be90851e9e56b12060985374f738565f20a8",
+      "sha256": "92d543b6480dc06b0cebdc5026f314e1f7ae4d458e97b7dd7386011a1780656b",
       "mode": 33188
     },
     "app/backend/tests/test_qq_install.py": {
@@ -878,7 +898,7 @@
     },
     "app/backend/tests/test_review_qq_integration.py": {
       "source": "backend/tests/test_review_qq_integration.py",
-      "sha256": "b70e8a66bc812a35dfc409ffb08ff36baeb3749e7ae94ee9fbc6ee39785ace11",
+      "sha256": "2a86c56122ad2de31a54a0e02adcdd04681b3f2d809bbeb776f9f97914f9a302",
       "mode": 33188
     },
     "app/backend/tests/test_screen_reaction.py": {
@@ -893,7 +913,7 @@
     },
     "app/backend/tests/test_social_accounts.py": {
       "source": "backend/tests/test_social_accounts.py",
-      "sha256": "104607746512397382c43c980281f3a1deff8d8e3bdc4779da4e943f543607e0",
+      "sha256": "49c278e0c8092a82fe65d4430b98ec9c84931891e33b22410eaa679b3bfea2f5",
       "mode": 33188
     },
     "app/backend/tests/test_social_api.py": {
@@ -903,7 +923,7 @@
     },
     "app/backend/tests/test_social_attention.py": {
       "source": "backend/tests/test_social_attention.py",
-      "sha256": "caf21acd4562b044e534e9ec3a4c80d4be1064d35fd5d9b24de154099689ca1c",
+      "sha256": "8f2d9a2be3b7432159d8bddc90137c896e6a847660d4f2a41abb2c74a311a443",
       "mode": 33188
     },
     "app/backend/tests/test_social_media.py": {
@@ -913,7 +933,7 @@
     },
     "app/backend/tests/test_social_model_tools.py": {
       "source": "backend/tests/test_social_model_tools.py",
-      "sha256": "392d1e762fa5476156565f97e9b4efd279a917f2d66f8c489eb6e6fa5de5a90a",
+      "sha256": "8ef88d3fa41d9a882b700605688d27b49acffc14f721e41bea1bc059b22890c9",
       "mode": 33188
     },
     "app/backend/tests/test_store.py": {
@@ -938,7 +958,7 @@
     },
     "app/backend/tests/test_vision.py": {
       "source": "backend/tests/test_vision.py",
-      "sha256": "b0186248f6c175966e20433b5b5eda0b7816cc704cdaf577e137dfe43739fd2e",
+      "sha256": "f48e1c4cc6584257a60d8632b1f18ed970d30ace4af91ad1dbb257f7bb64feaf",
       "mode": 33188
     },
     "app/backend/tests/test_web_loopback_origins.py": {
@@ -948,7 +968,17 @@
     },
     "app/backend/uv.lock": {
       "source": "backend/uv.lock",
-      "sha256": "366a007b3d8f8cc233924279c7c289a6b7c27ef67b227553cfe45d8ac8aad4e1",
+      "sha256": "4bf4dba0186eede4d88bddea1391ed6b7c9edd06d34910a727dfc4c196d529a9",
+      "mode": 33188
+    },
+    "app/docs/examples/evening-chimes.momomod": {
+      "source": "docs/examples/evening-chimes.momomod",
+      "sha256": "35141ac1c71300cc5ea50676c52d605bef9c1722fc5119a8f0404ba5f04815a4",
+      "mode": 33188
+    },
+    "app/docs/examples/make_evening_chimes.py": {
+      "source": "docs/examples/make_evening_chimes.py",
+      "sha256": "24b8e177beeadb128bce4af99f63fa311ad278307884e827f005127790a6d3b3",
       "mode": 33188
     },
     "app/frontend/dev/web-origin.test.ts": {
@@ -963,17 +993,17 @@
     },
     "app/frontend/e2e/01-smoke.spec.ts": {
       "source": "frontend/e2e/01-smoke.spec.ts",
-      "sha256": "59f820f8e492625a9b71d11f2b92f9c399a08f208239ec79474373022a36ced3",
+      "sha256": "57a8c4b450fd0950110a52acd4bb47174b00b0c27b9604337767d8d13f4eb3bc",
       "mode": 33188
     },
     "app/frontend/e2e/02-settings.spec.ts": {
       "source": "frontend/e2e/02-settings.spec.ts",
-      "sha256": "37a8a6596e020d860833c3b6b1d1539777d0d86ad3d6eda31869ea4b171b92ad",
+      "sha256": "99514a8973bd6cf1bab4cf5d494fe0e6772e32cc2ff2fe0da96ff22e57aec498",
       "mode": 33188
     },
     "app/frontend/e2e/03-memory.spec.ts": {
       "source": "frontend/e2e/03-memory.spec.ts",
-      "sha256": "eac6394d9e1b8164f4cc259b41884753f57d49fb06604c10f36bb59d189b08e6",
+      "sha256": "116bc0fe27f81cb8a21404a0bfa97b3ff99302e099c7f4983f969e09581bc552",
       "mode": 33188
     },
     "app/frontend/e2e/05-continuous-life.spec.ts": {
@@ -983,17 +1013,17 @@
     },
     "app/frontend/e2e/06-chat.spec.ts": {
       "source": "frontend/e2e/06-chat.spec.ts",
-      "sha256": "d353c4ce27e4fb8c90b129bf4fe20af39cf884fded6b9c382ead0194cb7af346",
+      "sha256": "b4ffddd221c093910ebaf50ede60affc7a0b024eca893272d3f92ab8e8489461",
       "mode": 33188
     },
     "app/frontend/e2e/07-tts.spec.ts": {
       "source": "frontend/e2e/07-tts.spec.ts",
-      "sha256": "0e25162d14e9bcfa4bcdc3260e976eae812438c63ce31072fa6ff7b9bfe65f21",
+      "sha256": "d8595a973f7dfed96d583b09943c52aab5547d7dfc694c304b32f95218ddaf63",
       "mode": 33188
     },
     "app/frontend/e2e/08-performance.spec.ts": {
       "source": "frontend/e2e/08-performance.spec.ts",
-      "sha256": "c4d05b44acc7059961c476d4eaeda6590e3f61e69bd613509d0ab022607a4d92",
+      "sha256": "ef8c3d61a095bdc53d3894009647ce1fee609b522c5fb42461ca23157da8732d",
       "mode": 33188
     },
     "app/frontend/e2e/09-failed-chat.spec.ts": {
@@ -1003,17 +1033,17 @@
     },
     "app/frontend/e2e/10-visual-preview.spec.ts": {
       "source": "frontend/e2e/10-visual-preview.spec.ts",
-      "sha256": "3267d80c04a59624933bcdcbe4314d18db48487e20f7e106532c053cd450cfb9",
+      "sha256": "8426dd3a3c30ac348ca3a72e8072550a65fc80aab212828f1a4285b6a7f42ff0",
       "mode": 33188
     },
     "app/frontend/e2e/11-resource-preview.spec.ts": {
       "source": "frontend/e2e/11-resource-preview.spec.ts",
-      "sha256": "9f3eb5313a89a4afb57dd0236c1a3df4c847967839d7b10b59efc7c113abf12f",
+      "sha256": "773fb9714fefd4d0dd5013452d1e0efcf02ddee0b8a81e9bbc3ee87239fd8c14",
       "mode": 33188
     },
     "app/frontend/e2e/12-overlay-layout.spec.ts": {
       "source": "frontend/e2e/12-overlay-layout.spec.ts",
-      "sha256": "06685229b8727671c7b6c4aa0ef5ab9057c4fa06043eef08aad7d4b030de1da8",
+      "sha256": "b21cbebf51f3b18217682cbf0afda661bde49014123583f390bb5e17dc6e7369",
       "mode": 33188
     },
     "app/frontend/e2e/13-real-performance.spec.ts": {
@@ -1023,7 +1053,7 @@
     },
     "app/frontend/e2e/14-control-semantics.spec.ts": {
       "source": "frontend/e2e/14-control-semantics.spec.ts",
-      "sha256": "295f0639134b8ef8cb1fd868582b1cf6c702b7d38c92bef038e71b7a3161b873",
+      "sha256": "b0d12c31337ca0584c81037b0551031e16260084babc7f895fc9c4288ca0ea92",
       "mode": 33188
     },
     "app/frontend/e2e/15-onboarding.spec.ts": {
@@ -1033,17 +1063,17 @@
     },
     "app/frontend/e2e/16-builtin-models.spec.ts": {
       "source": "frontend/e2e/16-builtin-models.spec.ts",
-      "sha256": "10fc1b58def6c9e08a7b4474370834b56bad943b7a125ef46a7a9a95db1d0375",
+      "sha256": "38d76372bf3d5e5ddc65137e3a88ec3b80426e997a2c55e0c96d93ba08d86e37",
       "mode": 33188
     },
     "app/frontend/e2e/17-data-roundtrip.spec.ts": {
       "source": "frontend/e2e/17-data-roundtrip.spec.ts",
-      "sha256": "d34de1b6672a5ab4d0ba57587418f161bbe7fa76471c4545d15a427e15bd6293",
+      "sha256": "9c909f37db737f72bbe011db22368c36f6c5de55be0c9028f584a9bb8d5836d3",
       "mode": 33188
     },
     "app/frontend/e2e/18-startup-presence.spec.ts": {
       "source": "frontend/e2e/18-startup-presence.spec.ts",
-      "sha256": "cd10ac23939aa66c6ff5d2a797eb9430f59cb11b7f493afb04526dccd98c8bb4",
+      "sha256": "82e9a4562db6c4552e1fa87c81b4849ca8738270380c44606c10627b68e930f9",
       "mode": 33188
     },
     "app/frontend/e2e/19-presence-entry.spec.ts": {
@@ -1063,22 +1093,22 @@
     },
     "app/frontend/e2e/22-social-ui.spec.ts": {
       "source": "frontend/e2e/22-social-ui.spec.ts",
-      "sha256": "a0510e63e86127ea65b343d47a24f903789d9667e17af719fd5bcf08cd639d7f",
+      "sha256": "6f9f34956455da0778c30212885a0e72b8a6d1e820ee4b4a024c6580148120f7",
       "mode": 33188
     },
     "app/frontend/e2e/25-qq-managed-login.spec.ts": {
       "source": "frontend/e2e/25-qq-managed-login.spec.ts",
-      "sha256": "5b7b35867ceac463d6f03ea9473612bf6c206b2a06349d0af0e1b89e7d3cba09",
+      "sha256": "e7a75bb73dc3118149aaab92dcb3ebc7c4abd1308206962cbc494763039c40fe",
       "mode": 33188
     },
     "app/frontend/e2e/27-qq-full-permissions.spec.ts": {
       "source": "frontend/e2e/27-qq-full-permissions.spec.ts",
-      "sha256": "c542883fefee90c511adb6085bf3ed8267e61c17eed0ef91294d4985bfa8a01a",
+      "sha256": "c150022fdfaef8529aa6ed91067dad0bd7cbe4d7b9d5385adcfe44cf6cdb10a4",
       "mode": 33188
     },
     "app/frontend/e2e/28-intro-guide.spec.ts": {
       "source": "frontend/e2e/28-intro-guide.spec.ts",
-      "sha256": "ff9e182d39e1a987061a18bf2f366378690bb8d4505633ed0469640b04d17907",
+      "sha256": "7f47561792a7bf2e6ac767d72b635d57333362d9f2b695be5f084a21df1bea89",
       "mode": 33188
     },
     "app/frontend/e2e/29-chat-side-rail.spec.ts": {
@@ -1103,7 +1133,7 @@
     },
     "app/frontend/e2e/35-plugin-library.spec.ts": {
       "source": "frontend/e2e/35-plugin-library.spec.ts",
-      "sha256": "0f3f51146355c9da6074fd0d7f284b2ee9fa34689a935190e94140f757959cbb",
+      "sha256": "7a4bf7cad39398a53cadd3d26bf2d4f99374af952dd1b955eb73be87327b61fe",
       "mode": 33188
     },
     "app/frontend/e2e/35-scene-layers.spec.ts": {
@@ -1118,42 +1148,42 @@
     },
     "app/frontend/e2e/37-image-understanding.spec.ts": {
       "source": "frontend/e2e/37-image-understanding.spec.ts",
-      "sha256": "624ca65eecefb7ee54dd8d6ad9db31d6677bf633bf1998a6e166ed715ec6e36b",
+      "sha256": "11ab5d9d0ec6c0d0e94d738467f3c692d46fc679eb3f6717eb4a1c051a9bc4c9",
       "mode": 33188
     },
     "app/frontend/e2e/37-mcp-pagination.spec.ts": {
       "source": "frontend/e2e/37-mcp-pagination.spec.ts",
-      "sha256": "e12218d7b67d6846ce95b890c500d1cd44728df7316d3b4d4515a498541691fb",
+      "sha256": "d101fac512b8d7e9862b55b9dbbe9250af9714e4495aee671e42f6f53ad65aa8",
       "mode": 33188
     },
     "app/frontend/e2e/38-browser-settings.spec.ts": {
       "source": "frontend/e2e/38-browser-settings.spec.ts",
-      "sha256": "79ef6309ba279877d5875f7f7a2195e82d9a21ab209620993305a7f90936f36b",
+      "sha256": "1d3c09e3ad1c0f4450fd10a4f27738d9378660d8e98eaff783f13b21a7245204",
       "mode": 33188
     },
     "app/frontend/e2e/39-screen-companion.spec.ts": {
       "source": "frontend/e2e/39-screen-companion.spec.ts",
-      "sha256": "dc84a5502fce4b92fef5c87eea29c1220029cb212b821384ef11d9cf3a352026",
+      "sha256": "a2e1f12db7fa84b695ea12a681410d5141df2a2d6585f2524984ddea40b9db5d",
       "mode": 33188
     },
     "app/frontend/e2e/40-minecraft-settings.spec.ts": {
       "source": "frontend/e2e/40-minecraft-settings.spec.ts",
-      "sha256": "027d66f68bebd649de68be51f851a663f17862176cd58b69fce20ad99a1fa859",
+      "sha256": "c9081e2184e3434eba26a6ae8eda7d44bf4c568652932dd8be7cd1a16f142eaf",
       "mode": 33188
     },
     "app/frontend/e2e/41-extension-entry.spec.ts": {
       "source": "frontend/e2e/41-extension-entry.spec.ts",
-      "sha256": "92b42ba9f4186b49151b2f707cb35f564058c6978a057960ee104e676b33ca18",
+      "sha256": "2f8c848a62f0ffcd6cbee62ef703a7fe0fd41c67d6bda804ffeccf2db539a8d7",
       "mode": 33188
     },
     "app/frontend/e2e/42-extension-layout.spec.ts": {
       "source": "frontend/e2e/42-extension-layout.spec.ts",
-      "sha256": "0e9486026d3aec004e85a1fdffb3d47f6462ef6b4bebcdb8cd67ade1742dc06f",
+      "sha256": "20064aa1881c5001a61c6db54ec44da649d859bf9bd04b7c437b5718fc2b6e60",
       "mode": 33188
     },
     "app/frontend/e2e/43-environment-audio.spec.ts": {
       "source": "frontend/e2e/43-environment-audio.spec.ts",
-      "sha256": "800d0890f70e90767feb9d55ee3c45973d60ca484f0b5d0b8886cdee227bcf2d",
+      "sha256": "dd326d22c8ca033c6e9143067bb4a538c151888f55f6796a03ce527bec71377e",
       "mode": 33188
     },
     "app/frontend/e2e/44-room-time.spec.ts": {
@@ -1168,7 +1198,32 @@
     },
     "app/frontend/e2e/47-sound-inline.spec.ts": {
       "source": "frontend/e2e/47-sound-inline.spec.ts",
-      "sha256": "69a6a166a56a0f60c0416f41fcab85cd0fce1dd93cca7636f2769f44a89821c5",
+      "sha256": "44770ae1dc8d1d9cafaa8530877727d1861da041febe79b60fe3f41a125d2593",
+      "mode": 33188
+    },
+    "app/frontend/e2e/48-desktop-access.spec.ts": {
+      "source": "frontend/e2e/48-desktop-access.spec.ts",
+      "sha256": "0a223b28abae8334aa1b9729c4d1a7da12f52a1c82971994011fee6bc85209fa",
+      "mode": 33188
+    },
+    "app/frontend/e2e/49-content-mod.spec.ts": {
+      "source": "frontend/e2e/49-content-mod.spec.ts",
+      "sha256": "5da2b58d140356c9e12874223f421a702e47f75bda88e3d63cad3844fa6088ce",
+      "mode": 33188
+    },
+    "app/frontend/e2e/49-mod-background.spec.ts": {
+      "source": "frontend/e2e/49-mod-background.spec.ts",
+      "sha256": "42c6c496702831536b85c92f42639baae2256093113fd9eb87bfa934c06c1304",
+      "mode": 33188
+    },
+    "app/frontend/e2e/50-official-mod-download.spec.ts": {
+      "source": "frontend/e2e/50-official-mod-download.spec.ts",
+      "sha256": "ced2062765b2f5bf4bdb32a50975748855df91f9cfb84b8d8d88fbc49a5b69e5",
+      "mode": 33188
+    },
+    "app/frontend/e2e/51-settings-locales.spec.ts": {
+      "source": "frontend/e2e/51-settings-locales.spec.ts",
+      "sha256": "c9d2bb117baf32f5156b0186e84d3a1ad077c83188e5d9b3de70076b706b8c94",
       "mode": 33188
     },
     "app/frontend/e2e/README.md": {
@@ -1188,12 +1243,17 @@
     },
     "app/frontend/e2e/helpers.ts": {
       "source": "frontend/e2e/helpers.ts",
-      "sha256": "8185b79e0bede48d7f8ded611f698d94fdcff55c64cc6cf109cabf15009bbdb8",
+      "sha256": "94c73eecf5922268894e3efa1277d724909e0192b892fdcb3119ab77cfb2117b",
       "mode": 33188
     },
     "app/frontend/e2e/helpers/runtime.ts": {
       "source": "frontend/e2e/helpers/runtime.ts",
       "sha256": "e1c03836efbca437197820eb7336ea708dec07c463c2a813355a9253ecf0cc07",
+      "mode": 33188
+    },
+    "app/frontend/e2e/mod-fixtures.ts": {
+      "source": "frontend/e2e/mod-fixtures.ts",
+      "sha256": "06e518cdcbf461c36133cbea9234023a9557acdbc72c578100d1dd502fcca070",
       "mode": 33188
     },
     "app/frontend/index.html": {
@@ -2798,17 +2858,17 @@
     },
     "app/frontend/src/App.tsx": {
       "source": "frontend/src/App.tsx",
-      "sha256": "51c44e4a5aecdaf0831fdc2954688b0e714bbe99578c3d243107b7db31142564",
+      "sha256": "0daec52e397dfc66e48f0b7f929355e7bd586f5d3804fef3d3471a0c7d602671",
       "mode": 33188
     },
     "app/frontend/src/api/schema.d.ts": {
       "source": "frontend/src/api/schema.d.ts",
-      "sha256": "ca9e4164c3f310fd1b08e24f830eb110c3b83012ff3dbb912551909e41f5269d",
+      "sha256": "ecc0d4e95293cedd4e5887fed58b68794dd17f316a927ee34c3c5db213d11b7b",
       "mode": 33188
     },
     "app/frontend/src/api/schema.sha256": {
       "source": "frontend/src/api/schema.sha256",
-      "sha256": "1673624fd808ff9ea8285182b3add8e1eea9e505a4b4b706e9fdb4c887aa85e5",
+      "sha256": "8f2958faad0cdf83e32ea035a4d53ac603fe2ad13d744a36657a34fc96331480",
       "mode": 33188
     },
     "app/frontend/src/api/schema.test.ts": {
@@ -2823,12 +2883,12 @@
     },
     "app/frontend/src/audio/ambient.test.ts": {
       "source": "frontend/src/audio/ambient.test.ts",
-      "sha256": "c640c0f8c9f1790f3d466693f333f63a316ca33fc76a1bd5ec9852c1b6961976",
+      "sha256": "f366912c742f9217effa644494efb031d4b169f6c69a99253f51da960adc42aa",
       "mode": 33188
     },
     "app/frontend/src/audio/ambient.ts": {
       "source": "frontend/src/audio/ambient.ts",
-      "sha256": "4a4e8fcb1c4885b877dc53a0dd74034c428fd8bcc958c5925f68d1b46f359c6c",
+      "sha256": "22a392e709760c743a06d1c6bd9fed458f65c02e6f2b4c341b1c5808f3bdafa3",
       "mode": 33188
     },
     "app/frontend/src/audio/capture.ts": {
@@ -2928,7 +2988,7 @@
     },
     "app/frontend/src/components/AppPermissions.tsx": {
       "source": "frontend/src/components/AppPermissions.tsx",
-      "sha256": "b2831b5c89e0025330209ce3e23d7e16a53322dd70250f8b853b07cdaa1aaee3",
+      "sha256": "deb710e35dea2d6310369a5e066bec9d1b12bf5ef028a89b916800c43501e7b9",
       "mode": 33188
     },
     "app/frontend/src/components/BuiltinResourcesNotice.tsx": {
@@ -2943,12 +3003,12 @@
     },
     "app/frontend/src/components/DesktopObservation.tsx": {
       "source": "frontend/src/components/DesktopObservation.tsx",
-      "sha256": "d2374baa9247c163425cdf0f15d616ae39f3a74ba0c7de796b645a7b6ae23430",
+      "sha256": "bf7f6a1d7ccf9ae058918f1abc22e7fd8143d14878bad6cd3bd099dc2de74500",
       "mode": 33188
     },
     "app/frontend/src/components/DesktopPetControls.tsx": {
       "source": "frontend/src/components/DesktopPetControls.tsx",
-      "sha256": "1165c62d704f2d2d6dbefcff0a7b31fb16e8b40a63f0dbcfb67105a6ad2a1dcc",
+      "sha256": "866ed36c25a54de81b0ad8c0b97b8476ff01d8ab15ad53756bc7387e507c9c07",
       "mode": 33188
     },
     "app/frontend/src/components/DetailModal.test.tsx": {
@@ -2988,7 +3048,7 @@
     },
     "app/frontend/src/components/IntroGuide.tsx": {
       "source": "frontend/src/components/IntroGuide.tsx",
-      "sha256": "bb86438fc65bd1a0ad3a0d1f823d087243d52d3e99ee26da3b076555105a330a",
+      "sha256": "b7d0c3363b6805e1769ef6865bfce83106441786de538c3e6bb2bb0ee415f52c",
       "mode": 33188
     },
     "app/frontend/src/components/MessageMedia.tsx": {
@@ -2998,7 +3058,7 @@
     },
     "app/frontend/src/components/PhoneSurface.tsx": {
       "source": "frontend/src/components/PhoneSurface.tsx",
-      "sha256": "50343c719c7199c64b6ffc331dcf4222f75f07cea26d6c1ebf7c20de98dff7b4",
+      "sha256": "0f7e4024d45f3074c097035ad829b3c8e782157eaef2b4d3e9a084be28a168a6",
       "mode": 33188
     },
     "app/frontend/src/components/ProactiveResponseToggle.tsx": {
@@ -3031,9 +3091,14 @@
       "sha256": "00119b99446cd4b8b95ec5c9465749669a7200bd076919573aa7c605271eee1b",
       "mode": 33188
     },
+    "app/frontend/src/effects/captureFonts.ts": {
+      "source": "frontend/src/effects/captureFonts.ts",
+      "sha256": "0222b37a9a9ed3f00eb6965566144ddeb17f26aedb1e5f381bd6a2ea0a70b0e2",
+      "mode": 33188
+    },
     "app/frontend/src/effects/captureStage.ts": {
       "source": "frontend/src/effects/captureStage.ts",
-      "sha256": "4c78e114575af8f2a48a64ce7af9746b28b9ac04e45cb861a38046af0b940c33",
+      "sha256": "7d9d27702d253a51eba8f7c21a84602dee0e7c155bc8a6d2ede5319676c24c67",
       "mode": 33188
     },
     "app/frontend/src/effects/glassReturn.css": {
@@ -3048,7 +3113,7 @@
     },
     "app/frontend/src/i18n/en.ts": {
       "source": "frontend/src/i18n/en.ts",
-      "sha256": "3fbadadd3858aab993b401adb0b0dd3f2abf5bab78921c2be3941aeaf4aab45a",
+      "sha256": "d452b79d202855a0b344da2aec9ae038bfbabfa6af73c0b2075803ebd7f6a1cd",
       "mode": 33188
     },
     "app/frontend/src/i18n/index.ts": {
@@ -3058,7 +3123,7 @@
     },
     "app/frontend/src/i18n/ja.ts": {
       "source": "frontend/src/i18n/ja.ts",
-      "sha256": "cc6a24f5201bed80ebdf80fa374890f8041d0b38b50733a75a6820ea47776e62",
+      "sha256": "9d7c33bb06cdd7d9ab43a53be3356620b7dbfd63b5afe6268d1ce52c47adb11c",
       "mode": 33188
     },
     "app/frontend/src/i18n/lang.test.ts": {
@@ -3068,7 +3133,7 @@
     },
     "app/frontend/src/i18n/zh.ts": {
       "source": "frontend/src/i18n/zh.ts",
-      "sha256": "8d505f37c252d9be7c2cc5e2e4a2de9d51d6afe1348016859e9144887aa66b1a",
+      "sha256": "5876014c028d21814e7cc72659d1a2518bab49e93afa5185c65a9661cd5d1253",
       "mode": 33188
     },
     "app/frontend/src/lib/asr.ts": {
@@ -3198,7 +3263,7 @@
     },
     "app/frontend/src/live2d/RoomBackground.tsx": {
       "source": "frontend/src/live2d/RoomBackground.tsx",
-      "sha256": "289eb5cf2bf12a05c0cccb67936d0d55918880938d5d4c74ed4403ee43b78cbd",
+      "sha256": "fb2b88fbcc9fdb15e73c504c8810c1f48eafc1f9675da49756fba19e5394ce09",
       "mode": 33188
     },
     "app/frontend/src/live2d/StageCanvas.tsx": {
@@ -3298,32 +3363,32 @@
     },
     "app/frontend/src/pages/Backlog.tsx": {
       "source": "frontend/src/pages/Backlog.tsx",
-      "sha256": "78c621cc4cee00ac46af18d1b22cd040995c5dd57e8f83ddcb3f2ee7707ed222",
+      "sha256": "5fd1a5609b9c3017b570c9a08a5b5e372c5d78cccb23fb1d1cbdfc5557e4176d",
       "mode": 33188
     },
     "app/frontend/src/pages/Chat.tsx": {
       "source": "frontend/src/pages/Chat.tsx",
-      "sha256": "af8baded05b7ae4568c2dafc7bda48f7ecaccb8313316d5a5a94dc5f9625d220",
+      "sha256": "a3616bd6755997dcde7d89d997536ea95194894acaf4c774f36bb1f797c9548a",
       "mode": 33188
     },
     "app/frontend/src/pages/ExtensionActivities.test.tsx": {
       "source": "frontend/src/pages/ExtensionActivities.test.tsx",
-      "sha256": "9215b0bce026d9ab2f5d5310a4ee3c8fa6affbde73fa389ee75cf2da63daeccb",
+      "sha256": "ab2a929060e84a3d9149ec65f8b98fb497ff04e9fc33587bf8afbce576c96abe",
       "mode": 33188
     },
     "app/frontend/src/pages/ExtensionActivities.tsx": {
       "source": "frontend/src/pages/ExtensionActivities.tsx",
-      "sha256": "728dd946d6db94a36a693dfdd243ec976034416797c2da44f11755f9214f3f97",
+      "sha256": "d0f53be30f1d77d383dd1e303b8870c88025c37fb91757713b4251a12254ca67",
       "mode": 33188
     },
     "app/frontend/src/pages/Settings.tsx": {
       "source": "frontend/src/pages/Settings.tsx",
-      "sha256": "4e26dab7c5ee5837ccd393b4a67a4877cba0d906886c3a46163cef9df9e99b1e",
+      "sha256": "6e6326f53cfa9ad51b93e0ce925e99cfc33b8eb57bec0aeced8259256fe4d24c",
       "mode": 33188
     },
     "app/frontend/src/pages/Title.tsx": {
       "source": "frontend/src/pages/Title.tsx",
-      "sha256": "0e70892f402956ed4da3e4faea9b4f27059322158bcc96afe9beef8b4b750793",
+      "sha256": "4dfde85d6a3cb18cfd1becaa466fd5d4ce77c391e545e5e8795c583d1d45be85",
       "mode": 33188
     },
     "app/frontend/src/pages/dialogPreviewSplit.test.ts": {
@@ -3343,7 +3408,17 @@
     },
     "app/frontend/src/pages/panels/Memory.tsx": {
       "source": "frontend/src/pages/panels/Memory.tsx",
-      "sha256": "b2fe469789edffc254b6ebadd3d10256ead0400103b725a7e96ab35d70e8231d",
+      "sha256": "4dd2c130828faa512e6172401871b5585101d9f3e82e562dd57b29b6f54e9b60",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/ArchivePanel.tsx": {
+      "source": "frontend/src/pages/settings/ArchivePanel.tsx",
+      "sha256": "da4806eddb262b91285497801e816ad5046c6ba36a021f3a3bc348feb98d357e",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/AsrStatus.tsx": {
+      "source": "frontend/src/pages/settings/AsrStatus.tsx",
+      "sha256": "bb02f71d72e951fd615881f49fcf72f6b88f9283f3fc781309e896c898dc0558",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/BrowserCompanion.tsx": {
@@ -3356,9 +3431,19 @@
       "sha256": "5bb746517284fc39dfe2dd5e12434e32eba135f1d6d6f70ca23fc71184b86bf8",
       "mode": 33188
     },
+    "app/frontend/src/pages/settings/ConfigAction.tsx": {
+      "source": "frontend/src/pages/settings/ConfigAction.tsx",
+      "sha256": "573f42102ac7ccd6c91618db9a80820a4f43ef054625f8fe6ff131347b784305",
+      "mode": 33188
+    },
     "app/frontend/src/pages/settings/DataTransfer.tsx": {
       "source": "frontend/src/pages/settings/DataTransfer.tsx",
-      "sha256": "040e5247575ac63045941f376976b314ecb7b874c6cdd9bfb58cad819246647e",
+      "sha256": "810aa1fb51e3d325f5ecc024fb49763a068491a2c01dc69311016a9c9d6aafca",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/DesktopSettings.tsx": {
+      "source": "frontend/src/pages/settings/DesktopSettings.tsx",
+      "sha256": "aafb8c75614bb596d89525710c6e9641294f9e29b37694d95ab3843800bf83c2",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/DialogPreview.tsx": {
@@ -3373,17 +3458,17 @@
     },
     "app/frontend/src/pages/settings/ExtensionCard.tsx": {
       "source": "frontend/src/pages/settings/ExtensionCard.tsx",
-      "sha256": "742c3f60cccf3f10e21d7a524876f43c1568700a437373325ab3eb071fe63e31",
+      "sha256": "458e769091c3be17168754a5d3ecc4ff22340b951f798d565f384eb7ef3d86e6",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/ExtensionsTab.tsx": {
       "source": "frontend/src/pages/settings/ExtensionsTab.tsx",
-      "sha256": "9573f06c808ab69bfb2f7a1858a3c39893e30d75170e748f067262cb79ad84d3",
+      "sha256": "a3e12a271a0979ca6d25aeb7ff5ee85b40f9a21b4ac63dbccf123da3f55d5b31",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/GeneralTab.tsx": {
       "source": "frontend/src/pages/settings/GeneralTab.tsx",
-      "sha256": "0641f8d3584ac03f616abb9771741088c076f3560db3e7855783defe5a399b6a",
+      "sha256": "f3f176bf023178a8c4f39eeabc6d5efbb5567c039dbf1688f228260fe4dad25d",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/MinecraftCompanion.tsx": {
@@ -3393,12 +3478,17 @@
     },
     "app/frontend/src/pages/settings/ModelsTab.tsx": {
       "source": "frontend/src/pages/settings/ModelsTab.tsx",
-      "sha256": "aa4f81acb9698ec335acf062f450ec77b25a5b29cf76bda8d6f6ecc4d05f81e9",
+      "sha256": "b93c56b56380f773575dbab7752be8d5278eaf18db8dec77da3610f8f99ecace",
+      "mode": 33188
+    },
+    "app/frontend/src/pages/settings/ModsPanel.tsx": {
+      "source": "frontend/src/pages/settings/ModsPanel.tsx",
+      "sha256": "b91efb4f3d209443857b75dc5db287b53fff9b57a2c457c8df5b2ded045e404e",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/NativeCompanion.tsx": {
       "source": "frontend/src/pages/settings/NativeCompanion.tsx",
-      "sha256": "e1c9bc18651a1cd977228a79cd278ff67b550a261976dd9bae11184bd8e0ec4a",
+      "sha256": "ed4ad25ab486f7952766a08d4cffe235111aa5b94f991930904915bd3bccdf93",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/NativeWindowNotice.test.tsx": {
@@ -3418,7 +3508,7 @@
     },
     "app/frontend/src/pages/settings/PluginLibrary.tsx": {
       "source": "frontend/src/pages/settings/PluginLibrary.tsx",
-      "sha256": "704220a31dfe0e3f455d09661eb445f9c86fd500fcb46b61f6731ef416dd43d1",
+      "sha256": "7bac64ff37122d00f3a173859d029401b63b07d8e6e0acc39d6741a8ad182c48",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/QQLoginPanel.test.tsx": {
@@ -3483,7 +3573,7 @@
     },
     "app/frontend/src/phone/qqApp.tsx": {
       "source": "frontend/src/phone/qqApp.tsx",
-      "sha256": "6edfdc60ecfb5c06e907308b7081da55c444e85b609b7192f65706fb4e18df15",
+      "sha256": "abad914e8d917a5bba1cb2ea55bc506547f44ae224626968e3399db728b0b478",
       "mode": 33188
     },
     "app/frontend/src/phone/registry.test.tsx": {
@@ -3538,7 +3628,7 @@
     },
     "app/frontend/src/services/computerClient.ts": {
       "source": "frontend/src/services/computerClient.ts",
-      "sha256": "981023f28526f1ac3a5bd23e308cb19a8958bdb15005958d531859d7be5d7c33",
+      "sha256": "ccc716367dbb3f7c2eb7a4aac196c46d6b7d7e07269c55ac578d3b7fc3685804",
       "mode": 33188
     },
     "app/frontend/src/services/dataTransfer.test.ts": {
@@ -3614,6 +3704,11 @@
     "app/frontend/src/services/minecraftFailure.ts": {
       "source": "frontend/src/services/minecraftFailure.ts",
       "sha256": "60c449465eef40c3ef5b7aa621631e460df7c5ddda59dfd8f6819370ebc9f56a",
+      "mode": 33188
+    },
+    "app/frontend/src/services/mods.ts": {
+      "source": "frontend/src/services/mods.ts",
+      "sha256": "6996cb70786d46479e07efe2bfd1e1024aca9a25f0773f6a5ca84e963249cb80",
       "mode": 33188
     },
     "app/frontend/src/services/onboardingClient.test.ts": {
@@ -3718,7 +3813,7 @@
     },
     "app/frontend/src/services/useComputerReactions.ts": {
       "source": "frontend/src/services/useComputerReactions.ts",
-      "sha256": "8328fb1c85e0c0a73867b60a7342e8965980118ea45e4b5ad8c1de180382ba04",
+      "sha256": "9bad0c738bdf517a184c85b2568ea81b7019330420235159286be14cfe9c3131",
       "mode": 33188
     },
     "app/frontend/src/services/useMinecraftDecisions.ts": {
@@ -3749,6 +3844,11 @@
     "app/frontend/src/styles/chat.css": {
       "source": "frontend/src/styles/chat.css",
       "sha256": "57f68cbf1197d2fcede743340b7483a8a38dda4b79f89f384b74f8077380a7f3",
+      "mode": 33188
+    },
+    "app/frontend/src/styles/config-document.css": {
+      "source": "frontend/src/styles/config-document.css",
+      "sha256": "d6a1e183abcd9c8cdd39b78a1b1092fbe47741177ffd7986eeabf6240b515c10",
       "mode": 33188
     },
     "app/frontend/src/styles/controls.css": {
@@ -3808,17 +3908,17 @@
     },
     "app/frontend/src/styles/settings.css": {
       "source": "frontend/src/styles/settings.css",
-      "sha256": "729e3323ba1bf9f598c647d691255a33ff2a3c061926eff0c17008c2f6fa5b17",
+      "sha256": "6420d592e0573bf693d134d51cfc8fe0484a90ec87cc1d68f4217d1c7a7c008f",
       "mode": 33188
     },
     "app/frontend/src/styles/social.css": {
       "source": "frontend/src/styles/social.css",
-      "sha256": "0189111d3b56d4558f5294cf4e887029a4a55ff71fd8152b827521aee774f1a0",
+      "sha256": "f4d88be856b9f5488ec3b38036a394ec09b26d51be0e94baa6b9c47bebbccf56",
       "mode": 33188
     },
     "app/frontend/src/styles/title.css": {
       "source": "frontend/src/styles/title.css",
-      "sha256": "0ac379abe0c87f7ab28498071b91e93ac9c4ee677627aae63e6e2af48e5af458",
+      "sha256": "e9bd48bf9d63d8c61dc0b19207e828e233f020b634b81dd493b513611dcddafe",
       "mode": 33188
     },
     "app/frontend/src/ui/AddItemModal.tsx": {
@@ -3883,7 +3983,7 @@
     },
     "app/frontend/src/ui/Modal.tsx": {
       "source": "frontend/src/ui/Modal.tsx",
-      "sha256": "c70a47bf10fa96805c424b9ea8c622f2e6c58999a2438abdc02d1caa842029cc",
+      "sha256": "2df8ea3be8ccba476a25626110fc5a10f916f2ca9cf970851538c40e816f5f6f",
       "mode": 33188
     },
     "app/frontend/src/ui/PageHeader.tsx": {
@@ -3898,12 +3998,12 @@
     },
     "app/frontend/src/ui/Select.tsx": {
       "source": "frontend/src/ui/Select.tsx",
-      "sha256": "01d6534dc066254f407ada6c10d2ba2419f52ba6450bc6201ae6069a36229b41",
+      "sha256": "20757aa2112d7dc530884a15ec3ab439734d85216ba179996d9de02a7b930235",
       "mode": 33188
     },
     "app/frontend/src/ui/Slider.tsx": {
       "source": "frontend/src/ui/Slider.tsx",
-      "sha256": "cd5d193262616e2b5a3f13e556bba03181dc68e21de5cedff55e994e4604d75b",
+      "sha256": "5180feb938669d8eaae3d43ed0d8d65f05b6c1adc5e47c6204ecb9a5682253bc",
       "mode": 33188
     },
     "app/frontend/src/ui/Switch.tsx": {
@@ -3943,12 +4043,12 @@
     },
     "app/plugin-host/PLUGIN-FORMAT.md": {
       "source": "plugin-host/PLUGIN-FORMAT.md",
-      "sha256": "b477b02a45e0db3eb4d9df49331f251f7b26945cd5fff006ad2de407208fee68",
+      "sha256": "1e356c20b99061d2c415123811ca46d0b74426f37ce17caaaeac60b0788573eb",
       "mode": 33188
     },
     "app/plugin-host/README.md": {
       "source": "plugin-host/README.md",
-      "sha256": "46dc8595684a7ae576365764ed16583ad7df7d7bdafb829714c0f5d588ddd5b3",
+      "sha256": "0465e49e2b1c31e5e200a74937763f9f150ade6139c18c49c342aef04236a51e",
       "mode": 33188
     },
     "app/plugin-host/examples/hello-plugin.json": {
@@ -3963,7 +4063,7 @@
     },
     "app/plugin-host/minecraft-fabric/README.md": {
       "source": "plugin-host/minecraft-fabric/README.md",
-      "sha256": "44c21f678982a9ae31f5edbc4f3881f33691d76f790bd20f9c96e5d91d558d2c",
+      "sha256": "e0638fe3aec3cf96c6f2a13992b0a3679d7ae44b3747078ee64df59cb8efa733",
       "mode": 33188
     },
     "app/plugin-host/minecraft-fabric/build.gradle": {
@@ -4693,12 +4793,12 @@
     },
     "app/plugin-host/package-lock.json": {
       "source": "plugin-host/package-lock.json",
-      "sha256": "7d87e8bcc3ce1bb1c8960a6bfebc58fd9712a0d4d8f35cef3a030b9c2c374b01",
+      "sha256": "9bce9dda66e4a2ee5f24b31a63ae34cda7409dc5615f1b7cc83e26ab21af6773",
       "mode": 33188
     },
     "app/plugin-host/package.json": {
       "source": "plugin-host/package.json",
-      "sha256": "185947a2f803f792be1cdb686cdeaab25dbf1c5e0b5ea9706d22a24ee8b61d3c",
+      "sha256": "d3ea5a406239fbf5a15b26bc1c993678f0b85c08d76561c2eba07ff5dd922afa",
       "mode": 33188
     },
     "app/plugin-host/resources/native-control/AIRI-LICENSE": {
@@ -4713,7 +4813,7 @@
     },
     "app/plugin-host/resources/native-control/control.swift": {
       "source": "plugin-host/resources/native-control/control.swift",
-      "sha256": "5f67d48b0bc25cbced90b5e2e267a241b18f3e9da70323769a321c57fedbe66c",
+      "sha256": "cbd50ddf3ba30776562c131cf8149862fa16d11b7163b007c49a40514a2a33a8",
       "mode": 33188
     },
     "app/plugin-host/src/channels.mjs": {
@@ -4723,12 +4823,12 @@
     },
     "app/plugin-host/src/host.mjs": {
       "source": "plugin-host/src/host.mjs",
-      "sha256": "97987533dfa93a3fa57e4d114ef3fecfe1187dcabb2753ef21bcd1ad8b4280f6",
+      "sha256": "27521ecb0c5c081a1e15c4aae9efd04389bfd42b3e912348abcd3bebfff163d8",
       "mode": 33188
     },
     "app/plugin-host/src/index.mjs": {
       "source": "plugin-host/src/index.mjs",
-      "sha256": "627e2c3aaf68ea8c2f4b92dcf79590a439dfbe46c0ca8d068d2db09ff645e30b",
+      "sha256": "b291e1339db1f6e6232d338f8989a62ce3d4c6366bf20a0d8cc43b660ca418de",
       "mode": 33188
     },
     "app/plugin-host/src/minecraft-adapter.mjs": {
@@ -4748,7 +4848,7 @@
     },
     "app/plugin-host/src/native-control.mjs": {
       "source": "plugin-host/src/native-control.mjs",
-      "sha256": "239fdccc7cf617a527fb909527275e37bacfd876b12a0aa1789cc742a0193835",
+      "sha256": "0605ed8323addb338b6ccdcb4bd13690e00120f9359fcbbff85320abc42a529b",
       "mode": 33188
     },
     "app/plugin-host/src/plugin-manifest.mjs": {
@@ -4786,6 +4886,11 @@
       "sha256": "dd2355632ce9605f941199fb007306a66faed7368aed7ebc07d25da6c0358cd2",
       "mode": 33188
     },
+    "app/plugin-host/test/fixtures/installed-qq.mjs": {
+      "source": "plugin-host/test/fixtures/installed-qq.mjs",
+      "sha256": "e0f0ec81abd92c7b3b83b429d28e9f7ecc20b3d4f3e44fd4bcdf843f9bcaa7cf",
+      "mode": 33188
+    },
     "app/plugin-host/test/fixtures/mcp-server.mjs": {
       "source": "plugin-host/test/fixtures/mcp-server.mjs",
       "sha256": "90471fc652d5fd07530356dfd7b05ea665deebbda4a919f3c5a62ed9a4bccd7e",
@@ -4803,7 +4908,7 @@
     },
     "app/plugin-host/test/fixtures/qq-full-host.mjs": {
       "source": "plugin-host/test/fixtures/qq-full-host.mjs",
-      "sha256": "cc63d0e0968ea474a7335ea965e0b44a6027678b6606f7f7f6604d0bdb79eb75",
+      "sha256": "6031adc7593232cbe231ff0b8a47456381a878fb5e57b1c4fcb7d92e7e667656",
       "mode": 33188
     },
     "app/plugin-host/test/fixtures/qq-full-native.cjs": {
@@ -4813,12 +4918,12 @@
     },
     "app/plugin-host/test/host-shutdown.test.mjs": {
       "source": "plugin-host/test/host-shutdown.test.mjs",
-      "sha256": "1b48079f8d570acdd5c1a5debc956754c2f1ede9d3c053fcf4bb9e04383597f2",
+      "sha256": "b2fe6961a1d39bc70992a9594d2b2b746d36d6e9bdda43f673cb4865d3fba180",
       "mode": 33188
     },
     "app/plugin-host/test/host.test.mjs": {
       "source": "plugin-host/test/host.test.mjs",
-      "sha256": "79955d7fe2c89d83869afb888700c4a300757cae11320762160de786e8e3f25b",
+      "sha256": "06be83637973e4fb7c6c9c7eccc2b07c156a23beeee59adbf3fa10674e491612",
       "mode": 33188
     },
     "app/plugin-host/test/minecraft-adapter.test.mjs": {
@@ -4858,17 +4963,17 @@
     },
     "app/plugin-host/test/protocol.test.mjs": {
       "source": "plugin-host/test/protocol.test.mjs",
-      "sha256": "a76b7d67747de39138ecf7ac72104637470456ec177d7733b8c37856c519aaaa",
+      "sha256": "dcd2dc051b13ab82ed2964deffa4c57fdcaa79155b9a142585680479c8a90272",
       "mode": 33188
     },
     "app/plugin-host/test/qq-actions-host.test.mjs": {
       "source": "plugin-host/test/qq-actions-host.test.mjs",
-      "sha256": "a5ebbfc062e67db56519e450e38e2516f73d12282117c39510baa284a1c43251",
+      "sha256": "ca88be980d9a4d04285eae3d6126a65c2e79925be5674ec52fd07447db9a02f8",
       "mode": 33188
     },
     "app/plugin-host/test/qq-host-runtime.test.mjs": {
       "source": "plugin-host/test/qq-host-runtime.test.mjs",
-      "sha256": "1c6816143aa8fecdb065a80442a223dde1111b4f889779e077431fa1571af216",
+      "sha256": "19054383d1c6d59c319d3a12cae8d64c3236087b802c1cad0ee4f62d1680cdf3",
       "mode": 33188
     },
     "app/plugin-host/test/qq-invocation.test.mjs": {
@@ -4883,7 +4988,7 @@
     },
     "app/plugin-host/test/qq-managed-host.test.mjs": {
       "source": "plugin-host/test/qq-managed-host.test.mjs",
-      "sha256": "b3b2d89f703e04f440d316780d0a82fe58b37947525553f438045f540e184e16",
+      "sha256": "da1f559df0c4aac6eb8300fbbacb51c82ac8ed972fa7ac12861f4f1616b5874d",
       "mode": 33188
     },
     "app/plugin-host/test/qq-native-worker.test.mjs": {
@@ -4908,7 +5013,7 @@
     },
     "app/plugin-host/test/social.test.mjs": {
       "source": "plugin-host/test/social.test.mjs",
-      "sha256": "3a584a14f7886d54547411814eb2906cedc133488ec73a46f477f64f05cab4da",
+      "sha256": "026174234c785828d3d9419cae62681002616d7c07341f333746ae34fb648848",
       "mode": 33188
     },
     "app/scripts/build-minecraft-component.py": {

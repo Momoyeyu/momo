@@ -1,13 +1,14 @@
 import { createServer } from "node:http";
 import { chromium, expect } from "@playwright/test";
 import { spawn, execFileSync } from "node:child_process";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import assert from "node:assert/strict";
 
 const executable = process.env.MOMO_E2E_APP;
 if (!executable) throw Error("Set MOMO_E2E_APP to a packaged executable");
+const modDirectory = process.argv[2];
 const profile = await mkdtemp(path.join(tmpdir(), "momo-electron-smoke-"));
 const evidence = path.resolve(".workbuddy/electron-smoke");
 await mkdir(evidence, { recursive: true });
@@ -125,6 +126,16 @@ async function launch() {
     .toBeGreaterThan(0);
   page = browser.contexts().flatMap((context) => context.pages())[0];
   page.setDefaultTimeout(15000);
+  page.on("response", async (response) => {
+    const url = new URL(response.url());
+    if (url.pathname.startsWith("/api/data/") && !response.ok())
+      console.error(
+        "Data transfer failed",
+        url.pathname,
+        response.status(),
+        (await response.text()).slice(0, 180),
+      );
+  });
   page.on("pageerror", (error) => console.error("Renderer:", error.message));
   await expect(page.locator(".title-screen")).toBeVisible({ timeout: 60000 });
   timings.push({ titleReadyMs: Math.round(performance.now() - started) });
@@ -174,13 +185,27 @@ try {
     ).status,
     403,
   );
-  const qq = await api("/api/social/accounts/qq/runtime");
-  assert.equal(qq.status, 200);
-  const qqStatus = await qq.json();
-  assert.equal(qqStatus.running, false);
-  assert.equal(qqStatus.connected, false);
+  const mods = await api("/api/mods");
+  assert.equal(mods.status, 200);
+  assert.deepEqual((await mods.json()).mods, []);
   const intro = await (await api("/api/intro")).json();
   assert.equal(intro.phase, "setup");
+  const access = page.getByRole("dialog", { name: "桌面访问", exact: true });
+  await expect(access).toBeVisible();
+  const passiveStatus = await api("/api/computer/access/system");
+  if (passiveStatus.ok) {
+    const { screenPermission, inputPermission } = await passiveStatus.json();
+    console.log("Native permission status", {
+      screenPermission,
+      inputPermission,
+    });
+  }
+  await access.getByRole("button", { name: "稍后再说", exact: true }).click();
+  await expect(access).toHaveCount(0);
+  assert.equal(
+    (await (await api("/api/computer/access")).json()).granted,
+    false,
+  );
   await expect(page.locator('.intro-guide[data-ready="true"]')).toBeVisible();
   await page.screenshot({ path: path.join(evidence, "fresh-intro.png") });
   await sampleProcesses("title");
@@ -219,16 +244,50 @@ try {
       .status,
     204,
   );
-  // Enable only the activity capability in this disposable profile. No capture or OS grant.
   assert.equal(
-    (
-      await api("/api/extensions/activities", {
-        method: "PATCH",
-        body: JSON.stringify({ id: "computer", enabled: true }),
-      })
-    ).status,
-    200,
+    (await (await api("/api/extensions/activities")).json()).enabled.computer,
+    false,
   );
+  if (modDirectory) {
+    for (const id of ["momo.qq", "momo.minecraft"]) {
+      const filename = id + "-1.0.0.momomod";
+      const form = new FormData();
+      form.append(
+        "file",
+        new Blob([await readFile(path.join(modDirectory, filename))]),
+        filename,
+      );
+      const installed = await fetch(runtime.baseUrl + "/api/mods", {
+        method: "POST",
+        body: form,
+        headers: { Origin: "momo://app", "x-momo-token": runtime.token },
+      });
+      assert.equal(installed.status, 200);
+      assert.equal((await installed.json()).enabled, false);
+      assert.equal(
+        (
+          await api("/api/mods/" + id, {
+            method: "PATCH",
+            body: JSON.stringify({ enabled: true }),
+          })
+        ).status,
+        200,
+      );
+    }
+    assert.equal(
+      (await api("/api/mods/momo.qq", { method: "DELETE" })).status,
+      200,
+    );
+    const retained = await (await api("/api/mods")).json();
+    assert.deepEqual(
+      retained.mods.map((mod) => [mod.id, mod.enabled]),
+      [["momo.minecraft", true]],
+    );
+    assert.equal(
+      (await api("/api/mods/momo.minecraft", { method: "DELETE" })).status,
+      200,
+    );
+  }
   await quit();
   // Seed a completed intro in this disposable profile only; no production bypass endpoint.
   execFileSync("python3", [
@@ -252,6 +311,55 @@ c.commit()`,
   await expect(page.locator(".chat-page")).not.toHaveAttribute("inert", "", {
     timeout: 30000,
   });
+  const firstMeeting = await page.evaluate(() =>
+    sessionStorage.getItem("momo.meeting-owner.v1"),
+  );
+  assert.ok(JSON.parse(firstMeeting ?? "null")?.leaseId);
+  // A skipped permission guide must still allow the same conversation in a pet window.
+  assert.equal(
+    (await (await api("/api/computer/access")).json()).granted,
+    false,
+  );
+  await page.getByRole("button", { name: "进入桌面", exact: true }).click();
+  await expect(page.locator("html")).toHaveClass(/desktop-pet/);
+  const observe = page.locator(".tb-observation");
+  await expect(observe).toHaveAttribute("aria-pressed", "false");
+  await observe.click();
+  const accessAgain = page.getByRole("dialog", {
+    name: "桌面访问",
+    exact: true,
+  });
+  await expect(accessAgain).toBeVisible();
+  await accessAgain
+    .getByRole("button", { name: "稍后再说", exact: true })
+    .click();
+  assert.equal(
+    (await (await api("/api/computer/access")).json()).granted,
+    false,
+  );
+  await page.getByRole("button", { name: "返回 chat", exact: true }).click();
+  await expect(page.locator("html")).not.toHaveClass(/desktop-pet/);
+  assert.equal(
+    await page.evaluate(() => sessionStorage.getItem("momo.meeting-owner.v1")),
+    firstMeeting,
+  );
+  assert.equal(
+    (
+      await api("/api/computer/access/consent", {
+        method: "PUT",
+        body: JSON.stringify({ granted: true }),
+      })
+    ).status,
+    200,
+  );
+  const reminder = page.getByRole("dialog", { name: "桌面访问", exact: true });
+  await page.addLocatorHandler(reminder, async () => {
+    await reminder
+      .getByRole("button", { name: /^(关闭配置|稍后再说)$/ })
+      .click();
+  });
+  await page.reload();
+  await expect(page.locator("canvas").first()).toBeVisible();
   const meetingBeforePet = await page.evaluate(() =>
     sessionStorage.getItem("momo.meeting-owner.v1"),
   );
@@ -469,7 +577,15 @@ c.commit()`,
       return click.call(this);
     };
   });
-  await page.getByRole("button", { name: "导出备份", exact: true }).click();
+  await page
+    .locator(".config-index")
+    .getByRole("button", { name: "存档", exact: true })
+    .click();
+  await page.getByRole("button", { name: "导出文件", exact: true }).click();
+  const exportDialog = page.getByRole("dialog", { name: "备份", exact: true });
+  await exportDialog
+    .getByRole("button", { name: "导出备份", exact: true })
+    .click();
   await expect
     .poll(() => page.evaluate(() => Boolean(window.smokeExport)))
     .toBe(true);
@@ -500,15 +616,23 @@ c.commit()`,
         };
       }),
   );
-  // Match the actual restore button: export must finish before starting import.
+  await expect(exportDialog.locator("dialog.data-transfer-busy")).toBeHidden();
+  await exportDialog.getByRole("button", { name: "关闭", exact: true }).click();
+  await page.getByRole("button", { name: "选择文件", exact: true }).click();
+  const restoreDialog = page.getByRole("dialog", {
+    name: "恢复备份",
+    exact: true,
+  });
   await expect(
-    page.getByRole("button", { name: "恢复备份", exact: true }),
+    restoreDialog.getByRole("button", { name: "恢复备份", exact: true }),
   ).toBeEnabled();
   await expect(page.locator("dialog.data-transfer-busy")).toBeHidden();
   page.once("dialog", (dialog) => void dialog.accept());
   const reloaded = page.waitForEvent("load", { timeout: 45000 });
   const chooser = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: "恢复备份", exact: true }).click();
+  await restoreDialog
+    .getByRole("button", { name: "恢复备份", exact: true })
+    .click();
   await (await chooser).setFiles(backup);
   try {
     await reloaded;
@@ -554,11 +678,12 @@ c.commit()`,
     path.join(evidence, "result.json"),
     JSON.stringify(
       {
+        desktopPetWithoutConsent: true,
         desktopPetSameRendererAndLease: true,
         freshIntro: true,
         isolatedRestart: true,
         auth: true,
-        qqInstalledAndDormant: true,
+        officialModsAbsent: true,
         titleBootChatSettingsHome: true,
         exitReclaimsBackend: true,
         singleInstance: true,

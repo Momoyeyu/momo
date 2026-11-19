@@ -11,8 +11,9 @@
     "test": "node --test --test-concurrency=1 test/*.test.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.32.2",
-    "cordis": "4.0.0-rc.12",
+    "@modelcontextprotocol/sdk": "1.32.2"
+  },
+  "devDependencies": {
     "silk-wasm": "3.7.1"
   }
 }

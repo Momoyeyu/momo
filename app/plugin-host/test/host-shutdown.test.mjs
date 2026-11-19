@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PluginHost } from '../src/host.mjs';
+import { PluginHost } from './fixtures/installed-qq.mjs';
 
 function blockedPlugin() {
   let release;
@@ -9,7 +9,7 @@ function blockedPlugin() {
     release,
     plugin: { id: 'inert-mcp', config: { type: 'mcp', transport: 'stdio' }, enabled: true,
       connected: true, controllers: new Set(), client: { close: () => blocked },
-      transport: null, fiber: null },
+      transport: null },
   };
 }
 

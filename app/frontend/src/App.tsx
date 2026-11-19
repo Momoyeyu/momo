@@ -1,6 +1,8 @@
 import {getStage} from './live2d/stage';
 import {desktopWindowAvailable,useDesktopWindowBridge,setDesktopMode} from './services/desktopWindow';
 import './styles/desktop-pet.css';
+import {registerPhoneApp} from './phone/registry';
+import {qqPhoneApp} from './phone/qqApp';
 import {musicDirector} from './audio/director';
 import {useIntro} from './services/introClient';
 import {useMinecraftDecisions} from './services/useMinecraftDecisions';
@@ -81,7 +83,9 @@ export default function App({ready, onPrepared}: {ready: boolean; onPrepared: ()
   },[desktopWindow.panel,desktopWindow.mode]);
   useEffect(()=>{if(desktopWindow.mode==='pet'&&route!=='chat')void setDesktopMode('chat').catch(()=>{});},[desktopWindow.mode,route]);
   const audioIntro=useIntro().data?.phase;
+  const [desktopGuideVisible,setDesktopGuideVisible]=useState(false);
   useEffect(()=>ambient.install(),[]);
+  useEffect(()=>registerPhoneApp(qqPhoneApp),[]);
   useEffect(()=>{const sync=()=>ambient.configure(getSettings().general);sync();return subscribe(sync);},[]);
   useEffect(()=>{musicDirector.page(route,!!audioIntro&&['naming','memory','return_title','celebration'].includes(audioIntro));},[route,audioIntro]);
   const t = useT();
@@ -345,9 +349,9 @@ export default function App({ready, onPrepared}: {ready: boolean; onPrepared: ()
       </div>}
       <div className="desktop-window-grip" aria-hidden="true"/>
       <div id="desktop-controls-host"/>
-      <AppPermissions/>
       <TooltipLayer />
-      <IntroGuide ready={ready} />
+      <IntroGuide ready={ready && !desktopGuideVisible} />
+      <AppPermissions ready={ready} onGuideVisibility={setDesktopGuideVisible}/>
 
       {/* 换场特效：落点 + 水面光晕（涟漪环已删——正圆光环盖过不规则边缘） */}
       <div className="tx-fx" aria-hidden="true">

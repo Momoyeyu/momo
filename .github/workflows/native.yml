@@ -1,15 +1,6 @@
 name: Electron macOS candidate
 on:
   workflow_dispatch:
-    inputs:
-      qq_archive_url:
-        description: Reviewed resource-only QQ tar.gz URL (resources/ and manifest.json)
-        required: true
-        type: string
-      qq_archive_sha256:
-        description: SHA-256 of that archive
-        required: true
-        type: string
 permissions:
   contents: read
 jobs:
@@ -32,33 +23,6 @@ jobs:
         working-directory: app/frontend
       - run: uv sync --frozen
         working-directory: app/backend
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.10.2'
-      - name: Build locked Minecraft component and provenance
-        run: |
-          python3 app/scripts/prepare-minecraft-runtime.py
-          python3 app/scripts/build-minecraft-component.py --gradle "$(command -v gradle)" --cache "$RUNNER_TEMP/momo-minecraft-gradle"
-      - name: Retrieve reviewed QQ resources
-        env:
-          QQ_ARCHIVE_URL: ${{ inputs.qq_archive_url }}
-          QQ_ARCHIVE_SHA256: ${{ inputs.qq_archive_sha256 }}
-        run: |
-          python3 - <<'PYTHON'
-          import hashlib, os, pathlib, tarfile, urllib.request
-          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'momo-qq'
-          target.mkdir()
-          archive = target / 'bundle.tar.gz'
-          urllib.request.urlretrieve(os.environ['QQ_ARCHIVE_URL'], archive)
-          if hashlib.file_digest(archive.open('rb'), 'sha256').hexdigest() != os.environ['QQ_ARCHIVE_SHA256']:
-              raise SystemExit('QQ archive checksum mismatch')
-          with tarfile.open(archive) as package:
-              package.extractall(target, filter='data')
-          PYTHON
       - name: Prepare pinned offline resources
         run: |
           uv run --project app/backend --frozen python app/backend/scripts/download_asr_models.py
@@ -67,7 +31,6 @@ jobs:
           uv run --project app/backend --frozen python app/scripts/prepare-models.py app/dist/momo-resources.zip
           python3 app/scripts/prepare-core.py
           python3 app/scripts/prepare-plugin-runtime.py
-          python3 app/scripts/prepare-qq-bundle.py --resources "$RUNNER_TEMP/momo-qq/resources" --manifest "$RUNNER_TEMP/momo-qq/manifest.json"
       - run: uv pip install --python app/backend/.venv pyinstaller==6.20.0
       - run: python3 app/scripts/freeze-backend.py
       - run: node app/scripts/frontend.mjs build

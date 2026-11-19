@@ -4,7 +4,7 @@ import { EventEmitter } from 'node:events';
 import { PassThrough, Writable } from 'node:stream';
 import { randomUUID } from 'node:crypto';
 import { QQRuntimeManager } from '../src/qq-runtime.mjs';
-import { PluginHost } from '../src/host.mjs';
+import { PluginHost } from './fixtures/installed-qq.mjs';
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(check) { for (let i = 0; i < 100 && !check(); i++) await wait(5); assert.ok(check()); }
@@ -42,7 +42,7 @@ async function setup(t, { reply = true } = {}) {
   return { host, runtime, request, sent, events, complete, ipc, permit };
 }
 
-test('native engine, Cordis channel and permit gates integrate without any OneBot listening port', async t => {
+test('native engine, managed channel and permit gates integrate without any OneBot listening port', async t => {
   const { host, request, sent, events, ipc, permit } = await setup(t);
   assert.equal((await request('channels.health', { pluginId: 'momo-qq' })).status, 'connected');
   ipc({ event: 'onebot', data: { post_type: 'message', message_type: 'private', sub_type: 'friend', self_id: '123456', user_id: '456789', message_id: 'incoming-native', time: 1770000000, message: [{ type: 'text', data: { text: 'Hello over native QQ' } }] } });

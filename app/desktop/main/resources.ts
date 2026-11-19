@@ -17,15 +17,8 @@ export function resourcePaths(root: string) {
     backend,
     node,
     path.join(root, "plugin-host/src/index.mjs"),
-    path.join(
-      root,
-      "plugin-host/resources/minecraft/momo-fabric-companion-0.1.0.jar",
-    ),
     ...(process.platform === "darwin"
-      ? [
-          path.join(root, "helpers/momo-native-control"),
-          path.join(root, "qq/manifest.json"),
-        ]
+      ? [path.join(root, "helpers/momo-native-control")]
       : []),
     path.join(models, "resource-manifest.json"),
     path.join(models, "live2d/live2dcubismcore.min.js"),

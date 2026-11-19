@@ -1,9 +1,9 @@
-// Private test launcher: real Cordis host/runtime, test-only SDK subprocess.
+// Private test launcher: real Node host/runtime, test-only SDK subprocess.
 import {spawn} from 'node:child_process';
 import {createInterface} from 'node:readline';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
-import {PluginHost,HostError} from '../../src/host.mjs';
+import {PluginHost,HostError} from './installed-qq.mjs';
 import {QQRuntimeManager} from '../../src/qq-runtime.mjs';
 const fixture=fileURLToPath(new URL('./qq-full-native.cjs',import.meta.url));
 const runtime=new QQRuntimeManager({createTransport:()=>spawn(process.execPath,[fixture,path.join(process.env.QQ_FIXTURE_ROOT,'native')],{stdio:['pipe','pipe','pipe']}),requestTimeoutMs:2000,stopTimeoutMs:1000,autoRetryDelayMs:50});

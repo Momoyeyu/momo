@@ -1,14 +1,7 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
-const resourceNames = [
-  "backend",
-  "models",
-  "node",
-  "plugin-host",
-  "helpers",
-  "qq",
-];
+const resourceNames = ["backend", "models", "node", "plugin-host", "helpers"];
 
 async function normalizeResourceLinks(sourceRoot, destinationRoot) {
   sourceRoot = path.resolve(sourceRoot);
