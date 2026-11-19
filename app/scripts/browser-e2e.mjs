@@ -10,12 +10,18 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const options = {apiPort:7822, webPort:5174, resources:path.join(app,'resources/models'), evidence:null, smoke:false};
+const options = {apiPort:7822, webPort:5174, resources:path.join(app,'resources/models'), evidence:null, fresh:false, smoke:false, specs:[]};
 for(let index=2;index<process.argv.length;index++){
   const flag=process.argv[index];
   if(flag==='--help'){
-    console.log('Usage: node app/scripts/browser-e2e.mjs [--smoke] [--api-port 7822] [--web-port 5174] [--resources-dir PATH] [--evidence-dir PATH]');process.exit(0);
+    console.log('Usage: node scripts/browser-e2e.mjs [--smoke] [--fresh-profile] [--spec e2e/NN-name.spec.ts] [--api-port 7822] [--web-port 5174] [--resources-dir PATH] [--evidence-dir PATH]');process.exit(0);
   } else if(flag==='--smoke') options.smoke=true;
+  else if(flag==='--fresh-profile') options.fresh=true;
+  else if(flag==='--spec'){
+    const spec=process.argv[++index];
+    if(!spec || !/^e2e\/[A-Za-z0-9._-]+\.spec\.ts$/.test(spec))throw new Error('Specs must be repository-relative e2e/*.spec.ts files');
+    options.specs.push(spec);
+  }
   else {
     const key={'--api-port':'apiPort','--web-port':'webPort','--resources-dir':'resources','--evidence-dir':'evidence'}[flag];
     const value=process.argv[++index];
@@ -72,10 +78,17 @@ const provider=createServer(async(req,res)=>{
   try{
     let body='';for await(const chunk of req){body+=chunk;if(body.length>1024*1024)throw new Error('Synthetic request is too large');}
     const input=JSON.parse(body||'{}');
+    const imageParts=(input.messages??[]).flatMap(message=>Array.isArray(message.content)?message.content:[]).filter(part=>part.type==='image_url');
+    let imageReply='';
+    if(imageParts.length&&input.model!=='no-vision'){
+      const fixture=spawnSync(python,[path.join(app,'scripts/vision-fixture.py')],{input:body,encoding:'utf8',maxBuffer:1024*1024});
+      if(fixture.status!==0)throw new Error('Synthetic image content was not recognized');
+      imageReply=fixture.stdout.trim();
+    }
     if(input.stream){
       res.writeHead(200,{'content-type':'text/event-stream'});
-      res.end('data: '+JSON.stringify({choices:[{delta:{content:'测试通过。'},index:0}]})+'\n\ndata: [DONE]\n\n');
-    }else{res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({choices:[{message:{content:'[]'}}]}));}
+      res.end('data: '+JSON.stringify({choices:[{delta:{content:imageReply?`The image is ${imageReply}.`:'测试通过。'},index:0}]})+'\n\ndata: [DONE]\n\n');
+    }else{res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({choices:[{message:{content:imageReply||'[]'}}]}));}
   }catch{res.writeHead(400);res.end();}
 });
 let interrupted;
@@ -84,6 +97,7 @@ interruption.catch(()=>{});
 process.once('SIGINT',interrupted);process.once('SIGTERM',interrupted);
 try{
   for(const file of [python,path.join(frontend,'node_modules/@playwright/test/cli.js'),path.join(frontend,'public/live2d/live2dcubismcore.min.js'),path.join(options.resources,'asr/manifest.json'),path.join(options.resources,'embedding/multilingual-e5-small/manifest.json')])await access(file);
+  for(const spec of options.specs)await access(path.join(frontend,spec));
   await Promise.all([freePort(options.apiPort),freePort(options.webPort)]);
   const data=await mkdtemp(path.join(tmpdir(),'momo-browser-e2e-'));
   const evidence=options.evidence??path.join(app,'target/browser-e2e',path.basename(data));
@@ -91,9 +105,9 @@ try{
   await new Promise((resolve,reject)=>{provider.once('error',reject);provider.listen(0,'127.0.0.1',resolve);});
   const providerUrl=`http://127.0.0.1:${provider.address().port}`;
   const env={...process.env,MOMO_DATA_DIR:data,MOMO_RESOURCES_DIR:options.resources};
-  for(const key of ['MOMO_DESKTOP_TOKEN','MOMO_DESKTOP_NONCE','MOMO_REAL_LLM_E2E','MOMO_REAL_TTS_E2E','MOMO_REAL_ONBOARDING_E2E','MOMO_BROWSER_LLM_CONFIG','MOMO_E2E_LLM_CONFIG','MOMO_ASR_MODELS'])delete env[key];
-  const seed=`import sys\nfrom app.core import state,db\nfrom app.services import checkpoint\nstate.write_state({'settings':{'llm':{'url':sys.argv[1],'model':'deterministic','key':''},'general':{'lang':'zh','voiceInput':False,'textSpeed':100,'sentenceSpeed':100}}})\ncheckpoint.begin_turn('隔离测试会话',checkpoint.generation(),db.now_iso())\ncheckpoint.append_sentence('欢迎回来。',checkpoint.generation(),db.now_iso())\ndb.reset()`;
-  if(await start(python,['-c',seed,providerUrl],path.join(app,'backend'),env,path.join(evidence,'seed.log')).done!==0)throw new Error('Could not seed synthetic test profile');
+  for(const key of ['MOMO_DESKTOP_TOKEN','MOMO_DESKTOP_NONCE','MOMO_REAL_LLM_E2E','MOMO_REAL_TTS_E2E','MOMO_REAL_ONBOARDING_E2E','MOMO_BROWSER_LLM_CONFIG','MOMO_E2E_LLM_CONFIG','MOMO_ASR_MODELS','MOMO_QQ_RUNTIME_CONFIG'])delete env[key];
+  const seed=`import sys\nfrom app.core import state,db\nfrom app.services import checkpoint\nstate.write_state({'settings':{'llm':{'url':sys.argv[1],'model':'deterministic','key':''},'general':{'lang':'zh','voiceInput':False,'textSpeed':100,'sentenceSpeed':100}}})\nat=db.now_iso();gen=checkpoint.generation()\ncheckpoint.begin_turn('隔离测试会话',gen,at)\ncheckpoint.append_sentence('欢迎回来。',gen,at)\ncheckpoint.acknowledge(checkpoint.current_run(gen,at),'欢迎回来。',gen)\ndb.reset()`;
+  if(!options.fresh && await start(python,['-c',seed,providerUrl],path.join(app,'backend'),env,path.join(evidence,'seed.log')).done!==0)throw new Error('Could not seed synthetic test profile');
   const backend=start(python,['-m','uvicorn','app.main:app','--host','127.0.0.1','--port',String(options.apiPort)],path.join(app,'backend'),env,path.join(evidence,'backend.log'));
   const web=start(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port',String(options.webPort),'--strictPort'],frontend,{...env,MOMO_WEB_API_UPSTREAM:`http://127.0.0.1:${options.apiPort}`,MOMO_WEB_LLM_UPSTREAM:providerUrl,MOMO_WEB_ASR_UPSTREAM:providerUrl,MOMO_WEB_TTS_UPSTREAM:providerUrl},path.join(evidence,'frontend.log'));
   const baseURL=`http://127.0.0.1:${options.webPort}`;
@@ -102,6 +116,7 @@ try{
   console.log(`Browser regression instance: ${baseURL}\nSynthetic data: ${data}\nEvidence: ${evidence}`);
   const args=['node_modules/@playwright/test/cli.js','test','--output',path.join(evidence,'test-results')];
   if(options.smoke)args.push('e2e/01-smoke.spec.ts');
+  else args.push(...options.specs);
   const run=start(process.execPath,args,frontend,{...env,MOMO_E2E_BASE_URL:baseURL},path.join(evidence,'playwright.log'));
   run.child.stdout.pipe(process.stdout);run.child.stderr.pipe(process.stderr);
   process.exitCode=await Promise.race([run.done,interruption]);

@@ -20,6 +20,8 @@
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/code-MIT-E7BE77?labelColor=28232E" alt="项目代码：MIT 许可"></a>
 </p>
 
+本分支的体验版提供连续滚动的设置页，支持中文、英文和日文。在「设置 → 模组」按需安装并启用 QQ 或 Minecraft，也可以从本地导入音乐和背景包。桌面陪伴与已有浏览器连接位于核心设置。 [官方模组](https://github.com/Momoyeyu/momo-plugin/releases/tag/v1.0.0)
+
 ## 从一句「今天过得怎么样」开始
 
 不必准备一个好问题。和 momo 讲讲今天，听她接一句话，看她用表情和动作回应。下次回来时，名字、喜好和一起聊过的小事，可以留在记忆里。

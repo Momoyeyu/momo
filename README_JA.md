@@ -20,6 +20,8 @@
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/code-MIT-E7BE77?labelColor=28232E" alt="プロジェクトのコード：MITライセンス"></a>
 </p>
 
+このプレビュー版では、日本語・中国語・英語の設定を一つのスクロール画面にまとめました。「設定 → Mod」で QQ や Minecraft を必要に応じて導入できます。背景や BGM のローカルパックにも対応します。デスクトップとブラウザーは標準機能です。 [公式 Mod](https://github.com/Momoyeyu/momo-plugin/releases/tag/v1.0.0)
+
 ## 「今日はどうだった？」から始めよう
 
 気の利いた質問を用意しなくても大丈夫。今日あったことをmomoに話し、返事を聞いて、表情や動きを眺める。次に帰ってきたとき、名前や好み、一緒に話した小さなことを記憶に残せます。

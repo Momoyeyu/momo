@@ -1,9 +1,9 @@
 {
   "format": "momo-web-source",
   "version": 1,
-  "revision": "af3892724ae19586c1f3fdf7e02aa6cae887101c",
+  "revision": "fe7bc809f30a2ac89037b2d6df0a67f249755e93",
   "checks": [
-    "Signed Mods, three-language UI checks and disposable-profile tests"
+    "189 browser scenarios, multilingual layout, catalog, desktop integration"
   ],
   "files": {
     "app/.env.example": {
@@ -328,7 +328,7 @@
     },
     "app/backend/app/services/intro.py": {
       "source": "backend/app/services/intro.py",
-      "sha256": "9c3b326c0434b179cdf595a14c2377d5709d5831ef4d63113bc0332579c4bd27",
+      "sha256": "f744b65ec7fdb852507b01fbe8df509b5d8f520466befce6d011abba49445025",
       "mode": 33188
     },
     "app/backend/app/services/live2d.py": {
@@ -678,7 +678,7 @@
     },
     "app/backend/tests/test_intro.py": {
       "source": "backend/tests/test_intro.py",
-      "sha256": "9ff8ededea6ba37711c7cd14f5341fd489e9065b37e711b0786d8eab79bccbd0",
+      "sha256": "81067bc1fde6d179fd342121d3398de46fcde01243585f0defefde8900f0c5db",
       "mode": 33188
     },
     "app/backend/tests/test_layering.py": {
@@ -1088,7 +1088,7 @@
     },
     "app/frontend/e2e/21-runtime-meeting.spec.ts": {
       "source": "frontend/e2e/21-runtime-meeting.spec.ts",
-      "sha256": "395fa557c661426cbe455f5085f1861a54eb9a0a71e4d08a2882edcb8be86b66",
+      "sha256": "edf656c18b4f8885b9ba59b203c8f13b72b3bbbedf1d3d1b2f19bd7a7e64d422",
       "mode": 33188
     },
     "app/frontend/e2e/22-social-ui.spec.ts": {
@@ -1128,7 +1128,7 @@
     },
     "app/frontend/e2e/34-glass-return.spec.ts": {
       "source": "frontend/e2e/34-glass-return.spec.ts",
-      "sha256": "fdb8b41d453f05fa7ea862b21a8061582a960cbb240113a4e9a0fafcd40278c5",
+      "sha256": "921298c5bd59834714422fa16859c74e4666a77860300d1caa1a03f9a79ac888",
       "mode": 33188
     },
     "app/frontend/e2e/35-plugin-library.spec.ts": {
@@ -1143,12 +1143,12 @@
     },
     "app/frontend/e2e/36-terminal-dialog.spec.ts": {
       "source": "frontend/e2e/36-terminal-dialog.spec.ts",
-      "sha256": "46da8fe00eb0dd0686355634e61d831a496a42c7bf92277615403ce4c400e0a6",
+      "sha256": "c329f04fc266d9658f91d9469482e6855b01f44a75490d83a7ed181c8603823c",
       "mode": 33188
     },
     "app/frontend/e2e/37-image-understanding.spec.ts": {
       "source": "frontend/e2e/37-image-understanding.spec.ts",
-      "sha256": "11ab5d9d0ec6c0d0e94d738467f3c692d46fc679eb3f6717eb4a1c051a9bc4c9",
+      "sha256": "54acdb63a97d66d77394eceac4ac67abdb9ad4a53f1a2910e1271b16fc3a0bdb",
       "mode": 33188
     },
     "app/frontend/e2e/37-mcp-pagination.spec.ts": {
@@ -1193,7 +1193,7 @@
     },
     "app/frontend/e2e/46-desktop-pet.spec.ts": {
       "source": "frontend/e2e/46-desktop-pet.spec.ts",
-      "sha256": "feb1fd77be7fbe5e9539b596bcc320b706f022dcb732eed1b8bda38b99654649",
+      "sha256": "0242a974587f463f7717d50772d30e085bb50f0e7e0dee692a84da91c1b9c771",
       "mode": 33188
     },
     "app/frontend/e2e/47-sound-inline.spec.ts": {
@@ -1228,7 +1228,7 @@
     },
     "app/frontend/e2e/README.md": {
       "source": "frontend/e2e/README.md",
-      "sha256": "ac8b641e9471564947dd25047211092f0feaaf8eab4295cc7950d37031e6190a",
+      "sha256": "9cab9b73ff6b274ac595427b4bff15097de8fcc620aa6082ce929a1a6ad40d2a",
       "mode": 33188
     },
     "app/frontend/e2e/fixtures.ts": {
@@ -3098,7 +3098,7 @@
     },
     "app/frontend/src/effects/captureStage.ts": {
       "source": "frontend/src/effects/captureStage.ts",
-      "sha256": "7d9d27702d253a51eba8f7c21a84602dee0e7c155bc8a6d2ede5319676c24c67",
+      "sha256": "00dcbdb7ad68e3cc09c5c8d832e14f4db7f4cd609888cc1e11e6162a11a707ff",
       "mode": 33188
     },
     "app/frontend/src/effects/glassReturn.css": {
@@ -3478,7 +3478,7 @@
     },
     "app/frontend/src/pages/settings/ModelsTab.tsx": {
       "source": "frontend/src/pages/settings/ModelsTab.tsx",
-      "sha256": "b93c56b56380f773575dbab7752be8d5278eaf18db8dec77da3610f8f99ecace",
+      "sha256": "48336406e9a2c8ef5a9dcf47eab13c4a7ff183db164dcc2ef27446b758b297e9",
       "mode": 33188
     },
     "app/frontend/src/pages/settings/ModsPanel.tsx": {
@@ -3663,7 +3663,7 @@
     },
     "app/frontend/src/services/introClient.ts": {
       "source": "frontend/src/services/introClient.ts",
-      "sha256": "4ca65be815e2f470d0540d52d5790ac77c26086679e567d9a00342e8cdd6ee10",
+      "sha256": "694be9c85452f3f3bcc27c060ce5f77d2f1d3d59b9b1a73f51380060d0d6b20e",
       "mode": 33188
     },
     "app/frontend/src/services/lifeClient.ts": {

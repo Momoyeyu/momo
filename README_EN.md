@@ -20,6 +20,8 @@
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/code-MIT-E7BE77?labelColor=28232E" alt="Project code: MIT license"></a>
 </p>
 
+This preview adds a continuous settings page in English, Chinese and Japanese. Open Settings → Mods to install and enable QQ or Minecraft, or import local music and background packs. Desktop companionship and browser connections are core settings. [Official mods](https://github.com/Momoyeyu/momo-plugin/releases/tag/v1.0.0)
+
 ## Start with “How was your day?”
 
 You do not need a perfect question. Tell momo about your day, hear what she has to say, and watch her expressions and movements respond. When you return, your name, preferences, and little things you discussed can stay in memory.
