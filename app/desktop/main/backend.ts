@@ -152,18 +152,26 @@ export class BackendProcess {
     return this.stopping;
   }
 
+  private async waitForExit(timeoutMs: number): Promise<boolean> {
+    if (!this.exited) return true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        this.exited.then(() => true),
+        new Promise<boolean>((resolve) => {
+          timer = setTimeout(() => resolve(false), timeoutMs);
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   private async reap(): Promise<void> {
     const child = this.child;
     if (!child) return;
     child.stdin.end();
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    await Promise.race([
-      this.exited,
-      new Promise<void>((resolve) => {
-        timer = setTimeout(resolve, this.options.shutdownTimeoutMs ?? 6500);
-      }),
-    ]);
-    clearTimeout(timer);
+    await this.waitForExit(this.options.shutdownTimeoutMs ?? 6500);
     if (child.pid) {
       try {
         if (process.platform === "win32") {
@@ -176,7 +184,14 @@ export class BackendProcess {
             );
         } else process.kill(-child.pid, "SIGKILL");
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+        // The child may exit between the timeout and taskkill finding its PID.
+        // Only an actual exit event makes the Windows failure benign.
+        if (
+          (error as NodeJS.ErrnoException).code !== "ESRCH" &&
+          (process.platform !== "win32" || !(await this.waitForExit(500)))
+        ) {
+          throw error;
+        }
       }
     }
     await this.exited;

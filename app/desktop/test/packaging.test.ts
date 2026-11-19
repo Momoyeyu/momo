@@ -30,7 +30,7 @@ test("packaged libraries remain readable after the build inputs are removed", as
     await normalizeResourceLinks(source, target);
     assert.equal(
       await readlink(path.join(target, "backend/lib.dylib")),
-      "PIL/lib.dylib",
+      path.join("PIL", "lib.dylib"),
     );
     await rm(source, { recursive: true });
     assert.equal(

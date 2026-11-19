@@ -1,6 +1,7 @@
 import { mediaPermission } from "../main/security.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import path from "node:path";
 import {
   trustedFrame,
   assetPath,
@@ -20,18 +21,22 @@ test("only the owned main frame at the exact app origin receives runtime credent
     assert.equal(trustedFrame(sender, 1, url, main), false);
 });
 test("asset resolution stays inside renderer root and rejects encoded traversal", () => {
+  const rendererRoot = path.resolve("bundle");
   assert.equal(
-    assetPath("/bundle", "momo://app/assets/main.js"),
-    "/bundle/assets/main.js",
+    assetPath(rendererRoot, "momo://app/assets/main.js"),
+    path.join(rendererRoot, "assets", "main.js"),
   );
-  assert.equal(assetPath("/bundle", "momo://app/"), "/bundle/index.html");
+  assert.equal(
+    assetPath(rendererRoot, "momo://app/"),
+    path.join(rendererRoot, "index.html"),
+  );
   for (const url of [
     "momo://evil/index.html",
     "momo://app/%2e%2e%2fsecret",
     "momo://app/%00secret",
     "momo://app/%5c..%5csecret",
   ])
-    assert.throws(() => assetPath("/bundle", url));
+    assert.throws(() => assetPath(rendererRoot, url));
 });
 test("CSP grants only the owned loopback endpoint, not arbitrary local services", () => {
   const csp = contentSecurityPolicy("http://127.0.0.1:49152");
