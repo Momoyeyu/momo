@@ -115,7 +115,7 @@ export function createPermissionGuide(owner: BrowserWindow) {
           bundle
             ? app.getFileIcon(bundle, { size: "normal" }).catch(() => undefined)
             : undefined,
-          guide.loadFile(document),
+          guide.loadURL(documentUrl),
         ]);
         if (active !== session) return;
         const canDrag = Boolean(bundle && icon && !icon.isEmpty());
