@@ -19,6 +19,7 @@ import { resourcePaths } from "./resources.ts";
 import { createWindow, requestSystemPermission } from "./window.ts";
 import { registerProtocol } from "./protocol.ts";
 import { trustedFrame } from "./security.ts";
+import { createPermissionGuide } from "./permission-guide.ts";
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -83,6 +84,7 @@ else {
         ? process.resourcesPath
         : path.join(app.getAppPath(), "resources");
       window = createWindow(getTexts);
+      const permissionGuide = createPermissionGuide(window);
       modes = new WindowModeController(
         window,
         () => screen.getDisplayMatching(window!.getBounds()).workArea,
@@ -97,6 +99,9 @@ else {
           1,
           (kind: unknown) => requestSystemPermission(kind),
         ],
+        ["momo:open-permission-guide", 2, permissionGuide.open],
+        ["momo:close-permission-guide", 0, permissionGuide.close],
+        ["momo:set-permission-guide-granted", 1, permissionGuide.setGranted],
         [
           "momo:set-game-overlay",
           1,
@@ -128,7 +133,7 @@ else {
             )
           )
             throw Error("Window access denied");
-          return handler(args[0]);
+          return handler(args[0], args[1]);
         });
       const icon = nativeImage.createEmpty();
       tray = new Tray(icon);

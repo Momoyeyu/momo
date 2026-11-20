@@ -53,7 +53,7 @@ module.exports = {
     },
     ignore: (file) =>
       file !== "" &&
-      !/^\/(package\.json|migration($|\/web-source\.json$)|\.desktop($|\/(main|preload)(\/|$)|\/contracts\.js$)|frontend($|\/dist(\/|$)))/.test(
+      !/^\/(package\.json|migration($|\/web-source\.json$)|\.desktop($|\/(main|preload)(\/|$)|\/contracts\.js$)|desktop($|\/permission-guide($|\/index\.html$))|frontend($|\/dist(\/|$)))/.test(
         file,
       ),
   },

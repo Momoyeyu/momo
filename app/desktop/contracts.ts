@@ -7,8 +7,26 @@ export interface WindowState {
   clickThrough: boolean;
   panel?: { width: number; petWidth: number };
 }
+export type DesktopPermissionKind = "screen" | "input";
+export interface PermissionGuideCopy {
+  title: string;
+  instructions: string;
+  dragLabel: string;
+  doneLabel: string;
+  grantedLabel: string;
+  closeLabel: string;
+  openSettingsLabel?: string;
+  revealLabel?: string;
+}
 export interface DesktopBridge {
-  requestSystemPermission(kind: "screen" | "input"): Promise<void>;
+  requestSystemPermission(kind: DesktopPermissionKind): Promise<void>;
+  openPermissionGuide(
+    kind: DesktopPermissionKind,
+    copy: PermissionGuideCopy,
+  ): Promise<void>;
+  closePermissionGuide(): Promise<void>;
+  setPermissionGuideGranted(granted: boolean): Promise<void>;
+  onPermissionGuideClosed(callback: () => void): () => void;
   setGameOverlay(enabled: boolean): Promise<void>;
   setPetPanel(open: boolean): Promise<WindowState>;
   dragPetWindow(

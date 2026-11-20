@@ -1,0 +1,182 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"
+    />
+    <title>momo</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font:
+          13px/1.45 system-ui,
+          sans-serif;
+        color: #f3ecdf;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      body {
+        height: 100vh;
+        margin: 0;
+        padding: 0 13px 13px;
+        border: 1px solid #876f55;
+        border-radius: 12px;
+        background: #302639;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      header {
+        flex: none;
+        display: flex;
+        min-height: 41px;
+        gap: 10px;
+        align-items: center;
+        user-select: none;
+        -webkit-app-region: drag;
+      }
+      h1 {
+        flex: 1;
+        margin: 0;
+        overflow-wrap: anywhere;
+        font-size: 14px;
+        font-weight: 650;
+      }
+      .grip {
+        flex: none;
+        width: 12px;
+        height: 14px;
+        background: radial-gradient(circle, #bdaaaf 1px, transparent 1.5px) 0
+          0 / 5px 5px;
+        opacity: 0.65;
+      }
+      main {
+        overflow: auto;
+        scrollbar-width: thin;
+      }
+      p {
+        margin: 0 0 8px;
+        overflow-wrap: anywhere;
+        color: #c1b7c8;
+      }
+      button {
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        -webkit-app-region: no-drag;
+      }
+      button:focus-visible {
+        outline: 2px solid #f0c986;
+        outline-offset: -2px;
+      }
+      #close {
+        flex: none;
+        border: 0;
+        padding: 0;
+        width: 26px;
+        height: 26px;
+        border-radius: 5px;
+        background: transparent;
+        color: #c1b7c8;
+        font:
+          22px/1 system-ui,
+          sans-serif;
+      }
+      #close:hover {
+        background: #ffffff16;
+        color: #f3ecdf;
+      }
+      #tile {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        width: 100%;
+        border: 1px solid #9c794f;
+        padding: 5px 10px;
+        border-radius: 7px;
+        background: #3b302f;
+        color: #f0c986;
+        cursor: grab;
+        font-weight: 600;
+        text-align: start;
+        user-select: none;
+      }
+      #tile:hover {
+        background: #49382f;
+      }
+      #tile:active {
+        cursor: grabbing;
+      }
+      #tile img {
+        flex: none;
+        width: 29px;
+        height: 29px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 4px 12px;
+        margin-top: 6px;
+      }
+      .actions button {
+        border: 0;
+        padding: 4px 0;
+        border-radius: 4px;
+        background: transparent;
+        color: #ddc59c;
+        font-size: 12px;
+        text-align: start;
+      }
+      .actions button:hover {
+        text-decoration: underline;
+      }
+      #status {
+        color: #f0c986;
+      }
+      #done {
+        width: 100%;
+        min-height: 34px;
+        border: 0;
+        border-radius: 7px;
+        background: #e7be77;
+        color: #281a0e;
+        font-weight: 650;
+      }
+      #done:hover {
+        background: #f4d196;
+      }
+    </style>
+  </head>
+  <body hidden>
+    <header>
+      <span class="grip" aria-hidden="true"></span>
+      <h1 id="title"></h1>
+      <button type="button" id="close">×</button>
+    </header>
+    <main aria-labelledby="title">
+      <section id="pending">
+        <p id="instructions"></p>
+        <button id="tile" type="button" draggable="true" hidden>
+          <img id="icon" alt="" draggable="false" />
+          <span id="tile-label"></span>
+        </button>
+        <div class="actions">
+          <button id="settings" type="button" hidden></button>
+          <button id="reveal" type="button" hidden></button>
+        </div>
+      </section>
+      <section id="result" hidden>
+        <p id="status" role="status"></p>
+        <button id="done" type="button"></button>
+      </section>
+    </main>
+  </body>
+</html>

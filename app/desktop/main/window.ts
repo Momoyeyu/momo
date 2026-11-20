@@ -7,6 +7,7 @@ import {
 } from "electron";
 import path from "node:path";
 import { trustedFrame, mediaPermission } from "./security.ts";
+import { permissionSettingsUrl } from "./permission-guide-config.ts";
 
 import type { DialogTexts } from "./dialog-locale.ts";
 
@@ -145,12 +146,7 @@ export function createWindow(getTexts: () => Promise<DialogTexts>) {
 export async function requestSystemPermission(kind: unknown): Promise<void> {
   if (process.platform !== "darwin")
     throw Error("System permission setup is unavailable");
-  if (kind !== "input" && kind !== "screen")
-    throw Error("Invalid system permission");
+  const url = permissionSettingsUrl(kind);
   if (kind === "input") systemPreferences.isTrustedAccessibilityClient(true);
-  const pane =
-    kind === "input" ? "Privacy_Accessibility" : "Privacy_ScreenCapture";
-  await shell.openExternal(
-    "x-apple.systempreferences:com.apple.preference.security?" + pane,
-  );
+  await shell.openExternal(url);
 }
