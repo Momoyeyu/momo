@@ -77,5 +77,5 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </main>
-  <footer class="help-footer">momo · {{ t.tagline }} · <UiLink variant="bare" href="https://momoyeyu.github.io/momo-ui/">momo-ui</UiLink></footer>
+  <footer class="help-footer">momo · {{ t.tagline }} · <UiLink variant="bare" href="https://momoyeyu.github.io/momo-ui/" target="_self">momo-ui</UiLink></footer>
 </template>

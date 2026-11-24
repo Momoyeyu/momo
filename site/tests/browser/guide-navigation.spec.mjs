@@ -119,3 +119,16 @@ test('mobile: both global routes and the language menu remain keyboard usable wi
   await page.locator('.help-page article pre').first().scrollIntoViewIfNeeded()
   await noOverflow(page)
 })
+
+test('desktop: the momo-ui link opens its own Pages document on the same origin', async ({page}) => {
+  await page.goto(guidePath('voice'));
+  const link = page.getByRole('contentinfo').getByRole('link', {name: 'momo-ui'});
+  await expect(link).toHaveAttribute('href', 'https://momoyeyu.github.io/momo-ui/');
+  await page.route('**/momo-ui/', route => route.fulfill({
+    contentType: 'text/html',
+    body: '<!doctype html><title>momo-ui</title><h1>Separate Pages project</h1>',
+  }));
+  await link.evaluate(element => element.setAttribute('href', '/momo-ui/'));
+  await link.click();
+  await expect(page.getByRole('heading', {name: 'Separate Pages project'})).toBeVisible();
+});
