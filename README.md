@@ -12,7 +12,8 @@
   <a href="https://momoyeyu.github.io/momo/">认识 momo</a> ·
   <a href="docs/usage/getting-started.md">开始指南</a> ·
   <a href="https://github.com/Momoyeyu/momo/releases">版本状态</a> ·
-  <a href="CONTRIBUTING.md">一起参与</a>
+  <a href="CONTRIBUTING.md">一起参与</a> ·
+  <a href="https://momoyeyu.github.io/momo-ui/">momo-ui</a>
 </p>
 <p align="center">
   <a href="https://github.com/Momoyeyu/momo/actions/workflows/ci-app.yml"><img src="https://github.com/Momoyeyu/momo/actions/workflows/ci-app.yml/badge.svg?branch=master" alt="应用检查状态"></a>

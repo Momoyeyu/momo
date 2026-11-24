@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link as UiLink } from '@momoyeyu/momo-ui/vue'
 import { withBase } from 'vitepress'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { copy } from './product-copy.mjs'
@@ -122,7 +123,7 @@ onBeforeUnmount(() => {
 
     <section id="memory" class="story-chapter archive-chapter" data-testid="archive-chapter" aria-labelledby="memory-title" :style="{ '--archive-open': phase(progress[1], .05, .82) }">
       <div class="chapter-stage">
-        <div class="chapter-copy"><h2 id="memory-title">{{ t.memory.title[0] }}<br>{{ t.memory.title[1] }}</h2><p class="chapter-lead">{{ t.memory.lead }}</p><a class="text-link" :href="helpHref('data')">{{ t.memory.link }}</a><div class="archive-source" aria-hidden="true"><span v-for="label in t.memoryLabels" :key="label">{{ label }}</span><svg viewBox="0 0 320 160" fill="none"><path d="M2 35C230 190 298-43 310 45M2 84C180-15 259 215 310 98M2 125C127 178 212 39 310 130"/></svg></div></div>
+        <div class="chapter-copy"><h2 id="memory-title">{{ t.memory.title[0] }}<br>{{ t.memory.title[1] }}</h2><p class="chapter-lead">{{ t.memory.lead }}</p><UiLink class="text-link" :href="helpHref('data')">{{ t.memory.link }}</UiLink><div class="archive-source" aria-hidden="true"><span v-for="label in t.memoryLabels" :key="label">{{ label }}</span><svg viewBox="0 0 320 160" fill="none"><path d="M2 35C230 190 298-43 310 45M2 84C180-15 259 215 310 98M2 125C127 178 212 39 310 130"/></svg></div></div>
         <div class="archive-papers"><div class="archive-shadow shadow-a" aria-hidden="true"></div><div class="archive-shadow shadow-b" aria-hidden="true"></div><div class="archive-binding" aria-hidden="true"></div><article v-for="(item,index) in t.memory.items" :key="item[0]" class="archive-entry"><span class="entry-tab">{{ labels.memory[index] }}</span><h3>{{ item[0] }}</h3><p>{{ item[1] }}</p><span class="entry-seal" aria-hidden="true">{{ ['◇','✧','⌑'][index] }}</span></article></div>
         <div class="archive-fragments" aria-hidden="true"><span v-for="(glyph,index) in glyphs" :key="index" :style="{left:`${glyph.x}%`,top:`${glyph.y}%`,opacity:glyph.opacity,transform:`rotate(${glyph.rotation}deg)`}">{{ glyph.char }}</span></div>
         <p class="chapter-footnote archive-footnote">{{ t.memory.note }}</p>
@@ -131,14 +132,14 @@ onBeforeUnmount(() => {
 
     <section id="voice" class="story-chapter response-chapter" data-testid="response-chapter" aria-labelledby="voice-title" :style="{ '--response-scan': phase(progress[2], .02, .9) }">
       <div class="chapter-stage">
-        <div class="chapter-copy"><h2 id="voice-title">{{ t.voice.title[0] }}<br>{{ t.voice.title[1] }}</h2><p class="chapter-lead">{{ t.voice.heading }}</p><p>{{ t.voice.body }}</p><p class="chapter-aside">{{ t.voice.detail }}</p><a class="text-link" :href="helpHref('voice')">{{ t.voice.link }}</a></div>
+        <div class="chapter-copy"><h2 id="voice-title">{{ t.voice.title[0] }}<br>{{ t.voice.title[1] }}</h2><p class="chapter-lead">{{ t.voice.heading }}</p><p>{{ t.voice.body }}</p><p class="chapter-aside">{{ t.voice.detail }}</p><UiLink class="text-link" :href="helpHref('voice')">{{ t.voice.link }}</UiLink></div>
         <EchoScene @unavailable="echoAvailable = false; preferences()" :progress="progress[2]" :enhanced="echoEnhanced" />
         <p class="chapter-footnote response-footnote">{{ t.voice.note }}</p>
       </div>
     </section>
 
     <section id="extensions" class="story-chapter paths-chapter" data-testid="paths-chapter" aria-labelledby="extensions-title" :style="{ '--stitch': stitch }">
-      <div class="chapter-stage"><div class="chapter-copy"><h2 id="extensions-title">{{ t.extensions.title[0] }}<br>{{ t.extensions.title[1] }}</h2><p class="chapter-lead">{{ t.extensions.body }}</p><p>{{ t.extensions.detail }}</p><a class="text-link" :href="helpHref('start')">{{ t.extensions.link }}</a></div><div class="possibility-map" aria-hidden="true"><svg viewBox="0 0 640 420" fill="none"><g class="map-grid"><path v-for="n in 9" :key="`v${n}`" :d="`M${n*64} 0V420`"/><path v-for="n in 6" :key="`h${n}`" :d="`M0 ${n*64}H640`"/></g><path class="map-branch" pathLength="1" :stroke-dashoffset="1-stitch" d="M95 210H210Q230 210 245 190L340 80Q355 63 380 63H520M95 210H540M95 210H220Q239 210 255 233L330 338Q347 360 370 360H520"/><g v-for="(y,index) in [63,210,360]" :key="y" :transform="`translate(${[520,540,520][index]} ${y})`"><path class="map-knot" d="M0-7L7 0 0 7-7 0Z"/></g><circle class="map-origin" cx="95" cy="210" r="29"/><path class="map-spark" d="M95 197L99 206 108 210 99 214 95 223 91 214 82 210 91 206Z"/></svg><span v-for="(label,index) in t.extensions.labels" :key="label" :class="`map-label map-label-${index}`">{{ label }}</span><p>{{ labels.constellation }}</p></div></div>
+      <div class="chapter-stage"><div class="chapter-copy"><h2 id="extensions-title">{{ t.extensions.title[0] }}<br>{{ t.extensions.title[1] }}</h2><p class="chapter-lead">{{ t.extensions.body }}</p><p>{{ t.extensions.detail }}</p><UiLink class="text-link" :href="helpHref('start')">{{ t.extensions.link }}</UiLink></div><div class="possibility-map" aria-hidden="true"><svg viewBox="0 0 640 420" fill="none"><g class="map-grid"><path v-for="n in 9" :key="`v${n}`" :d="`M${n*64} 0V420`"/><path v-for="n in 6" :key="`h${n}`" :d="`M0 ${n*64}H640`"/></g><path class="map-branch" pathLength="1" :stroke-dashoffset="1-stitch" d="M95 210H210Q230 210 245 190L340 80Q355 63 380 63H520M95 210H540M95 210H220Q239 210 255 233L330 338Q347 360 370 360H520"/><g v-for="(y,index) in [63,210,360]" :key="y" :transform="`translate(${[520,540,520][index]} ${y})`"><path class="map-knot" d="M0-7L7 0 0 7-7 0Z"/></g><circle class="map-origin" cx="95" cy="210" r="29"/><path class="map-spark" d="M95 197L99 206 108 210 99 214 95 223 91 214 82 210 91 206Z"/></svg><span v-for="(label,index) in t.extensions.labels" :key="label" :class="`map-label map-label-${index}`">{{ label }}</span><p>{{ labels.constellation }}</p></div></div>
     </section>
   </div>
 </template>

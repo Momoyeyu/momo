@@ -12,7 +12,8 @@
   <a href="https://momoyeyu.github.io/momo/en/">Meet momo</a> ·
   <a href="docs/usage/getting-started.md">Start guide</a> ·
   <a href="https://github.com/Momoyeyu/momo/releases">Release status</a> ·
-  <a href="CONTRIBUTING.md">Join in</a>
+  <a href="CONTRIBUTING.md">Join in</a> ·
+  <a href="https://momoyeyu.github.io/momo-ui/">momo-ui</a>
 </p>
 <p align="center">
   <a href="https://github.com/Momoyeyu/momo/actions/workflows/ci-app.yml"><img src="https://github.com/Momoyeyu/momo/actions/workflows/ci-app.yml/badge.svg?branch=master" alt="Application checks"></a>

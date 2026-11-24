@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button as UiButton } from '@momoyeyu/momo-ui/vue'
 import { withBase } from 'vitepress'
 import { computed, ref } from 'vue'
 import { soundtrackTracks } from '../../../scripts/soundtrack-tracks.mjs'
@@ -42,11 +43,11 @@ async function select(index: number) {
     <div class="soundtrack-player">
       <ol :aria-label="words.label">
         <li v-for="(track, index) of soundtrackTracks" :key="track[0]">
-          <button type="button" :aria-current="selected === index ? 'true' : undefined" @click="select(index)">
+          <UiButton variant="bare" type="button" :aria-current="selected === index ? 'true' : undefined" @click="select(index)">
             <span class="track-action" aria-hidden="true">{{ selected === index && playing ? '♪' : '▷' }}</span>
             <span>{{ title(index) }}</span>
             <span class="track-duration">{{ track[4] }}</span>
-          </button>
+          </UiButton>
         </li>
       </ol>
       <audio ref="player" :src="source(0)" :aria-label="title(selected)" controls preload="none"

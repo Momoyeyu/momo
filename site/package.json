@@ -10,8 +10,11 @@
     "test:browser": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "vitepress": "^1.6.4",
-    "vue": "^3.5.43",
-    "@playwright/test": "^1.64.1"
+    "vue": "^3.5.43"
+  },
+  "dependencies": {
+    "@momoyeyu/momo-ui": "https://momoyeyu.github.io/momo-ui/packages/momo-ui-0.2.0.tgz"
   }
 }

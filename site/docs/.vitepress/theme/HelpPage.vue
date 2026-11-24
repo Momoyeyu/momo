@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Link as UiLink } from '@momoyeyu/momo-ui/vue'
 import { Content, useData, useRouter, withBase } from 'vitepress'
 import { helpLinks } from './product-content.mjs'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
@@ -55,26 +56,26 @@ onBeforeUnmount(() => {
     <div class="help-atmosphere" aria-hidden="true"><img :src="withBase('/brand/momo-presence-v2.webp')" alt=""></div>
     <div class="help-shell">
       <nav class="help-breadcrumb" :aria-label="labels.breadcrumb">
-        <a :href="withBase(localePath(locale))">{{ labels.home }}</a><span aria-hidden="true">/</span>
-        <a :href="localizedHref(helpLinks.start)">{{ labels.guides }}</a>
+        <UiLink variant="bare" :href="withBase(localePath(locale))">{{ labels.home }}</UiLink><span aria-hidden="true">/</span>
+        <UiLink variant="bare" :href="localizedHref(helpLinks.start)">{{ labels.guides }}</UiLink>
         <template v-if="currentGuide"><span aria-hidden="true">/</span><span aria-current="page">{{ currentGuide.title }}</span></template>
       </nav>
       <aside class="help-index">
         <p class="help-index-title">{{ labels.index }}</p>
         <nav class="guide-navigation" :aria-label="labels.guides" data-testid="guide-navigation">
-          <a v-for="guide in guideEntries" :key="guide.href" :href="localizedHref(guide.href)" :aria-current="guide.current ? 'page' : undefined">
+          <UiLink variant="bare" v-for="guide in guideEntries" :key="guide.href" :href="localizedHref(guide.href)" :aria-current="guide.current ? 'page' : undefined">
             <span class="guide-number" aria-hidden="true">{{ guide.number }}</span><span>{{ guide.title }}</span>
-          </a>
+          </UiLink>
         </nav>
-        <a class="back-home" :href="withBase(localePath(locale))"><span aria-hidden="true">↶</span>{{ t.back }}</a>
+        <UiLink variant="bare" class="back-home" :href="withBase(localePath(locale))"><span aria-hidden="true">↶</span>{{ t.back }}</UiLink>
       </aside>
       <div class="help-reading">
         <div v-if="currentGuide" class="guide-folio" aria-hidden="true"><span>{{ labels.part }} {{ currentGuide.number }}</span><i></i><span>momo</span></div>
         <p v-if="t.helpNote" class="translation-note">{{ t.helpNote }}</p>
         <article v-if="!page.isNotFound" lang="zh-CN"><Content /></article>
-        <article v-else><h1>{{ t.missing }}</h1><p><a :href="withBase(localePath(locale))">{{ t.back }}</a></p></article>
+        <article v-else><h1>{{ t.missing }}</h1><p><UiLink variant="bare" :href="withBase(localePath(locale))">{{ t.back }}</UiLink></p></article>
       </div>
     </div>
   </main>
-  <footer class="help-footer">momo · {{ t.tagline }}</footer>
+  <footer class="help-footer">momo · {{ t.tagline }} · <UiLink variant="bare" href="https://momoyeyu.github.io/momo-ui/">momo-ui</UiLink></footer>
 </template>
