@@ -15,6 +15,6 @@
     "vue": "^3.5.43"
   },
   "dependencies": {
-    "@momoyeyu/momo-ui": "https://momoyeyu.github.io/momo-ui/packages/momo-ui-0.2.0.tgz"
+    "@momoyeyu/momo-ui": "https://momoyeyu.github.io/momo-ui/packages/momo-ui-0.3.0.tgz"
   }
 }

@@ -18,7 +18,7 @@
 .help-page .help-breadcrumb [aria-current]{color:var(--text)}
 .help-page .help-index{align-self:start;position:sticky;top:36px;padding-top:8px}
 .help-page .help-index-title{font-size:13px;color:var(--secondary);margin:0 0 22px;line-height:1.7}
-.help-page .guide-navigation{display:flex;flex-direction:column;align-items:stretch;gap:0;border-top:1px solid var(--border)}
+.help-page .guide-navigation{align-items:stretch;border-top:1px solid var(--border)}
 .help-page .guide-navigation a{display:grid;grid-template-columns:27px 1fr;gap:15px;align-items:baseline;padding:22px 0;border-bottom:1px solid #49414d99;color:var(--secondary);font-size:14px;line-height:1.6}
 .help-page .guide-number{font-family:'Nunito',sans-serif;font-size:12px;letter-spacing:.04em;color:#938798;font-variant-numeric:tabular-nums}
 .help-page .guide-navigation a[aria-current],.help-page .guide-navigation a[aria-current] .guide-number,.help-page .guide-navigation a:hover{color:var(--accent)}

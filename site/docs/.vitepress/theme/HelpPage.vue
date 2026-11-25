@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link as UiLink } from '@momoyeyu/momo-ui/vue'
+import { Link as UiLink, Stack } from '@momoyeyu/momo-ui/vue'
 import { Content, useData, useRouter, withBase } from 'vitepress'
 import { helpLinks } from './product-content.mjs'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
@@ -62,11 +62,11 @@ onBeforeUnmount(() => {
       </nav>
       <aside class="help-index">
         <p class="help-index-title">{{ labels.index }}</p>
-        <nav class="guide-navigation" :aria-label="labels.guides" data-testid="guide-navigation">
+        <Stack as="nav" gap="none" class="guide-navigation" :aria-label="labels.guides" data-testid="guide-navigation">
           <UiLink variant="bare" v-for="guide in guideEntries" :key="guide.href" :href="localizedHref(guide.href)" :aria-current="guide.current ? 'page' : undefined">
             <span class="guide-number" aria-hidden="true">{{ guide.number }}</span><span>{{ guide.title }}</span>
           </UiLink>
-        </nav>
+        </Stack>
         <UiLink variant="bare" class="back-home" :href="withBase(localePath(locale))"><span aria-hidden="true">↶</span>{{ t.back }}</UiLink>
       </aside>
       <div class="help-reading">
